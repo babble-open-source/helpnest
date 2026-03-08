@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
   // 2. Vector search in Qdrant
   await ensureCollection()
-  let searchResults: Array<{ payload?: Record<string, unknown> }> = []
+  let searchResults: Array<{ payload?: Record<string, unknown> | null }> = []
   if (queryEmbedding.length > 0) {
     try {
       searchResults = await qdrant.search(COLLECTION_NAME, {
