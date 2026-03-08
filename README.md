@@ -16,13 +16,15 @@ HelpNest is a self-hostable help center and knowledge base for businesses. An op
 
 ## Features
 
-- **📚 Knowledge base** — Organize articles into collections, write with a rich text editor
+- **📚 Knowledge base** — Organize articles into collections with full CRUD from the dashboard
+- **✍️ Rich text editor** — Tiptap-powered editor with toolbar, version history, and auto-save
+- **🎨 Themes** — 8 built-in themes via [`@helpnest/themes`](https://www.npmjs.com/package/@helpnest/themes), applied instantly with no redeploy
 - **🔍 Full-text search** — Fast search across all articles, built on Postgres
 - **✦ AI answers** — Ask AI gets instant answers from your docs (OpenAI + Claude)
-- **🧩 Embeddable widget** — Drop a `<script>` tag into any app to add a help launcher
 - **⚡ Self-hostable** — One Docker command to run your own instance
-- **🔌 REST API + SDK** — JS/TS SDK to manage content programmatically
-- **🛠️ CLI** — `npx helpnest init` to set up, export, import, and deploy
+- **🧩 Embeddable widget** — Drop a `<script>` tag into any app *(coming soon)*
+- **🔌 REST API + SDK** — JS/TS SDK to manage content programmatically *(coming soon)*
+- **🛠️ CLI** — `npx helpnest init` to set up, export, import, and deploy *(coming soon)*
 
 ## Quick Start
 
@@ -42,45 +44,25 @@ Your help center is now running at **http://localhost:3000**.
 git clone https://github.com/babble-open-source/helpnest.git
 cd helpnest
 cp .env.example .env
+cp .env.example apps/web/.env.local   # Next.js reads env from its own directory
 pnpm install
 ./scripts/dev-setup.sh   # starts Docker, migrates DB, seeds data
 pnpm dev
 ```
 
-### Option 3 — npx
+Default seed credentials: `admin@helpnest.io` / `password`
+
+## Themes
+
+HelpNest ships with 8 themes out of the box, powered by the [`@helpnest/themes`](https://www.npmjs.com/package/@helpnest/themes) npm package. Themes control colors, typography, and border radius across both the public help center and the admin dashboard.
 
 ```bash
-npx helpnest init
+npm install @helpnest/themes
 ```
 
-## Embed in your app
+Available themes: **Default**, **Dark**, **Ocean**, **Forest**, **Aurora**, **Slate**, **Rose**, **Midnight**
 
-```html
-<script
-  src="https://your-helpnest-url.com/widget.js"
-  data-workspace="your-workspace-slug"
-  data-base-url="https://your-helpnest-url.com"
-></script>
-```
-
-## JS/TS SDK
-
-```bash
-npm install @helpnest/sdk
-```
-
-```typescript
-import { HelpNest } from '@helpnest/sdk'
-
-const client = new HelpNest({
-  apiKey: 'hn_live_xxx',
-  workspace: 'acme',
-  baseUrl: 'https://your-helpnest-url.com',
-})
-
-const articles = await client.articles.list({ status: 'PUBLISHED' })
-const result = await client.articles.search('reset password')
-```
+Switch themes from **Dashboard → Settings → Appearance**. Community themes are welcome — see the [`helpnest-themes`](https://github.com/babble-open-source/helpnest-themes) repo.
 
 ## Tech Stack
 
@@ -93,6 +75,7 @@ const result = await client.articles.search('reset password')
 | Auth | NextAuth v5 |
 | Editor | Tiptap |
 | Styling | Tailwind CSS |
+| Themes | `@helpnest/themes` |
 | AI | OpenAI Embeddings + Claude |
 | Monorepo | Turborepo + pnpm |
 
@@ -106,10 +89,10 @@ helpnest/
 ├── packages/
 │   ├── db/           → Prisma schema + client
 │   ├── ui/           → Shared React components
-│   ├── editor/       → Tiptap MDX editor
-│   ├── widget/       → Embeddable JS widget
-│   ├── cli/          → npx helpnest CLI
-│   ├── sdk/          → JS/TS API SDK
+│   ├── editor/       → Tiptap editor
+│   ├── widget/       → Embeddable JS widget (coming soon)
+│   ├── cli/          → npx helpnest CLI (coming soon)
+│   ├── sdk/          → JS/TS API SDK (coming soon)
 │   └── config/       → Shared tooling config
 ├── docker-compose.yml         → Local dev
 ├── docker-compose.prod.yml    → Self-hosting
@@ -118,16 +101,34 @@ helpnest/
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values:
+Next.js reads env files from its own directory, not the repo root — set env vars in two places:
+
+```bash
+cp .env.example .env                  # used by scripts, Prisma, Docker
+cp .env.example apps/web/.env.local   # used by Next.js (gitignored)
+```
+
+Key variables:
 
 ```env
 DATABASE_URL=postgresql://helpnest:helpnest@localhost:5432/helpnest_dev
-NEXTAUTH_SECRET=your-secret
+AUTH_SECRET=<run: openssl rand -base64 32>
 NEXTAUTH_URL=http://localhost:3000
-OPENAI_API_KEY=        # for AI search
-ANTHROPIC_API_KEY=     # for AI answers
+
+# AI Search (optional — required for AI-powered search)
+OPENAI_API_KEY=
+ANTHROPIC_API_KEY=
 QDRANT_URL=http://localhost:6333
 ```
+
+## Related Packages
+
+| Package | Description |
+|---------|-------------|
+| [`@helpnest/themes`](https://github.com/babble-open-source/helpnest-themes) | Community theme marketplace |
+| `@helpnest/widget` | Embeddable help launcher *(coming soon)* |
+| `@helpnest/sdk` | JS/TS API client *(coming soon)* |
+| `@helpnest/cli` | CLI for setup and content management *(coming soon)* |
 
 ## Contributing
 

@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { themes } from '@/lib/themes'
 import { redirect } from 'next/navigation'
+import { ApiKeysSection } from './ApiKeysSection'
 import { SyncEmbeddingsButton } from './SyncEmbeddingsButton'
 import { ThemePicker } from './ThemePicker'
 import { WorkspaceForm } from './WorkspaceForm'
@@ -53,6 +54,9 @@ export default async function SettingsPage() {
           </p>
           <SyncEmbeddingsButton workspaceId={member.workspaceId} />
         </div>
+
+        {/* API Keys */}
+        <ApiKeysSection />
       </div>
     </div>
   )

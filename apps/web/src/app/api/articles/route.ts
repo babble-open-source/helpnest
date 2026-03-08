@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireAuth } from '@/lib/auth-api'
 
 function slugify(text: string) {
   return text
@@ -10,19 +10,28 @@ function slugify(text: string) {
     .slice(0, 80)
 }
 
-export async function POST(_request: Request) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+export async function POST(request: Request) {
+  const authResult = await requireAuth(request)
+  if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
-    select: { workspaceId: true, userId: true },
-  })
-  if (!member) return NextResponse.json({ error: 'No workspace' }, { status: 403 })
+  const { workspaceId, userId } = authResult
+
+  // For session auth, userId comes from the member lookup in requireAuth.
+  // For API key auth, we need to find any user in the workspace to assign as author.
+  let authorId = userId
+  if (!authorId) {
+    const member = await prisma.member.findFirst({
+      where: { workspaceId },
+      select: { userId: true },
+      orderBy: { id: 'asc' },
+    })
+    if (!member) return NextResponse.json({ error: 'No workspace member found' }, { status: 500 })
+    authorId = member.userId
+  }
 
   // Get first collection as default
   const collection = await prisma.collection.findFirst({
-    where: { workspaceId: member.workspaceId },
+    where: { workspaceId },
     select: { id: true },
   })
   if (!collection) return NextResponse.json({ error: 'Create a collection first' }, { status: 400 })
@@ -33,15 +42,15 @@ export async function POST(_request: Request) {
   // Ensure unique slug
   let slug = baseSlug
   let i = 1
-  while (await prisma.article.findUnique({ where: { workspaceId_slug: { workspaceId: member.workspaceId, slug } } })) {
+  while (await prisma.article.findUnique({ where: { workspaceId_slug: { workspaceId, slug } } })) {
     slug = `${baseSlug}-${i++}`
   }
 
   const article = await prisma.article.create({
     data: {
-      workspaceId: member.workspaceId,
+      workspaceId,
       collectionId: collection.id,
-      authorId: member.userId,
+      authorId,
       title,
       slug,
       content: '',

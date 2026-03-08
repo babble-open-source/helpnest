@@ -1,21 +1,28 @@
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth-api'
 
 export async function POST(request: Request) {
-  const session = await auth()
-  if (!session?.user) {
+  const authResult = await requireAuth(request)
+  if (!authResult) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const member = await prisma.member.findFirst({
-    where: {
-      user: { email: session.user.email! },
-      role: { in: ['OWNER', 'ADMIN', 'EDITOR'] },
-    },
-  })
-  if (!member) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { workspaceId, userId, via } = authResult
+
+  // Session-authenticated users must have at least EDITOR role.
+  if (via === 'session' && userId) {
+    const member = await prisma.member.findFirst({
+      where: {
+        userId,
+        workspaceId,
+        role: { in: ['OWNER', 'ADMIN', 'EDITOR'] },
+      },
+      select: { id: true },
+    })
+    if (!member) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
   }
 
   const body = await request.json() as { title?: string; description?: string; emoji?: string }
@@ -29,19 +36,19 @@ export async function POST(request: Request) {
   const baseSlug = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
   // Ensure uniqueness within the workspace
   const existing = await prisma.collection.findMany({
-    where: { workspaceId: member.workspaceId, slug: { startsWith: baseSlug } },
+    where: { workspaceId, slug: { startsWith: baseSlug } },
     select: { slug: true },
   })
   const slug = existing.length === 0 ? baseSlug : `${baseSlug}-${existing.length}`
 
   // Order: append after existing top-level collections
   const count = await prisma.collection.count({
-    where: { workspaceId: member.workspaceId, parentId: null },
+    where: { workspaceId, parentId: null },
   })
 
   const collection = await prisma.collection.create({
     data: {
-      workspaceId: member.workspaceId,
+      workspaceId,
       title: title.trim(),
       slug,
       description: description?.trim() || null,

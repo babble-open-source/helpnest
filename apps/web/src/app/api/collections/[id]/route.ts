@@ -1,29 +1,37 @@
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { requireAuth } from '@/lib/auth-api'
 
-async function getMember(email: string) {
-  return prisma.member.findFirst({
+/** For session-authenticated callers, verify they hold at least EDITOR role. */
+async function ensureEditorRole(userId: string, workspaceId: string): Promise<boolean> {
+  const member = await prisma.member.findFirst({
     where: {
-      user: { email },
+      userId,
+      workspaceId,
       role: { in: ['OWNER', 'ADMIN', 'EDITOR'] },
     },
-    select: { workspaceId: true },
+    select: { id: true },
   })
+  return member !== null
 }
 
 export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authResult = await requireAuth(request)
+  if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const member = await getMember(session.user.email!)
-  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { workspaceId, userId, via } = authResult
+
+  if (via === 'session' && userId) {
+    if (!(await ensureEditorRole(userId, workspaceId))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
 
   const col = await prisma.collection.findFirst({
-    where: { id: params.id, workspaceId: member.workspaceId },
+    where: { id: params.id, workspaceId },
     select: { id: true, slug: true },
   })
   if (!col) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -49,17 +57,22 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authResult = await requireAuth(request)
+  if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const member = await getMember(session.user.email!)
-  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { workspaceId, userId, via } = authResult
+
+  if (via === 'session' && userId) {
+    if (!(await ensureEditorRole(userId, workspaceId))) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+  }
 
   const col = await prisma.collection.findFirst({
-    where: { id: params.id, workspaceId: member.workspaceId },
+    where: { id: params.id, workspaceId },
     select: { id: true, _count: { select: { articles: true } } },
   })
   if (!col) return NextResponse.json({ error: 'Not found' }, { status: 404 })

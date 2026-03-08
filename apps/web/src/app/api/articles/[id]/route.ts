@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { requireAuth } from '@/lib/auth-api'
 
 function slugify(text: string) {
   return text
@@ -11,14 +11,14 @@ function slugify(text: string) {
 }
 
 export async function GET(
-  _req: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authResult = await requireAuth(request)
+  if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const article = await prisma.article.findUnique({
-    where: { id: params.id },
+  const article = await prisma.article.findFirst({
+    where: { id: params.id, workspaceId: authResult.workspaceId },
     include: { collection: true, author: true },
   })
   if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -30,14 +30,10 @@ export async function PATCH(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authResult = await requireAuth(request)
+  if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
-    select: { workspaceId: true, userId: true },
-  })
-  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  const { workspaceId } = authResult
 
   const body = await request.json() as {
     title?: string
@@ -56,15 +52,15 @@ export async function PATCH(
     let i = 1
     const base = slug
     while (await prisma.article.findFirst({
-      where: { workspaceId: member.workspaceId, slug, id: { not: params.id } }
+      where: { workspaceId, slug, id: { not: params.id } }
     })) {
       slug = `${base}-${i++}`
     }
   }
 
-  // Verify article belongs to member's workspace
+  // Verify article belongs to the authenticated workspace
   const existing = await prisma.article.findFirst({
-    where: { id: params.id, workspaceId: member.workspaceId },
+    where: { id: params.id, workspaceId },
     select: { id: true },
   })
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
@@ -89,23 +85,29 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _req: Request,
+  request: Request,
   { params }: { params: { id: string } }
 ) {
-  const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const authResult = await requireAuth(request)
+  if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const member = await prisma.member.findFirst({
-    where: {
-      user: { email: session.user.email! },
-      role: { in: ['OWNER', 'ADMIN', 'EDITOR'] },
-    },
-    select: { workspaceId: true },
-  })
-  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  // For session-based auth, role enforcement is done by requireAuth indirectly via
+  // getMember — but requireAuth only checks membership, not role. For delete, we
+  // additionally verify the session-path user has at least EDITOR role.
+  if (authResult.via === 'session' && authResult.userId) {
+    const member = await prisma.member.findFirst({
+      where: {
+        userId: authResult.userId,
+        workspaceId: authResult.workspaceId,
+        role: { in: ['OWNER', 'ADMIN', 'EDITOR'] },
+      },
+      select: { id: true },
+    })
+    if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const article = await prisma.article.findFirst({
-    where: { id: params.id, workspaceId: member.workspaceId },
+    where: { id: params.id, workspaceId: authResult.workspaceId },
     select: { id: true },
   })
   if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })

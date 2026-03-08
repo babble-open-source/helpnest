@@ -41,6 +41,14 @@ interface IntercomExport {
   articles?: IntercomArticle[]
 }
 
+interface ZendeskArticle {
+  id: number
+  title: string
+  body: string
+  section_id: number
+  section?: { name: string }
+}
+
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 80)
 }
@@ -65,7 +73,7 @@ export async function importCommand(options: ImportOptions) {
 
   try {
     const raw = fs.readFileSync(filePath, 'utf-8')
-    const data = JSON.parse(raw) as HelpNestExport | IntercomExport
+    const data = JSON.parse(raw) as HelpNestExport | IntercomExport | ZendeskArticle[]
 
     const workspace = await prisma.workspace.findFirst()
     if (!workspace) {
@@ -115,6 +123,51 @@ export async function importCommand(options: ImportOptions) {
             })
             imported++
           }
+        }
+      }
+    } else if (options.format === 'zendesk') {
+      const articles = data as ZendeskArticle[]
+
+      // Group articles by section, creating one collection per section.
+      const sectionMap = new Map<string, ZendeskArticle[]>()
+      for (const art of articles) {
+        const sectionKey = art.section?.name ?? String(art.section_id)
+        const bucket = sectionMap.get(sectionKey) ?? []
+        bucket.push(art)
+        sectionMap.set(sectionKey, bucket)
+      }
+
+      for (const [sectionName, sectionArticles] of sectionMap) {
+        const collectionSlug = slugify(sectionName)
+        const collection = await prisma.collection.upsert({
+          where: { workspaceId_slug: { workspaceId: workspace.id, slug: collectionSlug } },
+          update: {},
+          create: {
+            workspaceId: workspace.id,
+            title: sectionName,
+            slug: collectionSlug,
+            emoji: '📂',
+            isPublic: true,
+          },
+        })
+
+        for (const art of sectionArticles) {
+          const slug = slugify(art.title)
+          await prisma.article.upsert({
+            where: { workspaceId_slug: { workspaceId: workspace.id, slug } },
+            update: { content: art.body, title: art.title },
+            create: {
+              workspaceId: workspace.id,
+              collectionId: collection.id,
+              authorId: adminUser.id,
+              title: art.title,
+              slug,
+              content: art.body ?? '',
+              status: 'PUBLISHED',
+              publishedAt: new Date(),
+            },
+          })
+          imported++
         }
       }
     } else if (options.format === 'intercom') {

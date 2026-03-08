@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const q = searchParams.get('q')?.trim() ?? ''
   const workspaceSlug = searchParams.get('workspace') ?? ''
 
   if (q.length < 2) {
-    return NextResponse.json({ results: [] })
+    return NextResponse.json({ results: [] }, { headers: CORS_HEADERS })
   }
 
   const workspace = await prisma.workspace.findUnique({
@@ -16,7 +26,7 @@ export async function GET(request: Request) {
   })
 
   if (!workspace) {
-    return NextResponse.json({ results: [] })
+    return NextResponse.json({ results: [] }, { headers: CORS_HEADERS })
   }
 
   // Postgres full-text search using raw query for tsvector
@@ -85,5 +95,5 @@ export async function GET(request: Request) {
     }
   })
 
-  return NextResponse.json({ results: formatted })
+  return NextResponse.json({ results: formatted }, { headers: CORS_HEADERS })
 }
