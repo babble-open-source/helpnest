@@ -15,7 +15,19 @@
     "react": "^18.3.0",
     "react-dom": "^18.3.0",
     "@helpnest/db": "workspace:*",
-    "@helpnest/ui": "workspace:*"
+    "@helpnest/ui": "workspace:*",
+    "@tiptap/react": "^2.4.0",
+    "@tiptap/starter-kit": "^2.4.0",
+    "@tiptap/extension-image": "^2.4.0",
+    "@tiptap/extension-link": "^2.4.0",
+    "@tiptap/extension-code-block-lowlight": "^2.4.0",
+    "@tiptap/extension-table": "^2.4.0",
+    "@tiptap/extension-table-row": "^2.4.0",
+    "@tiptap/extension-table-header": "^2.4.0",
+    "@tiptap/extension-table-cell": "^2.4.0",
+    "@tiptap/extension-placeholder": "^2.4.0",
+    "@tiptap/extension-character-count": "^2.4.0",
+    "lowlight": "^3.1.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

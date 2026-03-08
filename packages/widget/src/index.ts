@@ -1,2 +1,29 @@
-// Embeddable JS widget — will be built in Phase 3
-export {}
+import { HelpPanel } from './panel'
+
+function init() {
+  const script = document.currentScript as HTMLScriptElement | null
+    ?? document.querySelector('script[data-workspace]') as HTMLScriptElement | null
+
+  if (!script) return
+
+  const workspace = script.dataset['workspace']
+  if (!workspace) {
+    console.warn('[HelpNest] Missing data-workspace attribute')
+    return
+  }
+
+  const baseUrl = script.dataset['baseUrl']
+    ?? (typeof window !== 'undefined' ? window.location.origin : '')
+
+  const position = (script.dataset['position'] as 'bottom-right' | 'bottom-left') ?? 'bottom-right'
+  const title = script.dataset['title'] ?? 'How can we help?'
+
+  const panel = new HelpPanel({ workspace, baseUrl, position, title })
+  panel.mount()
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init)
+} else {
+  init()
+}

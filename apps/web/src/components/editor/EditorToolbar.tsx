@@ -1,0 +1,197 @@
+'use client'
+
+import type { Editor } from '@tiptap/react'
+
+interface Props {
+  editor: Editor
+}
+
+function ToolbarButton({
+  onClick,
+  active,
+  title,
+  children,
+}: {
+  onClick: () => void
+  active?: boolean
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      onMouseDown={(e) => { e.preventDefault(); onClick() }}
+      title={title}
+      className={`p-1.5 rounded text-sm transition-colors ${
+        active
+          ? 'bg-[#1A1814] text-[#F7F4EE]'
+          : 'text-[#7A756C] hover:text-[#1A1814] hover:bg-[#F7F4EE]'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}
+
+export function EditorToolbar({ editor }: Props) {
+  return (
+    <div className="flex flex-wrap items-center gap-0.5 px-4 py-2 bg-white border-b border-[#E2DDD5] shrink-0">
+      {/* Text style */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        active={editor.isActive('bold')}
+        title="Bold"
+      >
+        <strong>B</strong>
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        active={editor.isActive('italic')}
+        title="Italic"
+      >
+        <em>I</em>
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+        active={editor.isActive('strike')}
+        title="Strikethrough"
+      >
+        <s>S</s>
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleCode().run()}
+        active={editor.isActive('code')}
+        title="Inline code"
+      >
+        {'<>'}
+      </ToolbarButton>
+
+      <div className="w-px h-5 bg-[#E2DDD5] mx-1" />
+
+      {/* Headings */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        active={editor.isActive('heading', { level: 1 })}
+        title="Heading 1"
+      >
+        H1
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        active={editor.isActive('heading', { level: 2 })}
+        title="Heading 2"
+      >
+        H2
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        active={editor.isActive('heading', { level: 3 })}
+        title="Heading 3"
+      >
+        H3
+      </ToolbarButton>
+
+      <div className="w-px h-5 bg-[#E2DDD5] mx-1" />
+
+      {/* Lists */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleBulletList().run()}
+        active={editor.isActive('bulletList')}
+        title="Bullet list"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+        </svg>
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleOrderedList().run()}
+        active={editor.isActive('orderedList')}
+        title="Numbered list"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h10M7 16h10M3 8h.01M3 12h.01M3 16h.01" />
+        </svg>
+      </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        active={editor.isActive('blockquote')}
+        title="Blockquote"
+      >
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
+        </svg>
+      </ToolbarButton>
+
+      <div className="w-px h-5 bg-[#E2DDD5] mx-1" />
+
+      {/* Link */}
+      <ToolbarButton
+        onClick={() => {
+          const url = window.prompt('URL:')
+          if (url) editor.chain().focus().setLink({ href: url }).run()
+        }}
+        active={editor.isActive('link')}
+        title="Add link"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+        </svg>
+      </ToolbarButton>
+
+      {/* Image */}
+      <ToolbarButton
+        onClick={() => {
+          const url = window.prompt('Image URL:')
+          if (url) editor.chain().focus().setImage({ src: url }).run()
+        }}
+        title="Insert image"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </ToolbarButton>
+
+      <div className="w-px h-5 bg-[#E2DDD5] mx-1" />
+
+      {/* Code block */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+        active={editor.isActive('codeBlock')}
+        title="Code block"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+        </svg>
+      </ToolbarButton>
+
+      {/* Horizontal rule */}
+      <ToolbarButton
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+        title="Horizontal rule"
+      >
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
+        </svg>
+      </ToolbarButton>
+
+      <div className="ml-auto flex items-center gap-1">
+        {/* Undo/Redo */}
+        <ToolbarButton
+          onClick={() => editor.chain().focus().undo().run()}
+          title="Undo"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+          </svg>
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().redo().run()}
+          title="Redo"
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6" />
+          </svg>
+        </ToolbarButton>
+      </div>
+    </div>
+  )
+}
