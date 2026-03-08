@@ -1,0 +1,9 @@
+{
+  "extends": "@helpnest/config/tsconfig",
+  "compilerOptions": {
+    "jsx": "preserve",
+    "noEmit": true
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules", "dist"]
+}
