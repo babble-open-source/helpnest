@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+import { getTheme, themeToCSS } from '@/lib/themes'
 import { redirect } from 'next/navigation'
 
 const navItems = [
@@ -13,7 +15,22 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const session = await auth()
   if (!session?.user) redirect('/login')
 
+  // Fetch the workspace theme so the admin UI reflects the same colors as the
+  // public help center — what admins see matches what their users see.
+  const member = await prisma.member.findFirst({
+    where: { user: { email: session.user.email! } },
+    select: { workspace: { select: { themeId: true } } },
+  })
+  const theme = getTheme(member?.workspace.themeId ?? 'default')
+  const themeCSS = themeToCSS(theme)
+  const fontUrls = [theme.fonts.headingUrl, theme.fonts.bodyUrl].filter(Boolean) as string[]
+
   return (
+    <>
+      <style>{`:root { ${themeCSS} }`}</style>
+      {fontUrls.map((url) => (
+        <link key={url} rel="stylesheet" href={url} />
+      ))}
     <div className="min-h-screen bg-cream flex">
       {/* Sidebar */}
       <aside className="w-60 bg-ink text-cream flex flex-col shrink-0">
@@ -49,5 +66,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {children}
       </main>
     </div>
+    </>
   )
 }
