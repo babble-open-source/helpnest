@@ -34,7 +34,7 @@ export default function LoginPage() {
         <h1 className="font-serif text-3xl text-ink mb-2 text-center">Sign in</h1>
         <p className="text-muted text-sm text-center mb-8">to your HelpNest workspace</p>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
+          <div suppressHydrationWarning>
             <label className="block text-sm font-medium text-ink mb-1">Email</label>
             <input
               type="email"
