@@ -1,6 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
+import { SyncEmbeddingsButton } from './SyncEmbeddingsButton'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -60,6 +61,15 @@ export default async function SettingsPage() {
         <div className="bg-cream rounded-xl border border-border p-5">
           <p className="text-sm font-medium text-ink mb-1">Your help center URL</p>
           <p className="text-sm text-muted font-mono">/{member.workspace.slug}/help</p>
+        </div>
+
+        {/* AI Search */}
+        <div className="bg-white rounded-xl border border-border p-6">
+          <h2 className="font-medium text-ink mb-1">AI Search</h2>
+          <p className="text-sm text-muted mb-4">
+            Index your articles for AI-powered search. Requires OpenAI API key and Qdrant.
+          </p>
+          <SyncEmbeddingsButton workspaceId={member.workspaceId} />
         </div>
       </div>
     </div>

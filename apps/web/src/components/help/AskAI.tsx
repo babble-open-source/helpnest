@@ -1,0 +1,34 @@
+'use client'
+
+import { useState } from 'react'
+import { AskAIModal } from './AskAIModal'
+
+interface Props {
+  workspace: string
+  workspaceName: string
+}
+
+export function AskAI({ workspace, workspaceName }: Props) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-2 bg-white/20 hover:bg-white/30 text-white px-4 py-1.5 rounded-lg text-sm font-medium transition-colors"
+      >
+        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        Ask AI
+      </button>
+      {open && (
+        <AskAIModal
+          workspace={workspace}
+          workspaceName={workspaceName}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  )
+}
