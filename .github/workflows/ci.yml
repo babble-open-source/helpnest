@@ -64,6 +64,9 @@ jobs:
       NEXTAUTH_SECRET: ci-secret-for-build
       NEXTAUTH_URL: http://localhost:3000
       NEXT_PUBLIC_APP_URL: http://localhost:3000
+      OPENAI_API_KEY: placeholder-for-build
+      ANTHROPIC_API_KEY: placeholder-for-build
+      QDRANT_URL: http://localhost:6333
     steps:
       - uses: actions/checkout@v4
 

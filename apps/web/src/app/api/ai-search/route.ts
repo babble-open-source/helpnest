@@ -4,11 +4,10 @@ import { prisma } from '@/lib/db'
 import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import { embedText } from '@/lib/embeddings'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY ?? '',
-})
-
 export async function POST(request: Request) {
+  const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY ?? '',
+  })
   const { query, workspaceSlug } = await request.json() as {
     query: string
     workspaceSlug: string
