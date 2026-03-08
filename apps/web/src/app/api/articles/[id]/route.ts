@@ -62,6 +62,13 @@ export async function PATCH(
     }
   }
 
+  // Verify article belongs to member's workspace
+  const existing = await prisma.article.findFirst({
+    where: { id: params.id, workspaceId: member.workspaceId },
+    select: { id: true },
+  })
+  if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
   const data: Record<string, unknown> = {}
   if (body.title !== undefined) data.title = body.title
   if (body.content !== undefined) data.content = body.content

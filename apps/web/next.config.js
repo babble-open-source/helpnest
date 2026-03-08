@@ -10,6 +10,7 @@ const nextConfig = {
       'undici',
       'openai',
       '@anthropic-ai/sdk',
+      '@helpnest/themes',
     ],
   },
 }

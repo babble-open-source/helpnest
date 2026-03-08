@@ -9,6 +9,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import CharacterCount from '@tiptap/extension-character-count'
 import { EditorToolbar } from './EditorToolbar'
 import { ArticleMetaSidebar } from './ArticleMetaSidebar'
+import { EditorOutline } from './EditorOutline'
 
 interface Article {
   id: string
@@ -50,6 +51,8 @@ export function ArticleEditor({ article, collections }: Props) {
   const [status, setStatus] = useState(article.status)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [showVersions, setShowVersions] = useState(false)
+  const [showOutline, setShowOutline] = useState(false)
+  const [showMeta, setShowMeta] = useState(true)
   const [versions, setVersions] = useState<ArticleVersion[]>([])
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -106,7 +109,7 @@ export function ArticleEditor({ article, collections }: Props) {
 
     setSaveStatus('saving')
     try {
-      await fetch(`/api/articles/${article.id}`, {
+      const res = await fetch(`/api/articles/${article.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -118,6 +121,7 @@ export function ArticleEditor({ article, collections }: Props) {
           status: currentStatus,
         }),
       })
+      if (!res.ok) throw new Error(`Save failed: ${res.status}`)
       lastSaved.current = {
         title: currentTitle,
         content,
@@ -191,14 +195,40 @@ export function ArticleEditor({ article, collections }: Props) {
 
   return (
     <div className="flex h-screen bg-cream overflow-hidden">
+      {/* Left outline panel */}
+      {showOutline && editor && <EditorOutline editor={editor} />}
+
       {/* Editor area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-border shrink-0">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <a href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm">
               &larr; Articles
             </a>
+            <div className="flex items-center gap-1 border-l border-border pl-3">
+              {/* Outline toggle */}
+              <button
+                onClick={() => setShowOutline((v) => !v)}
+                title="Toggle outline"
+                className={`p-1.5 rounded transition-colors ${showOutline ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h8M4 14h12M4 18h6" />
+                </svg>
+              </button>
+              {/* Meta sidebar toggle */}
+              <button
+                onClick={() => setShowMeta((v) => !v)}
+                title="Toggle properties panel"
+                className={`p-1.5 rounded transition-colors ${showMeta ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                  <rect x="14" y="10" width="6" height="8" rx="1" strokeWidth={2} />
+                </svg>
+              </button>
+            </div>
             <span className={`text-xs px-2 py-0.5 rounded-full ${
               saveStatus === 'saved' ? 'text-green bg-green/10' :
               saveStatus === 'saving' ? 'text-muted bg-cream' :
@@ -261,8 +291,8 @@ export function ArticleEditor({ article, collections }: Props) {
         </div>
       </div>
 
-      {/* Metadata sidebar */}
-      <ArticleMetaSidebar
+      {/* Right metadata sidebar */}
+      {showMeta && <ArticleMetaSidebar
         articleId={article.id}
         articleTitle={title}
         slug={slug}
@@ -273,7 +303,7 @@ export function ArticleEditor({ article, collections }: Props) {
         onCollectionChange={setCollectionId}
         status={status}
         collections={collections}
-      />
+      />}
 
       {/* Version history modal */}
       {showVersions && (

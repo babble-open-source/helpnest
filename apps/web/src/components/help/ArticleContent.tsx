@@ -48,10 +48,11 @@ function renderMarkdown(md: string): string {
 }
 
 export function ArticleContent({ content }: Props) {
-  const html = renderMarkdown(content)
+  // Tiptap saves HTML (starts with `<`); legacy seed data is Markdown.
+  const html = content.trimStart().startsWith('<') ? content : renderMarkdown(content)
   return (
     <div
-      className="prose-custom text-ink/90 leading-7"
+      className="article-prose text-ink/90 leading-7"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )
