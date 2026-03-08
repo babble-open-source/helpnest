@@ -200,7 +200,7 @@ export function ArticleEditor({ article, collections }: Props) {
               &larr; Articles
             </a>
             <span className={`text-xs px-2 py-0.5 rounded-full ${
-              saveStatus === 'saved' ? 'text-green-700 bg-green-50' :
+              saveStatus === 'saved' ? 'text-green bg-green/10' :
               saveStatus === 'saving' ? 'text-muted bg-cream' :
               saveStatus === 'error' ? 'text-red-600 bg-red-50' :
               'text-muted bg-cream'

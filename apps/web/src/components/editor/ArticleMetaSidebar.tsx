@@ -41,13 +41,13 @@ export function ArticleMetaSidebar({
           </label>
           <span className={`inline-flex items-center gap-1.5 text-sm px-2.5 py-1 rounded-full ${
             status === 'PUBLISHED'
-              ? 'bg-green-50 text-green-700'
+              ? 'bg-green/10 text-green'
               : status === 'ARCHIVED'
               ? 'bg-border text-muted'
               : 'bg-cream border border-border text-muted'
           }`}>
             <span className={`w-1.5 h-1.5 rounded-full ${
-              status === 'PUBLISHED' ? 'bg-green-600' : 'bg-muted'
+              status === 'PUBLISHED' ? 'bg-green' : 'bg-muted'
             }`} />
             {status.charAt(0) + status.slice(1).toLowerCase()}
           </span>

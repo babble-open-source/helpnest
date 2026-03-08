@@ -10,14 +10,7 @@ const config: Partial<Config> = {
         muted: 'rgb(var(--color-muted) / <alpha-value>)',
         border: 'rgb(var(--color-border) / <alpha-value>)',
         accent: 'rgb(var(--color-accent) / <alpha-value>)',
-        green: {
-          DEFAULT: 'rgb(var(--color-green) / <alpha-value>)',
-          50: '#f0fdf4',
-          100: '#dcfce7',
-          500: '#22c55e',
-          600: '#16a34a',
-          700: '#2D6A4F',
-        },
+        green: 'rgb(var(--color-green) / <alpha-value>)',
         white: 'rgb(var(--color-white) / <alpha-value>)',
       },
       fontFamily: {

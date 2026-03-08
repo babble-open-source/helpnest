@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
 const STATUS_STYLES = {
-  PUBLISHED: 'bg-green/10 text-green-700',
+  PUBLISHED: 'bg-green/10 text-green',
   DRAFT: 'bg-cream text-muted border border-border',
   ARCHIVED: 'bg-border/50 text-muted',
 }
