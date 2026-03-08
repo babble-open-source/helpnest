@@ -28,12 +28,8 @@ export default async function HelpCenterLayout({ children, params }: Props) {
   return (
     <>
       {/* Inject theme CSS variables — server-rendered, no flash */}
-      <style>{`:root { ${css} }`}</style>
-
-      {/* Preload Google Fonts for the active theme */}
-      {fontUrls.map((url) => (
-        <link key={url} rel="stylesheet" href={url} />
-      ))}
+      <style dangerouslySetInnerHTML={{ __html: `${fontUrls.map((url) => `@import url('${url}');`).join('\n')}
+:root { ${css} }` }} />
 
       {children}
     </>

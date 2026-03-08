@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { NewCollectionModal } from './NewCollectionModal'
 
 export default async function CollectionsPage() {
   const session = await auth()
@@ -34,9 +35,7 @@ export default async function CollectionsPage() {
             {collections.length} collection{collections.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <button className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium">
-          + New Collection
-        </button>
+        <NewCollectionModal />
       </div>
 
       {collections.length === 0 ? (

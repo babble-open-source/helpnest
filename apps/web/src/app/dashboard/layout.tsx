@@ -27,10 +27,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <>
-      <style>{`:root { ${themeCSS} }`}</style>
-      {fontUrls.map((url) => (
-        <link key={url} rel="stylesheet" href={url} />
-      ))}
+      <style dangerouslySetInnerHTML={{ __html: `${fontUrls.map((url) => `@import url('${url}');`).join('\n')}
+:root { ${themeCSS} }` }} />
     <div className="min-h-screen bg-cream flex">
       {/* Sidebar */}
       <aside className="w-60 bg-ink text-cream flex flex-col shrink-0">
