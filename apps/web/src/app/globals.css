@@ -4,8 +4,21 @@
 
 @layer base {
   :root {
-    --font-dm-sans: 'DM Sans', system-ui, sans-serif;
-    --font-instrument-serif: 'Instrument Serif', Georgia, serif;
+    /* Default theme color channels (RGB, space-separated for Tailwind opacity support) */
+    --color-cream: 247 244 238;
+    --color-ink: 26 24 20;
+    --color-muted: 122 117 108;
+    --color-border: 226 221 213;
+    --color-accent: 200 98 42;
+    --color-green: 45 106 79;
+    --color-white: 255 255 255;
+
+    /* Font family variables — overridden by theme at runtime */
+    --font-heading: 'Instrument Serif', Georgia, serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    /* Legacy aliases used by the Tiptap editor (dashboard only, not themed) */
+    --font-instrument-serif: var(--font-heading);
+    --font-dm-sans: var(--font-body);
   }
 
   html {
@@ -13,11 +26,11 @@
   }
 
   body {
-    font-family: var(--font-dm-sans);
+    font-family: var(--font-body);
   }
 
   h1, h2, h3 {
-    font-family: var(--font-instrument-serif);
+    font-family: var(--font-heading);
   }
 }
 
