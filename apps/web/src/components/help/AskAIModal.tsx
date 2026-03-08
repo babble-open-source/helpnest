@@ -182,7 +182,7 @@ export function AskAIModal({ workspace, workspaceName, onClose }: Props) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ask a question..."
               disabled={status === 'loading' || status === 'streaming'}
-              className="flex-1 px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green disabled:opacity-50"
+              className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-green disabled:opacity-50"
               autoFocus
             />
             <button

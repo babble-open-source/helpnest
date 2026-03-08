@@ -1,7 +1,9 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { themes } from '@/lib/themes'
 import { redirect } from 'next/navigation'
 import { SyncEmbeddingsButton } from './SyncEmbeddingsButton'
+import { ThemePicker } from './ThemePicker'
 
 export default async function SettingsPage() {
   const session = await auth()
@@ -26,7 +28,7 @@ export default async function SettingsPage() {
               <label className="block text-sm font-medium text-ink mb-1">Name</label>
               <input
                 defaultValue={member.workspace.name}
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
             <div>
@@ -37,7 +39,7 @@ export default async function SettingsPage() {
                 </span>
                 <input
                   defaultValue={member.workspace.slug}
-                  className="flex-1 px-3 py-2 text-sm focus:outline-none"
+                  className="flex-1 px-3 py-2 text-sm bg-white text-ink placeholder:text-muted focus:outline-none"
                 />
               </div>
             </div>
@@ -48,7 +50,7 @@ export default async function SettingsPage() {
               <input
                 defaultValue={member.workspace.customDomain ?? ''}
                 placeholder="help.yourcompany.com"
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
               />
             </div>
             <button className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors">
@@ -61,6 +63,19 @@ export default async function SettingsPage() {
         <div className="bg-cream rounded-xl border border-border p-5">
           <p className="text-sm font-medium text-ink mb-1">Your help center URL</p>
           <p className="text-sm text-muted font-mono">/{member.workspace.slug}/help</p>
+        </div>
+
+        {/* Theme */}
+        <div className="bg-white rounded-xl border border-border p-6">
+          <h2 className="font-medium text-ink mb-1">Help Center Theme</h2>
+          <p className="text-sm text-muted mb-4">
+            Choose a theme for your public-facing help center. Applied instantly, no redeploy needed.
+          </p>
+          <ThemePicker
+            themes={themes}
+            currentThemeId={member.workspace.themeId}
+            workspaceSlug={member.workspace.slug}
+          />
         </div>
 
         {/* AI Search */}

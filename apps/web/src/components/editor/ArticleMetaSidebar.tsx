@@ -79,7 +79,7 @@ export function ArticleMetaSidebar({
           <input
             value={slug}
             onChange={(e) => onSlugChange(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent font-mono"
+            className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent font-mono"
           />
           <p className="text-xs text-muted mt-1">
             help/collection/<strong>{slug}</strong>
@@ -96,7 +96,7 @@ export function ArticleMetaSidebar({
             onChange={(e) => onExcerptChange(e.target.value)}
             placeholder="Brief summary shown in article lists..."
             rows={3}
-            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+            className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none"
           />
         </div>
       </div>

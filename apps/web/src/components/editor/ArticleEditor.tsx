@@ -243,7 +243,7 @@ export function ArticleEditor({ article, collections }: Props) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Article title"
-              className="w-full font-serif text-4xl text-ink bg-transparent outline-none placeholder:text-border mb-6 leading-tight"
+              className="w-full font-serif text-4xl text-ink bg-transparent outline-none placeholder:text-muted/40 mb-6 leading-tight"
             />
             {/* Editor body */}
             <EditorContent
