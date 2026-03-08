@@ -2,6 +2,7 @@
   "name": "@helpnest/config",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "exports": {
     "./tailwind": "./tailwind.config.ts",
     "./tsconfig": "./tsconfig.base.json",
