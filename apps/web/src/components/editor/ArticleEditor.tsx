@@ -190,20 +190,20 @@ export function ArticleEditor({ article, collections }: Props) {
   const readTime = Math.max(1, Math.round(wordCount / 200))
 
   return (
-    <div className="flex h-screen bg-[#F7F4EE] overflow-hidden">
+    <div className="flex h-screen bg-cream overflow-hidden">
       {/* Editor area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-[#E2DDD5] shrink-0">
+        <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-border shrink-0">
           <div className="flex items-center gap-4">
-            <a href="/dashboard/articles" className="text-[#7A756C] hover:text-[#1A1814] transition-colors text-sm">
+            <a href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm">
               &larr; Articles
             </a>
             <span className={`text-xs px-2 py-0.5 rounded-full ${
               saveStatus === 'saved' ? 'text-green-700 bg-green-50' :
-              saveStatus === 'saving' ? 'text-[#7A756C] bg-[#F7F4EE]' :
+              saveStatus === 'saving' ? 'text-muted bg-cream' :
               saveStatus === 'error' ? 'text-red-600 bg-red-50' :
-              'text-[#7A756C] bg-[#F7F4EE]'
+              'text-muted bg-cream'
             }`}>
               {saveStatus === 'saved' ? '✓ Saved' :
                saveStatus === 'saving' ? 'Saving...' :
@@ -214,19 +214,19 @@ export function ArticleEditor({ article, collections }: Props) {
           <div className="flex items-center gap-2">
             <button
               onClick={loadVersions}
-              className="text-sm text-[#7A756C] hover:text-[#1A1814] transition-colors px-3 py-1.5"
+              className="text-sm text-muted hover:text-ink transition-colors px-3 py-1.5"
             >
               History
             </button>
             <button
               onClick={() => save()}
-              className="text-sm text-[#7A756C] hover:text-[#1A1814] transition-colors border border-[#E2DDD5] rounded-lg px-3 py-1.5"
+              className="text-sm text-muted hover:text-ink transition-colors border border-border rounded-lg px-3 py-1.5"
             >
               Save draft
             </button>
             <button
               onClick={publish}
-              className="text-sm bg-[#C8622A] text-white rounded-lg px-4 py-1.5 hover:bg-[#C8622A]/90 transition-colors font-medium"
+              className="text-sm bg-accent text-white rounded-lg px-4 py-1.5 hover:bg-accent/90 transition-colors font-medium"
             >
               {status === 'PUBLISHED' ? 'Update' : 'Publish'}
             </button>
@@ -243,18 +243,18 @@ export function ArticleEditor({ article, collections }: Props) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Article title"
-              className="w-full font-serif text-4xl text-[#1A1814] bg-transparent outline-none placeholder:text-[#E2DDD5] mb-6 leading-tight"
+              className="w-full font-serif text-4xl text-ink bg-transparent outline-none placeholder:text-border mb-6 leading-tight"
             />
             {/* Editor body */}
             <EditorContent
               editor={editor}
-              className="prose-editor min-h-[400px] text-[#1A1814]/90 leading-7 focus:outline-none"
+              className="prose-editor min-h-[400px] text-ink/90 leading-7 focus:outline-none"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-2 border-t border-[#E2DDD5] bg-white flex items-center gap-4 text-xs text-[#7A756C] shrink-0">
+        <div className="px-6 py-2 border-t border-border bg-white flex items-center gap-4 text-xs text-muted shrink-0">
           <span>{wordCount} words</span>
           <span>&middot;</span>
           <span>{readTime} min read</span>
@@ -276,37 +276,37 @@ export function ArticleEditor({ article, collections }: Props) {
       {/* Version history modal */}
       {showVersions && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#1A1814]/40"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
           onClick={() => setShowVersions(false)}
         >
           <div
             className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-[#E2DDD5]">
-              <h2 className="font-medium text-[#1A1814]">Version History</h2>
+            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+              <h2 className="font-medium text-ink">Version History</h2>
               <button
                 onClick={() => setShowVersions(false)}
-                className="text-[#7A756C] hover:text-[#1A1814]"
+                className="text-muted hover:text-ink"
               >
                 &#x2715;
               </button>
             </div>
-            <div className="max-h-96 overflow-y-auto divide-y divide-[#E2DDD5]">
+            <div className="max-h-96 overflow-y-auto divide-y divide-border">
               {versions.length === 0 ? (
-                <p className="p-6 text-center text-[#7A756C] text-sm">No versions saved yet.</p>
+                <p className="p-6 text-center text-muted text-sm">No versions saved yet.</p>
               ) : (
                 versions.map((v) => (
-                  <div key={v.id} className="flex items-center justify-between p-4 hover:bg-[#F7F4EE]">
+                  <div key={v.id} className="flex items-center justify-between p-4 hover:bg-cream">
                     <div>
-                      <p className="text-sm font-medium text-[#1A1814]">Version {v.version}</p>
-                      <p className="text-xs text-[#7A756C] mt-0.5">
+                      <p className="text-sm font-medium text-ink">Version {v.version}</p>
+                      <p className="text-xs text-muted mt-0.5">
                         {new Date(v.createdAt).toLocaleString()} &middot; {v.author.name ?? 'Unknown'}
                       </p>
                     </div>
                     <button
                       onClick={() => restoreVersion(v.content, v.title)}
-                      className="text-xs text-[#C8622A] hover:underline"
+                      className="text-xs text-accent hover:underline"
                     >
                       Restore
                     </button>

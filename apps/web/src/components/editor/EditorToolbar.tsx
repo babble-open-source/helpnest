@@ -23,8 +23,8 @@ function ToolbarButton({
       title={title}
       className={`p-1.5 rounded text-sm transition-colors ${
         active
-          ? 'bg-[#1A1814] text-[#F7F4EE]'
-          : 'text-[#7A756C] hover:text-[#1A1814] hover:bg-[#F7F4EE]'
+          ? 'bg-ink text-cream'
+          : 'text-muted hover:text-ink hover:bg-cream'
       }`}
     >
       {children}
@@ -34,7 +34,7 @@ function ToolbarButton({
 
 export function EditorToolbar({ editor }: Props) {
   return (
-    <div className="flex flex-wrap items-center gap-0.5 px-4 py-2 bg-white border-b border-[#E2DDD5] shrink-0">
+    <div className="flex flex-wrap items-center gap-0.5 px-4 py-2 bg-white border-b border-border shrink-0">
       {/* Text style */}
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
@@ -65,7 +65,7 @@ export function EditorToolbar({ editor }: Props) {
         {'<>'}
       </ToolbarButton>
 
-      <div className="w-px h-5 bg-[#E2DDD5] mx-1" />
+      <div className="w-px h-5 bg-border mx-1" />
 
       {/* Headings */}
       <ToolbarButton
@@ -90,7 +90,7 @@ export function EditorToolbar({ editor }: Props) {
         H3
       </ToolbarButton>
 
-      <div className="w-px h-5 bg-[#E2DDD5] mx-1" />
+      <div className="w-px h-5 bg-border mx-1" />
 
       {/* Lists */}
       <ToolbarButton
@@ -121,7 +121,7 @@ export function EditorToolbar({ editor }: Props) {
         </svg>
       </ToolbarButton>
 
-      <div className="w-px h-5 bg-[#E2DDD5] mx-1" />
+      <div className="w-px h-5 bg-border mx-1" />
 
       {/* Link */}
       <ToolbarButton
@@ -150,7 +150,7 @@ export function EditorToolbar({ editor }: Props) {
         </svg>
       </ToolbarButton>
 
-      <div className="w-px h-5 bg-[#E2DDD5] mx-1" />
+      <div className="w-px h-5 bg-border mx-1" />
 
       {/* Code block */}
       <ToolbarButton
