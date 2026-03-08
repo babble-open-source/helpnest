@@ -5,7 +5,7 @@ Thanks for your interest in contributing! Here's how to get started.
 ## Local Setup
 
 ```bash
-git clone https://github.com/helpnest/helpnest.git
+git clone https://github.com/babble-open-source/helpnest.git
 cd helpnest
 cp .env.example .env
 pnpm install

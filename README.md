@@ -2,7 +2,7 @@
   <h1>🪺 HelpNest</h1>
   <p><strong>The open-source customer help center. Self-host or use the cloud.</strong></p>
   <p>
-    <a href="https://github.com/helpnest/helpnest/blob/main/LICENSE">
+    <a href="https://github.com/babble-open-source/helpnest/blob/main/LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
     </a>
     <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome" />
@@ -29,7 +29,7 @@ HelpNest is a self-hostable help center and knowledge base for businesses. An op
 ### Option 1 — Docker (recommended for self-hosting)
 
 ```bash
-git clone https://github.com/helpnest/helpnest.git
+git clone https://github.com/babble-open-source/helpnest.git
 cd helpnest
 ./scripts/self-host-setup.sh
 ```
@@ -39,7 +39,7 @@ Your help center is now running at **http://localhost:3000**.
 ### Option 2 — Local development
 
 ```bash
-git clone https://github.com/helpnest/helpnest.git
+git clone https://github.com/babble-open-source/helpnest.git
 cd helpnest
 cp .env.example .env
 pnpm install
