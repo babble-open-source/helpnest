@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -e
+
+echo "🚀 Setting up HelpNest development environment..."
+
+# Check prerequisites
+command -v docker >/dev/null 2>&1 || { echo "❌ Docker is required but not installed."; exit 1; }
+command -v pnpm >/dev/null 2>&1 || { echo "❌ pnpm is required but not installed. Run: npm i -g pnpm"; exit 1; }
+command -v node >/dev/null 2>&1 || { echo "❌ Node.js is required but not installed."; exit 1; }
+
+# Copy env file if not exists
+if [ ! -f .env ]; then
+  cp .env.example .env
+  echo "📋 Created .env from .env.example — please review and update values"
+fi
+
+# Install dependencies
+echo "📦 Installing dependencies..."
+pnpm install
+
+# Start Docker services
+echo "🐳 Starting Docker services..."
+docker compose up -d
+
+# Wait for postgres to be healthy
+echo "⏳ Waiting for PostgreSQL to be ready..."
+until docker exec helpnest_postgres pg_isready -U helpnest -d helpnest_dev >/dev/null 2>&1; do
+  printf '.'
+  sleep 1
+done
+echo ""
+echo "✅ PostgreSQL is ready!"
+
+# Run migrations
+echo "🗄️  Running database migrations..."
+cd packages/db
+pnpm prisma migrate dev --name init
+echo "✅ Migrations complete!"
+
+# Run seed
+echo "🌱 Seeding database..."
+pnpm db:seed
+echo "✅ Database seeded!"
+
+cd ../..
+
+echo ""
+echo "✅ HelpNest is ready for development!"
+echo ""
+echo "   Run: pnpm dev"
+echo "   Web: http://localhost:3000"
+echo "   Docs: http://localhost:3001"
+echo "   Prisma Studio: pnpm db:studio"
+echo "   Qdrant UI: http://localhost:6333/dashboard"
+echo ""

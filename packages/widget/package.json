@@ -1,0 +1,13 @@
+{
+  "name": "@helpnest/widget",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  }
+}

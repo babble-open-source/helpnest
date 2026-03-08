@@ -1,0 +1,162 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum ArticleStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Workspace {
+  id           String   @id @default(cuid())
+  name         String
+  slug         String   @unique
+  logo         String?
+  customDomain String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  collections Collection[]
+  articles    Article[]
+  members     Member[]
+  apiKeys     ApiKey[]
+  searchIndex SearchIndex[]
+
+  @@index([slug])
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  avatar    String?
+  createdAt DateTime @default(now())
+
+  members          Member[]
+  articles         Article[]
+  articleVersions  ArticleVersion[]
+}
+
+model Member {
+  id          String     @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        MemberRole @default(VIEWER)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, userId])
+  @@index([workspaceId])
+  @@index([userId])
+}
+
+model Collection {
+  id          String  @id @default(cuid())
+  workspaceId String
+  title       String
+  description String?
+  icon        String?
+  emoji       String?
+  slug        String
+  order       Int     @default(0)
+  isPublic    Boolean @default(true)
+  parentId    String?
+
+  workspace        Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  parent           Collection?  @relation("SubCollections", fields: [parentId], references: [id])
+  subCollections   Collection[] @relation("SubCollections")
+  articles         Article[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([parentId])
+}
+
+model Article {
+  id           String        @id @default(cuid())
+  workspaceId  String
+  collectionId String
+  title        String
+  slug         String
+  content      String        @db.Text
+  excerpt      String?
+  status       ArticleStatus @default(DRAFT)
+  order        Int           @default(0)
+  views        Int           @default(0)
+  helpful      Int           @default(0)
+  notHelpful   Int           @default(0)
+  authorId     String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  publishedAt  DateTime?
+
+  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  collection  Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  author      User       @relation(fields: [authorId], references: [id])
+  versions    ArticleVersion[]
+  searchIndex SearchIndex[]
+
+  @@unique([workspaceId, slug])
+  @@index([workspaceId])
+  @@index([collectionId])
+  @@index([status])
+  @@index([workspaceId, status])
+}
+
+model ArticleVersion {
+  id        String   @id @default(cuid())
+  articleId String
+  content   String   @db.Text
+  title     String
+  createdAt DateTime @default(now())
+  authorId  String
+  version   Int
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  author  User    @relation(fields: [authorId], references: [id])
+
+  @@index([articleId])
+  @@index([articleId, version])
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  workspaceId String
+  name        String
+  keyHash     String    @unique
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([keyHash])
+}
+
+model SearchIndex {
+  id          String   @id @default(cuid())
+  articleId   String
+  workspaceId String
+  embedding   Json?
+  updatedAt   DateTime @updatedAt
+
+  article   Article   @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId])
+  @@index([workspaceId])
+}

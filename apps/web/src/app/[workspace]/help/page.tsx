@@ -1,0 +1,164 @@
+import { prisma } from '@/lib/db'
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
+
+interface Props {
+  params: { workspace: string }
+}
+
+function ReadTime({ content }: { content: string }) {
+  const words = content.split(/\s+/).length
+  const minutes = Math.max(1, Math.round(words / 200))
+  return <span>{minutes} min read</span>
+}
+
+export default async function HelpCenterHome({ params }: Props) {
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug: params.workspace },
+    include: {
+      collections: {
+        where: { isPublic: true, parentId: null },
+        orderBy: { order: 'asc' },
+        include: {
+          _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
+        },
+      },
+      articles: {
+        where: { status: 'PUBLISHED' },
+        orderBy: { views: 'desc' },
+        take: 5,
+        include: { collection: true },
+      },
+    },
+  })
+
+  if (!workspace) notFound()
+
+  return (
+    <div className="min-h-screen bg-cream">
+      {/* Nav */}
+      <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+          <Link href={`/${params.workspace}/help`} className="font-serif text-xl text-ink">
+            {workspace.name}
+          </Link>
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted hidden sm:block">Help Center</span>
+          </div>
+        </div>
+      </nav>
+
+      {/* Hero */}
+      <section className="bg-ink text-cream py-16 px-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <h1 className="font-serif text-4xl sm:text-5xl mb-4">How can we help you today?</h1>
+          <p className="text-cream/70 text-lg mb-8">
+            Search our knowledge base or browse collections below
+          </p>
+          <Link
+            href={`/${params.workspace}/help/search`}
+            className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition-colors rounded-xl px-5 py-3 max-w-lg mx-auto text-left"
+          >
+            <svg className="w-5 h-5 text-cream/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="text-cream/50 flex-1">Search articles...</span>
+            <kbd className="hidden sm:block text-xs text-cream/30 bg-white/10 rounded px-1.5 py-0.5">⌘K</kbd>
+          </Link>
+        </div>
+      </section>
+
+      {/* AI Banner */}
+      <div className="bg-green text-white py-3 px-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-center gap-2 text-sm">
+          <span className="inline-flex items-center gap-1.5">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            <strong>Ask AI</strong> — get instant answers from our docs
+          </span>
+          <span className="text-white/50 text-xs">Coming soon</span>
+        </div>
+      </div>
+
+      {/* Main content */}
+      <main className="max-w-4xl mx-auto px-4 py-12">
+        {/* Collections */}
+        <section className="mb-16">
+          <h2 className="font-serif text-2xl text-ink mb-6">Browse by topic</h2>
+          {workspace.collections.length === 0 ? (
+            <p className="text-muted">No collections yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {workspace.collections.map((col) => (
+                <Link
+                  key={col.id}
+                  href={`/${params.workspace}/help/${col.slug}`}
+                  className="group bg-white rounded-xl border border-border p-5 hover:border-accent hover:shadow-sm transition-all"
+                >
+                  <div className="text-2xl mb-3">{col.emoji ?? '📄'}</div>
+                  <h3 className="font-medium text-ink group-hover:text-accent transition-colors mb-1">
+                    {col.title}
+                  </h3>
+                  {col.description && (
+                    <p className="text-sm text-muted line-clamp-2 mb-3">{col.description}</p>
+                  )}
+                  <span className="text-xs text-muted">
+                    {col._count.articles} article{col._count.articles !== 1 ? 's' : ''}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        {/* Popular articles */}
+        {workspace.articles.length > 0 && (
+          <section className="mb-16">
+            <h2 className="font-serif text-2xl text-ink mb-6">Popular articles</h2>
+            <div className="bg-white rounded-xl border border-border divide-y divide-border">
+              {workspace.articles.map((article) => (
+                <Link
+                  key={article.id}
+                  href={`/${params.workspace}/help/${article.collection.slug}/${article.slug}`}
+                  className="flex items-start gap-4 p-4 hover:bg-cream/50 transition-colors group"
+                >
+                  <div className="mt-0.5 text-muted group-hover:text-accent transition-colors">
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-ink group-hover:text-accent transition-colors truncate">
+                      {article.title}
+                    </p>
+                    {article.excerpt && (
+                      <p className="text-sm text-muted mt-0.5 line-clamp-1">{article.excerpt}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3 text-xs text-muted whitespace-nowrap">
+                    <span className="bg-cream rounded-full px-2 py-0.5">{article.collection.title}</span>
+                    <ReadTime content={article.content} />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Footer stats */}
+        <footer className="border-t border-border pt-8 text-center">
+          <p className="text-muted text-sm mb-4">Still need help?</p>
+          <div className="flex items-center justify-center gap-8 text-sm text-muted">
+            <span>
+              <strong className="text-ink">{workspace.articles.length}+</strong> articles
+            </span>
+            <span>
+              <strong className="text-ink">{workspace.collections.length}</strong> collections
+            </span>
+          </div>
+        </footer>
+      </main>
+    </div>
+  )
+}
