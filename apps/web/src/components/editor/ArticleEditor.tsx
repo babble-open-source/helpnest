@@ -160,6 +160,8 @@ export function ArticleEditor({ article, collections }: Props) {
       setSaveStatus('unsaved')
       scheduleAutoSave()
     }
+    // scheduleAutoSave is intentionally omitted — it's stable via useCallback
+    // and including it would cause this effect to re-run on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title, excerpt, collectionId, status])
 

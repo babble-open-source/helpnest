@@ -60,9 +60,10 @@ export function AskAIModal({ workspace, workspaceName, onClose }: Props) {
       const decoder = new TextDecoder()
       let buffer = ''
 
-      while (true) {
+      let streaming = true
+      while (streaming) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) { streaming = false; break }
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
@@ -79,7 +80,7 @@ export function AskAIModal({ workspace, workspaceName, onClose }: Props) {
             if (event.type === 'sources') setSources(event.sources)
             else if (event.type === 'text') setAnswer((prev) => prev + event.text)
             else if (event.type === 'done') setStatus('done')
-          } catch {}
+          } catch (_e) { /* ignore malformed SSE lines */ }
         }
       }
     } catch {

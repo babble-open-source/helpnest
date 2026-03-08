@@ -34,17 +34,11 @@ export default async function ArticlesPage({
       : {}),
   }
 
-  const [articles, collections] = await Promise.all([
-    prisma.article.findMany({
-      where,
-      orderBy: { updatedAt: 'desc' },
-      include: { collection: true, author: true },
-    }),
-    prisma.collection.findMany({
-      where: { workspaceId: member.workspaceId },
-      select: { id: true, title: true },
-    }),
-  ])
+  const articles = await prisma.article.findMany({
+    where,
+    orderBy: { updatedAt: 'desc' },
+    include: { collection: true, author: true },
+  })
 
   return (
     <div className="p-8">

@@ -22,7 +22,7 @@ export function useSearch(workspace: string) {
     try {
       const stored = localStorage.getItem('helpnest_recent_searches')
       if (stored) setRecentSearches(JSON.parse(stored) as string[])
-    } catch {}
+    } catch (_e) { /* localStorage unavailable */ }
   }, [])
 
   // Keyboard shortcut + custom event listener
@@ -74,7 +74,7 @@ export function useSearch(workspace: string) {
       setRecentSearches(updated)
       try {
         localStorage.setItem('helpnest_recent_searches', JSON.stringify(updated))
-      } catch {}
+      } catch (_e) { /* localStorage unavailable */ }
     },
     [recentSearches]
   )
