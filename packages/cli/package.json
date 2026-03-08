@@ -20,6 +20,8 @@
   "devDependencies": {
     "typescript": "^5.4.0",
     "@types/node": "^20.0.0",
-    "@types/inquirer": "^9.0.7"
+    "@types/inquirer": "^9.0.7",
+    "@prisma/client": "^5.13.0",
+    "prisma": "^5.13.0"
   }
 }
