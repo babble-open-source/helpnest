@@ -3,7 +3,14 @@ const nextConfig = {
   output: 'standalone',
   transpilePackages: ['@helpnest/ui', '@helpnest/db'],
   experimental: {
-    serverComponentsExternalPackages: ['@prisma/client', 'prisma'],
+    serverComponentsExternalPackages: [
+      '@prisma/client',
+      'prisma',
+      '@qdrant/js-client-rest',
+      'undici',
+      'openai',
+      '@anthropic-ai/sdk',
+    ],
   },
 }
 
