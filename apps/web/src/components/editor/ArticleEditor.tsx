@@ -263,6 +263,8 @@ export function ArticleEditor({ article, collections }: Props) {
 
       {/* Metadata sidebar */}
       <ArticleMetaSidebar
+        articleId={article.id}
+        articleTitle={title}
         slug={slug}
         onSlugChange={setSlug}
         excerpt={excerpt}

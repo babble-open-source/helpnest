@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { NewCollectionModal } from './NewCollectionModal'
+import { CollectionActions } from './CollectionActions'
 
 export default async function CollectionsPage() {
   const session = await auth()
@@ -62,14 +63,17 @@ export default async function CollectionsPage() {
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="text-sm text-muted">
-                        {col._count.articles} articles
+                        {col._count.articles} article{col._count.articles !== 1 ? 's' : ''}
                       </span>
-                      <button className="text-xs text-muted hover:text-accent transition-colors">
-                        Edit
-                      </button>
-                      <button className="text-xs text-muted hover:text-red-500 transition-colors">
-                        Delete
-      </button>
+                      <CollectionActions
+                        collection={{
+                          id: col.id,
+                          title: col.title,
+                          description: col.description,
+                          emoji: col.emoji,
+                          articleCount: col._count.articles,
+                        }}
+                      />
                     </div>
                   </div>
                   {col.subCollections.length > 0 && (

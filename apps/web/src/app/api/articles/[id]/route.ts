@@ -80,3 +80,31 @@ export async function PATCH(
 
   return NextResponse.json(article)
 }
+
+export async function DELETE(
+  _req: Request,
+  { params }: { params: { id: string } }
+) {
+  const session = await auth()
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const member = await prisma.member.findFirst({
+    where: {
+      user: { email: session.user.email! },
+      role: { in: ['OWNER', 'ADMIN', 'EDITOR'] },
+    },
+    select: { workspaceId: true },
+  })
+  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const article = await prisma.article.findFirst({
+    where: { id: params.id, workspaceId: member.workspaceId },
+    select: { id: true },
+  })
+  if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  await prisma.articleVersion.deleteMany({ where: { articleId: params.id } })
+  await prisma.article.delete({ where: { id: params.id } })
+
+  return new NextResponse(null, { status: 204 })
+}

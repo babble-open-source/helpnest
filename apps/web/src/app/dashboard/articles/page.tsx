@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { ArticleActions } from './ArticleActions'
 
 const STATUS_STYLES = {
   PUBLISHED: 'bg-green/10 text-green',
@@ -178,13 +179,11 @@ export default async function ArticlesPage({
                       )}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/dashboard/articles/${article.id}/edit`}
-                      className="text-xs text-muted hover:text-accent transition-colors"
-                    >
-                      Edit →
-                    </Link>
+                  <td className="px-4 py-3">
+                    <ArticleActions
+                      articleId={article.id}
+                      articleTitle={article.title}
+                    />
                   </td>
                 </tr>
               ))}
