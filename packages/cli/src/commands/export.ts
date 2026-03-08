@@ -28,10 +28,12 @@ export async function exportCommand(options: ExportOptions) {
       },
     })
 
-    const totalArticles = workspaces.reduce(
-      (acc, w) => acc + w.collections.reduce((a, c) => a + c.articles.length, 0),
-      0
-    )
+    let totalArticles = 0
+    for (const w of workspaces) {
+      for (const c of w.collections) {
+        totalArticles += c.articles.length
+      }
+    }
 
     const exportData = {
       exportedAt: new Date().toISOString(),
