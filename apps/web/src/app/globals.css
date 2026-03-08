@@ -34,7 +34,12 @@
   }
 }
 
-/* Tiptap editor styles */
+/* Tiptap editor styles
+ * Colors use rgb(var(--color-*)) so they inherit from the .prose-editor wrapper,
+ * which gets the workspace theme vars injected via inline style in ArticleEditor.
+ * The editor chrome (top bar, toolbar, sidebar) is hardcoded to the admin defaults
+ * and is intentionally NOT affected by workspace themes.
+ */
 .prose-editor .tiptap {
   outline: none;
   min-height: 400px;
@@ -43,31 +48,31 @@
 .prose-editor .tiptap p {
   margin: 0.75rem 0;
   line-height: 1.75;
-  color: rgb(26 24 20 / 0.9);
+  color: rgb(var(--color-ink) / 0.9);
 }
 
 .prose-editor .tiptap h1 {
-  font-family: var(--font-instrument-serif);
+  font-family: var(--font-heading);
   font-size: 2rem;
   font-weight: 400;
   margin: 2rem 0 0.75rem;
-  color: #1A1814;
+  color: rgb(var(--color-ink));
 }
 
 .prose-editor .tiptap h2 {
-  font-family: var(--font-instrument-serif);
+  font-family: var(--font-heading);
   font-size: 1.5rem;
   font-weight: 400;
   margin: 1.75rem 0 0.5rem;
-  color: #1A1814;
+  color: rgb(var(--color-ink));
 }
 
 .prose-editor .tiptap h3 {
-  font-family: var(--font-instrument-serif);
+  font-family: var(--font-heading);
   font-size: 1.25rem;
   font-weight: 400;
   margin: 1.5rem 0 0.5rem;
-  color: #1A1814;
+  color: rgb(var(--color-ink));
 }
 
 .prose-editor .tiptap ul,
@@ -82,25 +87,25 @@
 .prose-editor .tiptap li { margin: 0.25rem 0; }
 
 .prose-editor .tiptap blockquote {
-  border-left: 4px solid #C8622A;
+  border-left: 4px solid rgb(var(--color-accent));
   padding-left: 1rem;
-  color: #7A756C;
+  color: rgb(var(--color-muted));
   font-style: italic;
   margin: 1rem 0;
 }
 
 .prose-editor .tiptap code {
-  background: #F7F4EE;
-  border: 1px solid #E2DDD5;
+  background: rgb(var(--color-cream));
+  border: 1px solid rgb(var(--color-border));
   border-radius: 4px;
   padding: 0.1em 0.4em;
   font-size: 0.875em;
-  color: #C8622A;
+  color: rgb(var(--color-accent));
 }
 
 .prose-editor .tiptap pre {
-  background: #1A1814;
-  color: #F7F4EE;
+  background: rgb(var(--color-ink));
+  color: rgb(var(--color-cream));
   border-radius: 8px;
   padding: 1rem;
   overflow-x: auto;
@@ -117,12 +122,12 @@
 
 .prose-editor .tiptap hr {
   border: none;
-  border-top: 1px solid #E2DDD5;
+  border-top: 1px solid rgb(var(--color-border));
   margin: 2rem 0;
 }
 
 .prose-editor .tiptap a {
-  color: #C8622A;
+  color: rgb(var(--color-accent));
   text-decoration: underline;
 }
 
@@ -135,7 +140,7 @@
 .prose-editor .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
   float: left;
-  color: #E2DDD5;
+  color: rgb(var(--color-border));
   pointer-events: none;
   height: 0;
 }

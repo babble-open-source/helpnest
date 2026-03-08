@@ -29,6 +29,10 @@ interface Collection {
 interface Props {
   article: Article
   collections: Collection[]
+  /** CSS variable declarations for the workspace theme, applied scoped to the
+   *  editor content area so the article preview matches the public help center.
+   *  The dashboard chrome (toolbar, sidebar) uses hardcoded admin defaults. */
+  themeCSS?: string
 }
 
 interface ArticleVersion {
@@ -42,7 +46,7 @@ interface ArticleVersion {
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 
-export function ArticleEditor({ article, collections }: Props) {
+export function ArticleEditor({ article, collections, themeCSS }: Props) {
   const [title, setTitle] = useState(article.title)
   const [slug, setSlug] = useState(article.slug)
   const [excerpt, setExcerpt] = useState(article.excerpt)
@@ -236,9 +240,14 @@ export function ArticleEditor({ article, collections }: Props) {
         {/* Toolbar */}
         {editor && <EditorToolbar editor={editor} />}
 
-        {/* Scrollable content */}
+        {/* Scrollable content — theme CSS vars are scoped to .editor-content-area
+            so the workspace theme applies to the article preview only, while the
+            dashboard chrome (top bar, toolbar, sidebar) keeps its admin defaults. */}
+        {themeCSS && (
+          <style>{`.editor-content-area { ${themeCSS} }`}</style>
+        )}
         <div className="flex-1 overflow-y-auto">
-          <div className="max-w-2xl mx-auto px-8 py-10">
+          <div className="editor-content-area max-w-2xl mx-auto px-8 py-10">
             {/* Title */}
             <input
               value={title}
