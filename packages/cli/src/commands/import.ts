@@ -2,6 +2,7 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
+import { PrismaClient } from '@prisma/client'
 
 interface ImportOptions {
   file?: string
@@ -60,14 +61,7 @@ export async function importCommand(options: ImportOptions) {
 
   const spinner = ora(`Importing from ${options.format}...`).start()
 
-  let prisma: import('@prisma/client').PrismaClient
-  try {
-    const { PrismaClient } = await import('@prisma/client')
-    prisma = new PrismaClient()
-  } catch {
-    spinner.fail('Could not connect to database')
-    process.exit(1)
-  }
+  const prisma = new PrismaClient()
 
   try {
     const raw = fs.readFileSync(filePath, 'utf-8')

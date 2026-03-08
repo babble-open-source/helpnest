@@ -2,6 +2,7 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
+import { PrismaClient } from '@prisma/client'
 
 interface ExportOptions {
   output: string
@@ -11,15 +12,7 @@ export async function exportCommand(options: ExportOptions) {
   console.log()
   const spinner = ora('Exporting articles...').start()
 
-  // Dynamically load Prisma to avoid bundling issues
-  let prisma: import('@prisma/client').PrismaClient
-  try {
-    const { PrismaClient } = await import('@prisma/client')
-    prisma = new PrismaClient()
-  } catch {
-    spinner.fail('Could not connect to database. Check DATABASE_URL in .env')
-    process.exit(1)
-  }
+  const prisma = new PrismaClient()
 
   try {
     const workspaces = await prisma.workspace.findMany({
