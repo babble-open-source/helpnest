@@ -6,5 +6,8 @@
     "./tailwind": "./tailwind.config.ts",
     "./tsconfig": "./tsconfig.base.json",
     "./eslint": "./eslint.config.js"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.4.0"
   }
 }
