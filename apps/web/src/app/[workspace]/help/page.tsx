@@ -85,7 +85,7 @@ export default async function HelpCenterHome({ params }: Props) {
                   className="group bg-white rounded-xl border border-border p-5 hover:border-accent hover:shadow-sm transition-all"
                 >
                   <div className="text-2xl mb-3">{col.emoji ?? '📄'}</div>
-                  <h3 className="font-medium text-ink group-hover:text-accent transition-colors mb-1">
+                  <h3 className="font-normal text-ink group-hover:text-accent transition-colors mb-1">
                     {col.title}
                   </h3>
                   {col.description && (

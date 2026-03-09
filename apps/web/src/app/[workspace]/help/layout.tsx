@@ -27,9 +27,17 @@ export default async function HelpCenterLayout({ children, params }: Props) {
 
   return (
     <>
+      {/* Preconnect to Google Fonts for faster font load */}
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+
+      {/* Load theme fonts — <link> tags are hoisted to <head> by React */}
+      {fontUrls.map((url) => (
+        <link key={url} rel="stylesheet" href={url} />
+      ))}
+
       {/* Inject theme CSS variables — server-rendered, no flash */}
-      <style dangerouslySetInnerHTML={{ __html: `${fontUrls.map((url) => `@import url('${url}');`).join('\n')}
-:root { ${css} }` }} />
+      <style dangerouslySetInnerHTML={{ __html: `:root { ${css} }` }} />
 
       {children}
     </>
