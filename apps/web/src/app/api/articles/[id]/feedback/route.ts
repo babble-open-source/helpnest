@@ -7,6 +7,20 @@ export async function POST(
 ) {
   try {
     const { type } = await request.json() as { type: 'helpful' | 'not' }
+    if (type !== 'helpful' && type !== 'not') {
+      return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
+    }
+
+    // Only allow feedback on published articles in public collections
+    const article = await prisma.article.findFirst({
+      where: {
+        id: params.id,
+        status: 'PUBLISHED',
+        collection: { isPublic: true },
+      },
+      select: { id: true },
+    })
+    if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
     await prisma.article.update({
       where: { id: params.id },
