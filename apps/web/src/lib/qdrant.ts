@@ -1,4 +1,5 @@
 import { QdrantClient } from '@qdrant/js-client-rest'
+import { createHash } from 'node:crypto'
 
 const globalForQdrant = globalThis as unknown as {
   qdrant: QdrantClient | undefined
@@ -50,4 +51,13 @@ export function chunkText(text: string, maxTokens = 512, overlap = 50): string[]
   }
 
   return chunks
+}
+
+/** Build a deterministic UUIDv4-like point ID accepted by Qdrant */
+export function buildPointId(...parts: Array<string | number>): string {
+  const hash = createHash('sha256').update(parts.join(':')).digest('hex')
+  const version = `4${hash.slice(13, 16)}`
+  const clockSeqHi = ((parseInt(hash.slice(16, 18), 16) & 0x3f) | 0x80).toString(16).padStart(2, '0')
+  const clockSeq = `${clockSeqHi}${hash.slice(18, 20)}`
+  return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-${version}-${clockSeq}-${hash.slice(20, 32)}`
 }

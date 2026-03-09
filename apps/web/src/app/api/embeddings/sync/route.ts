@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { qdrant, COLLECTION_NAME, ensureCollection, chunkText } from '@/lib/qdrant'
+import { qdrant, COLLECTION_NAME, ensureCollection, chunkText, buildPointId } from '@/lib/qdrant'
 import { embedBatch } from '@/lib/embeddings'
 
 export async function POST(request: Request) {
@@ -33,7 +33,7 @@ export async function POST(request: Request) {
     const embeddings = await embedBatch(chunks)
 
     const points = chunks.map((chunk, i) => ({
-      id: `${article.id}-${i}`,
+      id: buildPointId(article.id, i),
       vector: embeddings[i] ?? [],
       payload: {
         articleId: article.id,
