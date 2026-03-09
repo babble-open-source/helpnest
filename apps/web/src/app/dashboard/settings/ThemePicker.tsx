@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import type { HelpNestTheme } from '@/lib/themes'
 
 interface Props {
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function ThemePicker({ themes, currentThemeId, workspaceSlug }: Props) {
+  const router = useRouter()
   const [selected, setSelected] = useState(currentThemeId)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -23,6 +25,7 @@ export function ThemePicker({ themes, currentThemeId, workspaceSlug }: Props) {
     })
     setSaving(false)
     setSaved(true)
+    router.refresh()
     setTimeout(() => setSaved(false), 2000)
   }
 
