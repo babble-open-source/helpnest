@@ -4,17 +4,51 @@ import { prisma } from '@/lib/db'
 import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import { embedText } from '@/lib/embeddings'
 
-export async function POST(request: Request) {
-  const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY ?? '',
-  })
-  const { query, workspaceSlug } = await request.json() as {
-    query: string
-    workspaceSlug: string
+// Lazily initialised so the key is read at request time, not at build/module-load time.
+// This means adding the env var and restarting the server is sufficient — no redeploy needed.
+let _anthropic: Anthropic | null = null
+function getAnthropic(): Anthropic {
+  if (!_anthropic) {
+    _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })
   }
+  return _anthropic
+}
+
+type SearchResultLike = { payload?: Record<string, unknown> | null }
+type ArticleRow = {
+  id: string
+  title: string
+  slug: string
+  content: string
+  collection: { slug: string; title: string }
+}
+type ContextArticle = ArticleRow & { contextChunk?: string }
+
+export async function POST(request: Request) {
+  // Fail fast with a clear error if the API key is not configured.
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return NextResponse.json(
+      { error: 'AI search is not configured. Set ANTHROPIC_API_KEY in your environment.' },
+      { status: 503 },
+    )
+  }
+
+  let body: { query?: string; workspaceSlug?: string }
+  try {
+    body = await request.json() as { query?: string; workspaceSlug?: string }
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+
+  const { query, workspaceSlug } = body
 
   if (!query?.trim() || !workspaceSlug) {
     return NextResponse.json({ error: 'query and workspaceSlug are required' }, { status: 400 })
+  }
+
+  const normalizedQuery = query.trim()
+  if (normalizedQuery.length > 500) {
+    return NextResponse.json({ error: 'Query must be 500 characters or fewer' }, { status: 400 })
   }
 
   const workspace = await prisma.workspace.findUnique({
@@ -23,19 +57,19 @@ export async function POST(request: Request) {
   })
   if (!workspace) return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
 
-  // 1. Embed the query
+  // 1. Embed the query (requires OPENAI_API_KEY; falls back to full-text if unavailable)
   let queryEmbedding: number[] = []
   try {
-    queryEmbedding = await embedText(query)
+    queryEmbedding = await embedText(normalizedQuery)
   } catch {
-    // will fall back to full-text
+    // fall back to full-text search below
   }
 
   // 2. Vector search in Qdrant
-  await ensureCollection()
-  let searchResults: Array<{ payload?: Record<string, unknown> | null }> = []
+  let searchResults: SearchResultLike[] = []
   if (queryEmbedding.length > 0) {
     try {
+      await ensureCollection()
       searchResults = await qdrant.search(COLLECTION_NAME, {
         vector: queryEmbedding,
         limit: 5,
@@ -43,46 +77,56 @@ export async function POST(request: Request) {
         with_payload: true,
       })
     } catch {
-      // Qdrant unavailable — fall back
+      // Qdrant unavailable — fall back to full-text
     }
   }
 
-  // 3. Resolve articles
-  const articleIds = [...new Set(
-    searchResults
-      .map((r) => r.payload?.['articleId'] as string | undefined)
-      .filter((id): id is string => !!id)
-  )]
-
-  type ArticleRow = {
-    id: string
-    title: string
-    slug: string
-    content: string
-    collection: { slug: string; title: string }
+  // 3. Resolve articles in ranked vector order (preserving first chunk per article)
+  const seenArticleIds = new Set<string>()
+  const vectorMatches: Array<{ articleId: string; chunk?: string }> = []
+  for (const result of searchResults) {
+    const articleId = result.payload?.['articleId']
+    if (typeof articleId !== 'string' || seenArticleIds.has(articleId)) continue
+    seenArticleIds.add(articleId)
+    const chunk = result.payload?.['chunk']
+    vectorMatches.push({
+      articleId,
+      chunk: typeof chunk === 'string' ? chunk : undefined,
+    })
   }
 
-  let articles: ArticleRow[] = []
+  let articles: ContextArticle[] = []
 
-  if (articleIds.length > 0) {
+  if (vectorMatches.length > 0) {
+    const articleIds = vectorMatches.map((m) => m.articleId)
     const rows = await prisma.article.findMany({
-      where: { id: { in: articleIds }, status: 'PUBLISHED' },
+      where: { id: { in: articleIds }, workspaceId: workspace.id, status: 'PUBLISHED' },
       select: {
         id: true, title: true, slug: true, content: true,
         collection: { select: { slug: true, title: true } },
       },
-      take: 5,
     })
-    articles = rows
+    const byId = new Map(rows.map((row) => [row.id, row]))
+    const ordered: ContextArticle[] = []
+    for (const match of vectorMatches) {
+      const row = byId.get(match.articleId)
+      if (!row) continue
+      ordered.push({
+        ...row,
+        ...(match.chunk ? { contextChunk: match.chunk } : {}),
+      })
+    }
+    articles = ordered
   } else {
-    articles = await prisma.$queryRaw<ArticleRow[]>`
+    articles = await prisma.$queryRaw<ContextArticle[]>`
       SELECT a.id, a.title, a.slug, a.content,
              json_build_object('slug', c.slug, 'title', c.title) as collection
       FROM "Article" a
       JOIN "Collection" c ON a."collectionId" = c.id
       WHERE a."workspaceId" = ${workspace.id}
         AND a.status = 'PUBLISHED'
-        AND to_tsvector('english', a.title || ' ' || a.content) @@ plainto_tsquery('english', ${query})
+        AND to_tsvector('english', a.title || ' ' || a.content) @@ plainto_tsquery('english', ${normalizedQuery})
+      ORDER BY ts_rank_cd(to_tsvector('english', a.title || ' ' || a.content), plainto_tsquery('english', ${normalizedQuery})) DESC
       LIMIT 5
     `
   }
@@ -95,8 +139,7 @@ export async function POST(request: Request) {
   }
 
   const context = articles.map((a, i) => {
-    const chunk = searchResults[i]?.payload?.['chunk'] as string | undefined
-    const content = chunk ?? a.content.slice(0, 1500)
+    const content = a.contextChunk ?? a.content.slice(0, 1500)
     return `[Article ${i + 1}]: ${a.title}\n${content}`
   }).join('\n\n---\n\n')
 
@@ -108,7 +151,7 @@ export async function POST(request: Request) {
   }))
 
   // 4. Stream Claude response
-  const stream = anthropic.messages.stream({
+  const stream = getAnthropic().messages.stream({
     model: 'claude-haiku-4-5-20251001',
     max_tokens: 1024,
     system: `You are a helpful customer support assistant for ${workspace.name}.
@@ -125,18 +168,26 @@ Format your response in plain text (no markdown).`,
   const encoder = new TextEncoder()
   const readable = new ReadableStream({
     async start(controller) {
-      controller.enqueue(
-        encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources })}\n\n`)
-      )
-      for await (const chunk of stream) {
-        if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
-          controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'text', text: chunk.delta.text })}\n\n`)
-          )
+      try {
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources })}\n\n`)
+        )
+        for await (const chunk of stream) {
+          if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: 'text', text: chunk.delta.text })}\n\n`)
+            )
+          }
         }
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'AI service error'
+        controller.enqueue(
+          encoder.encode(`data: ${JSON.stringify({ type: 'error', message })}\n\n`)
+        )
+      } finally {
+        controller.close()
       }
-      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
-      controller.close()
     },
   })
 
