@@ -1,6 +1,7 @@
 import NextAuth from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import GitHub from 'next-auth/providers/github'
+import bcrypt from 'bcryptjs'
 import { prisma } from './db'
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -16,18 +17,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email) return null
-        // Simple email-based auth for now — Phase 2 will add passwords
+
         const user = await prisma.user.findUnique({
           where: { email: credentials.email as string },
+          select: { id: true, email: true, name: true, passwordHash: true },
         })
-        return user ? { id: user.id, email: user.email, name: user.name } : null
+
+        if (!user) return null
+
+        const password = credentials.password as string | undefined
+
+        if (user.passwordHash) {
+          // User has a password set — must verify it.
+          if (!password) return null
+          const valid = await bcrypt.compare(password, user.passwordHash)
+          if (!valid) return null
+        }
+        // If no passwordHash exists, allow login without a password.
+        // This covers seed users and the migration grace period before
+        // users set their first password via the profile page.
+
+        return { id: user.id, email: user.email, name: user.name }
       },
     }),
   ],
   callbacks: {
+    jwt({ token, user }) {
+      if (user?.id) token.id = user.id
+      return token
+    },
     session({ session, token }) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub
+      if (session.user && token.id) {
+        session.user.id = token.id as string
       }
       return session
     },

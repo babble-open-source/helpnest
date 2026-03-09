@@ -49,13 +49,15 @@ export function mdToHtml(md: string): string {
     .replace(/^---$/gm, '<hr>')
     // Links
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-    // Unordered list items
-    .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
-    // Ordered list items
-    .replace(/^\d+\. (.+)$/gm, '<li>$1</li>')
+    // Unordered list items — temp marker so we can wrap in <ul>
+    .replace(/^[-*] (.+)$/gm, '<li-ul>$1</li-ul>')
+    // Ordered list items — temp marker so we can wrap in <ol>
+    .replace(/^\d+\. (.+)$/gm, '<li-ol>$1</li-ol>')
 
-  // Wrap consecutive <li> runs in <ul>
-  html = html.replace(/(<li>.*<\/li>\n?)+/g, (m) => `<ul>${m}</ul>`)
+  // Wrap consecutive runs in the correct container, then normalise the tag
+  html = html
+    .replace(/(<li-ul>.*<\/li-ul>\n?)+/g, (m) => `<ul>${m.replace(/li-ul/g, 'li')}</ul>`)
+    .replace(/(<li-ol>.*<\/li-ol>\n?)+/g, (m) => `<ol>${m.replace(/li-ol/g, 'li')}</ol>`)
 
   // Split on blank lines to form paragraphs
   const blocks = html.split(/\n{2,}/)
@@ -64,7 +66,7 @@ export function mdToHtml(md: string): string {
       const trimmed = block.trim()
       if (!trimmed) return ''
       // Code block placeholder or block element — leave as-is
-      if (trimmed.startsWith('\x00CODE') || /^<(h[1-6]|ul|ol|li|blockquote|hr|pre)/.test(trimmed)) return trimmed
+      if (trimmed.startsWith('\x00CODE') || /^<(h[1-6]|ul|ol|blockquote|hr|pre)/.test(trimmed)) return trimmed
       // Single newlines within a block become spaces (inline content)
       return `<p>${trimmed.replace(/\n/g, ' ')}</p>`
     })

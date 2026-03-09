@@ -9,6 +9,19 @@ export async function GET(
   const session = await auth()
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // Verify article belongs to a workspace the caller is a member of
+  const member = await prisma.member.findFirst({
+    where: { user: { email: session.user.email! } },
+    select: { workspaceId: true },
+  })
+  if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const article = await prisma.article.findFirst({
+    where: { id: params.id, workspaceId: member.workspaceId },
+    select: { id: true },
+  })
+  if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
   const versions = await prisma.articleVersion.findMany({
     where: { articleId: params.id },
     orderBy: { version: 'desc' },
@@ -27,9 +40,16 @@ export async function POST(
 
   const member = await prisma.member.findFirst({
     where: { user: { email: session.user.email! } },
-    select: { userId: true },
+    select: { workspaceId: true, userId: true },
   })
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  // Verify article belongs to the caller's workspace
+  const article = await prisma.article.findFirst({
+    where: { id: params.id, workspaceId: member.workspaceId },
+    select: { id: true },
+  })
+  if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const { title, content } = await request.json() as { title: string; content: string }
 

@@ -41,12 +41,15 @@ function renderMarkdown(md: string): string {
     .replace(/`([^`]+)`/g, '<code class="bg-cream border border-border rounded px-1.5 py-0.5 text-sm font-mono text-accent">$1</code>')
     // Blockquote
     .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-accent pl-4 text-muted italic my-4">$1</blockquote>')
-    // Unordered lists
-    .replace(/^[-*] (.+)$/gm, '<li class="ml-4 list-disc text-ink/90 my-1">$1</li>')
-    // Ordered lists
-    .replace(/^\d+\. (.+)$/gm, '<li class="ml-4 list-decimal text-ink/90 my-1">$1</li>')
-    // Wrap consecutive li in ul/ol
-    .replace(/(<li.*<\/li>\n?)+/g, (m) => `<ul class="my-4 space-y-1">${m}</ul>`)
+    // Unordered lists — temp marker
+    .replace(/^[-*] (.+)$/gm, '<li-ul class="text-ink/90 my-1">$1</li-ul>')
+    // Ordered lists — temp marker
+    .replace(/^\d+\. (.+)$/gm, '<li-ol class="text-ink/90 my-1">$1</li-ol>')
+    // Wrap in correct container; list-style class lives on the container, not the item
+    .replace(/(<li-ul.*<\/li-ul>\n?)+/g, (m) =>
+      `<ul class="list-disc pl-5 my-4 space-y-1">${m.replace(/li-ul/g, 'li')}</ul>`)
+    .replace(/(<li-ol.*<\/li-ol>\n?)+/g, (m) =>
+      `<ol class="list-decimal pl-5 my-4 space-y-1">${m.replace(/li-ol/g, 'li')}</ol>`)
     // Horizontal rule
     .replace(/^---$/gm, '<hr class="border-border my-8" />')
     // Links

@@ -39,7 +39,7 @@ interface ArticleVersion {
   title: string
   content: string
   createdAt: string
-  author: { name: string | null }
+  author: { name: string | null; email: string }
 }
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
@@ -179,10 +179,15 @@ export function ArticleEditor({ article, collections }: Props) {
   }
 
   async function loadVersions() {
-    const res = await fetch(`/api/articles/${article.id}/versions`)
-    const data = await res.json() as ArticleVersion[]
-    setVersions(data)
-    setShowVersions(true)
+    try {
+      const res = await fetch(`/api/articles/${article.id}/versions`)
+      if (!res.ok) throw new Error('Failed to load versions')
+      const data = await res.json() as ArticleVersion[]
+      setVersions(data)
+      setShowVersions(true)
+    } catch {
+      // fail silently — button just doesn't open the modal
+    }
   }
 
   function restoreVersion(versionContent: string, versionTitle: string) {
@@ -191,6 +196,7 @@ export function ArticleEditor({ article, collections }: Props) {
     titleRef.current = versionTitle
     setShowVersions(false)
     setSaveStatus('unsaved')
+    scheduleAutoSave()
   }
 
   const wordCount = editor?.storage.characterCount?.words() ?? 0
@@ -341,7 +347,7 @@ export function ArticleEditor({ article, collections }: Props) {
                     <div>
                       <p className="text-sm font-medium text-ink">Version {v.version}</p>
                       <p className="text-xs text-muted mt-0.5">
-                        {new Date(v.createdAt).toLocaleString()} &middot; {v.author.name ?? 'Unknown'}
+                        {new Date(v.createdAt).toLocaleString()} &middot; {v.author.name ?? v.author.email}
                       </p>
                     </div>
                     <button

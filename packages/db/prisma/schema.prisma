@@ -35,27 +35,31 @@ model Workspace {
   members     Member[]
   apiKeys     ApiKey[]
   searchIndex SearchIndex[]
+  invites     Invite[]
 
   @@index([slug])
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  avatar    String?
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  avatar       String?
+  passwordHash String?
+  createdAt    DateTime @default(now())
 
   members          Member[]
   articles         Article[]
   articleVersions  ArticleVersion[]
+  invitesSent      Invite[]
 }
 
 model Member {
-  id          String     @id @default(cuid())
-  workspaceId String
-  userId      String
-  role        MemberRole @default(VIEWER)
+  id             String     @id @default(cuid())
+  workspaceId    String
+  userId         String
+  role           MemberRole @default(VIEWER)
+  deactivatedAt  DateTime?
 
   workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -161,4 +165,22 @@ model SearchIndex {
 
   @@unique([articleId])
   @@index([workspaceId])
+}
+
+model Invite {
+  id          String     @id @default(cuid())
+  workspaceId String
+  email       String
+  role        MemberRole @default(EDITOR)
+  token       String     @unique @default(cuid())
+  invitedById String
+  acceptedAt  DateTime?
+  expiresAt   DateTime
+  createdAt   DateTime   @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy User      @relation(fields: [invitedById], references: [id])
+
+  @@index([workspaceId])
+  @@index([token])
 }

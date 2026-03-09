@@ -59,7 +59,49 @@ async function main() {
     create: { workspaceId: docsWorkspace.id, title: 'Integrations', description: 'Widget, API, SDK and third-party integrations.', emoji: '🔌', slug: 'integrations', order: 3, isPublic: true },
   })
 
+  const colAbout = await prisma.collection.upsert({
+    where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'about' } },
+    update: {},
+    create: { workspaceId: docsWorkspace.id, title: 'About', description: 'The story behind HelpNest — why it was built and who built it.', emoji: '💡', slug: 'about', order: 4, isPublic: true },
+  })
+
   const docsArticles = [
+    // About
+    {
+      collectionId: colAbout.id,
+      title: 'Why I built HelpNest',
+      slug: 'why-i-built-helpnest',
+      excerpt: 'The story behind HelpNest — a gap I found while building my own product.',
+      order: 0,
+      content: `# Why I built HelpNest
+
+While building [Babble](https://trybabble.io/), I hit a moment most product builders eventually face: I needed customer-facing help documentation.
+
+I already had developer docs — but I quickly realised the audience is completely different. A developer is comfortable navigating a sidebar, scanning code snippets, and jumping between sections. A general customer isn't. They land on a page, want a quick answer, and leave if it isn't obvious. The bar for clarity is much higher.
+
+So I did a quick scan of how other companies handle this. Every company I respected had a clean, searchable help center. The pattern was clear. What surprised me was the cost — many of these tools charge per seat, per page view, or lock key features behind expensive tiers. For an early-stage product that just needs a solid place to answer customer questions, the pricing felt out of proportion.
+
+I searched for open source alternatives. There are several great developer documentation frameworks — Docusaurus, Mintlify, ReadMe — but they are built *for developers, by developers*. I could not find a single stable, well-maintained OSS tool focused on the general customer audience.
+
+That gap is why HelpNest exists. A clean, self-hostable help center that your customers — not just your engineers — can actually use. MIT licensed, free forever, built for the world.`,
+    },
+    {
+      collectionId: colAbout.id,
+      title: 'Built with gratitude — Claude Code, Anthropic & Next.js',
+      slug: 'built-with-gratitude',
+      excerpt: 'A thank you to the tools and communities that made HelpNest possible.',
+      order: 1,
+      content: `# Built with gratitude
+
+HelpNest was designed and built in close collaboration with **Claude Code** by Anthropic. From the monorepo architecture and database schema to API routes, UI components, and debugging edge cases — Claude was a thoughtful pair programmer throughout.
+
+What stood out wasn't just speed, but quality of reasoning: catching security issues early, considering trade-offs, and pushing back when a simpler approach existed. Anthropic's commitment to building AI that is honest and genuinely helpful shows in every interaction.
+
+**Next.js** by Vercel is the foundation HelpNest runs on. The App Router, Server Components, and seamless server/client rendering made it possible to ship a fast, themeable, SEO-friendly help center without sacrificing developer experience.
+
+HelpNest also stands on the shoulders of **Tiptap**, **Prisma**, **Tailwind CSS**, **NextAuth.js**, and **Qdrant** — and the countless open source contributors behind them. Thank you.`,
+    },
+
     // Getting Started
     {
       collectionId: colGettingStarted.id,
@@ -460,8 +502,358 @@ Authorization: Bearer hn_your_api_key
     })
   }
 
-  console.log(`✅ Seeded ${docsArticles.length} articles`)
-  console.log('   http://localhost:3000/helpnest/help → HelpNest docs')
+  console.log(`✅ Seeded ${docsArticles.length} articles into 'helpnest' workspace`)
+
+  // ── support.helpnest.cloud workspace ──────────────────────────────────────
+  // HelpNest Cloud customer support — articles about billing, accounts, etc.
+  const supportWorkspace = await prisma.workspace.upsert({
+    where: { slug: 'support' },
+    update: {},
+    create: {
+      name: 'HelpNest Cloud',
+      slug: 'support',
+      logo: null,
+      themeId: 'default',
+    },
+  })
+
+  await prisma.member.upsert({
+    where: { workspaceId_userId: { workspaceId: supportWorkspace.id, userId: user.id } },
+    update: {},
+    create: { workspaceId: supportWorkspace.id, userId: user.id, role: MemberRole.OWNER },
+  })
+
+  const sColAccount = await prisma.collection.upsert({
+    where: { workspaceId_slug: { workspaceId: supportWorkspace.id, slug: 'account' } },
+    update: {},
+    create: { workspaceId: supportWorkspace.id, title: 'Account & Team', description: 'Managing your HelpNest Cloud account, workspaces, and team members.', emoji: '👤', slug: 'account', order: 0, isPublic: true },
+  })
+
+  const sColBilling = await prisma.collection.upsert({
+    where: { workspaceId_slug: { workspaceId: supportWorkspace.id, slug: 'billing' } },
+    update: {},
+    create: { workspaceId: supportWorkspace.id, title: 'Billing & Plans', description: 'Subscriptions, invoices, and plan limits.', emoji: '💳', slug: 'billing', order: 1, isPublic: true },
+  })
+
+  const sColSetup = await prisma.collection.upsert({
+    where: { workspaceId_slug: { workspaceId: supportWorkspace.id, slug: 'setup' } },
+    update: {},
+    create: { workspaceId: supportWorkspace.id, title: 'Getting Set Up', description: 'First steps after signing up for HelpNest Cloud.', emoji: '🚀', slug: 'setup', order: 2, isPublic: true },
+  })
+
+  const sColDomain = await prisma.collection.upsert({
+    where: { workspaceId_slug: { workspaceId: supportWorkspace.id, slug: 'custom-domain' } },
+    update: {},
+    create: { workspaceId: supportWorkspace.id, title: 'Custom Domains', description: 'Serve your help center on your own domain.', emoji: '🌐', slug: 'custom-domain', order: 3, isPublic: true },
+  })
+
+  const supportArticles = [
+    // Account & Team
+    {
+      collectionId: sColAccount.id,
+      title: 'Creating a workspace',
+      slug: 'creating-a-workspace',
+      excerpt: 'A workspace is your help center. You can create one during sign-up.',
+      order: 0,
+      content: `# Creating a workspace
+
+When you sign up for HelpNest Cloud, a workspace is created automatically. You can rename it, change its URL slug, and customise its theme from Settings.
+
+## Workspace URL
+
+Your help center is available at:
+
+\`\`\`
+https://{your-slug}.helpnest.cloud
+\`\`\`
+
+You can also set up a custom domain so customers see your own brand URL (e.g. help.yourcompany.com).
+
+## Workspace name and slug
+
+The workspace **name** appears in your help center header and in your customers' browser tab. The **slug** is the subdomain of your help center URL. Changing the slug changes the URL — update any links or bookmarks after doing so.`,
+    },
+    {
+      collectionId: sColAccount.id,
+      title: 'Inviting team members',
+      slug: 'inviting-team-members',
+      excerpt: 'Add support writers and editors to your workspace.',
+      order: 1,
+      content: `# Inviting team members
+
+You can invite colleagues to help write and manage your help center.
+
+## How to invite
+
+1. Go to **Settings → Team**
+2. Enter the email address of the person you want to invite
+3. Choose their role and click **Send invite**
+4. They will receive an email with a link to accept the invitation
+
+## Roles
+
+| Role | What they can do |
+|------|-----------------|
+| Owner | Full access, including billing and workspace deletion |
+| Admin | Manage articles, collections, members, and settings |
+| Editor | Create and edit articles and collections |
+| Viewer | Read-only access to the dashboard |
+
+## Seat limits
+
+The number of members you can invite depends on your plan:
+
+- **Free** — up to 3 members
+- **Pro** — up to 10 members
+- **Business** — up to 50 members`,
+    },
+    {
+      collectionId: sColAccount.id,
+      title: 'Changing your name or email',
+      slug: 'profile-settings',
+      excerpt: 'Update your personal profile from the Settings page.',
+      order: 2,
+      content: `# Changing your name or email
+
+You can update your display name and password from your profile settings.
+
+## How to update your profile
+
+1. Go to **Settings → Profile**
+2. Update your name
+3. To change your password, enter a new password and confirm it
+4. Click **Save changes**
+
+> Email address changes are not yet supported. If you need to change your email, contact support.`,
+    },
+
+    // Getting Set Up
+    {
+      collectionId: sColSetup.id,
+      title: 'Your first article',
+      slug: 'your-first-article',
+      excerpt: 'Publish your first help article in under 5 minutes.',
+      order: 0,
+      content: `# Your first article
+
+Publishing your first article takes just a few minutes.
+
+## Step 1 — Create a collection
+
+Articles live inside collections. Go to **Dashboard → Collections** and click **New Collection**. Give it a name like "Getting Started" and choose an emoji.
+
+## Step 2 — Write the article
+
+Go to **Dashboard → Articles** and click **New Article**. Select your collection, give the article a title, and start writing.
+
+The editor supports:
+
+- **Bold**, *italic*, headings
+- Bullet and numbered lists
+- Code blocks
+- Blockquotes
+- Links and images
+
+## Step 3 — Publish
+
+Click **Publish** in the top right. Your article is now live at your help center URL.
+
+## Step 4 — Share your help center
+
+Your help center is at:
+
+\`\`\`
+https://{your-slug}.helpnest.cloud
+\`\`\`
+
+Share this link with your customers or embed the search widget on your site.`,
+    },
+    {
+      collectionId: sColSetup.id,
+      title: 'Customising your help center theme',
+      slug: 'customising-theme',
+      excerpt: 'Pick a theme that matches your brand.',
+      order: 1,
+      content: `# Customising your help center theme
+
+HelpNest Cloud comes with 8 built-in themes. You can switch themes instantly from the dashboard.
+
+## How to change your theme
+
+1. Go to **Settings → Help Center Theme**
+2. Browse the available themes
+3. Click a theme card to preview it
+4. Click **Apply theme**
+
+The theme is applied immediately — no downtime, no redeploy.
+
+## Available themes
+
+- **Default** — Warm cream with Instrument Serif (what you see here)
+- **Dark** — Inverted warm tones for a dark-mode feel
+- **Ocean** — Clean blues, corporate feel
+- **Forest** — Deep earthy greens
+- **Aurora** — Violet with Syne
+- **Slate** — Neutral grays, enterprise look
+- **Rose** — Soft pinks with Playfair Display
+- **Midnight** — Deep navy
+
+More themes are available in the community theme marketplace.`,
+    },
+
+    // Billing
+    {
+      collectionId: sColBilling.id,
+      title: 'Plans and pricing',
+      slug: 'plans-and-pricing',
+      excerpt: 'Overview of HelpNest Cloud plans and what each includes.',
+      order: 0,
+      content: `# Plans and pricing
+
+HelpNest Cloud is currently in early access. All new accounts start on the **Free plan** at no cost.
+
+## Free plan
+
+The Free plan includes everything you need to get started:
+
+- Up to **25 published articles**
+- Up to **3 team members**
+- **50 AI search queries** per month
+- **1,000 API calls** per month
+- Your own \`{slug}.helpnest.cloud\` subdomain
+
+## Paid plans
+
+Pro and Business plans are coming soon with higher limits and custom domain support. You will be notified when they are available.
+
+## Self-hosting
+
+If you need unlimited usage, you can self-host HelpNest for free under the MIT license. See the [self-hosting guide](https://helpnest.io/helpnest/help/self-hosting).`,
+    },
+    {
+      collectionId: sColBilling.id,
+      title: 'Usage limits',
+      slug: 'usage-limits',
+      excerpt: 'What counts toward your plan limits and how to check usage.',
+      order: 1,
+      content: `# Usage limits
+
+Your dashboard shows a live view of your current usage.
+
+## What counts
+
+- **Articles** — the total number of published articles in your workspace
+- **Members** — team members with an active seat (excludes deactivated members)
+- **AI queries** — searches that trigger the AI semantic search engine
+- **API calls** — any request made using an API key
+
+## Checking your usage
+
+Go to **Dashboard** to see a usage summary with progress bars for each limit.
+
+## What happens when you hit a limit
+
+- **Articles** — you can still edit existing articles but cannot publish new ones until you archive some or upgrade
+- **Members** — you can still manage existing members but cannot send new invites
+- **AI queries** — falls back to keyword search automatically; no errors shown to customers
+- **API calls** — requests return a 429 error
+
+Usage resets on the first of each month.`,
+    },
+
+    // Custom Domains
+    {
+      collectionId: sColDomain.id,
+      title: 'Setting up a custom domain',
+      slug: 'setting-up-custom-domain',
+      excerpt: 'Serve your help center at help.yourcompany.com instead of a helpnest.cloud subdomain.',
+      order: 0,
+      content: `# Setting up a custom domain
+
+You can serve your help center from your own domain, such as **help.yourcompany.com**.
+
+> Custom domains are available on Pro and Business plans.
+
+## Step 1 — Enter your domain
+
+1. Go to **Settings → Custom Domain**
+2. Enter your domain (e.g. \`help.yourcompany.com\`)
+3. Click **Save**
+
+## Step 2 — Add a CNAME record
+
+In your DNS provider (Cloudflare, Route 53, Namecheap, etc.), add a CNAME record:
+
+| Type | Name | Value |
+|------|------|-------|
+| CNAME | help | helpnest.cloud |
+
+DNS propagation can take up to 48 hours, but is usually faster.
+
+## Step 3 — Wait for SSL
+
+HelpNest automatically provisions an SSL certificate for your domain once the CNAME is verified. You will see the SSL status update in Settings.
+
+## Step 4 — Go live
+
+Once verified, your help center will be available at your custom domain. The \`{slug}.helpnest.cloud\` URL continues to work as a fallback.`,
+    },
+    {
+      collectionId: sColDomain.id,
+      title: 'Domain verification troubleshooting',
+      slug: 'domain-verification-troubleshooting',
+      excerpt: 'What to do if your custom domain is not verifying.',
+      order: 1,
+      content: `# Domain verification troubleshooting
+
+If your custom domain is not verifying after 24 hours, here are the most common causes.
+
+## Check the CNAME record
+
+Use a DNS lookup tool (dig, nslookup, or an online checker) to confirm the CNAME record is set:
+
+\`\`\`
+dig help.yourcompany.com CNAME
+\`\`\`
+
+The answer should show \`helpnest.cloud\` as the target.
+
+## Proxy or CDN in front
+
+If you are using Cloudflare with the proxy enabled (orange cloud), turn it off (grey cloud) for the CNAME record. Proxied records cannot be verified.
+
+## Subdomain conflicts
+
+Make sure there is no existing A record or other DNS record conflicting with the CNAME.
+
+## Still not working?
+
+If you have checked all of the above and your domain is still not verifying, contact support and include your domain name and a screenshot of your DNS settings.`,
+    },
+  ]
+
+  for (const article of supportArticles) {
+    await prisma.article.upsert({
+      where: { workspaceId_slug: { workspaceId: supportWorkspace.id, slug: article.slug } },
+      update: {
+        title: article.title,
+        content: article.content,
+        excerpt: article.excerpt,
+      },
+      create: {
+        workspaceId: supportWorkspace.id,
+        authorId: user.id,
+        status: ArticleStatus.PUBLISHED,
+        publishedAt: new Date(),
+        views: 0,
+        ...article,
+      },
+    })
+  }
+
+  console.log(`✅ Seeded ${supportArticles.length} articles into 'support' workspace`)
+  console.log('   http://localhost:3000/helpnest/help → HelpNest self-host docs')
+  console.log('   http://localhost:3000/support/help  → HelpNest Cloud support')
   console.log('   http://localhost:3000/dashboard     → Dashboard')
 }
 
