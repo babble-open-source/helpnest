@@ -25,17 +25,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!user) return null
 
-        const password = credentials.password as string | undefined
+        // Users without a password hash must log in via OAuth.
+        // This protects OAuth-only accounts from credentials-based impersonation.
+        if (!user.passwordHash) return null
 
-        if (user.passwordHash) {
-          // User has a password set — must verify it.
-          if (!password) return null
-          const valid = await bcrypt.compare(password, user.passwordHash)
-          if (!valid) return null
-        }
-        // If no passwordHash exists, allow login without a password.
-        // This covers seed users and the migration grace period before
-        // users set their first password via the profile page.
+        const password = credentials.password as string | undefined
+        if (!password) return null
+
+        const valid = await bcrypt.compare(password, user.passwordHash)
+        if (!valid) return null
 
         return { id: user.id, email: user.email, name: user.name }
       },
@@ -57,3 +55,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     signIn: '/login',
   },
 })
+
+/**
+ * Resolve a stable user id from session data.
+ * Handles stale JWT ids after DB resets by falling back to email lookup.
+ */
+export async function resolveSessionUserId(session: { user?: { id?: string | null; email?: string | null } } | null): Promise<string | null> {
+  if (!session?.user) return null
+
+  if (session.user.id) {
+    const byId = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true },
+    })
+    if (byId) return byId.id
+  }
+
+  if (!session.user.email) return null
+  const byEmail = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: { id: true },
+  })
+  return byEmail?.id ?? null
+}

@@ -12,19 +12,24 @@
   <br />
 </div>
 
-HelpNest is a self-hostable help center and knowledge base for businesses. An open-source alternative to Intercom Articles, Zendesk Guide, and Help Scout Docs — with AI-powered search built in.
+HelpNest is a self-hostable help center and knowledge base for businesses — an open-source alternative to Intercom Articles, Zendesk Guide, and Help Scout Docs, with AI-powered search built in.
+
+> **Not a developer docs tool.** HelpNest is built for support teams and their customers, not for engineering documentation. If you need a dev docs site, look at Mintlify or Docusaurus.
 
 ## Features
 
 - **📚 Knowledge base** — Organize articles into collections with full CRUD from the dashboard
-- **✍️ Rich text editor** — Tiptap-powered editor with toolbar, version history, and auto-save
+- **✍️ Rich text editor** — Tiptap-powered WYSIWYG with toolbar, version history, and draft/publish flow
 - **🎨 Themes** — 8 built-in themes via [`@helpnest/themes`](https://www.npmjs.com/package/@helpnest/themes), applied instantly with no redeploy
-- **🔍 Full-text search** — Fast search across all articles, built on Postgres
-- **✦ AI answers** — Ask AI gets instant answers from your docs (OpenAI + Claude)
-- **⚡ Self-hostable** — One Docker command to run your own instance
-- **🧩 Embeddable widget** — Drop a `<script>` tag into any app *(coming soon)*
-- **🔌 REST API + SDK** — JS/TS SDK to manage content programmatically *(coming soon)*
-- **🛠️ CLI** — `npx helpnest init` to set up, export, import, and deploy *(coming soon)*
+- **🔍 Full-text search** — Postgres-powered search with ranked results and snippets
+- **✦ AI answers** — Semantic search via OpenAI embeddings + Qdrant, answered by Claude
+- **👥 Team management** — Invite members with roles: Owner, Admin, Editor, Viewer
+- **🔑 API keys** — Create API keys to manage content programmatically
+- **🌐 Multi-workspace** — Run multiple help centers from one instance
+- **⚡ Self-hostable** — Docker Compose deployment in one command
+- **🧩 Embeddable widget** — Drop a `<script>` tag into any website *(Phase 3)*
+- **🔌 REST API + SDK** — JS/TS SDK published to npm as `@helpnest/sdk` *(Phase 3)*
+- **🛠️ CLI** — `npx helpnest` for setup, export, import, and deployment *(Phase 3)*
 
 ## Quick Start
 
@@ -33,106 +38,148 @@ HelpNest is a self-hostable help center and knowledge base for businesses. An op
 ```bash
 git clone https://github.com/babble-open-source/helpnest.git
 cd helpnest
-./scripts/self-host-setup.sh
+cp .env.example .env       # fill in AUTH_SECRET at minimum
+docker compose -f docker-compose.prod.yml up -d
+docker compose exec app pnpm --filter @helpnest/db db:migrate
+docker compose exec app pnpm --filter @helpnest/db db:seed
 ```
 
-Your help center is now running at **http://localhost:3000**.
+Your help center is running at **http://localhost:3000**.
 
 ### Option 2 — Local development
 
 ```bash
 git clone https://github.com/babble-open-source/helpnest.git
 cd helpnest
-cp .env.example .env
-cp .env.example apps/web/.env.local   # Next.js reads env from its own directory
+cp .env.example .env       # fill in AUTH_SECRET at minimum
 pnpm install
-./scripts/dev-setup.sh   # starts Docker, migrates DB, seeds data
+./scripts/dev-setup.sh     # starts Docker services, migrates DB, seeds data
 pnpm dev
 ```
 
-Default seed credentials: `admin@helpnest.io` / `password`
+Open **http://localhost:3000** and log in with:
 
-## Themes
+| | |
+|---|---|
+| Email | `admin@helpnest.cloud` |
+| Password | `helpnest` |
 
-HelpNest ships with 8 themes out of the box, powered by the [`@helpnest/themes`](https://www.npmjs.com/package/@helpnest/themes) npm package. Themes control colors, typography, and border radius across both the public help center and the admin dashboard.
+The seed also creates two workspaces:
+- `http://localhost:3000/helpnest/help` — HelpNest's own docs (dogfooded)
+- `http://localhost:3000/support/help` — Sample cloud support center
+
+## Environment Variables
+
+The root `.env` is the single source of truth. `next.config.js` loads it automatically so you do **not** need a separate `apps/web/.env.local`.
 
 ```bash
-npm install @helpnest/themes
+cp .env.example .env
+# edit .env — fill in AUTH_SECRET at minimum
 ```
 
-Available themes: **Default**, **Dark**, **Ocean**, **Forest**, **Aurora**, **Slate**, **Rose**, **Midnight**
+```env
+# Required
+DATABASE_URL=postgresql://helpnest:helpnest@localhost:5432/helpnest_dev
+AUTH_SECRET=                    # openssl rand -base64 32
+NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 
-Switch themes from **Dashboard → Settings → Appearance**. Community themes are welcome — see the [`helpnest-themes`](https://github.com/babble-open-source/helpnest-themes) repo.
+# AI search (optional — falls back to full-text search without these)
+OPENAI_API_KEY=                 # for article embeddings
+ANTHROPIC_API_KEY=              # for AI-powered answers
+QDRANT_URL=http://localhost:6333
+
+# GitHub OAuth (optional)
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+```
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|-----------|
 | Framework | Next.js 14 App Router |
-| Database | PostgreSQL 16 + Prisma |
-| Cache | Redis 7 |
-| Vector DB | Qdrant |
-| Auth | NextAuth v5 |
+| Database | PostgreSQL 16 + Prisma 5 |
+| Auth | NextAuth v5 (Credentials + GitHub OAuth) |
 | Editor | Tiptap |
+| AI | OpenAI `text-embedding-3-small` + Claude Haiku |
+| Vector DB | Qdrant |
 | Styling | Tailwind CSS |
 | Themes | `@helpnest/themes` |
-| AI | OpenAI Embeddings + Claude |
-| Monorepo | Turborepo + pnpm |
+| Monorepo | Turborepo + pnpm workspaces |
 
 ## Repository Structure
 
 ```
 helpnest/
 ├── apps/
-│   ├── web/          → Help center app (Next.js)
-│   └── docs/         → HelpNest documentation
+│   ├── web/          → Help center + admin dashboard (Next.js 14, port 3000)
+│   └── docs/         → HelpNest's own documentation (dogfooded, port 3001)
 ├── packages/
-│   ├── db/           → Prisma schema + client
-│   ├── ui/           → Shared React components
-│   ├── editor/       → Tiptap editor
-│   ├── widget/       → Embeddable JS widget (coming soon)
-│   ├── cli/          → npx helpnest CLI (coming soon)
-│   ├── sdk/          → JS/TS API SDK (coming soon)
-│   └── config/       → Shared tooling config
-├── docker-compose.yml         → Local dev
-├── docker-compose.prod.yml    → Self-hosting
-└── Dockerfile                 → Production image
+│   ├── db/           → @helpnest/db — Prisma schema + client (internal)
+│   ├── ui/           → @helpnest/ui — shared React components (internal)
+│   ├── config/       → @helpnest/config — shared tsconfig, ESLint, Tailwind (internal)
+│   ├── editor/       → @helpnest/editor — Tiptap rich text editor
+│   ├── search/       → @helpnest/search — search utilities
+│   ├── widget/       → @helpnest/widget — embeddable JS snippet (Phase 3)
+│   ├── sdk/          → @helpnest/sdk — JS/TS REST API SDK (Phase 3)
+│   └── cli/          → @helpnest/cli — npx helpnest CLI (Phase 3)
+├── scripts/
+│   ├── dev-setup.sh          → first-time local setup
+│   └── self-host-setup.sh    → production Docker setup
+├── docker-compose.yml        → local dev services
+├── docker-compose.prod.yml   → self-hosting
+└── Dockerfile                → production image
 ```
 
-## Environment Variables
-
-Next.js reads env files from its own directory, not the repo root — set env vars in two places:
+## Common Commands
 
 ```bash
-cp .env.example .env                  # used by scripts, Prisma, Docker
-cp .env.example apps/web/.env.local   # used by Next.js (gitignored)
+# Development
+pnpm dev              # all apps: web :3000, docs :3001
+pnpm build
+pnpm lint
+pnpm typecheck
+pnpm format
+
+# Database
+pnpm db:generate      # run after schema changes before typecheck
+pnpm db:migrate       # apply pending migrations
+pnpm db:studio        # open Prisma Studio
+pnpm --filter @helpnest/db db:seed   # seed with demo data
+pnpm --filter @helpnest/db db:reset  # drop + re-migrate + re-seed
+
+# Tests
+pnpm --filter @helpnest/sdk test
 ```
 
-Key variables:
+## Themes
 
-```env
-DATABASE_URL=postgresql://helpnest:helpnest@localhost:5432/helpnest_dev
-AUTH_SECRET=<run: openssl rand -base64 32>
-NEXTAUTH_URL=http://localhost:3000
+8 built-in themes ship with the [`@helpnest/themes`](https://github.com/babble-open-source/helpnest-themes) npm package:
+**Default**, **Dark**, **Ocean**, **Forest**, **Aurora**, **Slate**, **Rose**, **Midnight**
 
-# AI Search (optional — required for AI-powered search)
-OPENAI_API_KEY=
-ANTHROPIC_API_KEY=
-QDRANT_URL=http://localhost:6333
-```
+Switch themes from **Dashboard → Settings → Appearance**. Community themes are welcome — see the [`helpnest-themes`](https://github.com/babble-open-source/helpnest-themes) repo.
 
-## Related Packages
+## Ecosystem
 
-| Package | Description |
-|---------|-------------|
-| [`@helpnest/themes`](https://github.com/babble-open-source/helpnest-themes) | Community theme marketplace |
-| `@helpnest/widget` | Embeddable help launcher *(coming soon)* |
-| `@helpnest/sdk` | JS/TS API client *(coming soon)* |
-| `@helpnest/cli` | CLI for setup and content management *(coming soon)* |
+| Repo | Description |
+|------|-------------|
+| [`helpnest`](https://github.com/babble-open-source/helpnest) | This repo — main monorepo |
+| [`helpnest-themes`](https://github.com/babble-open-source/helpnest-themes) | Theme package published as `@helpnest/themes` |
+| [`helpnest-intercom`](https://github.com/babble-open-source/helpnest-intercom) | Migration CLI: Intercom Articles → HelpNest |
+| [`helpnest-mintlify`](https://github.com/babble-open-source/helpnest-mintlify) | Migration CLI: Mintlify docs → HelpNest |
+| [`helpnest-notion`](https://github.com/babble-open-source/helpnest-notion) | Migration CLI: Notion databases → HelpNest |
+| [`helpnest-slack`](https://github.com/babble-open-source/helpnest-slack) | Slack bot: `/helpnest` search + `/helpnest-ask` AI |
+| [`helpnest-examples`](https://github.com/babble-open-source/helpnest-examples) | Deployment guides: Docker, Railway, Vercel, Render |
+| [`helpnest-templates`](https://github.com/babble-open-source/helpnest-templates) | Industry starter content (SaaS, fintech, healthcare…) |
+| [`awesome-helpnest`](https://github.com/babble-open-source/awesome-helpnest) | Community resources |
+| `helpnest-cloud` *(private)* | SaaS billing, plan limits, workspace provisioning |
+| `helpnest-ai-service` *(private)* | RAG pipeline, embeddings, Claude streaming |
+| `helpnest-analytics` *(private)* | Event ingestion and search insights |
 
 ## Contributing
 
-We welcome contributions! See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started.
+We welcome contributions. See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started.
 
 ## License
 

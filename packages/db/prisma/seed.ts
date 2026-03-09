@@ -1,18 +1,24 @@
 import { PrismaClient, ArticleStatus, MemberRole } from '@prisma/client'
+import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
 async function main() {
   console.log('🌱 Seeding database...')
 
+  const defaultPasswordHash = await bcrypt.hash('helpnest', 12)
+
   // Create user
   const user = await prisma.user.upsert({
-    where: { email: 'admin@helpnest.io' },
-    update: {},
+    where: { email: 'admin@helpnest.cloud' },
+    update: {
+      passwordHash: defaultPasswordHash,
+    },
     create: {
-      email: 'admin@helpnest.io',
+      email: 'admin@helpnest.cloud',
       name: 'HelpNest Admin',
       avatar: null,
+      passwordHash: defaultPasswordHash,
     },
   })
 
@@ -173,14 +179,14 @@ pnpm install
 pnpm dev
 \`\`\`
 
-5. Open http://localhost:3000 and log in with admin@helpnest.io.
+5. Open http://localhost:3000 and log in with admin@helpnest.cloud / helpnest.
 
 ## What the seed creates
 
 The setup script seeds two workspaces:
 
-- **Acme Corp** at /acme/help — a sample customer help center
-- **HelpNest** at /helpnest/help — the docs you are reading right now`,
+- **HelpNest docs** at /helpnest/help — the docs you are reading right now
+- **HelpNest Cloud support** at /support/help — sample cloud support center`,
     },
     {
       collectionId: colGettingStarted.id,
@@ -293,7 +299,7 @@ You can serve your help center on a custom domain like help.yourcompany.com.
 2. In your HelpNest dashboard, go to Settings and enter help.yourcompany.com in the Custom Domain field.
 3. Set up a reverse proxy to forward requests to the HelpNest app.
 
-### nginx example
+Example nginx config:
 
 \`\`\`
 server {
@@ -347,36 +353,11 @@ Collections can only be deleted when they have no articles. Move or delete all a
       slug: 'writing-articles',
       excerpt: 'Create and publish help articles using the rich text editor.',
       order: 1,
-      content: `# Writing and Publishing Articles
-
-HelpNest includes a full-featured rich text editor powered by Tiptap.
-
-## Creating an article
-
-1. Go to Dashboard > Articles
-2. Click New Article
-3. Choose a collection and enter a title
-
-## The editor
-
-The toolbar supports bold, italic, strikethrough, inline code, headings (H1–H3), bullet and numbered lists, blockquote, code blocks, links, and images.
-
-## Panels
-
-- **Outline panel** (left) — shows all headings, click to jump to any section
-- **Properties panel** (right) — collection, URL slug, excerpt, and status
-
-## Saving
-
-Changes auto-save every 30 seconds. Click Save draft to save immediately.
-
-## Publishing
-
-Click Publish to make the article live on your help center. Click Update to save changes to an already-published article.
-
-## Version history
-
-Click History to view and restore previous saved versions.`,
+      content: `<h2>Writing and Publishing Articles</h2><p>HelpNest includes a <strong>full-featured rich text editor</strong> powered by <a href="https://tiptap.dev">Tiptap</a>. This article demonstrates every formatting feature available to you.</p><hr><h2>Creating an article</h2><ol><li><p>Go to <strong>Dashboard &gt; Articles</strong></p></li><li><p>Click <strong>New Article</strong></p></li><li><p>Choose a collection and enter a title</p></li><li><p>Start writing — changes auto-save every 30 seconds</p></li></ol><h2>Text formatting</h2><p>The editor supports all standard inline styles. You can make text <strong>bold</strong>, <em>italic</em>, <u>underlined</u>, or <s>struck through</s>. Combine them freely: <strong><em>bold italic</em></strong>.</p><p>Use backticks for <code>inline code</code> when referencing commands or values inline.</p><blockquote><p>Pro tip: use the bubble menu — select any text to see formatting options appear inline without touching the toolbar.</p></blockquote><h2>Headings and structure</h2><p>Use H2 for top-level sections and H3 for sub-sections. The outline panel on the left tracks all headings and lets you jump to any section instantly.</p><h3>Bullet lists</h3><ul><li><p>Rich text editor powered by Tiptap</p></li><li><p>AI-powered semantic search via OpenAI + Qdrant</p></li><li><p>8 built-in themes — swappable without redeployment</p></li><li><p>Multi-workspace support from one instance</p></li></ul><h3>Numbered lists</h3><ol><li><p>Write the article content</p></li><li><p>Fill in the excerpt and URL slug in the properties panel</p></li><li><p>Click <strong>Publish</strong></p></li></ol><h3>Task lists</h3><p>Use task lists for checklists and step-by-step guides your readers can follow along with:</p><ul data-type="taskList"><li data-checked="true" data-type="taskItem"><label><input type="checkbox" checked></label><div><p>Create your first collection</p></div></li><li data-checked="true" data-type="taskItem"><label><input type="checkbox" checked></label><div><p>Write and publish your first article</p></div></li><li data-checked="false" data-type="taskItem"><label><input type="checkbox"></label><div><p>Customise your help center theme</p></div></li><li data-checked="false" data-type="taskItem"><label><input type="checkbox"></label><div><p>Embed the search widget on your site</p></div></li></ul><h2>Code blocks</h2><p>Use code blocks for multi-line commands, configuration snippets, or any code your readers need to copy:</p><pre><code class="language-bash">git clone https://github.com/babble-open-source/helpnest
+cd helpnest
+cp .env.example .env
+./scripts/dev-setup.sh
+pnpm install &amp;&amp; pnpm dev</code></pre><p>Code blocks support syntax highlighting for bash, JavaScript, TypeScript, JSON, and <a href="https://github.com/highlightjs/highlight.js/blob/main/SUPPORTED_LANGUAGES.md">many more languages</a>.</p><h2>Tables</h2><p>Insert tables to compare options or present structured data clearly:</p><table><tbody><tr><th colspan="1" rowspan="1"><p>Panel</p></th><th colspan="1" rowspan="1"><p>Location</p></th><th colspan="1" rowspan="1"><p>Purpose</p></th></tr><tr><td colspan="1" rowspan="1"><p>Outline</p></td><td colspan="1" rowspan="1"><p>Left sidebar</p></td><td colspan="1" rowspan="1"><p>Heading navigation — jump to any section</p></td></tr><tr><td colspan="1" rowspan="1"><p>Properties</p></td><td colspan="1" rowspan="1"><p>Right sidebar</p></td><td colspan="1" rowspan="1"><p>Collection, slug, excerpt, publish status</p></td></tr><tr><td colspan="1" rowspan="1"><p>Toolbar</p></td><td colspan="1" rowspan="1"><p>Top (classic mode)</p></td><td colspan="1" rowspan="1"><p>All formatting controls in one row</p></td></tr></tbody></table><h2>Saving and publishing</h2><p>Changes <strong>auto-save every 30 seconds</strong>. You can also:</p><ul><li><p>Click <strong>Save draft</strong> to save immediately without publishing</p></li><li><p>Click <strong>Publish</strong> to make the article live on your help center</p></li><li><p>Click <strong>Update</strong> to push changes to an already-published article</p></li></ul><hr><h2>Version history</h2><p>Click <strong>History</strong> in the top bar to view all saved versions of the article. Click <strong>Restore</strong> next to any version to roll back — the restored content loads into the editor as an unsaved draft so you can review it before publishing.</p>`,
     },
     {
       collectionId: colDashboard.id,
@@ -432,7 +413,7 @@ Add the following snippet before the closing body tag on your website:
 <script>
   window.HelpNest = { workspace: 'your-workspace-slug' };
 </script>
-<script src="https://cdn.helpnest.io/widget.js" async></script>
+<script src="https://cdn.helpnest.cloud/widget.js" async></script>
 \`\`\`
 
 Replace your-workspace-slug with your workspace slug from Settings.
@@ -660,13 +641,7 @@ Click **Publish** in the top right. Your article is now live at your help center
 
 ## Step 4 — Share your help center
 
-Your help center is at:
-
-\`\`\`
-https://{your-slug}.helpnest.cloud
-\`\`\`
-
-Share this link with your customers or embed the search widget on your site.`,
+Copy your help center URL from the dashboard and share it with your customers, or embed the search widget on your site.`,
     },
     {
       collectionId: sColSetup.id,
@@ -728,7 +703,7 @@ Pro and Business plans are coming soon with higher limits and custom domain supp
 
 ## Self-hosting
 
-If you need unlimited usage, you can self-host HelpNest for free under the MIT license. See the [self-hosting guide](https://helpnest.io/helpnest/help/self-hosting).`,
+If you need unlimited usage, you can self-host HelpNest for free under the MIT license. See the [self-hosting guide](https://helpnest.cloud/helpnest/help/self-hosting).`,
     },
     {
       collectionId: sColBilling.id,
@@ -774,29 +749,18 @@ You can serve your help center from your own domain, such as **help.yourcompany.
 
 > Custom domains are available on Pro and Business plans.
 
-## Step 1 — Enter your domain
+## Steps
 
-1. Go to **Settings → Custom Domain**
-2. Enter your domain (e.g. \`help.yourcompany.com\`)
-3. Click **Save**
+1. Go to **Settings → Custom Domain**, enter your domain (e.g. \`help.yourcompany.com\`), and click **Save**.
+2. In your DNS provider, add a CNAME record pointing to \`helpnest.cloud\`. DNS propagation can take up to 48 hours.
+3. Once the CNAME is detected, HelpNest automatically provisions an SSL certificate. You will see the SSL status update in Settings.
+4. Your help center is now live at your custom domain. The \`{slug}.helpnest.cloud\` URL continues to work as a fallback.
 
-## Step 2 — Add a CNAME record
-
-In your DNS provider (Cloudflare, Route 53, Namecheap, etc.), add a CNAME record:
+## DNS record reference
 
 | Type | Name | Value |
 |------|------|-------|
-| CNAME | help | helpnest.cloud |
-
-DNS propagation can take up to 48 hours, but is usually faster.
-
-## Step 3 — Wait for SSL
-
-HelpNest automatically provisions an SSL certificate for your domain once the CNAME is verified. You will see the SSL status update in Settings.
-
-## Step 4 — Go live
-
-Once verified, your help center will be available at your custom domain. The \`{slug}.helpnest.cloud\` URL continues to work as a fallback.`,
+| CNAME | help | helpnest.cloud |`,
     },
     {
       collectionId: sColDomain.id,
@@ -816,7 +780,7 @@ Use a DNS lookup tool (dig, nslookup, or an online checker) to confirm the CNAME
 dig help.yourcompany.com CNAME
 \`\`\`
 
-The answer should show \`helpnest.cloud\` as the target.
+The response should show \`helpnest.cloud\` as the target.
 
 ## Proxy or CDN in front
 
@@ -855,6 +819,7 @@ If you have checked all of the above and your domain is still not verifying, con
   console.log('   http://localhost:3000/helpnest/help → HelpNest self-host docs')
   console.log('   http://localhost:3000/support/help  → HelpNest Cloud support')
   console.log('   http://localhost:3000/dashboard     → Dashboard')
+  console.log('   Login: admin@helpnest.cloud / helpnest')
 }
 
 main()

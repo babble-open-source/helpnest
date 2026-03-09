@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { getTheme, themeToCSS } from '@/lib/themes'
 import { redirect } from 'next/navigation'
@@ -6,12 +6,15 @@ import { DashboardSidebar } from './DashboardSidebar'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
-  if (!session?.user) redirect('/login')
+  const userId = await resolveSessionUserId(session)
+  if (!userId || !session?.user) redirect('/login')
 
   const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
+    where: { userId, deactivatedAt: null },
     select: { workspace: { select: { themeId: true } } },
   })
+  if (!member) redirect('/login')
+
   const theme = getTheme(member?.workspace.themeId ?? 'default')
   const themeCSS = themeToCSS(theme)
   const fontUrls = [theme.fonts.headingUrl, theme.fonts.bodyUrl].filter(Boolean) as string[]

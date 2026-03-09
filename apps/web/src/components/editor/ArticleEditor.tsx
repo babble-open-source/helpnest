@@ -7,9 +7,21 @@ import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import CharacterCount from '@tiptap/extension-character-count'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { common, createLowlight } from 'lowlight'
+import Table from '@tiptap/extension-table'
+import TableRow from '@tiptap/extension-table-row'
+import TableHeader from '@tiptap/extension-table-header'
+import TableCell from '@tiptap/extension-table-cell'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
+import Underline from '@tiptap/extension-underline'
+import TextAlign from '@tiptap/extension-text-align'
 import { EditorToolbar } from './EditorToolbar'
 import { ArticleMetaSidebar } from './ArticleMetaSidebar'
 import { EditorOutline } from './EditorOutline'
+import { EditorBubbleMenu } from './EditorBubbleMenu'
+import { EditorFloatingMenu } from './EditorFloatingMenu'
 
 interface Article {
   id: string
@@ -83,13 +95,34 @@ export function ArticleEditor({ article, collections }: Props) {
   // called from the useEditor onUpdate closure which is captured on mount.
   const scheduleAutoSaveRef = useRef<() => void>(() => undefined)
 
+  const [editorMode, setEditorMode] = useState<'classic' | 'notion'>('classic')
+  useEffect(() => {
+    const stored = localStorage.getItem('helpnest:editor-mode') as 'classic' | 'notion' | null
+    if (stored) setEditorMode(stored)
+  }, [])
+  function toggleEditorMode() {
+    const next = editorMode === 'classic' ? 'notion' : 'classic'
+    setEditorMode(next)
+    localStorage.setItem('helpnest:editor-mode', next)
+  }
+
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({ codeBlock: false }),
       Image,
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: 'Start writing your article...' }),
       CharacterCount,
+      CodeBlockLowlight.configure({ lowlight: createLowlight(common) }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
+      TaskList,
+      TaskItem.configure({ nested: true }),
+      Underline,
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
     content: article.content || '',
     onUpdate: () => {
@@ -237,6 +270,16 @@ export function ArticleEditor({ article, collections }: Props) {
                   <rect x="14" y="10" width="6" height="8" rx="1" strokeWidth={2} />
                 </svg>
               </button>
+              {/* Editor mode toggle */}
+              <button
+                onClick={toggleEditorMode}
+                title={editorMode === 'classic' ? 'Switch to Notion mode' : 'Switch to Classic mode'}
+                className={`p-1.5 rounded transition-colors text-xs font-medium ${
+                  editorMode === 'notion' ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'
+                }`}
+              >
+                {editorMode === 'classic' ? '✦' : '≡'}
+              </button>
             </div>
             <span className={`text-xs px-2 py-0.5 rounded-full ${
               saveStatus === 'saved' ? 'text-green bg-green/10' :
@@ -277,8 +320,21 @@ export function ArticleEditor({ article, collections }: Props) {
           </div>
         </div>
 
-        {/* Toolbar */}
-        {editor && <EditorToolbar editor={editor} />}
+        {/* Toolbar: always in the DOM, hidden in notion mode via CSS to keep
+            ProseMirror's sibling node references stable */}
+        {editor && (
+          <div className={editorMode === 'notion' ? 'hidden' : ''}>
+            <EditorToolbar editor={editor} />
+          </div>
+        )}
+
+        {/* Bubble + floating menus: always mounted, hidden in classic mode via shouldShow */}
+        {editor && (
+          <>
+            <EditorBubbleMenu editor={editor} active={editorMode === 'notion'} />
+            <EditorFloatingMenu editor={editor} active={editorMode === 'notion'} />
+          </>
+        )}
 
         <div className="flex-1 overflow-y-auto">
           <div className="max-w-2xl mx-auto px-8 py-10">

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { MemberRole } from '@helpnest/db'
 
@@ -26,11 +26,12 @@ export async function PATCH(
   { params }: { params: { id: string } },
 ) {
   const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await resolveSessionUserId(session)
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const callerMember = await resolveCallerMember(session.user.id)
+  const callerMember = await resolveCallerMember(userId)
   if (!callerMember) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
@@ -117,11 +118,12 @@ export async function DELETE(
   { params }: { params: { id: string } },
 ) {
   const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await resolveSessionUserId(session)
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const callerMember = await resolveCallerMember(session.user.id)
+  const callerMember = await resolveCallerMember(userId)
   if (!callerMember) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }

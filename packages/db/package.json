@@ -15,7 +15,9 @@
   "devDependencies": {
     "prisma": "^5.13.0",
     "tsx": "^4.7.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "bcryptjs": "^2.4.3",
+    "@types/bcryptjs": "^2.4.6"
   },
   "exports": {
     ".": "./src/index.ts"

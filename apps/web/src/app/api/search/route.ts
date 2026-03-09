@@ -20,6 +20,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] }, { headers: CORS_HEADERS })
   }
 
+  if (q.length > 200) {
+    return NextResponse.json({ results: [] }, { headers: CORS_HEADERS })
+  }
+
   const workspace = await prisma.workspace.findUnique({
     where: { slug: workspaceSlug },
     select: { id: true },
@@ -29,28 +33,37 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] }, { headers: CORS_HEADERS })
   }
 
-  // Postgres full-text search using raw query for tsvector
+  // Postgres full-text search using raw query for tsvector.
+  // ts_headline generates the snippet server-side, avoiding fetching full content over the wire.
   const results = await prisma.$queryRaw<
     Array<{
       id: string
       title: string
       slug: string
-      excerpt: string | null
-      content: string
+      snippet: string
       collection_title: string
       collection_slug: string
       views: number
+      word_count: number
     }>
   >`
     SELECT
       a.id,
       a.title,
       a.slug,
-      a.excerpt,
-      a.content,
+      COALESCE(
+        a.excerpt,
+        ts_headline(
+          'english',
+          a.content,
+          plainto_tsquery('english', ${q}),
+          'MaxWords=30, MinWords=15, ShortWord=3, HighlightAll=false, MaxFragments=1, FragmentDelimiter='' … '''
+        )
+      ) AS snippet,
       c.title as collection_title,
       c.slug as collection_slug,
-      a.views
+      a.views,
+      array_length(regexp_split_to_array(a.content, '\s+'), 1) as word_count
     FROM "Article" a
     JOIN "Collection" c ON a."collectionId" = c.id
     WHERE a."workspaceId" = ${workspace.id}
@@ -67,33 +80,14 @@ export async function GET(request: Request) {
     LIMIT 10
   `
 
-  const formatted = results.map((r) => {
-    // Extract a snippet around the match
-    const lowerContent = r.content.toLowerCase()
-    const lowerQ = q.toLowerCase()
-    const idx = lowerContent.indexOf(lowerQ)
-    let snippet = r.excerpt ?? ''
-    if (!snippet && idx !== -1) {
-      const start = Math.max(0, idx - 60)
-      const end = Math.min(r.content.length, idx + q.length + 120)
-      snippet =
-        (start > 0 ? '…' : '') +
-        r.content.slice(start, end) +
-        (end < r.content.length ? '…' : '')
-    }
-
-    const words = r.content.split(/\s+/).length
-    const readTime = Math.max(1, Math.round(words / 200))
-
-    return {
-      id: r.id,
-      title: r.title,
-      slug: r.slug,
-      snippet,
-      collection: { title: r.collection_title, slug: r.collection_slug },
-      readTime,
-    }
-  })
+  const formatted = results.map((r) => ({
+    id: r.id,
+    title: r.title,
+    slug: r.slug,
+    snippet: r.snippet ?? '',
+    collection: { title: r.collection_title, slug: r.collection_slug },
+    readTime: Math.max(1, Math.round((r.word_count ?? 0) / 200)),
+  }))
 
   return NextResponse.json({ results: formatted }, { headers: CORS_HEADERS })
 }

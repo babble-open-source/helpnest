@@ -89,7 +89,7 @@ export class HelpPanel {
             ✦ Ask AI
           </button>
         </div>
-        <p class="hn-powered">Powered by <a href="https://helpnest.io" target="_blank">HelpNest</a></p>
+        <p class="hn-powered">Powered by <a href="https://helpnest.cloud" target="_blank">HelpNest</a></p>
       </div>
     `
   }

@@ -43,7 +43,7 @@ export function WorkspaceForm({ name, slug, customDomain, helpCenterUrl }: Props
         <label className="block text-sm font-medium text-ink mb-1">Slug</label>
         <div className="flex items-center border border-border rounded-lg overflow-hidden">
           <span className="px-3 py-2 bg-cream text-muted text-sm border-r border-border shrink-0">
-            helpnest.io/
+            helpnest.cloud/
           </span>
           <input
             value={values.slug}

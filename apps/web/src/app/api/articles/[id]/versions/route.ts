@@ -51,22 +51,40 @@ export async function POST(
   })
   if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  const { title, content } = await request.json() as { title: string; content: string }
+  let body: unknown
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  }
+  if (typeof body !== 'object' || body === null) {
+    return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+  }
+  const { title, content } = body as { title?: unknown; content?: unknown }
+  if (typeof title !== 'string' || title.trim().length === 0) {
+    return NextResponse.json({ error: 'title must be a non-empty string' }, { status: 400 })
+  }
+  if (typeof content !== 'string') {
+    return NextResponse.json({ error: 'content must be a string' }, { status: 400 })
+  }
 
-  const last = await prisma.articleVersion.findFirst({
-    where: { articleId: params.id },
-    orderBy: { version: 'desc' },
-    select: { version: true },
-  })
-
-  const version = await prisma.articleVersion.create({
-    data: {
-      articleId: params.id,
-      authorId: member.userId,
-      title,
-      content,
-      version: (last?.version ?? 0) + 1,
-    },
+  // Use a transaction to atomically read the last version number and create the new one,
+  // preventing duplicate version numbers from concurrent requests.
+  const version = await prisma.$transaction(async (tx) => {
+    const last = await tx.articleVersion.findFirst({
+      where: { articleId: params.id },
+      orderBy: { version: 'desc' },
+      select: { version: true },
+    })
+    return tx.articleVersion.create({
+      data: {
+        articleId: params.id,
+        authorId: member.userId,
+        title: title.trim(),
+        content,
+        version: (last?.version ?? 0) + 1,
+      },
+    })
   })
 
   return NextResponse.json(version)

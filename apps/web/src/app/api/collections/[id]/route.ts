@@ -43,10 +43,22 @@ export async function PATCH(
     isPublic?: boolean
   }
 
+  // Regenerate slug when title changes, ensuring uniqueness (excluding this collection)
+  let newSlug: string | undefined
+  if (body.title !== undefined) {
+    const baseSlug = body.title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    let slug = baseSlug
+    let i = 1
+    while (await prisma.collection.findFirst({ where: { workspaceId, slug, id: { not: params.id } } })) {
+      slug = `${baseSlug}-${i++}`
+    }
+    newSlug = slug
+  }
+
   const updated = await prisma.collection.update({
     where: { id: params.id },
     data: {
-      ...(body.title !== undefined && { title: body.title }),
+      ...(body.title !== undefined && { title: body.title, slug: newSlug }),
       ...(body.description !== undefined && { description: body.description || null }),
       ...(body.emoji !== undefined && { emoji: body.emoji }),
       ...(body.isPublic !== undefined && { isPublic: body.isPublic }),

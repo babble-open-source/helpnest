@@ -1,3 +1,4 @@
+import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
@@ -32,31 +33,36 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   }
 
-  // Generate slug from title
   const baseSlug = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
-  // Ensure uniqueness within the workspace
-  const existing = await prisma.collection.findMany({
-    where: { workspaceId, slug: { startsWith: baseSlug } },
-    select: { slug: true },
-  })
-  const slug = existing.length === 0 ? baseSlug : `${baseSlug}-${existing.length}`
 
   // Order: append after existing top-level collections
   const count = await prisma.collection.count({
     where: { workspaceId, parentId: null },
   })
 
-  const collection = await prisma.collection.create({
-    data: {
-      workspaceId,
-      title: title.trim(),
-      slug,
-      description: description?.trim() || null,
-      emoji: emoji || '📁',
-      isPublic: true,
-      order: count,
-    },
-  })
-
-  return NextResponse.json(collection, { status: 201 })
+  // Retry on unique slug conflict to handle concurrent creates (TOCTOU-safe)
+  let slug = baseSlug
+  let i = 1
+  while (true) {
+    try {
+      const collection = await prisma.collection.create({
+        data: {
+          workspaceId,
+          title: title.trim(),
+          slug,
+          description: description?.trim() || null,
+          emoji: emoji || '📁',
+          isPublic: true,
+          order: count,
+        },
+      })
+      return NextResponse.json(collection, { status: 201 })
+    } catch (e: unknown) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        slug = `${baseSlug}-${i++}`
+      } else {
+        throw e
+      }
+    }
+  }
 }

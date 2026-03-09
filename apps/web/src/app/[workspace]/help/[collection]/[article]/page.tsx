@@ -12,21 +12,41 @@ function formatDate(date: Date) {
   return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(date)
 }
 
+function slugify(text: string): string {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+}
+
 function extractHeadings(content: string): { id: string; text: string; level: number }[] {
-  const headingRegex = /^(#{1,3})\s+(.+)$/gm
   const headings: { id: string; text: string; level: number }[] = []
-  let match
-  while ((match = headingRegex.exec(content)) !== null) {
-    const level = match[1]!.length
-    const text = match[2]!.trim()
-    const id = text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-    headings.push({ id, text, level })
+
+  if (content.trimStart().startsWith('<')) {
+    // Tiptap HTML — match <h1>, <h2>, <h3> tags, strip any inner markup for the label
+    const headingRegex = /<h([1-3])[^>]*>([\s\S]*?)<\/h[1-3]>/gi
+    let match
+    while ((match = headingRegex.exec(content)) !== null) {
+      const level = parseInt(match[1]!, 10)
+      const text = match[2]!.replace(/<[^>]+>/g, '').trim()
+      if (text) headings.push({ id: slugify(text), text, level })
+    }
+  } else {
+    // Markdown
+    const headingRegex = /^(#{1,3})\s+(.+)$/gm
+    let match
+    while ((match = headingRegex.exec(content)) !== null) {
+      const level = match[1]!.length
+      const text = match[2]!.trim()
+      headings.push({ id: slugify(text), text, level })
+    }
   }
+
   return headings
 }
 
-function readTime(content: string) {
-  return Math.max(1, Math.round(content.split(/\s+/).length / 200))
+function readTime(content: string): number {
+  const text = content.trimStart().startsWith('<')
+    ? content.replace(/<[^>]+>/g, ' ')
+    : content
+  return Math.max(1, Math.round(text.split(/\s+/).filter(Boolean).length / 200))
 }
 
 export default async function ArticlePage({ params }: Props) {

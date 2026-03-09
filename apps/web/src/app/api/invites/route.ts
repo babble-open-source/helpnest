@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { MemberRole } from '@helpnest/db'
 
@@ -7,14 +7,15 @@ const VALID_ROLES: MemberRole[] = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']
 
 export async function POST(request: Request) {
   const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await resolveSessionUserId(session)
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   // Verify caller is OWNER or ADMIN in some workspace
   const callerMember = await prisma.member.findFirst({
     where: {
-      userId: session.user.id,
+      userId,
       role: { in: ['OWNER', 'ADMIN'] },
       deactivatedAt: null,
     },
@@ -65,6 +66,23 @@ export async function POST(request: Request) {
     )
   }
 
+  // Prevent creating a duplicate invite while one is still pending
+  const pendingInvite = await prisma.invite.findFirst({
+    where: {
+      workspaceId: callerMember.workspaceId,
+      email: normalizedEmail,
+      acceptedAt: null,
+      expiresAt: { gt: new Date() },
+    },
+    select: { id: true },
+  })
+  if (pendingInvite) {
+    return NextResponse.json(
+      { error: 'A pending invite for this email already exists' },
+      { status: 409 },
+    )
+  }
+
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
   const invite = await prisma.invite.create({
@@ -72,7 +90,7 @@ export async function POST(request: Request) {
       workspaceId: callerMember.workspaceId,
       email: normalizedEmail,
       role: inviteRole,
-      invitedById: session.user.id,
+      invitedById: userId,
       expiresAt,
     },
   })

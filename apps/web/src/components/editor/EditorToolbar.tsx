@@ -11,11 +11,13 @@ function ToolbarButton({
   active,
   title,
   children,
+  className,
 }: {
   onClick: () => void
   active?: boolean
   title: string
   children: React.ReactNode
+  className?: string
 }) {
   return (
     <button
@@ -25,7 +27,7 @@ function ToolbarButton({
         active
           ? 'bg-ink text-cream'
           : 'text-muted hover:text-ink hover:bg-cream'
-      }`}
+      } ${className ?? ''}`}
     >
       {children}
     </button>
@@ -58,12 +60,52 @@ export function EditorToolbar({ editor }: Props) {
         <s>S</s>
       </ToolbarButton>
       <ToolbarButton
+        onClick={() => editor.chain().focus().toggleUnderline().run()}
+        active={editor.isActive('underline')}
+        title="Underline"
+      >
+        <span className="underline font-medium">U</span>
+      </ToolbarButton>
+      <ToolbarButton
         onClick={() => editor.chain().focus().toggleCode().run()}
         active={editor.isActive('code')}
         title="Inline code"
       >
         {'<>'}
       </ToolbarButton>
+
+      <div className="w-px h-5 bg-border mx-1" />
+
+      {/* Text align */}
+      <div className="flex items-center">
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign('left').run()}
+          active={editor.isActive({ textAlign: 'left' })}
+          title="Align left"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/>
+          </svg>
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign('center').run()}
+          active={editor.isActive({ textAlign: 'center' })}
+          title="Align center"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="21" y1="6" x2="3" y2="6"/><line x1="18" y1="12" x2="6" y2="12"/><line x1="21" y1="18" x2="3" y2="18"/>
+          </svg>
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => editor.chain().focus().setTextAlign('right').run()}
+          active={editor.isActive({ textAlign: 'right' })}
+          title="Align right"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="12" x2="9" y2="12"/><line x1="21" y1="18" x2="7" y2="18"/>
+          </svg>
+        </ToolbarButton>
+      </div>
 
       <div className="w-px h-5 bg-border mx-1" />
 
@@ -120,6 +162,17 @@ export function EditorToolbar({ editor }: Props) {
           <path d="M14.017 21v-7.391c0-5.704 3.731-9.57 8.983-10.609l.995 2.151c-2.432.917-3.995 3.638-3.995 5.849h4v10h-9.983zm-14.017 0v-7.391c0-5.704 3.748-9.57 9-10.609l.996 2.151c-2.433.917-3.996 3.638-3.996 5.849h3.983v10h-9.983z" />
         </svg>
       </ToolbarButton>
+      <ToolbarButton
+        onClick={() => editor.chain().focus().toggleTaskList().run()}
+        active={editor.isActive('taskList')}
+        title="Task list"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="5" width="4" height="4" rx="1"/><line x1="9" y1="7" x2="21" y2="7"/>
+          <rect x="3" y="13" width="4" height="4" rx="1"/><line x1="9" y1="15" x2="21" y2="15"/>
+          <polyline points="3 20 5 22 9 18"/>
+        </svg>
+      </ToolbarButton>
 
       <div className="w-px h-5 bg-border mx-1" />
 
@@ -172,6 +225,27 @@ export function EditorToolbar({ editor }: Props) {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
         </svg>
       </ToolbarButton>
+
+      {/* Table */}
+      <div className="flex items-center border-l border-border pl-1 ml-1">
+        <ToolbarButton
+          onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+          title="Insert table"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/>
+          </svg>
+        </ToolbarButton>
+        {editor.isActive('table') && (
+          <>
+            <ToolbarButton onClick={() => editor.chain().focus().addRowAfter().run()} title="Add row below">+R</ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().deleteRow().run()} title="Delete row">-R</ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().addColumnAfter().run()} title="Add column right">+C</ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().deleteColumn().run()} title="Delete column">-C</ToolbarButton>
+            <ToolbarButton onClick={() => editor.chain().focus().deleteTable().run()} title="Delete table" className="text-red-500">×T</ToolbarButton>
+          </>
+        )}
+      </div>
 
       <div className="ml-auto flex items-center gap-1">
         {/* Undo/Redo */}

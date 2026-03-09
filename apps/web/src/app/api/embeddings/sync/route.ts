@@ -1,22 +1,36 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { qdrant, COLLECTION_NAME, ensureCollection, chunkText, buildPointId } from '@/lib/qdrant'
 import { embedBatch } from '@/lib/embeddings'
 
 export async function POST(request: Request) {
   const session = await auth()
-  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  const userId = await resolveSessionUserId(session)
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = await request.json() as { workspaceId?: string }
+  let body: { workspaceId?: string } = {}
+  try {
+    body = await request.json() as { workspaceId?: string }
+  } catch {
+    // body remains {}
+  }
 
+  // Verify caller is OWNER or ADMIN of their workspace
   const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
+    where: {
+      userId,
+      role: { in: ['OWNER', 'ADMIN'] },
+    },
     select: { workspaceId: true },
   })
-  if (!member) return NextResponse.json({ error: 'No workspace' }, { status: 403 })
+  if (!member) return NextResponse.json({ error: 'Forbidden — OWNER or ADMIN required' }, { status: 403 })
 
+  // If a specific workspaceId is requested, verify the caller belongs to it
   const targetWorkspaceId = body.workspaceId ?? member.workspaceId
+  if (targetWorkspaceId !== member.workspaceId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   await ensureCollection()
 

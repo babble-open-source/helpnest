@@ -135,8 +135,8 @@ model ArticleVersion {
   article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
   author  User    @relation(fields: [authorId], references: [id])
 
+  @@unique([articleId, version])
   @@index([articleId])
-  @@index([articleId, version])
 }
 
 model ApiKey {

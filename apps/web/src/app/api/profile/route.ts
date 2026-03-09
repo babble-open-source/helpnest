@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
 export async function PATCH(request: Request) {
   const session = await auth()
-  if (!session?.user?.id) {
+  const userId = await resolveSessionUserId(session)
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -46,7 +47,7 @@ export async function PATCH(request: Request) {
 
     // Fetch current user to check existing passwordHash
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       select: { passwordHash: true },
     })
 
@@ -78,7 +79,7 @@ export async function PATCH(request: Request) {
 
   try {
     const updated = await prisma.user.update({
-      where: { id: session.user.id },
+      where: { id: userId },
       data: updates,
       select: { id: true, email: true, name: true },
     })

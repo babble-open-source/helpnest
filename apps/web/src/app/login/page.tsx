@@ -67,7 +67,7 @@ export default function LoginPage() {
           </button>
         </form>
         <p className="text-xs text-muted text-center mt-6">
-          Default: <code className="bg-border px-1 rounded">admin@helpnest.io</code>
+          Default: <code className="bg-border px-1 rounded">admin@helpnest.cloud</code>
         </p>
       </div>
     </main>

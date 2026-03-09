@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 
@@ -39,24 +40,29 @@ export async function POST(request: Request) {
   const title = 'Untitled article'
   const baseSlug = slugify(title)
 
-  // Ensure unique slug
+  // Retry on unique slug conflict to handle concurrent creates (TOCTOU-safe)
   let slug = baseSlug
   let i = 1
-  while (await prisma.article.findUnique({ where: { workspaceId_slug: { workspaceId, slug } } })) {
-    slug = `${baseSlug}-${i++}`
+  while (true) {
+    try {
+      const article = await prisma.article.create({
+        data: {
+          workspaceId,
+          collectionId: collection.id,
+          authorId,
+          title,
+          slug,
+          content: '',
+          status: 'DRAFT',
+        },
+      })
+      return NextResponse.json({ id: article.id })
+    } catch (e: unknown) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        slug = `${baseSlug}-${i++}`
+      } else {
+        throw e
+      }
+    }
   }
-
-  const article = await prisma.article.create({
-    data: {
-      workspaceId,
-      collectionId: collection.id,
-      authorId,
-      title,
-      slug,
-      content: '',
-      status: 'DRAFT',
-    },
-  })
-
-  return NextResponse.json({ id: article.id })
 }

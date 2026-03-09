@@ -6,7 +6,7 @@ export class HttpClient {
   private apiKey: string
 
   constructor(config: HelpNestConfig) {
-    this.baseUrl = (config.baseUrl ?? 'https://helpnest.io').replace(/\/$/, '')
+    this.baseUrl = (config.baseUrl ?? 'https://helpnest.cloud').replace(/\/$/, '')
     this.workspace = config.workspace
     this.apiKey = config.apiKey
   }
