@@ -24,12 +24,61 @@ type ArticleRow = {
 }
 type ContextArticle = ArticleRow & { contextChunk?: string }
 
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+}
+
+const AI_RATE_LIMIT_WINDOW_MS = 60_000
+const AI_RATE_LIMIT_MAX_REQUESTS = 20
+type RateBucket = { count: number; resetAt: number }
+const aiRateBuckets = new Map<string, RateBucket>()
+
+function getClientIp(request: Request): string {
+  const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+  const realIp = request.headers.get('x-real-ip')?.trim()
+  return forwardedFor || realIp || 'unknown'
+}
+
+function consumeAiRateLimit(key: string): { limited: boolean; retryAfterSeconds: number } {
+  const now = Date.now()
+
+  // Best-effort cleanup for long-lived self-hosted processes.
+  if (aiRateBuckets.size > 10_000) {
+    for (const [k, bucket] of aiRateBuckets) {
+      if (bucket.resetAt <= now) aiRateBuckets.delete(k)
+    }
+  }
+
+  const current = aiRateBuckets.get(key)
+  if (!current || current.resetAt <= now) {
+    aiRateBuckets.set(key, { count: 1, resetAt: now + AI_RATE_LIMIT_WINDOW_MS })
+    return { limited: false, retryAfterSeconds: 0 }
+  }
+
+  if (current.count >= AI_RATE_LIMIT_MAX_REQUESTS) {
+    return {
+      limited: true,
+      retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
+    }
+  }
+
+  current.count += 1
+  aiRateBuckets.set(key, current)
+  return { limited: false, retryAfterSeconds: 0 }
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
+}
+
 export async function POST(request: Request) {
   // Fail fast with a clear error if the API key is not configured.
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
       { error: 'AI search is not configured. Set ANTHROPIC_API_KEY in your environment.' },
-      { status: 503 },
+      { status: 503, headers: CORS_HEADERS },
     )
   }
 
@@ -37,25 +86,48 @@ export async function POST(request: Request) {
   try {
     body = await request.json() as { query?: string; workspaceSlug?: string }
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: CORS_HEADERS })
   }
 
   const { query, workspaceSlug } = body
 
   if (!query?.trim() || !workspaceSlug) {
-    return NextResponse.json({ error: 'query and workspaceSlug are required' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'query and workspaceSlug are required' },
+      { status: 400, headers: CORS_HEADERS },
+    )
   }
 
   const normalizedQuery = query.trim()
   if (normalizedQuery.length > 500) {
-    return NextResponse.json({ error: 'Query must be 500 characters or fewer' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'Query must be 500 characters or fewer' },
+      { status: 400, headers: CORS_HEADERS },
+    )
+  }
+
+  const rateKey = `${getClientIp(request)}:${workspaceSlug}`
+  const rate = consumeAiRateLimit(rateKey)
+  if (rate.limited) {
+    return NextResponse.json(
+      { error: 'Too many AI requests. Please try again shortly.' },
+      {
+        status: 429,
+        headers: {
+          ...CORS_HEADERS,
+          'Retry-After': String(rate.retryAfterSeconds),
+        },
+      },
+    )
   }
 
   const workspace = await prisma.workspace.findUnique({
     where: { slug: workspaceSlug },
     select: { id: true, name: true },
   })
-  if (!workspace) return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
+  if (!workspace) {
+    return NextResponse.json({ error: 'Workspace not found' }, { status: 404, headers: CORS_HEADERS })
+  }
 
   // 1. Embed the query (requires OPENAI_API_KEY; falls back to full-text if unavailable)
   let queryEmbedding: number[] = []
@@ -132,10 +204,13 @@ export async function POST(request: Request) {
   }
 
   if (articles.length === 0) {
-    return NextResponse.json({
-      answer: "I couldn't find any relevant articles for your question. Try browsing the help center or contact our support team.",
-      sources: [],
-    })
+    return NextResponse.json(
+      {
+        answer: "I couldn't find any relevant articles for your question. Try browsing the help center or contact our support team.",
+        sources: [],
+      },
+      { headers: CORS_HEADERS },
+    )
   }
 
   const context = articles.map((a, i) => {
@@ -193,6 +268,7 @@ Format your response in plain text (no markdown).`,
 
   return new Response(readable, {
     headers: {
+      ...CORS_HEADERS,
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
       'Connection': 'keep-alive',

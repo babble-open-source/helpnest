@@ -22,6 +22,7 @@ import { ArticleMetaSidebar } from './ArticleMetaSidebar'
 import { EditorOutline } from './EditorOutline'
 import { EditorBubbleMenu } from './EditorBubbleMenu'
 import { EditorFloatingMenu } from './EditorFloatingMenu'
+import { fixOrderedListCounters } from '@/components/help/ArticleContent'
 
 interface Article {
   id: string
@@ -123,7 +124,9 @@ export function ArticleEditor({ article, collections }: Props) {
       Underline,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
     ],
-    content: article.content || '',
+    content: article.content?.trimStart().startsWith('<')
+      ? fixOrderedListCounters(article.content)
+      : article.content || '',
     onUpdate: () => {
       setSaveStatus('unsaved')
       scheduleAutoSaveRef.current()
@@ -364,7 +367,7 @@ export function ArticleEditor({ article, collections }: Props) {
             {/* Editor body */}
             <EditorContent
               editor={editor}
-              className="prose-editor min-h-[400px] text-ink/90 leading-7 focus:outline-none"
+              className="prose-editor hn-prose min-h-[400px] focus:outline-none"
             />
           </div>
         </div>

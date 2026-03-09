@@ -11,52 +11,68 @@ function escapeHtml(s: string): string {
 /**
  * Group consecutive <li-ol> / <li-ul> markers into proper <ol> / <ul> containers.
  *
- * Works line-by-line so that code block placeholders (\x00CODEn\x00) and blank
- * lines that appear *between* list items are absorbed into the same list rather
- * than breaking it into separate single-item lists — which would reset the
- * counter to 1 for every item.
+ * Code blocks between list items are emitted OUTSIDE the list to avoid invalid
+ * HTML (<pre> inside <ol>). For ordered lists the <ol start="N"> attribute keeps
+ * the counter continuous across the split segments.
  */
 function groupListItems(text: string): string {
   const lines = text.split('\n')
   const result: string[] = []
   let mode: 'ol' | 'ul' | null = null
   let buffer: string[] = []
+  let olStart = 1  // start attribute for the next <ol> segment
 
-  function flush() {
-    if (!mode || buffer.length === 0) { mode = null; buffer = []; return }
+  function countOlItemsInBuffer(): number {
+    return buffer.filter(l => l.trim().startsWith('<li-ol')).length
+  }
+
+  function flush(keepMode = false) {
+    if (!mode || buffer.length === 0) {
+      if (!keepMode) { mode = null }
+      buffer = []
+      return
+    }
     // Drop trailing blank lines so they don't create extra space inside the list.
     while (buffer.length > 0 && buffer[buffer.length - 1]!.trim() === '') buffer.pop()
+    if (buffer.length === 0) { if (!keepMode) mode = null; return }
+    const itemCount = countOlItemsInBuffer()
     const inner = buffer.join('\n')
       .replace(/li-ol/g, 'li')
       .replace(/li-ul/g, 'li')
-    result.push(
-      mode === 'ol'
-        ? `<ol class="list-decimal pl-5 my-4 space-y-2">${inner}</ol>`
-        : `<ul class="list-disc pl-5 my-4 space-y-1">${inner}</ul>`
-    )
-    mode = null
+    if (mode === 'ol') {
+      result.push(`<ol class="list-decimal pl-5 my-4 space-y-2" start="${olStart}">${inner}</ol>`)
+      olStart += itemCount
+    } else {
+      result.push(`<ul class="list-disc pl-5 my-4 space-y-1">${inner}</ul>`)
+    }
     buffer = []
+    if (!keepMode) mode = null
   }
 
   for (const line of lines) {
     const trimmed = line.trim()
     const isOlItem = trimmed.startsWith('<li-ol')
     const isUlItem = trimmed.startsWith('<li-ul')
-    // Code block placeholder or blank line — keep inside an active list
-    const isContinuation = /^\x00CODE\d+\x00$/.test(trimmed) || trimmed === ''
+    const isCodeBlock = /^\x00CODE\d+\x00$/.test(trimmed)
 
     if (isOlItem) {
-      if (mode === 'ul') flush()
+      if (mode === 'ul') { flush(); olStart = 1 }
       mode = 'ol'
       buffer.push(line)
     } else if (isUlItem) {
       if (mode === 'ol') flush()
       mode = 'ul'
       buffer.push(line)
-    } else if (mode && isContinuation) {
+    } else if (isCodeBlock && mode) {
+      // Flush the list segment so far, emit the code block outside the list,
+      // then keep mode active so subsequent items continue the sequence.
+      flush(/* keepMode */ true)
+      result.push(line)
+    } else if (trimmed === '' && mode) {
       buffer.push(line)
     } else {
       flush()
+      olStart = 1
       result.push(line)
     }
   }
@@ -146,6 +162,59 @@ function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
 }
 
+/**
+ * Tiptap splits a numbered list interrupted by code blocks into separate <ol>
+ * elements (because <pre> is not valid inside <ol>). Each new <ol> resets to 1.
+ * This function adds start="N" to continuation segments so the counter is continuous.
+ *
+ * Two <ol> blocks are treated as one sequence when only <pre> elements (and
+ * whitespace) appear between them. Any other block element resets the counter.
+ */
+export function fixOrderedListCounters(html: string): string {
+  // Tokenise into <ol>…</ol>, <pre>…</pre>, and everything else.
+  // Non-greedy match is safe here because Tiptap never nests <ol> inside <ol>
+  // at the same level when code blocks interrupt the list.
+  const tokenRe = /(<ol\b[\s\S]*?<\/ol>|<pre\b[\s\S]*?<\/pre>)/g
+  const parts: string[] = []
+  let lastIndex = 0
+  let olCounter = 1
+  let prevType: 'ol' | 'pre' | 'other' = 'other'
+
+  let m: RegExpExecArray | null
+  while ((m = tokenRe.exec(html)) !== null) {
+    const before = html.slice(lastIndex, m.index)
+    lastIndex = m.index + m[0].length
+
+    // Text/markup between tokens — only whitespace is allowed without breaking the sequence
+    if (before.trim() !== '') {
+      prevType = 'other'
+      olCounter = 1
+    }
+    parts.push(before)
+
+    const token = m[0]!
+    if (token.startsWith('<ol')) {
+      const liCount = (token.match(/<li\b/g) ?? []).length
+      const continuing = prevType === 'ol' || prevType === 'pre'
+
+      if (continuing && olCounter > 1) {
+        parts.push(token.replace(/^<ol\b/, `<ol start="${olCounter}"`))
+      } else {
+        olCounter = 1   // fresh sequence
+        parts.push(token)
+      }
+      olCounter += liCount
+      prevType = 'ol'
+    } else {
+      // <pre> block — doesn't break the sequence
+      parts.push(token)
+      prevType = 'pre'
+    }
+  }
+  parts.push(html.slice(lastIndex))
+  return parts.join('')
+}
+
 /** Add id attributes to <h1>–<h3> in Tiptap HTML so TOC anchor links work. */
 function addHeadingIds(html: string): string {
   return html.replace(/<h([1-3])([^>]*)>([\s\S]*?)<\/h[1-3]>/gi, (_match, level, attrs, inner) => {
@@ -160,10 +229,12 @@ function addHeadingIds(html: string): string {
 export function ArticleContent({ content }: Props) {
   // Tiptap saves HTML (starts with `<`); seed/legacy data is Markdown.
   const isTiptap = content.trimStart().startsWith('<')
-  const html = isTiptap ? addHeadingIds(content) : renderMarkdown(content)
+  const html = isTiptap
+    ? fixOrderedListCounters(addHeadingIds(content))
+    : renderMarkdown(content)
   return (
     <div
-      className="article-prose text-ink/90 leading-7"
+      className="article-prose hn-prose"
       dangerouslySetInnerHTML={{ __html: html }}
     />
   )

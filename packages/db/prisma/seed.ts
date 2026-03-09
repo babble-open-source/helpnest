@@ -232,56 +232,11 @@ Image uploads require S3-compatible storage.
       slug: 'docker-compose',
       excerpt: 'The easiest way to self-host HelpNest using Docker Compose.',
       order: 0,
-      content: `# Docker Compose Deployment
-
-The easiest way to run HelpNest in production is with Docker Compose.
-
-## What is included
-
-The provided docker-compose.yml runs:
-
-- **HelpNest** — the Next.js app (port 3000)
-- **PostgreSQL 16** — primary database
-- **Redis 7** — caching and sessions
-- **Qdrant** — vector database for AI search
-
-## Steps
-
-1. Clone the repo on your server
-
-\`\`\`
-git clone https://github.com/babble-open-source/helpnest
-cd helpnest
-\`\`\`
-
-2. Create your .env file
-
-\`\`\`
-cp .env.example .env
-\`\`\`
-
-3. Start everything
-
-\`\`\`
-docker compose up -d
-\`\`\`
-
-4. Run migrations and seed
-
-\`\`\`
-docker compose exec app pnpm --filter @helpnest/db db:migrate
-docker compose exec app pnpm --filter @helpnest/db db:seed
-\`\`\`
-
-5. Visit your server on port 3000.
-
-## Updating
-
-\`\`\`
-git pull
+      content: `<p>The easiest way to run HelpNest in production is with Docker Compose.</p><h2>What is included</h2><p>The provided docker-compose.yml runs:</p><ul><li><p><strong>HelpNest</strong> — the Next.js app (port 3000)</p></li><li><p><strong>PostgreSQL 16</strong> — primary database</p></li><li><p><strong>Redis 7</strong> — caching and sessions</p></li><li><p><strong>Qdrant</strong> — vector database for AI search</p></li></ul><h2>Steps</h2><ol><li><p>Clone the repo on your server</p><pre><code class="language-bash">git clone https://github.com/babble-open-source/helpnest
+cd helpnest</code></pre></li><li><p>Create your .env file</p><pre><code class="language-bash">cp .env.example .env</code></pre></li><li><p>Start everything</p><pre><code class="language-bash">docker compose up -d</code></pre></li><li><p>Run migrations and seed</p><pre><code class="language-bash">docker compose exec app pnpm --filter @helpnest/db db:migrate
+docker compose exec app pnpm --filter @helpnest/db db:seed</code></pre></li><li><p>Visit your server on port 3000.</p></li></ol><h2>Updating</h2><pre><code class="language-bash">git pull
 docker compose build app
-docker compose up -d
-\`\`\``,
+docker compose up -d</code></pre>`,
     },
     {
       collectionId: colSelfHosting.id,
@@ -289,36 +244,14 @@ docker compose up -d
       slug: 'custom-domain',
       excerpt: 'Point a custom domain at your HelpNest help center.',
       order: 1,
-      content: `# Custom Domain Setup
-
-You can serve your help center on a custom domain like help.yourcompany.com.
-
-## Option 1 — Subdomain (recommended)
-
-1. Add a CNAME record pointing help.yourcompany.com to your server's IP address.
-2. In your HelpNest dashboard, go to Settings and enter help.yourcompany.com in the Custom Domain field.
-3. Set up a reverse proxy to forward requests to the HelpNest app.
-
-Example nginx config:
-
-\`\`\`
-server {
+      content: `<p>You can serve your help center on a custom domain like help.yourcompany.com.</p><h2>Option 1 — Subdomain (recommended)</h2><ol><li><p>Add a CNAME record pointing <code>help.yourcompany.com</code> to your server's IP address.</p></li><li><p>In your HelpNest dashboard, go to Settings and enter <code>help.yourcompany.com</code> in the Custom Domain field.</p></li><li><p>Set up a reverse proxy to forward requests to the HelpNest app.</p></li></ol><p>Example nginx config:</p><pre><code class="language-nginx">server {
   server_name help.yourcompany.com;
   location / {
     proxy_pass http://localhost:3000;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
   }
-}
-\`\`\`
-
-## Option 2 — Path prefix
-
-If you want yourcompany.com/help, proxy all /help requests to the HelpNest app.
-
-## SSL
-
-Use Certbot with Let's Encrypt for free SSL certificates, or use Caddy which handles SSL automatically.`,
+}</code></pre><h2>Option 2 — Path prefix</h2><p>If you want <code>yourcompany.com/help</code>, proxy all <code>/help</code> requests to the HelpNest app.</p><h2>SSL</h2><p>Use Certbot with Let's Encrypt for free SSL certificates, or use Caddy which handles SSL automatically.</p>`,
     },
 
     // Using HelpNest
@@ -328,24 +261,7 @@ Use Certbot with Let's Encrypt for free SSL certificates, or use Caddy which han
       slug: 'managing-collections',
       excerpt: 'Collections group related articles together in your help center.',
       order: 0,
-      content: `# Managing Collections
-
-Collections are the top-level groupings in your help center. Every article belongs to a collection.
-
-## Creating a collection
-
-1. Go to Dashboard > Collections
-2. Click New Collection
-3. Choose an emoji, give it a title and optional description
-4. Click Create
-
-## Editing a collection
-
-Click the actions menu next to any collection and select Edit.
-
-## Deleting a collection
-
-Collections can only be deleted when they have no articles. Move or delete all articles first, then delete the collection.`,
+      content: `<p>Collections are the top-level groupings in your help center. Every article belongs to a collection.</p><h2>Creating a collection</h2><ol><li><p>Go to Dashboard &gt; Collections</p></li><li><p>Click <strong>New Collection</strong></p></li><li><p>Choose an emoji, give it a title and optional description</p></li><li><p>Click <strong>Create</strong></p></li></ol><h2>Editing a collection</h2><p>Click the actions menu next to any collection and select <strong>Edit</strong>.</p><h2>Deleting a collection</h2><p>Collections can only be deleted when they have no articles. Move or delete all articles first, then delete the collection.</p>`,
     },
     {
       collectionId: colDashboard.id,
@@ -365,33 +281,7 @@ pnpm install &amp;&amp; pnpm dev</code></pre><p>Code blocks support syntax highl
       slug: 'themes',
       excerpt: 'Change the look of your help center with community-built themes.',
       order: 2,
-      content: `# Customising Your Theme
-
-HelpNest ships with 8 built-in themes from the @helpnest/themes package.
-
-## Changing the theme
-
-1. Go to Dashboard > Settings
-2. Browse the theme gallery under Help Center Theme
-3. Click a theme to select it
-4. Click Apply theme
-
-The theme is applied instantly — no redeploy needed.
-
-## Available themes
-
-- **Default** — Warm cream with Instrument Serif
-- **Dark** — Inverted warm tones
-- **Ocean** — Clean blues, corporate feel
-- **Forest** — Deep earthy greens with Lora
-- **Aurora** — Violet with Syne
-- **Slate** — Neutral grays, enterprise
-- **Rose** — Soft pinks with Playfair Display
-- **Midnight** — Deep navy, developer-focused
-
-## Community themes
-
-Additional themes are available from the @helpnest/themes npm package. See the helpnest-themes repository for contribution guidelines.`,
+      content: `<p>HelpNest ships with 8 built-in themes from the <code>@helpnest/themes</code> package.</p><h2>Changing the theme</h2><ol><li><p>Go to Dashboard &gt; Settings</p></li><li><p>Browse the theme gallery under <strong>Help Center Theme</strong></p></li><li><p>Click a theme to select it</p></li><li><p>Click <strong>Apply theme</strong></p></li></ol><p>The theme is applied instantly — no redeploy needed.</p><h2>Available themes</h2><ul><li><p><strong>Default</strong> — Warm cream with Instrument Serif</p></li><li><p><strong>Dark</strong> — Inverted warm tones</p></li><li><p><strong>Ocean</strong> — Clean blues, corporate feel</p></li><li><p><strong>Forest</strong> — Deep earthy greens with Lora</p></li><li><p><strong>Aurora</strong> — Violet with Syne</p></li><li><p><strong>Slate</strong> — Neutral grays, enterprise</p></li><li><p><strong>Rose</strong> — Soft pinks with Playfair Display</p></li><li><p><strong>Midnight</strong> — Deep navy, developer-focused</p></li></ul><h2>Community themes</h2><p>Additional themes are available from the <code>@helpnest/themes</code> npm package. See the helpnest-themes repository for contribution guidelines.</p>`,
     },
 
     // Integrations
@@ -401,32 +291,10 @@ Additional themes are available from the @helpnest/themes npm package. See the h
       slug: 'widget',
       excerpt: 'Embed a help widget on any website with a single script tag.',
       order: 0,
-      content: `# Embeddable Widget
-
-The HelpNest widget lets your customers search your help center from any page on your site.
-
-## Installation
-
-Add the following snippet before the closing body tag on your website:
-
-\`\`\`
-<script>
+      content: `<p>The HelpNest widget lets your customers search your help center from any page on your site.</p><h2>Installation</h2><p>Add the following snippet before the closing <code>&lt;/body&gt;</code> tag on your website:</p><pre><code class="language-html">&lt;script&gt;
   window.HelpNest = { workspace: 'your-workspace-slug' };
-</script>
-<script src="https://cdn.helpnest.cloud/widget.js" async></script>
-\`\`\`
-
-Replace your-workspace-slug with your workspace slug from Settings.
-
-## Self-hosted
-
-Point the script src at your own instance:
-
-\`\`\`
-<script src="https://your-domain.com/widget.js" async></script>
-\`\`\`
-
-> The widget package is currently in development (Phase 3 of the roadmap).`,
+&lt;/script&gt;
+&lt;script src="https://cdn.helpnest.cloud/widget.js" async&gt;&lt;/script&gt;</code></pre><p>Replace <code>your-workspace-slug</code> with your workspace slug from Settings.</p><h2>Self-hosted</h2><p>Point the script src at your own instance:</p><pre><code class="language-html">&lt;script src="https://your-domain.com/widget.js" async&gt;&lt;/script&gt;</code></pre><blockquote><p>The widget package is currently in development (Phase 3 of the roadmap).</p></blockquote>`,
     },
     {
       collectionId: colIntegrations.id,
@@ -434,33 +302,7 @@ Point the script src at your own instance:
       slug: 'rest-api',
       excerpt: 'Access your help center content programmatically via the REST API.',
       order: 1,
-      content: `# REST API
-
-HelpNest exposes a REST API for reading and managing help center content programmatically.
-
-## Authentication
-
-Pass your API key in the Authorization header:
-
-\`\`\`
-Authorization: Bearer hn_your_api_key
-\`\`\`
-
-## Articles
-
-- GET /api/articles — list published articles
-- GET /api/articles/:id — get a single article
-- PATCH /api/articles/:id — update an article
-- DELETE /api/articles/:id — delete an article
-
-## Collections
-
-- GET /api/collections — list collections
-- POST /api/collections — create a collection
-- PATCH /api/collections/:id — update a collection
-- DELETE /api/collections/:id — delete a collection
-
-> API key management UI and full SDK are coming in Phase 3.`,
+      content: `<p>HelpNest exposes a REST API for reading and managing help center content programmatically.</p><h2>Authentication</h2><p>Pass your API key in the Authorization header:</p><pre><code class="language-bash">Authorization: Bearer hn_your_api_key</code></pre><h2>Articles</h2><ul><li><p><code>GET /api/articles</code> — list published articles</p></li><li><p><code>GET /api/articles/:id</code> — get a single article</p></li><li><p><code>PATCH /api/articles/:id</code> — update an article</p></li><li><p><code>DELETE /api/articles/:id</code> — delete an article</p></li></ul><h2>Collections</h2><ul><li><p><code>GET /api/collections</code> — list collections</p></li><li><p><code>POST /api/collections</code> — create a collection</p></li><li><p><code>PATCH /api/collections/:id</code> — update a collection</p></li><li><p><code>DELETE /api/collections/:id</code> — delete a collection</p></li></ul><blockquote><p>API key management UI and full SDK are coming in Phase 3.</p></blockquote>`,
     },
   ]
 

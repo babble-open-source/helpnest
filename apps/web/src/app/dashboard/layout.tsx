@@ -22,8 +22,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `${fontUrls.map((url) => `@import url('${url}');`).join('\n')}
-:root { ${themeCSS} }` }} />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      {fontUrls.map((url) => (
+        <link key={url} rel="stylesheet" href={url} />
+      ))}
+      <style dangerouslySetInnerHTML={{ __html: `:root { ${themeCSS} }` }} />
       <div className="h-screen bg-cream flex overflow-hidden">
         <DashboardSidebar
           userName={session.user.name ?? 'User'}
