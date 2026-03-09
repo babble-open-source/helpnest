@@ -53,7 +53,7 @@ export default async function HelpCenterHome({ params }: Props) {
       {/* Hero */}
       <section className="bg-ink text-cream py-16 px-4">
         <div className="max-w-2xl mx-auto text-center">
-          <h1 className="font-serif text-4xl sm:text-5xl mb-4">How can we help you today?</h1>
+          <h1 className="font-serif text-4xl sm:text-5xl leading-tight mb-4">How can we help you today?</h1>
           <p className="text-cream/70 text-lg mb-8">
             Search our knowledge base or browse collections below
           </p>
