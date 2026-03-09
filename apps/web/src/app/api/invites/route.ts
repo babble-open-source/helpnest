@@ -82,7 +82,6 @@ export async function POST(request: Request) {
       { status: 409 },
     )
   }
-
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
   const invite = await prisma.invite.create({
