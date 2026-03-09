@@ -100,8 +100,7 @@ export function ArticleEditor({ article, collections }: Props) {
     const stored = localStorage.getItem('helpnest:editor-mode') as 'classic' | 'notion' | null
     if (stored) setEditorMode(stored)
   }, [])
-  function toggleEditorMode() {
-    const next = editorMode === 'classic' ? 'notion' : 'classic'
+  function setAndPersistEditorMode(next: 'classic' | 'notion') {
     setEditorMode(next)
     localStorage.setItem('helpnest:editor-mode', next)
   }
@@ -270,16 +269,33 @@ export function ArticleEditor({ article, collections }: Props) {
                   <rect x="14" y="10" width="6" height="8" rx="1" strokeWidth={2} />
                 </svg>
               </button>
-              {/* Editor mode toggle */}
-              <button
-                onClick={toggleEditorMode}
-                title={editorMode === 'classic' ? 'Switch to Notion mode' : 'Switch to Classic mode'}
-                className={`p-1.5 rounded transition-colors text-xs font-medium ${
-                  editorMode === 'notion' ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'
-                }`}
-              >
-                {editorMode === 'classic' ? '✦' : '≡'}
-              </button>
+              {/* Editor mode switch */}
+              <div className="ml-1 inline-flex items-center rounded-lg border border-border bg-cream p-0.5">
+                <button
+                  onClick={() => setAndPersistEditorMode('classic')}
+                  aria-pressed={editorMode === 'classic'}
+                  title="Classic editor"
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    editorMode === 'classic'
+                      ? 'bg-white text-ink shadow-sm'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  Classic
+                </button>
+                <button
+                  onClick={() => setAndPersistEditorMode('notion')}
+                  aria-pressed={editorMode === 'notion'}
+                  title="Notion-style editor"
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    editorMode === 'notion'
+                      ? 'bg-white text-ink shadow-sm'
+                      : 'text-muted hover:text-ink'
+                  }`}
+                >
+                  Notion
+                </button>
+              </div>
             </div>
             <span className={`text-xs px-2 py-0.5 rounded-full ${
               saveStatus === 'saved' ? 'text-green bg-green/10' :
