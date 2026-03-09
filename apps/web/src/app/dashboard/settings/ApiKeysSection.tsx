@@ -106,25 +106,25 @@ export function ApiKeysSection() {
       </p>
 
       {error && (
-        <div className="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg bg-cream border border-border px-4 py-3 text-sm text-red-500">
           {error}
         </div>
       )}
 
       {/* New raw key reveal — shown once immediately after creation */}
       {newRawKey && (
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-medium text-amber-800 mb-2">
+        <div className="mb-6 rounded-lg border border-accent/30 bg-accent/5 p-4">
+          <p className="text-sm font-medium text-ink mb-2">
             Store this key — it will not be shown again.
           </p>
           <div className="flex items-center gap-2">
-            <code className="flex-1 block rounded bg-white border border-amber-200 px-3 py-2 text-sm font-mono text-ink break-all">
+            <code className="flex-1 block rounded bg-white border border-border px-3 py-2 text-sm font-mono text-ink break-all">
               {newRawKey}
             </code>
             <button
               type="button"
               onClick={() => void handleCopy()}
-              className="shrink-0 rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 transition-colors"
+              className="shrink-0 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-cream transition-colors"
             >
               {copied ? 'Copied!' : 'Copy'}
             </button>
@@ -132,7 +132,7 @@ export function ApiKeysSection() {
           <button
             type="button"
             onClick={() => setNewRawKey(null)}
-            className="mt-3 text-xs text-amber-700 underline hover:no-underline"
+            className="mt-3 text-xs text-muted underline hover:no-underline"
           >
             I have saved this key, dismiss
           </button>
@@ -147,13 +147,13 @@ export function ApiKeysSection() {
           onChange={(e) => setNewKeyName(e.target.value)}
           placeholder="Key name, e.g. CI deploy"
           maxLength={100}
-          className="flex-1 rounded-lg border border-border px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
+          className="flex-1 rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
           disabled={creating}
         />
         <button
           type="submit"
           disabled={creating || !newKeyName.trim()}
-          className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="rounded-lg bg-ink text-cream px-4 py-2 text-sm font-medium hover:bg-ink/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {creating ? 'Creating…' : 'Create'}
         </button>
@@ -180,7 +180,7 @@ export function ApiKeysSection() {
                 type="button"
                 disabled={deletingId === key.id}
                 onClick={() => void handleDelete(key.id, key.name)}
-                className="ml-4 rounded-lg border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="ml-4 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-cream disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {deletingId === key.id ? 'Revoking…' : 'Revoke'}
               </button>

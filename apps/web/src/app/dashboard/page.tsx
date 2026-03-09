@@ -1,12 +1,10 @@
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect('/login')
 
-  // Get the first workspace the user is a member of
   const member = await prisma.member.findFirst({
     where: { user: { email: session.user.email! } },
     include: { workspace: true },

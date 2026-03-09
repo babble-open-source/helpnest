@@ -26,6 +26,7 @@ model Workspace {
   slug         String   @unique
   logo         String?
   customDomain String?
+  themeId      String   @default("default")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -93,6 +94,7 @@ model Article {
   title        String
   slug         String
   content      String        @db.Text
+  draftContent String?       @db.Text
   excerpt      String?
   status       ArticleStatus @default(DRAFT)
   order        Int           @default(0)

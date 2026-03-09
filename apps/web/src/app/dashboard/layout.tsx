@@ -15,7 +15,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const theme = getTheme(member?.workspace.themeId ?? 'default')
   const themeCSS = themeToCSS(theme)
   const fontUrls = [theme.fonts.headingUrl, theme.fonts.bodyUrl].filter(Boolean) as string[]
-
   const userInitial = session.user.name?.[0] ?? session.user.email?.[0] ?? 'U'
 
   return (

@@ -20,7 +20,19 @@ export function isHtml(content: string): boolean {
  * Does NOT inject Tailwind classes — Tiptap strips them anyway.
  */
 export function mdToHtml(md: string): string {
-  let html = md
+  // Extract fenced code blocks first — they may contain blank lines or backticks
+  // that would break paragraph splitting and inline-code replacement.
+  const codeBlocks: string[] = []
+  let html = md.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+    const safe = code.trim()
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+    codeBlocks.push(`<pre><code${lang ? ` class="language-${lang}"` : ''}>${safe}</code></pre>`)
+    return `\x00CODE${codeBlocks.length - 1}\x00`
+  })
+
+  html = html
     // Headings
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
     .replace(/^## (.+)$/gm, '<h2>$1</h2>')
@@ -51,13 +63,18 @@ export function mdToHtml(md: string): string {
     .map((block) => {
       const trimmed = block.trim()
       if (!trimmed) return ''
-      // Already a block element — leave as-is
-      if (/^<(h[1-6]|ul|ol|li|blockquote|hr|pre)/.test(trimmed)) return trimmed
+      // Code block placeholder or block element — leave as-is
+      if (trimmed.startsWith('\x00CODE') || /^<(h[1-6]|ul|ol|li|blockquote|hr|pre)/.test(trimmed)) return trimmed
       // Single newlines within a block become spaces (inline content)
       return `<p>${trimmed.replace(/\n/g, ' ')}</p>`
     })
     .filter(Boolean)
     .join('\n')
+
+  // Restore code blocks
+  codeBlocks.forEach((block, i) => {
+    html = html.replace(`\x00CODE${i}\x00`, block)
+  })
 
   return html
 }

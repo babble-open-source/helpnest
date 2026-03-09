@@ -42,13 +42,13 @@ export async function PATCH(
     collectionId?: string
     status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
     slug?: string
+    publishDraft?: boolean
   }
 
   // Auto-generate slug from title if title changed and no explicit slug
   let slug = body.slug
   if (body.title && !body.slug) {
     slug = slugify(body.title)
-    // Ensure unique (exclude self)
     let i = 1
     const base = slug
     while (await prisma.article.findFirst({
@@ -61,20 +61,34 @@ export async function PATCH(
   // Verify article belongs to the authenticated workspace
   const existing = await prisma.article.findFirst({
     where: { id: params.id, workspaceId },
-    select: { id: true },
+    select: { id: true, status: true, draftContent: true },
   })
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
   const data: Record<string, unknown> = {}
   if (body.title !== undefined) data.title = body.title
-  if (body.content !== undefined) data.content = body.content
   if (body.excerpt !== undefined) data.excerpt = body.excerpt
   if (body.collectionId !== undefined) data.collectionId = body.collectionId
+  if (slug !== undefined) data.slug = slug
+
+  if (body.content !== undefined) {
+    if (body.publishDraft) {
+      // Publishing: push draftContent (or the submitted content) to live content, clear draft
+      data.content = existing.draftContent ?? body.content
+      data.draftContent = null
+    } else if (existing.status === 'PUBLISHED') {
+      // Saving draft on a published article: store in draftContent, leave live content alone
+      data.draftContent = body.content
+    } else {
+      // Saving a draft article: content goes straight to content
+      data.content = body.content
+    }
+  }
+
   if (body.status !== undefined) {
     data.status = body.status
     if (body.status === 'PUBLISHED') data.publishedAt = new Date()
   }
-  if (slug !== undefined) data.slug = slug
 
   const article = await prisma.article.update({
     where: { id: params.id },

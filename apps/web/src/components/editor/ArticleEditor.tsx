@@ -19,6 +19,7 @@ interface Article {
   excerpt: string
   status: string
   collectionId: string
+  hasDraft?: boolean
 }
 
 interface Collection {
@@ -44,6 +45,7 @@ interface ArticleVersion {
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 
 export function ArticleEditor({ article, collections }: Props) {
+  const [hasDraft, setHasDraft] = useState(article.hasDraft ?? false)
   const [title, setTitle] = useState(article.title)
   const [slug, setSlug] = useState(article.slug)
   const [excerpt, setExcerpt] = useState(article.excerpt)
@@ -83,9 +85,7 @@ export function ArticleEditor({ article, collections }: Props) {
 
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        codeBlock: false,
-      }),
+      StarterKit,
       Image,
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: 'Start writing your article...' }),
@@ -98,7 +98,7 @@ export function ArticleEditor({ article, collections }: Props) {
     },
   })
 
-  const save = useCallback(async (opts?: { saveVersion?: boolean }) => {
+  const save = useCallback(async (opts?: { saveVersion?: boolean; publishDraft?: boolean }) => {
     if (!editor) return
     const content = editor.getHTML()
     const currentTitle = titleRef.current
@@ -119,6 +119,7 @@ export function ArticleEditor({ article, collections }: Props) {
           excerpt: currentExcerpt,
           collectionId: currentCollectionId,
           status: currentStatus,
+          publishDraft: opts?.publishDraft ?? false,
         }),
       })
       if (!res.ok) throw new Error(`Save failed: ${res.status}`)
@@ -130,6 +131,8 @@ export function ArticleEditor({ article, collections }: Props) {
         status: currentStatus,
       }
       setSaveStatus('saved')
+      if (opts?.publishDraft) setHasDraft(false)
+      else if (statusRef.current === 'PUBLISHED') setHasDraft(true)
 
       if (opts?.saveVersion) {
         await fetch(`/api/articles/${article.id}/versions`, {
@@ -172,7 +175,7 @@ export function ArticleEditor({ article, collections }: Props) {
   async function publish() {
     setStatus('PUBLISHED')
     statusRef.current = 'PUBLISHED'
-    await save({ saveVersion: true })
+    await save({ saveVersion: true, publishDraft: true })
   }
 
   async function loadVersions() {
@@ -232,7 +235,7 @@ export function ArticleEditor({ article, collections }: Props) {
             <span className={`text-xs px-2 py-0.5 rounded-full ${
               saveStatus === 'saved' ? 'text-green bg-green/10' :
               saveStatus === 'saving' ? 'text-muted bg-cream' :
-              saveStatus === 'error' ? 'text-red-600 bg-red-50' :
+              saveStatus === 'error' ? 'text-red-500 bg-cream' :
               'text-muted bg-cream'
             }`}>
               {saveStatus === 'saved' ? '✓ Saved' :
@@ -240,6 +243,11 @@ export function ArticleEditor({ article, collections }: Props) {
                saveStatus === 'error' ? 'Save failed' :
                'Unsaved changes'}
             </span>
+            {hasDraft && saveStatus === 'saved' && (
+              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+                Unpublished changes
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <button

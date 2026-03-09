@@ -20,9 +20,11 @@ export default async function EditArticlePage({ params }: { params: { id: string
     orderBy: { order: 'asc' },
   })
 
-  // Tiptap only understands HTML. Convert legacy Markdown content on the way in.
-  // Once the editor saves, it will write back clean HTML — one-time conversion.
-  const content = isHtml(article.content) ? article.content : mdToHtml(article.content)
+  // Load draftContent if present (unsaved edits on a published article),
+  // otherwise fall back to the live content. Convert Markdown on the way in.
+  const raw = article.draftContent ?? article.content
+  const content = isHtml(raw) ? raw : mdToHtml(raw)
+  const hasDraft = article.status === 'PUBLISHED' && !!article.draftContent
 
   return (
     <ArticleEditor
@@ -34,6 +36,7 @@ export default async function EditArticlePage({ params }: { params: { id: string
         excerpt: article.excerpt ?? '',
         status: article.status,
         collectionId: article.collectionId,
+        hasDraft,
       }}
       collections={collections}
     />

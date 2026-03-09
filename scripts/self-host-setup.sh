@@ -25,14 +25,14 @@ if [ ! -f .env ]; then
 fi
 
 # Prompt for required secrets if not already set
-if grep -q "^NEXTAUTH_SECRET=$" .env || grep -q "^NEXTAUTH_SECRET=change-me" .env; then
-  echo -n "Enter a random secret for NEXTAUTH_SECRET (or press Enter to auto-generate): "
+if grep -q "^AUTH_SECRET=$" .env || grep -q "^AUTH_SECRET=run-openssl" .env; then
+  echo -n "Enter a random secret for AUTH_SECRET (or press Enter to auto-generate): "
   read -r SECRET
   if [ -z "$SECRET" ]; then
     SECRET=$(openssl rand -base64 32 2>/dev/null || cat /dev/urandom | tr -dc 'a-zA-Z0-9' | head -c 32)
   fi
-  sed -i.bak "s|^NEXTAUTH_SECRET=.*|NEXTAUTH_SECRET=${SECRET}|" .env && rm -f .env.bak
-  echo -e "${GREEN}✓${NC} NEXTAUTH_SECRET set"
+  sed -i.bak "s|^AUTH_SECRET=.*|AUTH_SECRET=${SECRET}|" .env && rm -f .env.bak
+  echo -e "${GREEN}✓${NC} AUTH_SECRET set"
 fi
 
 if grep -q "^POSTGRES_PASSWORD=$" .env 2>/dev/null; then

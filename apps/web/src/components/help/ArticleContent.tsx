@@ -4,8 +4,22 @@ interface Props {
   content: string
 }
 
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+}
+
 function renderMarkdown(md: string): string {
-  return md
+  // Extract fenced code blocks before any other processing to prevent
+  // paragraph logic and inline-code regex from mangling them.
+  const codeBlocks: string[] = []
+  let out = md.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, _lang, code) => {
+    codeBlocks.push(
+      `<pre class="bg-ink text-cream rounded-lg p-4 overflow-x-auto my-5"><code class="text-sm font-mono">${escapeHtml(code.trim())}</code></pre>`
+    )
+    return `\x00CODE${codeBlocks.length - 1}\x00`
+  })
+
+  out = out
     // Headers with IDs
     .replace(/^### (.+)$/gm, (_, t) => {
       const id = t.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -37,14 +51,21 @@ function renderMarkdown(md: string): string {
     .replace(/^---$/gm, '<hr class="border-border my-8" />')
     // Links
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-accent hover:underline" target="_blank" rel="noopener">$1</a>')
-    // Paragraphs (double newlines)
-    .replace(/\n\n(?!<[uo]l|<h[1-6]|<hr|<blockquote)/g, '</p><p class="text-ink/90 leading-7 my-4">')
-    // Wrap in paragraph if not already
-    .replace(/^(?!<[h1-6uo]|<hr|<blockquote)(.+)/, '<p class="text-ink/90 leading-7 my-4">$1')
+    // Paragraphs (double newlines) — skip code block placeholders
+    .replace(/\n\n(?!<[uo]l|<h[1-6]|<hr|<blockquote|\x00CODE)/g, '</p><p class="text-ink/90 leading-7 my-4">')
+    // Wrap in paragraph if not already a block element or placeholder
+    .replace(/^(?!<[h1-6uo]|<hr|<blockquote|\x00CODE)(.+)/, '<p class="text-ink/90 leading-7 my-4">$1')
     // Close last paragraph
     + '</p>'
     // Clean up empty paragraphs
     .replace(/<p[^>]*><\/p>/g, '')
+
+  // Restore code blocks
+  codeBlocks.forEach((block, i) => {
+    out = out.replace(`\x00CODE${i}\x00`, block)
+  })
+
+  return out
 }
 
 export function ArticleContent({ content }: Props) {

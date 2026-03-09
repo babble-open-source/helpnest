@@ -14,6 +14,12 @@ if [ ! -f .env ]; then
   echo "📋 Created .env from .env.example — please review and update values"
 fi
 
+# Next.js reads env from apps/web/, not the repo root
+if [ ! -f apps/web/.env.local ]; then
+  cp .env apps/web/.env.local
+  echo "📋 Created apps/web/.env.local (Next.js env)"
+fi
+
 # Install dependencies
 echo "📦 Installing dependencies..."
 pnpm install
