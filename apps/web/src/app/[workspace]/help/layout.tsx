@@ -37,7 +37,9 @@ function toAbsoluteHttpUrl(value: string | null | undefined): string | undefined
     if (url.protocol === 'http:' || url.protocol === 'https:') {
       return url.toString()
     }
-  } catch {}
+  } catch {
+    return undefined
+  }
 
   return undefined
 }

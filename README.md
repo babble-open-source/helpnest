@@ -38,13 +38,21 @@ HelpNest is a self-hostable help center and knowledge base for businesses — an
 ```bash
 git clone https://github.com/babble-open-source/helpnest.git
 cd helpnest
-cp .env.example .env       # fill in AUTH_SECRET at minimum
-docker compose -f docker-compose.prod.yml up -d
-docker compose exec app pnpm --filter @helpnest/db db:migrate
-docker compose exec app pnpm --filter @helpnest/db db:seed
+./scripts/self-host-setup.sh
 ```
 
-Your help center is running at **http://localhost:3000**.
+The setup script handles everything: generates secrets, configures `.env`, builds the Docker image, runs migrations, and seeds demo data. Your help center will be running at **http://localhost:3000**.
+
+Login credentials are printed at the end of the script.
+
+> **Manual setup** (if you prefer to control each step):
+> ```bash
+> cp .env.example .env   # fill in AUTH_SECRET, POSTGRES_PASSWORD, ADMIN_SEED_PASSWORD
+> docker compose -f docker-compose.prod.yml up -d
+> # Migrations run automatically via the "migrate" service.
+> # Seed demo data (production image uses node, not pnpm):
+> docker exec helpnest_app node /app/packages/db/prisma/seed.js
+> ```
 
 ### Option 2 — Local development
 
@@ -57,12 +65,14 @@ pnpm install
 pnpm dev
 ```
 
-Open **http://localhost:3000** and log in with:
+Open **http://localhost:3000** and log in with the **dev-only** seed credentials:
 
 | | |
 |---|---|
 | Email | `admin@helpnest.cloud` |
 | Password | `helpnest` |
+
+> **Never use these credentials in production.** For production Docker deployments, `self-host-setup.sh` generates a strong random `ADMIN_SEED_PASSWORD` and prints it at the end.
 
 The seed also creates two workspaces:
 - `http://localhost:3000/helpnest/help` — HelpNest's own docs (dogfooded)
