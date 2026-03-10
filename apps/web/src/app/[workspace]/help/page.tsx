@@ -1,8 +1,9 @@
-import { prisma } from '@/lib/db'
+import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { SearchTrigger } from '@/components/help/SearchTrigger'
 import { AskAI } from '@/components/help/AskAI'
+import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 
 interface Props {
   params: { workspace: string }
@@ -15,9 +16,13 @@ function ReadTime({ content }: { content: string }) {
 }
 
 export default async function HelpCenterHome({ params }: Props) {
+  const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await prisma.workspace.findUnique({
     where: { slug: params.workspace },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      logo: true,
       collections: {
         where: { isPublic: true, parentId: null },
         orderBy: { order: 'asc' },
@@ -36,14 +41,26 @@ export default async function HelpCenterHome({ params }: Props) {
 
   if (!workspace) notFound()
 
+  const brandTextRecord = brandTextColumnExists
+    ? await prisma.workspace.findUnique({
+        where: { id: workspace.id },
+        select: { brandText: true },
+      })
+    : null
+
   return (
     <div className="min-h-screen bg-cream">
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
         <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <Link href={`/${params.workspace}/help`} className="font-serif text-xl text-ink">
-            {workspace.name}
-          </Link>
+          <WorkspaceBrandLink
+            href={`/${params.workspace}/help`}
+            name={workspace.name}
+            logo={workspace.logo}
+            brandText={brandTextRecord?.brandText ?? null}
+            hideNameWhenLogo
+            textClassName="font-serif text-xl text-ink"
+          />
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted hidden sm:block">Help Center</span>
           </div>

@@ -53,6 +53,7 @@ function groupListItems(text: string): string {
     const trimmed = line.trim()
     const isOlItem = trimmed.startsWith('<li-ol')
     const isUlItem = trimmed.startsWith('<li-ul')
+    // eslint-disable-next-line no-control-regex
     const isCodeBlock = /^\x00CODE\d+\x00$/.test(trimmed)
 
     if (isOlItem) {
@@ -144,9 +145,10 @@ function renderMarkdown(md: string): string {
   out = groupListItems(out)
 
   // ── 5. Paragraph wrapping ───────────────────────────────────────────────────
-  out = out
-    .replace(/\n\n(?!<[uod]|<table|<h[1-6]|<hr|<blockquote|\x00CODE)/g, '</p><p class="text-ink/90 leading-7 my-4">')
-    .replace(/^(?!<[h1-6uod]|<table|<hr|<blockquote|\x00CODE)(.+)/, '<p class="text-ink/90 leading-7 my-4">$1')
+  // eslint-disable-next-line no-control-regex
+  out = out.replace(/\n\n(?!<[uod]|<table|<h[1-6]|<hr|<blockquote|\x00CODE)/g, '</p><p class="text-ink/90 leading-7 my-4">')
+  // eslint-disable-next-line no-control-regex
+  out = out.replace(/^(?!<[h1-6uod]|<table|<hr|<blockquote|\x00CODE)(.+)/, '<p class="text-ink/90 leading-7 my-4">$1')
   out = out + '</p>'
   out = out.replace(/<p[^>]*><\/p>/g, '')
 

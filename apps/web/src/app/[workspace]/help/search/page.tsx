@@ -1,6 +1,7 @@
-import { prisma } from '@/lib/db'
+import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 
 interface Props {
   params: { workspace: string }
@@ -8,11 +9,19 @@ interface Props {
 }
 
 export default async function SearchPage({ params, searchParams }: Props) {
+  const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await prisma.workspace.findUnique({
     where: { slug: params.workspace },
-    select: { id: true, name: true },
+    select: { id: true, name: true, logo: true },
   })
   if (!workspace) notFound()
+
+  const brandTextRecord = brandTextColumnExists
+    ? await prisma.workspace.findUnique({
+        where: { id: workspace.id },
+        select: { brandText: true },
+      })
+    : null
 
   const q = searchParams.q?.trim() ?? ''
 
@@ -52,9 +61,15 @@ export default async function SearchPage({ params, searchParams }: Props) {
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-4">
-          <Link href={`/${params.workspace}/help`} className="font-serif text-xl text-ink shrink-0">
-            {workspace.name}
-          </Link>
+          <WorkspaceBrandLink
+            href={`/${params.workspace}/help`}
+            name={workspace.name}
+            logo={workspace.logo}
+            brandText={brandTextRecord?.brandText ?? null}
+            hideNameWhenLogo
+            className="shrink-0"
+            textClassName="font-serif text-xl text-ink"
+          />
           <form method="GET" action="" className="flex-1">
             <input
               name="q"

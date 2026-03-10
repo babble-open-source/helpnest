@@ -1,8 +1,10 @@
-import { prisma } from '@/lib/db'
+import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
+import { incrementArticleViews } from '@/lib/counters'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArticleContent } from '@/components/help/ArticleContent'
 import { ArticleFeedback } from '@/components/help/ArticleFeedback'
+import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 
 interface Props {
   params: { workspace: string; collection: string; article: string }
@@ -50,10 +52,19 @@ function readTime(content: string): number {
 }
 
 export default async function ArticlePage({ params }: Props) {
+  const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await prisma.workspace.findUnique({
     where: { slug: params.workspace },
+    select: { id: true, name: true, logo: true },
   })
   if (!workspace) notFound()
+
+  const brandTextRecord = brandTextColumnExists
+    ? await prisma.workspace.findUnique({
+        where: { id: workspace.id },
+        select: { brandText: true },
+      })
+    : null
 
   const article = await prisma.article.findUnique({
     where: { workspaceId_slug: { workspaceId: workspace.id, slug: params.article } },
@@ -64,11 +75,8 @@ export default async function ArticlePage({ params }: Props) {
   })
   if (!article || article.status !== 'PUBLISHED') notFound()
 
-  // Increment view count (fire and forget)
-  prisma.article.update({
-    where: { id: article.id },
-    data: { views: { increment: 1 } },
-  }).catch(() => {})
+  // Increment view count — buffered in Redis, flushed to DB at threshold (fire and forget)
+  incrementArticleViews(article.id).catch(() => {})
 
   // Related articles from same collection
   const related = await prisma.article.findMany({
@@ -89,9 +97,15 @@ export default async function ArticlePage({ params }: Props) {
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-2 text-sm">
-          <Link href={`/${params.workspace}/help`} className="text-muted hover:text-ink transition-colors">
-            {workspace.name}
-          </Link>
+          <WorkspaceBrandLink
+            href={`/${params.workspace}/help`}
+            name={workspace.name}
+            logo={workspace.logo}
+            brandText={brandTextRecord?.brandText ?? null}
+            hideNameWhenLogo
+            className="shrink-0"
+            textClassName="text-muted hover:text-ink transition-colors"
+          />
           <span className="text-border">/</span>
           <Link
             href={`/${params.workspace}/help/${params.collection}`}

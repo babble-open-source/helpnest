@@ -1,6 +1,7 @@
-import { prisma } from '@/lib/db'
+import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 
 interface Props {
   params: { workspace: string; collection: string }
@@ -13,10 +14,19 @@ function ReadTime({ content }: { content: string }) {
 }
 
 export default async function CollectionPage({ params }: Props) {
+  const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await prisma.workspace.findUnique({
     where: { slug: params.workspace },
+    select: { id: true, name: true, logo: true },
   })
   if (!workspace) notFound()
+
+  const brandTextRecord = brandTextColumnExists
+    ? await prisma.workspace.findUnique({
+        where: { id: workspace.id },
+        select: { brandText: true },
+      })
+    : null
 
   const collection = await prisma.collection.findUnique({
     where: { workspaceId_slug: { workspaceId: workspace.id, slug: params.collection } },
@@ -41,9 +51,15 @@ export default async function CollectionPage({ params }: Props) {
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-2 text-sm">
-          <Link href={`/${params.workspace}/help`} className="text-muted hover:text-ink transition-colors">
-            {workspace.name}
-          </Link>
+          <WorkspaceBrandLink
+            href={`/${params.workspace}/help`}
+            name={workspace.name}
+            logo={workspace.logo}
+            brandText={brandTextRecord?.brandText ?? null}
+            hideNameWhenLogo
+            className="shrink-0"
+            textClassName="text-muted hover:text-ink transition-colors"
+          />
           <span className="text-border">/</span>
           <span className="text-ink font-medium truncate">{collection.title}</span>
         </div>
