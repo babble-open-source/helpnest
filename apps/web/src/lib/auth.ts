@@ -3,23 +3,52 @@ import Credentials from 'next-auth/providers/credentials'
 import GitHub from 'next-auth/providers/github'
 import bcrypt from 'bcryptjs'
 import { prisma } from './db'
+import { redis } from './redis'
+import { authConfig } from './auth.config'
+
+const LOGIN_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000 // 15 minutes
+const LOGIN_RATE_LIMIT_MAX = 10 // max attempts per window per email
+
+async function isLoginRateLimited(email: string): Promise<boolean> {
+  if (!redis) return false
+  try {
+    const windowSlot = Math.floor(Date.now() / LOGIN_RATE_LIMIT_WINDOW_MS)
+    const key = `rl:login:${email.toLowerCase()}:${windowSlot}`
+    const count = await redis.incr(key)
+    if (count === 1) await redis.pexpire(key, LOGIN_RATE_LIMIT_WINDOW_MS * 2)
+    return count > LOGIN_RATE_LIMIT_MAX
+  } catch {
+    // Redis unavailable — allow through rather than lock users out
+    return false
+  }
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   providers: [
-    GitHub({
-      clientId: process.env.GITHUB_CLIENT_ID ?? '',
-      clientSecret: process.env.GITHUB_CLIENT_SECRET ?? '',
-    }),
+    // Only register GitHub provider when credentials are present.
+    // Passing empty strings would silently break OAuth without a clear error.
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? [GitHub({
+          clientId: process.env.GITHUB_CLIENT_ID,
+          clientSecret: process.env.GITHUB_CLIENT_SECRET,
+        })]
+      : []),
     Credentials({
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email) return null
+        const email = credentials?.email as string | undefined
+        if (!email) return null
+
+        // Rate limit by email to prevent brute-force attacks.
+        // Returns the same null as an invalid password to avoid leaking state.
+        if (await isLoginRateLimited(email)) return null
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email },
           select: { id: true, email: true, name: true, passwordHash: true },
         })
 
@@ -39,21 +68,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     }),
   ],
-  callbacks: {
-    jwt({ token, user }) {
-      if (user?.id) token.id = user.id
-      return token
-    },
-    session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id as string
-      }
-      return session
-    },
-  },
-  pages: {
-    signIn: '/login',
-  },
 })
 
 /**
