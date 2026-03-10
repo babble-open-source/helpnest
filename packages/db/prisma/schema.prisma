@@ -25,8 +25,27 @@ model Workspace {
   name         String
   slug         String   @unique
   logo         String?
+  brandText    String?
+  favicon      String?
   customDomain String?
+  metaTitle    String?
+  metaDescription String?
   themeId      String   @default("default")
+  fontPresetId String?
+  customCreamColor         String?
+  customInkColor           String?
+  customMutedColor         String?
+  customBorderColor        String?
+  customAccentColor        String?
+  customGreenColor         String?
+  customWhiteColor         String?
+  customRadius             String?
+  customHeadingFontFamily String?
+  customHeadingFontUrl    String?
+  customBodyFontFamily    String?
+  customBodyFontUrl       String?
+  customBrandFontFamily   String?
+  customBrandFontUrl      String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
