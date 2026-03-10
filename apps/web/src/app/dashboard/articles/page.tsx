@@ -225,6 +225,7 @@ export default async function ArticlesPage(props: {
                       articleTitle={article.title}
                       articleStatus={article.status}
                       demoMode={demoMode}
+                      isSeeded={article.isSeeded}
                     />
                   </td>
                 </tr>

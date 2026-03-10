@@ -109,14 +109,20 @@ export function WorkspaceForm({
     }
   }
 
+  const inputClass = `w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed`
+
   return (
     <div className="space-y-4">
+      {demoMode && (
+        <p className="text-sm text-muted">Workspace settings cannot be changed in demo mode.</p>
+      )}
       <div>
         <label className="block text-sm font-medium text-ink mb-1">Name</label>
         <input
           value={values.name}
           onChange={set('name')}
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent"
+          disabled={demoMode}
+          className={inputClass}
         />
       </div>
       <div>
@@ -132,9 +138,6 @@ export function WorkspaceForm({
             className={`flex-1 px-3 py-2 text-sm bg-white text-ink focus:outline-none${demoMode ? ' cursor-not-allowed select-none' : ''}`}
           />
         </div>
-        {demoMode && (
-          <p className="mt-1 text-xs text-muted">Slug cannot be changed in demo mode.</p>
-        )}
       </div>
       <div>
         <label className="block text-sm font-medium text-ink mb-1">Custom Domain</label>
@@ -142,7 +145,8 @@ export function WorkspaceForm({
           value={values.customDomain}
           onChange={set('customDomain')}
           placeholder="support.yourcompany.com"
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
         />
         <p className="mt-1 text-xs text-muted">
           Point a CNAME record at this server, then enter the domain here. Routing activates automatically once DNS propagates.
@@ -160,7 +164,8 @@ export function WorkspaceForm({
           value={values.logo}
           onChange={set('logo')}
           placeholder="https://cdn.yourcompany.com/logo.svg"
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
         />
         <p className="mt-1 text-xs text-muted">
           Supports `https://`, `http://`, root-relative paths, or data image URLs. Square logos are
@@ -196,7 +201,8 @@ export function WorkspaceForm({
           value={values.brandText}
           onChange={set('brandText')}
           placeholder={values.name || 'Acme'}
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
         />
         <p className="mt-1 text-xs text-muted">
           Optional. Use this when you don&apos;t have a logo image and want to render branded text
@@ -209,7 +215,8 @@ export function WorkspaceForm({
           value={values.customBrandFontFamily}
           onChange={set('customBrandFontFamily')}
           placeholder="Sohne, DM Sans, Avenir Next"
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
         />
         <p className="mt-1 text-xs text-muted">
           Used only for the text wordmark when no logo image is uploaded.
@@ -221,7 +228,8 @@ export function WorkspaceForm({
           value={values.customBrandFontUrl}
           onChange={set('customBrandFontUrl')}
           placeholder="https://fonts.googleapis.com/css2?family=Your+Brand+Font"
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
         />
         <p className="mt-1 text-xs text-muted">
           Optional. Required only when the brand font is not already available on the page.
@@ -255,7 +263,8 @@ export function WorkspaceForm({
           value={values.favicon}
           onChange={set('favicon')}
           placeholder="https://cdn.yourcompany.com/favicon.png"
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
         />
         <p className="mt-1 text-xs text-muted">
           Used for the browser tab icon. Falls back to your company logo if empty.
@@ -282,7 +291,8 @@ export function WorkspaceForm({
           value={values.metaTitle}
           onChange={set('metaTitle')}
           placeholder={`${values.name} Help Center`}
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
         />
         <p className="mt-1 text-xs text-muted">Displayed in browser tabs and search results.</p>
       </div>
@@ -293,24 +303,27 @@ export function WorkspaceForm({
           onChange={set('metaDescription')}
           placeholder={`Support docs, guides, and answers for ${values.name}.`}
           rows={4}
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-y"
+          disabled={demoMode}
+          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-y disabled:opacity-50 disabled:cursor-not-allowed"
         />
         <p className="mt-1 text-xs text-muted">
           Used by search engines and link previews for your public help center.
         </p>
       </div>
 
-      <div className="flex items-center gap-3 pt-1">
-        <button
-          onClick={save}
-          disabled={status === 'saving'}
-          className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
-        >
-          {status === 'saving' ? 'Saving…' : 'Save changes'}
-        </button>
-        {status === 'saved' && <span className="text-sm text-green">✓ Saved</span>}
-        {status === 'error' && <span className="text-sm text-red-500">Save failed</span>}
-      </div>
+      {!demoMode && (
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            onClick={save}
+            disabled={status === 'saving'}
+            className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
+          >
+            {status === 'saving' ? 'Saving…' : 'Save changes'}
+          </button>
+          {status === 'saved' && <span className="text-sm text-green">✓ Saved</span>}
+          {status === 'error' && <span className="text-sm text-red-500">Save failed</span>}
+        </div>
+      )}
 
       <div className="pt-3 border-t border-border">
         <p className="text-xs text-muted mb-0.5">Help center URL</p>

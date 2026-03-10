@@ -313,6 +313,7 @@ export default async function SettingsPage() {
             currentCustomBodyFontFamily={workspaceCustomBodyFontFamily?.customBodyFontFamily ?? ''}
             currentCustomBodyFontUrl={workspaceCustomBodyFontUrl?.customBodyFontUrl ?? ''}
             workspaceSlug={member.workspace.slug}
+            demoMode={demoMode}
           />
         </div>
 

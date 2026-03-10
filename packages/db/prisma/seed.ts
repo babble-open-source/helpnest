@@ -329,6 +329,7 @@ pnpm install &amp;&amp; pnpm dev</code></pre><p>Code blocks support syntax highl
         title: article.title,
         content: article.content,
         excerpt: article.excerpt,
+        isSeeded: true,
       },
       create: {
         workspaceId: docsWorkspace.id,
@@ -336,6 +337,7 @@ pnpm install &amp;&amp; pnpm dev</code></pre><p>Code blocks support syntax highl
         status: ArticleStatus.PUBLISHED,
         publishedAt: new Date(),
         views: 0,
+        isSeeded: true,
         ...article,
       },
     })
@@ -661,6 +663,7 @@ If you have checked all of the above and your domain is still not verifying, con
         title: article.title,
         content: article.content,
         excerpt: article.excerpt,
+        isSeeded: true,
       },
       create: {
         workspaceId: supportWorkspace.id,
@@ -668,6 +671,7 @@ If you have checked all of the above and your domain is still not verifying, con
         status: ArticleStatus.PUBLISHED,
         publishedAt: new Date(),
         views: 0,
+        isSeeded: true,
         ...article,
       },
     })

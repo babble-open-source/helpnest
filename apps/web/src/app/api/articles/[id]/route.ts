@@ -107,7 +107,14 @@ export async function DELETE(
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   if (isDemoMode()) {
-    return NextResponse.json({ error: 'Deleting articles is disabled in demo mode.' }, { status: 403 })
+    const target = await prisma.article.findFirst({
+      where: { id: params.id, workspaceId: authResult.workspaceId },
+      select: { isSeeded: true },
+    })
+    if (!target) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    if (target.isSeeded) {
+      return NextResponse.json({ error: 'Demo articles cannot be deleted.' }, { status: 403 })
+    }
   }
 
   // For session-based auth, role enforcement is done by requireAuth indirectly via

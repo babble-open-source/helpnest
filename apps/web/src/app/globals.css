@@ -16,7 +16,7 @@
     /* Font family variables — overridden by theme CSS vars at runtime.
        Defaults point to the next/font variables set by the root layout,
        which use locally-optimised font files (no FOUT, no external request). */
-    --font-heading: var(--font-instrument-serif, 'Instrument Serif', Georgia, serif);
+    --font-heading: var(--font-lora, 'Lora', Georgia, serif);
     --font-body: var(--font-dm-sans, 'DM Sans', system-ui, sans-serif);
     --radius: 8px;
   }

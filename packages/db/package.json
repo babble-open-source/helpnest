@@ -6,20 +6,20 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "node node_modules/tsx/dist/cli.mjs prisma/seed.ts",
+    "db:seed": "npx tsx prisma/seed.ts",
     "db:reset": "prisma migrate reset --force"
   },
   "prisma": {
-    "seed": "node node_modules/tsx/dist/cli.mjs prisma/seed.ts"
+    "seed": "npx tsx prisma/seed.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.13.0"
+    "@prisma/client": "^5.13.0",
+    "bcryptjs": "^2.4.3"
   },
   "devDependencies": {
     "prisma": "^5.13.0",
     "tsx": "^4.7.0",
     "typescript": "^5.4.0",
-    "bcryptjs": "^2.4.3",
     "@types/bcryptjs": "^2.4.6"
   },
   "exports": {

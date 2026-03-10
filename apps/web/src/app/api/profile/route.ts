@@ -38,8 +38,8 @@ export async function PATCH(request: Request) {
     updates.name = name.trim()
   }
 
-  if (newPassword !== undefined && isDemoMode()) {
-    return NextResponse.json({ error: 'Password changes are disabled in demo mode.' }, { status: 403 })
+  if (isDemoMode() && (name !== undefined || newPassword !== undefined)) {
+    return NextResponse.json({ error: 'Profile changes are disabled in demo mode.' }, { status: 403 })
   }
 
   if (newPassword !== undefined) {

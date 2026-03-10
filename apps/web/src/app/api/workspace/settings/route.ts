@@ -121,6 +121,10 @@ export async function PATCH(request: Request) {
     customBrandFontUrl?: unknown
   }
 
+  if (isDemoMode()) {
+    return NextResponse.json({ error: 'Workspace settings cannot be changed in demo mode.' }, { status: 403 })
+  }
+
   if (name !== undefined) {
     if (typeof name !== 'string' || name.trim().length === 0) {
       return NextResponse.json({ error: 'Name must be a non-empty string' }, { status: 400 })
@@ -131,9 +135,6 @@ export async function PATCH(request: Request) {
   }
 
   if (slug !== undefined) {
-    if (isDemoMode()) {
-      return NextResponse.json({ error: 'Slug cannot be changed in demo mode.' }, { status: 403 })
-    }
     if (typeof slug !== 'string' || !SLUG_RE.test(slug) || slug.length > 63) {
       return NextResponse.json(
         { error: 'Slug must be lowercase alphanumeric with hyphens, max 63 characters' },
@@ -143,9 +144,6 @@ export async function PATCH(request: Request) {
   }
 
   if (customDomain !== undefined && customDomain !== null) {
-    if (isDemoMode()) {
-      return NextResponse.json({ error: 'Custom domain cannot be changed in demo mode.' }, { status: 403 })
-    }
     if (typeof customDomain !== 'string') {
       return NextResponse.json({ error: 'Custom domain must be a string' }, { status: 400 })
     }

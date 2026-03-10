@@ -25,6 +25,7 @@ interface Props {
   currentCustomBodyFontFamily: string
   currentCustomBodyFontUrl: string
   workspaceSlug: string
+  demoMode?: boolean
 }
 
 export function ThemePicker({
@@ -46,6 +47,7 @@ export function ThemePicker({
   currentCustomBodyFontFamily,
   currentCustomBodyFontUrl,
   workspaceSlug,
+  demoMode = false,
 }: Props) {
   const router = useRouter()
   const [selectedThemeId, setSelectedThemeId] = useState(currentThemeId)
@@ -521,16 +523,20 @@ export function ThemePicker({
         )}
       </div>
 
-      <div className="flex items-center gap-3">
-        <button
-          onClick={save}
-          disabled={saving || !isDirty}
-          className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
-        >
-          {saving ? 'Saving…' : saved ? 'Saved!' : 'Apply branding'}
-        </button>
-        {error && <span className="text-sm text-red-500">{error}</span>}
-      </div>
+      {demoMode ? (
+        <p className="text-sm text-muted">Branding changes cannot be saved in demo mode.</p>
+      ) : (
+        <div className="flex items-center gap-3">
+          <button
+            onClick={save}
+            disabled={saving || !isDirty}
+            className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
+          >
+            {saving ? 'Saving…' : saved ? 'Saved!' : 'Apply branding'}
+          </button>
+          {error && <span className="text-sm text-red-500">{error}</span>}
+        </div>
+      )}
     </div>
   )
 }

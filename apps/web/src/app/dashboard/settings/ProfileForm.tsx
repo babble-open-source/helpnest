@@ -79,14 +79,15 @@ export function ProfileForm({ name: initialName, demoMode }: Props) {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent"
+          disabled={demoMode}
+          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder="Your full name"
         />
       </div>
 
       {demoMode ? (
         <div className="pt-2 border-t border-border">
-          <p className="text-sm text-muted">Password changes are disabled in demo mode.</p>
+          <p className="text-sm text-muted">Profile changes are disabled in demo mode.</p>
         </div>
       ) : (
         <div className="pt-2 border-t border-border">
@@ -131,19 +132,21 @@ export function ProfileForm({ name: initialName, demoMode }: Props) {
 
       {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
 
-      <div className="flex items-center gap-3 pt-1">
-        <button
-          type="submit"
-          disabled={status === 'saving'}
-          className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
-        >
-          {status === 'saving' ? 'Saving…' : 'Save changes'}
-        </button>
-        {status === 'saved' && <span className="text-sm text-green">Saved</span>}
-        {status === 'error' && !errorMessage && (
-          <span className="text-sm text-red-500">Save failed</span>
-        )}
-      </div>
+      {!demoMode && (
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            type="submit"
+            disabled={status === 'saving'}
+            className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
+          >
+            {status === 'saving' ? 'Saving…' : 'Save changes'}
+          </button>
+          {status === 'saved' && <span className="text-sm text-green">Saved</span>}
+          {status === 'error' && !errorMessage && (
+            <span className="text-sm text-red-500">Save failed</span>
+          )}
+        </div>
+      )}
     </form>
   )
 }

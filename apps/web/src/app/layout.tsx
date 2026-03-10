@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { DM_Sans, Instrument_Serif } from 'next/font/google'
+import { DM_Sans, Lora } from 'next/font/google'
 import './globals.css'
 
 const dmSans = DM_Sans({
@@ -7,11 +7,11 @@ const dmSans = DM_Sans({
   variable: '--font-dm-sans',
 })
 
-const instrumentSerif = Instrument_Serif({
+const lora = Lora({
   subsets: ['latin'],
-  weight: '400',
+  weight: ['400', '500'],
   style: ['normal', 'italic'],
-  variable: '--font-instrument-serif',
+  variable: '--font-lora',
 })
 
 export const metadata: Metadata = {
@@ -26,7 +26,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${instrumentSerif.variable} font-sans bg-cream text-ink antialiased`} suppressHydrationWarning>
+      <body className={`${dmSans.variable} ${lora.variable} font-sans bg-cream text-ink antialiased`} suppressHydrationWarning>
         {children}
       </body>
     </html>
