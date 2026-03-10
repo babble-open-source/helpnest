@@ -20,11 +20,7 @@ COPY packages/ui/package.json  ./packages/ui/
 COPY packages/config/package.json ./packages/config/
 
 # Install all workspace dependencies.
-# Cache ID is scoped to TARGETPLATFORM so AMD64 and ARM64 builds never
-# share a pnpm store (native binaries are platform-specific).
-ARG TARGETPLATFORM
-RUN --mount=type=cache,id=${TARGETPLATFORM}-helpnest-pnpm,target=/root/.local/share/pnpm/store \
-    pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Copy full source (.env files excluded by .dockerignore).
 COPY . .
