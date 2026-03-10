@@ -1,0 +1,24 @@
+# Env files — never bake secrets into the image.
+# Production env vars come from the Kubernetes Secret (helpnest-secrets).
+.env
+.env.*
+apps/**/.env
+apps/**/.env.*
+
+# Dev artifacts
+# **/node_modules covers root and all nested packages/* dirs.
+# Without **, only the root node_modules is excluded; nested ones still get
+# sent to the build context and conflict with pnpm-installed symlinks.
+**/node_modules
+.git
+**/.next
+**/.turbo
+**/dist
+**/build
+**/*.log
+
+# Docs / scripts not needed in image
+*.md
+scripts/
+.github/
+docker-compose*.yml

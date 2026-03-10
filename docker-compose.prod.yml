@@ -1,11 +1,38 @@
 version: '3.9'
 
 services:
+  # Runs prisma migrate deploy before the app starts.
+  # Exits on completion; the app service depends on it finishing successfully.
+  migrate:
+    image: helpnest:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
+    container_name: helpnest_migrate
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    command:
+      - node
+      - /app/packages/db/node_modules/prisma/build/index.js
+      - migrate
+      - deploy
+      - --schema=/app/packages/db/prisma/schema.prisma
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
   app:
     image: helpnest:latest
     build:
       context: .
       dockerfile: Dockerfile
+      platforms:
+        - linux/amd64
     container_name: helpnest_app
     restart: unless-stopped
     ports:
@@ -14,11 +41,15 @@ services:
       - .env
     environment:
       - NODE_ENV=production
+      # Required for Next-auth v5 when running behind a reverse proxy (nginx, Caddy, etc.)
+      - AUTH_TRUST_HOST=true
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ['CMD', 'wget', '-qO-', 'http://localhost:3000/api/health']
       interval: 30s
@@ -61,7 +92,7 @@ services:
     restart: unless-stopped
     volumes:
       - qdrant_prod_data:/qdrant/storage
-    # Not exposed externally — app connects internally
+    # Not exposed externally — app connects via QDRANT_URL=http://qdrant:6333
 
 volumes:
   postgres_prod_data:
