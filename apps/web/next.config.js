@@ -1,9 +1,9 @@
 const fs = require('fs')
 const path = require('path')
 
-// Load the monorepo root .env so we only need to maintain one env file.
-// Uses only built-in Node.js modules — no dotenv dependency required.
-// apps/web/.env.local can still override individual vars for local dev.
+// Load the monorepo root .env for local development only.
+// In Docker/production, env vars come from the Kubernetes Secret — .env is
+// excluded by .dockerignore so this block is a no-op in CI/CD builds.
 const rootEnv = path.resolve(__dirname, '../../.env')
 if (fs.existsSync(rootEnv)) {
   for (const line of fs.readFileSync(rootEnv, 'utf8').split('\n')) {
@@ -22,6 +22,7 @@ const nextConfig = {
   output: 'standalone',
   transpilePackages: ['@helpnest/ui', '@helpnest/db'],
   experimental: {
+    instrumentationHook: true,
     serverComponentsExternalPackages: [
       '@prisma/client',
       'prisma',
@@ -30,7 +31,24 @@ const nextConfig = {
       'openai',
       '@anthropic-ai/sdk',
       '@helpnest/themes',
+      'ioredis',
     ],
+  },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-DNS-Prefetch-Control', value: 'on' },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'origin-when-cross-origin' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+          // HSTS — safe to include; HTTPS termination happens at the reverse proxy.
+          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+        ],
+      },
+    ]
   },
 }
 
