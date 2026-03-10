@@ -38,9 +38,11 @@ echo ""
 echo "✅ PostgreSQL is ready!"
 
 # Run migrations
+# migrate deploy applies all pending migrations without prompting —
+# safe to re-run on subsequent dev-setup.sh calls (idempotent).
 echo "🗄️  Running database migrations..."
 cd packages/db
-pnpm prisma migrate dev --name init
+pnpm prisma migrate deploy
 echo "✅ Migrations complete!"
 
 # Run seed
