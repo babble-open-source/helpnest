@@ -6,16 +6,32 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Seeding database...')
 
-  const defaultPasswordHash = await bcrypt.hash('helpnest', 12)
+  // In production, require explicit credentials so the well-known dev defaults
+  // ('admin@helpnest.cloud' / 'helpnest') are never deployed as real admin credentials.
+  // The email is public in the OSS repo — if an attacker knows it, brute-force
+  // protection is the only barrier. Use a private email + strong password in prod.
+  const isProd = process.env.NODE_ENV === 'production'
+
+  const adminEmail = process.env.ADMIN_SEED_EMAIL
+    ?? (isProd
+      ? (() => { throw new Error('[HelpNest] Set ADMIN_SEED_EMAIL before running db:seed in production.') })()
+      : 'admin@helpnest.cloud')
+
+  const adminPassword = process.env.ADMIN_SEED_PASSWORD
+    ?? (isProd
+      ? (() => { throw new Error('[HelpNest] Set ADMIN_SEED_PASSWORD before running db:seed in production.') })()
+      : 'helpnest')
+
+  const defaultPasswordHash = await bcrypt.hash(adminPassword, 12)
 
   // Create user
   const user = await prisma.user.upsert({
-    where: { email: 'admin@helpnest.cloud' },
+    where: { email: adminEmail },
     update: {
       passwordHash: defaultPasswordHash,
     },
     create: {
-      email: 'admin@helpnest.cloud',
+      email: adminEmail,
       name: 'HelpNest Admin',
       avatar: null,
       passwordHash: defaultPasswordHash,
@@ -661,7 +677,7 @@ If you have checked all of the above and your domain is still not verifying, con
   console.log('   http://localhost:3000/helpnest/help → HelpNest self-host docs')
   console.log('   http://localhost:3000/support/help  → HelpNest Cloud support')
   console.log('   http://localhost:3000/dashboard     → Dashboard')
-  console.log('   Login: admin@helpnest.cloud / helpnest')
+  console.log(`   Login: ${adminEmail} / ${adminPassword}`)
 }
 
 main()

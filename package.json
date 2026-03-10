@@ -11,6 +11,9 @@
     "db:migrate": "turbo db:migrate",
     "db:studio": "cd packages/db && pnpm prisma studio"
   },
+  "prisma": {
+    "seed": "node packages/db/node_modules/tsx/dist/cli.mjs packages/db/prisma/seed.ts"
+  },
   "devDependencies": {
     "turbo": "^2.0.0",
     "typescript": "^5.4.0",
