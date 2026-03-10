@@ -4,11 +4,12 @@ import Link from 'next/link'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 
 interface Props {
-  params: { workspace: string }
-  searchParams: { q?: string }
+  params: Promise<{ workspace: string }>
+  searchParams: Promise<{ q?: string }>
 }
 
-export default async function SearchPage({ params, searchParams }: Props) {
+export default async function SearchPage(props: Props) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams])
   const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await prisma.workspace.findUnique({
     where: { slug: params.workspace },

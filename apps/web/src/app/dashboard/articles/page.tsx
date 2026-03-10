@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArticleActions } from './ArticleActions'
 
+function nowMs() { return Date.now() }
+
 const STATUS_STYLES = {
   PUBLISHED: 'bg-green/10 text-green',
   DRAFT: 'bg-cream text-muted border border-border',
@@ -17,12 +19,10 @@ function feedbackSummary(helpful: number, notHelpful: number) {
   return { total, helpfulRate }
 }
 
-export default async function ArticlesPage({
-  searchParams,
-}: {
-  searchParams: { status?: string; collection?: string; q?: string }
+export default async function ArticlesPage(props: {
+  searchParams: Promise<{ status?: string; collection?: string; q?: string }>
 }) {
-  const session = await auth()
+  const [session, searchParams] = await Promise.all([auth(), props.searchParams])
   if (!session?.user) redirect('/login')
 
   const member = await prisma.member.findFirst({
@@ -209,7 +209,7 @@ export default async function ArticlesPage({
                     <span className="text-sm text-muted">
                       {new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
                         Math.round(
-                          (article.updatedAt.getTime() - Date.now()) /
+                          (article.updatedAt.getTime() - nowMs()) /
                             (1000 * 60 * 60 * 24)
                         ),
                         'day'

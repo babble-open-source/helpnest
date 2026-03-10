@@ -12,9 +12,9 @@ function slugify(text: string) {
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(request)
+  const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const article = await prisma.article.findFirst({
@@ -28,9 +28,9 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(request)
+  const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { workspaceId } = authResult
@@ -100,9 +100,9 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(request)
+  const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // For session-based auth, role enforcement is done by requireAuth indirectly via

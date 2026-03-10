@@ -6,7 +6,7 @@ import { AskAI } from '@/components/help/AskAI'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 
 interface Props {
-  params: { workspace: string }
+  params: Promise<{ workspace: string }>
 }
 
 function ReadTime({ content }: { content: string }) {
@@ -15,7 +15,8 @@ function ReadTime({ content }: { content: string }) {
   return <span>{minutes} min read</span>
 }
 
-export default async function HelpCenterHome({ params }: Props) {
+export default async function HelpCenterHome(props: Props) {
+  const params = await props.params
   const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await prisma.workspace.findUnique({
     where: { slug: params.workspace },

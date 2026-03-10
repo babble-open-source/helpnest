@@ -26,7 +26,7 @@ import { cache } from 'react'
 
 interface Props {
   children: React.ReactNode
-  params: { workspace: string }
+  params: Promise<{ workspace: string }>
 }
 
 function toAbsoluteHttpUrl(value: string | null | undefined): string | undefined {
@@ -225,7 +225,8 @@ const getWorkspaceHelpBranding = cache(async (slug: string) => {
   }
 })
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params
   const state = await getWorkspaceHelpBranding(params.workspace)
   if (!state) return {}
 
@@ -266,7 +267,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
  * CSS variables into :root so every page beneath uses the correct colors/fonts
  * with no client-side flash. Google Fonts for the active theme are preloaded.
  */
-export default async function HelpCenterLayout({ children, params }: Props) {
+export default async function HelpCenterLayout({ children, ...props }: Props) {
+  const params = await props.params
   const state = await getWorkspaceHelpBranding(params.workspace)
   if (!state) notFound()
 

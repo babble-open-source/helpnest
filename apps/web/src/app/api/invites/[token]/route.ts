@@ -3,9 +3,9 @@ import { prisma } from '@/lib/db'
 
 export async function GET(
   _request: Request,
-  { params }: { params: { token: string } },
+  { params: paramsPromise }: { params: Promise<{ token: string }> },
 ) {
-  const { token } = params
+  const { token } = await paramsPromise
 
   if (!token) {
     return NextResponse.json({ error: 'Token is required' }, { status: 400 })

@@ -23,9 +23,9 @@ async function countActiveOwners(workspaceId: string) {
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } },
+  { params: paramsPromise }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth()
+  const [session, params] = await Promise.all([auth(), paramsPromise])
   const userId = await resolveSessionUserId(session)
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -115,9 +115,9 @@ export async function PATCH(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } },
+  { params: paramsPromise }: { params: Promise<{ id: string }> },
 ) {
-  const session = await auth()
+  const [session, params] = await Promise.all([auth(), paramsPromise])
   const userId = await resolveSessionUserId(session)
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

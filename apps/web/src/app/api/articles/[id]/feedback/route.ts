@@ -12,10 +12,13 @@ function feedbackTypeToDb(type: 'helpful' | 'not'): 'HELPFUL' | 'NOT_HELPFUL' {
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { type } = await request.json() as { type: 'helpful' | 'not' }
+    const [{ type }, params] = await Promise.all([
+      request.json() as Promise<{ type: 'helpful' | 'not' }>,
+      paramsPromise,
+    ])
     if (type !== 'helpful' && type !== 'not') {
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
     }

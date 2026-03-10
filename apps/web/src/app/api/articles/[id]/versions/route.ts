@@ -4,9 +4,9 @@ import { prisma } from '@/lib/db'
 
 export async function GET(
   _req: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
+  const [session, params] = await Promise.all([auth(), paramsPromise])
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   // Verify article belongs to a workspace the caller is a member of
@@ -33,9 +33,9 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth()
+  const [session, params] = await Promise.all([auth(), paramsPromise])
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const member = await prisma.member.findFirst({

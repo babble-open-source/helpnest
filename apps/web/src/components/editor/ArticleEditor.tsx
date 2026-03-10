@@ -23,6 +23,7 @@ import { EditorOutline } from './EditorOutline'
 import { EditorBubbleMenu } from './EditorBubbleMenu'
 import { EditorFloatingMenu } from './EditorFloatingMenu'
 import { fixOrderedListCounters } from '@/components/help/ArticleContent'
+import NextLink from 'next/link'
 
 interface Article {
   id: string
@@ -247,9 +248,9 @@ export function ArticleEditor({ article, collections }: Props) {
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-border shrink-0">
           <div className="flex items-center gap-3">
-            <a href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm">
+            <NextLink href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm">
               &larr; Articles
-            </a>
+            </NextLink>
             <div className="flex items-center gap-1 border-l border-border pl-3">
               {/* Outline toggle */}
               <button

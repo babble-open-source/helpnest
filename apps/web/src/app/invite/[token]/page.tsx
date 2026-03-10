@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import { AcceptForm } from './AcceptForm'
 
 interface InviteDetails {
@@ -28,7 +29,8 @@ async function fetchInvite(token: string): Promise<InviteDetails | null | 'expir
   }
 }
 
-export default async function InvitePage({ params }: { params: { token: string } }) {
+export default async function InvitePage(props: { params: Promise<{ token: string }> }) {
+  const params = await props.params
   const invite = await fetchInvite(params.token)
 
   if (invite === null) {
@@ -65,12 +67,12 @@ export default async function InvitePage({ params }: { params: { token: string }
           <p className="text-muted text-sm mb-4">
             This invite has already been accepted. You can sign in to your account.
           </p>
-          <a
+          <Link
             href="/login"
             className="inline-block bg-ink text-cream px-4 py-2 rounded-lg text-sm font-medium hover:bg-ink/90 transition-colors"
           >
             Sign in
-          </a>
+          </Link>
         </div>
       </main>
     )
@@ -99,9 +101,9 @@ export default async function InvitePage({ params }: { params: { token: string }
 
         <p className="text-xs text-muted text-center mt-4">
           Already have an account?{' '}
-          <a href="/login" className="underline hover:no-underline">
+          <Link href="/login" className="underline hover:no-underline">
             Sign in
-          </a>
+          </Link>
         </p>
       </div>
     </main>

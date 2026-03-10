@@ -8,8 +8,8 @@ export default function Loading() {
           <div className="h-10 bg-border rounded w-4/5" />
           <div className="h-4 bg-border rounded w-1/2" />
           <div className="mt-8 space-y-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-4 bg-border rounded" style={{ width: `${70 + Math.random() * 30}%` }} />
+            {[90, 75, 85, 70, 80, 72].map((w, i) => (
+              <div key={i} className="h-4 bg-border rounded" style={{ width: `${w}%` }} />
             ))}
           </div>
         </div>

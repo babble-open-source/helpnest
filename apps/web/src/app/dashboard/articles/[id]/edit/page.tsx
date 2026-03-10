@@ -4,7 +4,8 @@ import { prisma } from '@/lib/db'
 import { ArticleEditor } from '@/components/editor/ArticleEditor'
 import { isHtml, mdToHtml } from '@/lib/content'
 
-export default async function EditArticlePage({ params }: { params: { id: string } }) {
+export default async function EditArticlePage(props: { params: Promise<{ id: string }> }) {
+  const params = await props.params
   const session = await auth()
   if (!session?.user) redirect('/login')
 

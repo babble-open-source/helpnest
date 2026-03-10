@@ -7,7 +7,7 @@ import { ArticleFeedback } from '@/components/help/ArticleFeedback'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 
 interface Props {
-  params: { workspace: string; collection: string; article: string }
+  params: Promise<{ workspace: string; collection: string; article: string }>
 }
 
 function formatDate(date: Date) {
@@ -51,7 +51,8 @@ function readTime(content: string): number {
   return Math.max(1, Math.round(text.split(/\s+/).filter(Boolean).length / 200))
 }
 
-export default async function ArticlePage({ params }: Props) {
+export default async function ArticlePage(props: Props) {
+  const params = await props.params
   const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await prisma.workspace.findUnique({
     where: { slug: params.workspace },

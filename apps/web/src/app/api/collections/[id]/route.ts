@@ -17,9 +17,9 @@ async function ensureEditorRole(userId: string, workspaceId: string): Promise<bo
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(request)
+  const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { workspaceId, userId, via } = authResult
@@ -70,9 +70,9 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
 ) {
-  const authResult = await requireAuth(request)
+  const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { workspaceId, userId, via } = authResult

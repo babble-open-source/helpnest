@@ -21,19 +21,16 @@ if (fs.existsSync(rootEnv)) {
 const nextConfig = {
   output: 'standalone',
   transpilePackages: ['@helpnest/ui', '@helpnest/db'],
-  experimental: {
-    instrumentationHook: true,
-    serverComponentsExternalPackages: [
-      '@prisma/client',
-      'prisma',
-      '@qdrant/js-client-rest',
-      'undici',
-      'openai',
-      '@anthropic-ai/sdk',
-      '@helpnest/themes',
-      'ioredis',
-    ],
-  },
+  serverExternalPackages: [
+    '@prisma/client',
+    'prisma',
+    '@qdrant/js-client-rest',
+    'undici',
+    'openai',
+    '@anthropic-ai/sdk',
+    '@helpnest/themes',
+    'ioredis',
+  ],
   async headers() {
     return [
       {
