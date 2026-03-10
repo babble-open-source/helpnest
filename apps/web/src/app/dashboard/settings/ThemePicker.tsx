@@ -1,29 +1,178 @@
 'use client'
 
-import { useState } from 'react'
+import { getAllFontPresetUrls, type FontPreset } from '@/lib/branding'
 import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 import type { HelpNestTheme } from '@/lib/themes'
+import { AIThemeGenerator } from './AIThemeGenerator'
 
 interface Props {
   themes: HelpNestTheme[]
+  fontPresets: FontPreset[]
+  radiusOptions: HelpNestTheme['radius'][]
   currentThemeId: string
+  currentFontPresetId: string | null
+  currentCustomCreamColor: string
+  currentCustomInkColor: string
+  currentCustomMutedColor: string
+  currentCustomBorderColor: string
+  currentCustomAccentColor: string
+  currentCustomGreenColor: string
+  currentCustomWhiteColor: string
+  currentCustomRadius: string
+  currentCustomHeadingFontFamily: string
+  currentCustomHeadingFontUrl: string
+  currentCustomBodyFontFamily: string
+  currentCustomBodyFontUrl: string
   workspaceSlug: string
 }
 
-export function ThemePicker({ themes, currentThemeId, workspaceSlug }: Props) {
+export function ThemePicker({
+  themes,
+  fontPresets,
+  radiusOptions,
+  currentThemeId,
+  currentFontPresetId,
+  currentCustomCreamColor,
+  currentCustomInkColor,
+  currentCustomMutedColor,
+  currentCustomBorderColor,
+  currentCustomAccentColor,
+  currentCustomGreenColor,
+  currentCustomWhiteColor,
+  currentCustomRadius,
+  currentCustomHeadingFontFamily,
+  currentCustomHeadingFontUrl,
+  currentCustomBodyFontFamily,
+  currentCustomBodyFontUrl,
+  workspaceSlug,
+}: Props) {
   const router = useRouter()
-  const [selected, setSelected] = useState(currentThemeId)
+  const [selectedThemeId, setSelectedThemeId] = useState(currentThemeId)
+  const [selectedFontPresetId, setSelectedFontPresetId] = useState(currentFontPresetId ?? '')
+  const [customCreamColor, setCustomCreamColor] = useState(currentCustomCreamColor)
+  const [customInkColor, setCustomInkColor] = useState(currentCustomInkColor)
+  const [customMutedColor, setCustomMutedColor] = useState(currentCustomMutedColor)
+  const [customBorderColor, setCustomBorderColor] = useState(currentCustomBorderColor)
+  const [customAccentColor, setCustomAccentColor] = useState(currentCustomAccentColor)
+  const [customGreenColor, setCustomGreenColor] = useState(currentCustomGreenColor)
+  const [customWhiteColor, setCustomWhiteColor] = useState(currentCustomWhiteColor)
+  const [customRadius, setCustomRadius] = useState(currentCustomRadius)
+  const [customHeadingFontFamily, setCustomHeadingFontFamily] = useState(currentCustomHeadingFontFamily)
+  const [customHeadingFontUrl, setCustomHeadingFontUrl] = useState(currentCustomHeadingFontUrl)
+  const [customBodyFontFamily, setCustomBodyFontFamily] = useState(currentCustomBodyFontFamily)
+  const [customBodyFontUrl, setCustomBodyFontUrl] = useState(currentCustomBodyFontUrl)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    for (const url of getAllFontPresetUrls()) {
+      const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+        (link) => (link as HTMLLinkElement).href === url,
+      )
+
+      if (existing) continue
+
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = url
+      document.head.appendChild(link)
+    }
+  }, [])
+
+  useEffect(() => {
+    for (const trimmedUrl of [customHeadingFontUrl, customBodyFontUrl].map((url) => url.trim())) {
+      if (trimmedUrl.length === 0) continue
+
+      const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+        (link) => (link as HTMLLinkElement).href === trimmedUrl,
+      )
+      if (existing) continue
+
+      const link = document.createElement('link')
+      link.rel = 'stylesheet'
+      link.href = trimmedUrl
+      document.head.appendChild(link)
+    }
+  }, [customHeadingFontUrl, customBodyFontUrl])
+
+  const isDirty =
+    selectedThemeId !== currentThemeId ||
+    selectedFontPresetId !== (currentFontPresetId ?? '') ||
+    customCreamColor !== currentCustomCreamColor ||
+    customInkColor !== currentCustomInkColor ||
+    customMutedColor !== currentCustomMutedColor ||
+    customBorderColor !== currentCustomBorderColor ||
+    customAccentColor !== currentCustomAccentColor ||
+    customGreenColor !== currentCustomGreenColor ||
+    customWhiteColor !== currentCustomWhiteColor ||
+    customRadius !== currentCustomRadius ||
+    customHeadingFontFamily !== currentCustomHeadingFontFamily ||
+    customHeadingFontUrl !== currentCustomHeadingFontUrl ||
+    customBodyFontFamily !== currentCustomBodyFontFamily ||
+    customBodyFontUrl !== currentCustomBodyFontUrl
+
+  const selectedTheme = themes.find((theme) => theme.id === selectedThemeId) ?? themes[0]!
+  const previewColors = {
+    cream: customCreamColor.trim() || selectedTheme.colors.cream,
+    ink: customInkColor.trim() || selectedTheme.colors.ink,
+    muted: customMutedColor.trim() || selectedTheme.colors.muted,
+    border: customBorderColor.trim() || selectedTheme.colors.border,
+    accent: customAccentColor.trim() || selectedTheme.colors.accent,
+    green: customGreenColor.trim() || selectedTheme.colors.green,
+    white: customWhiteColor.trim() || selectedTheme.colors.white,
+  }
+  const previewRadius = customRadius || selectedTheme.radius
+  const previewRadiusClass = previewRadius === 'none'
+    ? '0px'
+    : previewRadius === 'sm'
+      ? '4px'
+      : previewRadius === 'md'
+        ? '8px'
+        : previewRadius === 'lg'
+          ? '12px'
+          : '16px'
+  const colorFields = [
+    { label: 'Background', value: customCreamColor, setValue: setCustomCreamColor, placeholder: '#F7F4EE' },
+    { label: 'Text', value: customInkColor, setValue: setCustomInkColor, placeholder: '#1A1814' },
+    { label: 'Muted', value: customMutedColor, setValue: setCustomMutedColor, placeholder: '#7A756C' },
+    { label: 'Border', value: customBorderColor, setValue: setCustomBorderColor, placeholder: '#E2DDD5' },
+    { label: 'Accent', value: customAccentColor, setValue: setCustomAccentColor, placeholder: '#C8622A' },
+    { label: 'Success', value: customGreenColor, setValue: setCustomGreenColor, placeholder: '#2D6A4F' },
+    { label: 'Surface', value: customWhiteColor, setValue: setCustomWhiteColor, placeholder: '#FFFFFF' },
+  ] as const
 
   async function save() {
     setSaving(true)
-    await fetch('/api/workspace/settings', {
+    setError('')
+    const res = await fetch('/api/workspace/settings', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ themeId: selected }),
+      body: JSON.stringify({
+        themeId: selectedThemeId,
+        fontPresetId: selectedFontPresetId || null,
+        customCreamColor: customCreamColor.trim() || null,
+        customInkColor: customInkColor.trim() || null,
+        customMutedColor: customMutedColor.trim() || null,
+        customBorderColor: customBorderColor.trim() || null,
+        customAccentColor: customAccentColor.trim() || null,
+        customGreenColor: customGreenColor.trim() || null,
+        customWhiteColor: customWhiteColor.trim() || null,
+        customRadius: customRadius || null,
+        customHeadingFontFamily: customHeadingFontFamily.trim() || null,
+        customHeadingFontUrl: customHeadingFontUrl.trim() || null,
+        customBodyFontFamily: customBodyFontFamily.trim() || null,
+        customBodyFontUrl: customBodyFontUrl.trim() || null,
+      }),
     })
     setSaving(false)
+    if (!res.ok) {
+      const body = await res.json().catch(() => null) as { error?: string } | null
+      setError(body?.error ?? 'Unable to save branding')
+      return
+    }
+
     setSaved(true)
     router.refresh()
     setTimeout(() => setSaved(false), 2000)
@@ -31,13 +180,31 @@ export function ThemePicker({ themes, currentThemeId, workspaceSlug }: Props) {
 
   return (
     <div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+      <AIThemeGenerator
+        onApply={(generated) => {
+          setSaved(false)
+          setSelectedThemeId(generated.themeId)
+          setCustomCreamColor(generated.customCreamColor)
+          setCustomInkColor(generated.customInkColor)
+          setCustomMutedColor(generated.customMutedColor)
+          setCustomBorderColor(generated.customBorderColor)
+          setCustomAccentColor(generated.customAccentColor)
+          setCustomGreenColor(generated.customGreenColor)
+          setCustomWhiteColor(generated.customWhiteColor)
+          setCustomRadius(generated.customRadius)
+        }}
+      />
+      <p className="text-sm font-medium text-ink mb-3">Theme</p>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {themes.map((theme) => (
           <button
             key={theme.id}
-            onClick={() => setSelected(theme.id)}
+            onClick={() => {
+              setSaved(false)
+              setSelectedThemeId(theme.id)
+            }}
             className={`text-left rounded-xl border-2 overflow-hidden transition-all ${
-              selected === theme.id
+              selectedThemeId === theme.id
                 ? 'border-accent shadow-sm'
                 : 'border-border hover:border-muted'
             }`}
@@ -87,13 +254,283 @@ export function ThemePicker({ themes, currentThemeId, workspaceSlug }: Props) {
         ))}
       </div>
 
-      <button
-        onClick={save}
-        disabled={saving || selected === currentThemeId}
-        className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
-      >
-        {saving ? 'Saving…' : saved ? 'Saved!' : 'Apply theme'}
-      </button>
+      <p className="text-sm font-medium text-ink mb-3">Font</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
+        <button
+          onClick={() => {
+            setSaved(false)
+            setSelectedFontPresetId('')
+          }}
+          className={`text-left rounded-xl border-2 overflow-hidden transition-all ${
+            selectedFontPresetId.length === 0
+              ? 'border-accent shadow-sm'
+              : 'border-border hover:border-muted'
+          }`}
+        >
+          <div className="border-b border-border bg-cream px-4 py-3">
+            <p className="text-lg text-ink font-serif">Aa</p>
+            <p className="text-xs text-muted mt-1">Use the font pairing bundled with the selected theme.</p>
+          </div>
+          <div className="bg-white px-4 py-3">
+            <p className="text-sm font-medium text-ink">Match theme</p>
+            <p className="text-xs text-muted">Keeps the current theme fonts in sync.</p>
+          </div>
+        </button>
+
+        {fontPresets.map((preset) => (
+          <button
+            key={preset.id}
+            onClick={() => {
+              setSaved(false)
+              setSelectedFontPresetId(preset.id)
+            }}
+            className={`text-left rounded-xl border-2 overflow-hidden transition-all ${
+              selectedFontPresetId === preset.id
+                ? 'border-accent shadow-sm'
+                : 'border-border hover:border-muted'
+            }`}
+          >
+            <div className="border-b border-border bg-cream px-4 py-3">
+              <p className="text-lg text-ink" style={{ fontFamily: preset.fonts.heading }}>
+                Aa
+              </p>
+              <p className="text-sm text-ink mt-1" style={{ fontFamily: preset.fonts.body }}>
+                Help articles, search, and AI answers
+              </p>
+            </div>
+            <div className="bg-white px-4 py-3">
+              <p className="text-sm font-medium text-ink">{preset.headingLabel}</p>
+              <p className="text-xs text-muted">{preset.bodyLabel}</p>
+            </div>
+          </button>
+        ))}
+      </div>
+
+      <div className="rounded-xl border border-border bg-cream/50 p-4 mb-4">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <p className="text-sm font-medium text-ink">Company colors</p>
+            <p className="text-xs text-muted mt-1">
+              Override any theme token with your own brand colors and corner radius.
+            </p>
+          </div>
+          {(customCreamColor.length > 0 ||
+            customInkColor.length > 0 ||
+            customMutedColor.length > 0 ||
+            customBorderColor.length > 0 ||
+            customAccentColor.length > 0 ||
+            customGreenColor.length > 0 ||
+            customWhiteColor.length > 0 ||
+            customRadius.length > 0) && (
+            <button
+              onClick={() => {
+                setSaved(false)
+                setCustomCreamColor('')
+                setCustomInkColor('')
+                setCustomMutedColor('')
+                setCustomBorderColor('')
+                setCustomAccentColor('')
+                setCustomGreenColor('')
+                setCustomWhiteColor('')
+                setCustomRadius('')
+              }}
+              className="shrink-0 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-cream transition-colors"
+            >
+              Clear colors
+            </button>
+          )}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          {colorFields.map((field) => (
+            <div key={field.label}>
+              <label className="block text-xs font-medium text-ink mb-1">{field.label} color</label>
+              <div className="flex items-center gap-2">
+                <input
+                  value={field.value}
+                  onChange={(event) => {
+                    setSaved(false)
+                    field.setValue(event.target.value)
+                  }}
+                  placeholder={field.placeholder}
+                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                />
+                <span
+                  className="h-9 w-9 shrink-0 rounded-lg border border-border bg-white"
+                  style={{ backgroundColor: (field.value.trim() || field.placeholder) }}
+                />
+              </div>
+            </div>
+          ))}
+          <div>
+            <label className="block text-xs font-medium text-ink mb-1">Corner radius</label>
+            <select
+              value={customRadius}
+              onChange={(event) => {
+                setSaved(false)
+                setCustomRadius(event.target.value)
+              }}
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              <option value="">Use theme radius</option>
+              {radiusOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option.toUpperCase()}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-xl border border-border bg-white p-4">
+          <p className="text-xs text-muted mb-2">Color preview</p>
+          <div
+            className="overflow-hidden border"
+            style={{ backgroundColor: previewColors.cream, borderColor: previewColors.border, borderRadius: previewRadiusClass }}
+          >
+            <div
+              className="px-4 py-3"
+              style={{ backgroundColor: previewColors.ink, color: previewColors.cream }}
+            >
+              <p className="text-sm font-medium">{workspaceSlug} help</p>
+            </div>
+            <div className="grid gap-3 p-4 sm:grid-cols-2">
+              <div
+                className="border p-3"
+                style={{ backgroundColor: previewColors.white, borderColor: previewColors.border, borderRadius: previewRadiusClass }}
+              >
+                <p style={{ color: previewColors.ink }} className="text-sm font-medium">Popular article</p>
+                <p style={{ color: previewColors.muted }} className="text-xs mt-1">Previewing your company theme tokens.</p>
+              </div>
+              <div
+                className="p-3"
+                style={{ backgroundColor: previewColors.green, color: previewColors.white, borderRadius: previewRadiusClass }}
+              >
+                <p className="text-sm font-medium">AI answers enabled</p>
+                <p className="text-xs mt-1 opacity-80">Success/banner tone uses this slot.</p>
+              </div>
+            </div>
+            <div className="px-4 pb-4">
+              <button
+                type="button"
+                className="px-3 py-2 text-sm font-medium"
+                style={{ backgroundColor: previewColors.accent, color: previewColors.white, borderRadius: previewRadiusClass }}
+              >
+                Accent action
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-border bg-cream/50 p-4 mb-4">
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <div>
+            <p className="text-sm font-medium text-ink">Custom font override</p>
+            <p className="text-xs text-muted mt-1">
+              Themes use separate heading and body fonts. Custom branding should follow that same split.
+            </p>
+          </div>
+          {(customHeadingFontFamily.length > 0 ||
+            customHeadingFontUrl.length > 0 ||
+            customBodyFontFamily.length > 0 ||
+            customBodyFontUrl.length > 0) && (
+            <button
+              onClick={() => {
+                setSaved(false)
+                setCustomHeadingFontFamily('')
+                setCustomHeadingFontUrl('')
+                setCustomBodyFontFamily('')
+                setCustomBodyFontUrl('')
+              }}
+              className="shrink-0 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-cream transition-colors"
+            >
+              Clear custom font
+            </button>
+          )}
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2 mt-3">
+          <div>
+            <label className="block text-xs font-medium text-ink mb-1">Heading font family</label>
+            <input
+              value={customHeadingFontFamily}
+              onChange={(event) => {
+                setSaved(false)
+                setCustomHeadingFontFamily(event.target.value)
+              }}
+              placeholder={'e.g. "Sohne", "Helvetica Neue", sans-serif'}
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink mb-1">Heading stylesheet URL</label>
+            <input
+              value={customHeadingFontUrl}
+              onChange={(event) => {
+                setSaved(false)
+                setCustomHeadingFontUrl(event.target.value)
+              }}
+              placeholder="https://fonts.googleapis.com/css2?family=Heading+Font"
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink mb-1">Body font family</label>
+            <input
+              value={customBodyFontFamily}
+              onChange={(event) => {
+                setSaved(false)
+                setCustomBodyFontFamily(event.target.value)
+              }}
+              placeholder={'e.g. "Inter", system-ui, sans-serif'}
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-ink mb-1">Body stylesheet URL</label>
+            <input
+              value={customBodyFontUrl}
+              onChange={(event) => {
+                setSaved(false)
+                setCustomBodyFontUrl(event.target.value)
+              }}
+              placeholder="https://fonts.googleapis.com/css2?family=Body+Font"
+              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+        </div>
+
+        {(customHeadingFontFamily.trim().length > 0 ||
+          customBodyFontFamily.trim().length > 0) && (
+          <div className="mt-3 rounded-xl border border-border bg-white px-4 py-3">
+            <p className="text-xs text-muted mb-1">Custom font preview</p>
+            <p
+              className="text-xl text-ink"
+              style={{ fontFamily: customHeadingFontFamily || undefined }}
+            >
+              {workspaceSlug} help center
+            </p>
+            <p
+              className="text-sm text-muted mt-1"
+              style={{ fontFamily: customBodyFontFamily || undefined }}
+            >
+              Search, articles, navigation, and AI responses use the body font.
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <button
+          onClick={save}
+          disabled={saving || !isDirty}
+          className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
+        >
+          {saving ? 'Saving…' : saved ? 'Saved!' : 'Apply branding'}
+        </button>
+        {error && <span className="text-sm text-red-500">{error}</span>}
+      </div>
     </div>
   )
 }
