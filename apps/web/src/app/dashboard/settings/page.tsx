@@ -33,6 +33,7 @@ import { WorkspaceForm } from './WorkspaceForm'
 
 export default async function SettingsPage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://helpnest.cloud'
+  const demoMode = process.env.HELPNEST_DEMO_MODE === 'true'
   const session = await auth()
   if (!session?.user) redirect('/login')
 
@@ -256,7 +257,7 @@ export default async function SettingsPage() {
         {/* Profile */}
         <div className="bg-white rounded-xl border border-border p-6">
           <h2 className="font-medium text-ink mb-4">Your profile</h2>
-          <ProfileForm name={member.user.name ?? ''} />
+          <ProfileForm name={member.user.name ?? ''} demoMode={demoMode} />
         </div>
 
         {/* Workspace */}

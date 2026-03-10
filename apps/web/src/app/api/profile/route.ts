@@ -37,6 +37,10 @@ export async function PATCH(request: Request) {
     updates.name = name.trim()
   }
 
+  if (newPassword !== undefined && process.env.HELPNEST_DEMO_MODE === 'true') {
+    return NextResponse.json({ error: 'Password changes are disabled in demo mode.' }, { status: 403 })
+  }
+
   if (newPassword !== undefined) {
     if (typeof newPassword !== 'string' || newPassword.length < 8) {
       return NextResponse.json(

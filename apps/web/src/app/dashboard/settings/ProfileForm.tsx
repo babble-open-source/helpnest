@@ -4,9 +4,10 @@ import { useState } from 'react'
 
 interface Props {
   name: string
+  demoMode: boolean
 }
 
-export function ProfileForm({ name: initialName }: Props) {
+export function ProfileForm({ name: initialName, demoMode }: Props) {
   const [name, setName] = useState(initialName)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
@@ -83,44 +84,50 @@ export function ProfileForm({ name: initialName }: Props) {
         />
       </div>
 
-      <div className="pt-2 border-t border-border">
-        <p className="text-sm font-medium text-ink mb-3">Change password</p>
-        <div className="space-y-3">
-          <div suppressHydrationWarning>
-            <label className="block text-sm text-ink mb-1">Current password</label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              autoComplete="current-password"
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-              placeholder="Leave blank if not set yet"
-            />
-          </div>
-          <div suppressHydrationWarning>
-            <label className="block text-sm text-ink mb-1">New password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              autoComplete="new-password"
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-              placeholder="At least 8 characters"
-            />
-          </div>
-          <div suppressHydrationWarning>
-            <label className="block text-sm text-ink mb-1">Confirm new password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              autoComplete="new-password"
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-              placeholder="Repeat new password"
-            />
+      {demoMode ? (
+        <div className="pt-2 border-t border-border">
+          <p className="text-sm text-muted">Password changes are disabled in demo mode.</p>
+        </div>
+      ) : (
+        <div className="pt-2 border-t border-border">
+          <p className="text-sm font-medium text-ink mb-3">Change password</p>
+          <div className="space-y-3">
+            <div suppressHydrationWarning>
+              <label className="block text-sm text-ink mb-1">Current password</label>
+              <input
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                autoComplete="current-password"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                placeholder="Leave blank if not set yet"
+              />
+            </div>
+            <div suppressHydrationWarning>
+              <label className="block text-sm text-ink mb-1">New password</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                placeholder="At least 8 characters"
+              />
+            </div>
+            <div suppressHydrationWarning>
+              <label className="block text-sm text-ink mb-1">Confirm new password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                autoComplete="new-password"
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                placeholder="Repeat new password"
+              />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
 
