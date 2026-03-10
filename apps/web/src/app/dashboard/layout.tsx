@@ -41,7 +41,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ])
   if (!member) redirect('/login')
 
-  const showDefaultPasswordBanner = !isDemoMode() && currentUser?.passwordChangedAt === null
+  const demoMode = isDemoMode()
+  const showDefaultPasswordBanner = !demoMode && currentUser?.passwordChangedAt === null
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: member.workspaceId },
@@ -207,6 +208,11 @@ export default async function DashboardLayout({ children }: { children: React.Re
       ))}
       <style dangerouslySetInnerHTML={{ __html: `:root { ${themeCSS} }` }} />
       <div className="h-screen bg-cream flex flex-col overflow-hidden">
+        {demoMode && (
+          <div className="fixed top-4 right-4 z-50 bg-amber-500 text-white text-xs font-semibold px-3 py-1 rounded-full shadow pointer-events-none">
+            DEMO
+          </div>
+        )}
         {showDefaultPasswordBanner && <DefaultPasswordBanner />}
         <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar
