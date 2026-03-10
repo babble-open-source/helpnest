@@ -10,6 +10,13 @@ const STATUS_STYLES = {
   ARCHIVED: 'bg-border/50 text-muted',
 }
 
+function feedbackSummary(helpful: number, notHelpful: number) {
+  const total = helpful + notHelpful
+  const helpfulRate = total === 0 ? null : Math.round((helpful / total) * 100)
+
+  return { total, helpfulRate }
+}
+
 export default async function ArticlesPage({
   searchParams,
 }: {
@@ -133,6 +140,9 @@ export default async function ArticlesPage({
                   Views
                 </th>
                 <th className="text-right px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
+                  Feedback
+                </th>
+                <th className="text-right px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
                   Updated
                 </th>
                 <th className="px-4 py-3" />
@@ -167,6 +177,33 @@ export default async function ArticlesPage({
                     <span className="text-sm text-muted">
                       {article.views.toLocaleString()}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-right hidden lg:table-cell">
+                    {(() => {
+                      const summary = feedbackSummary(article.helpful, article.notHelpful)
+
+                      if (summary.total === 0) {
+                        return <span className="text-sm text-muted">No votes</span>
+                      }
+
+                      const rateTone =
+                        (summary.helpfulRate ?? 0) >= 80
+                          ? 'text-green'
+                          : (summary.helpfulRate ?? 0) >= 60
+                            ? 'text-ink'
+                            : 'text-accent'
+
+                      return (
+                        <div className="space-y-0.5">
+                          <p className={`text-sm font-medium ${rateTone}`}>
+                            {summary.helpfulRate}% helpful
+                          </p>
+                          <p className="text-xs text-muted">
+                            {summary.total} vote{summary.total === 1 ? '' : 's'}
+                          </p>
+                        </div>
+                      )
+                    })()}
                   </td>
                   <td className="px-4 py-3 text-right hidden lg:table-cell">
                     <span className="text-sm text-muted">

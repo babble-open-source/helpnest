@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 interface Props {
   articleId: string
@@ -8,10 +8,24 @@ interface Props {
 
 export function ArticleFeedback({ articleId }: Props) {
   const [voted, setVoted] = useState<'helpful' | 'not' | null>(null)
+  const storageKey = `helpnest-feedback:${articleId}`
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(storageKey)
+      if (saved === 'helpful' || saved === 'not') {
+        setVoted(saved)
+      }
+    } catch {}
+  }, [storageKey])
 
   async function vote(type: 'helpful' | 'not') {
     if (voted) return
     setVoted(type)
+    try {
+      window.localStorage.setItem(storageKey, type)
+    } catch {}
+
     await fetch(`/api/articles/${articleId}/feedback`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

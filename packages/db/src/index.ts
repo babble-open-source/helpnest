@@ -8,7 +8,9 @@ export type {
   ArticleVersion,
   ApiKey,
   SearchIndex,
+  ArticleFeedback,
   Invite,
   MemberRole,
   ArticleStatus,
+  ArticleFeedbackType,
 } from '@prisma/client'

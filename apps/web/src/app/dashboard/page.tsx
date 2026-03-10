@@ -1,6 +1,13 @@
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+
+function helpfulRate(helpful: number, notHelpful: number): number | null {
+  const total = helpful + notHelpful
+  if (total === 0) return null
+  return Math.round((helpful / total) * 100)
+}
+
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user) redirect('/login')
@@ -30,23 +37,102 @@ export default async function DashboardPage() {
     prisma.collection.count({ where: { workspaceId: member.workspaceId } }),
   ])
 
-  // Total views this month
-  const startOfMonth = new Date()
-  startOfMonth.setDate(1)
-  startOfMonth.setHours(0, 0, 0, 0)
+  const last30Days = new Date()
+  last30Days.setDate(last30Days.getDate() - 30)
+  const feedbackPrisma = prisma as typeof prisma & {
+    articleFeedback: {
+      count(args: unknown): Promise<number>
+    }
+  }
 
-  const recentArticles = await prisma.article.findMany({
+  const recentArticlesPromise = prisma.article.findMany({
     where: { workspaceId: member.workspaceId },
     orderBy: { updatedAt: 'desc' },
     take: 5,
     include: { collection: true },
   })
+  const feedbackCount30DaysPromise: Promise<number> = feedbackPrisma.articleFeedback.count({
+    where: {
+      workspaceId: member.workspaceId,
+      createdAt: { gte: last30Days },
+    },
+  })
+  const totalFeedbackCountPromise: Promise<number> = feedbackPrisma.articleFeedback.count({
+    where: { workspaceId: member.workspaceId },
+  })
+  const feedbackTotalsPromise = prisma.article.aggregate({
+    where: { workspaceId: member.workspaceId },
+    _sum: {
+      helpful: true,
+      notHelpful: true,
+    },
+  })
+  const feedbackArticlesPromise = prisma.article.findMany({
+    where: {
+      workspaceId: member.workspaceId,
+      status: 'PUBLISHED',
+      OR: [
+        { helpful: { gt: 0 } },
+        { notHelpful: { gt: 0 } },
+      ],
+    },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      helpful: true,
+      notHelpful: true,
+      views: true,
+      collection: {
+        select: { slug: true, title: true },
+      },
+    },
+    orderBy: [
+      { notHelpful: 'desc' },
+      { helpful: 'asc' },
+      { views: 'desc' },
+    ],
+    take: 20,
+  })
+
+  const [recentArticles, feedbackCount30Days, totalFeedbackCount, feedbackTotals, feedbackArticles] = await Promise.all([
+    recentArticlesPromise,
+    feedbackCount30DaysPromise,
+    totalFeedbackCountPromise,
+    feedbackTotalsPromise,
+    feedbackArticlesPromise,
+  ])
+
+  const totalHelpful = feedbackTotals._sum.helpful ?? 0
+  const totalNotHelpful = feedbackTotals._sum.notHelpful ?? 0
+  const overallHelpfulRate = helpfulRate(totalHelpful, totalNotHelpful)
+  const needsAttention = feedbackArticles
+    .map((article) => {
+      const totalVotes = article.helpful + article.notHelpful
+      return {
+        ...article,
+        totalVotes,
+        helpfulRate: helpfulRate(article.helpful, article.notHelpful),
+      }
+    })
+    .filter((article) => article.totalVotes > 0)
+    .sort((a, b) => {
+      const aRate = a.helpfulRate ?? 100
+      const bRate = b.helpfulRate ?? 100
+      if (aRate !== bRate) return aRate - bRate
+      return b.notHelpful - a.notHelpful
+    })
+    .slice(0, 5)
 
   const stats = [
     { label: 'Total Articles', value: articleCount },
     { label: 'Published', value: publishedCount },
     { label: 'Collections', value: collections },
     { label: 'Draft', value: articleCount - publishedCount },
+    { label: 'Feedback Responses', value: totalFeedbackCount },
+    { label: 'Helpful Rate', value: overallHelpfulRate === null ? '—' : `${overallHelpfulRate}%` },
+    { label: 'Negative Votes', value: totalNotHelpful },
+    { label: 'Responses (30d)', value: feedbackCount30Days },
   ]
 
   return (
@@ -64,6 +150,38 @@ export default async function DashboardPage() {
             <p className="text-sm text-muted mt-1">{stat.label}</p>
           </div>
         ))}
+      </div>
+
+      <div className="mb-10">
+        <h2 className="font-serif text-xl text-ink mb-4">Needs attention</h2>
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
+          {needsAttention.length === 0 ? (
+            <div className="p-6">
+              <p className="text-sm text-muted">
+                No article feedback yet. Publish more content and collect votes to identify gaps.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {needsAttention.map((article) => (
+                <div key={article.id} className="flex items-center gap-4 p-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-ink truncate">{article.title}</p>
+                    <p className="text-sm text-muted mt-0.5">{article.collection.title}</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className={`text-sm font-medium ${(article.helpfulRate ?? 0) >= 70 ? 'text-ink' : 'text-accent'}`}>
+                      {article.helpfulRate}% helpful
+                    </p>
+                    <p className="text-xs text-muted">
+                      {article.notHelpful} negative / {article.totalVotes} total
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Recent articles */}
