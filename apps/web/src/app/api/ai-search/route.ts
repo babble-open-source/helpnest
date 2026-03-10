@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '@/lib/db'
 import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import { embedText } from '@/lib/embeddings'
+import { redis } from '@/lib/redis'
 
 // Lazily initialised so the key is read at request time, not at build/module-load time.
 // This means adding the env var and restarting the server is sufficient — no redeploy needed.
@@ -33,6 +34,7 @@ const CORS_HEADERS = {
 const AI_RATE_LIMIT_WINDOW_MS = 60_000
 const AI_RATE_LIMIT_MAX_REQUESTS = 20
 type RateBucket = { count: number; resetAt: number }
+// In-memory fallback — used when Redis is unavailable or not configured.
 const aiRateBuckets = new Map<string, RateBucket>()
 
 function getClientIp(request: Request): string {
@@ -41,7 +43,7 @@ function getClientIp(request: Request): string {
   return forwardedFor || realIp || 'unknown'
 }
 
-function consumeAiRateLimit(key: string): { limited: boolean; retryAfterSeconds: number } {
+function consumeInMemoryRateLimit(key: string): { limited: boolean; retryAfterSeconds: number } {
   const now = Date.now()
 
   // Best-effort cleanup for long-lived self-hosted processes.
@@ -67,6 +69,35 @@ function consumeAiRateLimit(key: string): { limited: boolean; retryAfterSeconds:
   current.count += 1
   aiRateBuckets.set(key, current)
   return { limited: false, retryAfterSeconds: 0 }
+}
+
+/**
+ * Redis-backed sliding-window rate limiter.
+ * Falls back to the in-memory implementation if Redis is unavailable.
+ */
+async function consumeAiRateLimit(key: string): Promise<{ limited: boolean; retryAfterSeconds: number }> {
+  if (redis) {
+    try {
+      const windowSlot = Math.floor(Date.now() / AI_RATE_LIMIT_WINDOW_MS)
+      const redisKey = `rl:ai:${key}:${windowSlot}`
+      const count = await redis.incr(redisKey)
+      if (count === 1) {
+        // Set TTL on the first increment so the key expires automatically.
+        await redis.pexpire(redisKey, AI_RATE_LIMIT_WINDOW_MS * 2)
+      }
+      if (count > AI_RATE_LIMIT_MAX_REQUESTS) {
+        const windowEndMs = (windowSlot + 1) * AI_RATE_LIMIT_WINDOW_MS
+        return {
+          limited: true,
+          retryAfterSeconds: Math.max(1, Math.ceil((windowEndMs - Date.now()) / 1000)),
+        }
+      }
+      return { limited: false, retryAfterSeconds: 0 }
+    } catch {
+      // Redis error — degrade gracefully to in-memory.
+    }
+  }
+  return consumeInMemoryRateLimit(key)
 }
 
 export async function OPTIONS() {
@@ -107,7 +138,7 @@ export async function POST(request: Request) {
   }
 
   const rateKey = `${getClientIp(request)}:${workspaceSlug}`
-  const rate = consumeAiRateLimit(rateKey)
+  const rate = await consumeAiRateLimit(rateKey)
   if (rate.limited) {
     return NextResponse.json(
       { error: 'Too many AI requests. Please try again shortly.' },
