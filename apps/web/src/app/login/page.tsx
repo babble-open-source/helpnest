@@ -2,6 +2,8 @@ import { prisma } from '@/lib/db'
 import { isDemoMode } from '@/lib/demo'
 import { LoginForm } from './LoginForm'
 
+export const dynamic = 'force-dynamic'
+
 const DEFAULT_EMAIL = 'admin@helpnest.cloud'
 
 export default async function LoginPage() {
