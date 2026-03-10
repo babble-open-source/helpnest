@@ -183,6 +183,7 @@ export default async function ArticlesPage({
                     <ArticleActions
                       articleId={article.id}
                       articleTitle={article.title}
+                      articleStatus={article.status}
                     />
                   </td>
                 </tr>

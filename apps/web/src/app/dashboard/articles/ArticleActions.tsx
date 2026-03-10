@@ -7,13 +7,38 @@ import Link from 'next/link'
 interface Props {
   articleId: string
   articleTitle: string
+  articleStatus: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 }
 
-export function ArticleActions({ articleId, articleTitle }: Props) {
+export function ArticleActions({ articleId, articleTitle, articleStatus }: Props) {
   const router = useRouter()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [archiving, setArchiving] = useState(false)
   const [error, setError] = useState('')
+
+  async function handleArchive() {
+    setArchiving(true)
+    setError('')
+    try {
+      const newStatus = articleStatus === 'ARCHIVED' ? 'DRAFT' : 'ARCHIVED'
+      const res = await fetch(`/api/articles/${articleId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      })
+      if (!res.ok) {
+        const data = await res.json() as { error?: string }
+        setError(data.error ?? 'Something went wrong')
+        return
+      }
+      router.refresh()
+    } catch {
+      setError('Something went wrong')
+    } finally {
+      setArchiving(false)
+    }
+  }
 
   async function handleDelete() {
     setDeleting(true)
@@ -43,6 +68,13 @@ export function ArticleActions({ articleId, articleTitle }: Props) {
         >
           Edit
         </Link>
+        <button
+          onClick={handleArchive}
+          disabled={archiving}
+          className="text-xs text-muted hover:text-ink transition-colors disabled:opacity-50"
+        >
+          {archiving ? '…' : articleStatus === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
+        </button>
         <button
           onClick={() => { setError(''); setConfirmOpen(true) }}
           className="text-xs text-muted hover:text-red-500 transition-colors"
