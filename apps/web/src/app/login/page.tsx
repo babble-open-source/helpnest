@@ -9,16 +9,21 @@ export default async function LoginPage() {
   const seedEmail = process.env.ADMIN_SEED_EMAIL ?? DEFAULT_EMAIL
 
   let showDefaultCreds = false
+  let workspaceSlug: string | null = null
+
+  const seedUser = await prisma.user.findUnique({
+    where: { email: seedEmail },
+    select: {
+      passwordChangedAt: true,
+      members: { select: { workspace: { select: { slug: true } } }, take: 1 },
+    },
+  })
+
+  workspaceSlug = seedUser?.members[0]?.workspace.slug ?? null
 
   if (demoMode) {
-    // Always show default creds in demo/showcase mode
     showDefaultCreds = true
   } else {
-    // Show only while the seed admin hasn't changed their password
-    const seedUser = await prisma.user.findUnique({
-      where: { email: seedEmail },
-      select: { passwordChangedAt: true },
-    })
     showDefaultCreds = seedUser !== null && seedUser.passwordChangedAt === null
   }
 
@@ -27,6 +32,7 @@ export default async function LoginPage() {
       defaultEmail={seedEmail}
       defaultPassword={DEFAULT_PASSWORD}
       showDefaultCreds={showDefaultCreds}
+      workspaceSlug={workspaceSlug}
     />
   )
 }

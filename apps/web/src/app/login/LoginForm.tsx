@@ -3,14 +3,16 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 interface Props {
   defaultEmail: string
   defaultPassword: string
   showDefaultCreds: boolean
+  workspaceSlug: string | null
 }
 
-export function LoginForm({ defaultEmail, defaultPassword, showDefaultCreds }: Props) {
+export function LoginForm({ defaultEmail, defaultPassword, showDefaultCreds, workspaceSlug }: Props) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -44,13 +46,24 @@ export function LoginForm({ defaultEmail, defaultPassword, showDefaultCreds }: P
 
         {showDefaultCreds && (
           <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm">
-            <p className="font-medium text-amber-800 mb-1">Default credentials</p>
+            <p className="font-medium text-amber-800 mb-2">Default account</p>
             <p className="text-amber-700">
               Email: <code className="bg-amber-100 px-1 rounded">{defaultEmail}</code>
             </p>
             <p className="text-amber-700">
               Password: <code className="bg-amber-100 px-1 rounded">{defaultPassword}</code>
             </p>
+            {workspaceSlug && (
+              <p className="text-amber-700 mt-1">
+                Help center:{' '}
+                <Link
+                  href={`/${workspaceSlug}/help`}
+                  className="underline underline-offset-2 hover:text-amber-900"
+                >
+                  /{workspaceSlug}/help
+                </Link>
+              </p>
+            )}
             <p className="text-amber-600 text-xs mt-2">Change your password after signing in.</p>
           </div>
         )}
