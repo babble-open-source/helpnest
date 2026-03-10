@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   // Retry on unique slug conflict to handle concurrent creates (TOCTOU-safe)
   let slug = baseSlug
   let i = 1
-  while (true) {
+  for (;;) {
     try {
       const collection = await prisma.collection.create({
         data: {

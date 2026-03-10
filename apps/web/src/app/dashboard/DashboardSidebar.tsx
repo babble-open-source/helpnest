@@ -1,8 +1,10 @@
 'use client'
 
+import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 import { useState } from 'react'
-import Link from 'next/link'
 import { signOut } from 'next-auth/react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 
 const navItems = [
   { href: '/dashboard', label: 'Overview' },
@@ -12,13 +14,29 @@ const navItems = [
 ]
 
 interface Props {
+  workspaceName: string
+  workspaceLogo?: string | null
+  workspaceBrandText?: string | null
   userName: string
   userEmail: string
   userInitial: string
 }
 
-export function DashboardSidebar({ userName, userEmail, userInitial }: Props) {
+export function DashboardSidebar({
+  workspaceName,
+  workspaceLogo,
+  workspaceBrandText,
+  userName,
+  userEmail,
+  userInitial,
+}: Props) {
   const [open, setOpen] = useState(true)
+  const pathname = usePathname()
+
+  function isActive(href: string) {
+    // '/dashboard' requires an exact match so it doesn't highlight for all sub-routes.
+    return href === '/dashboard' ? pathname === href : pathname.startsWith(href)
+  }
 
   return (
     <aside
@@ -27,9 +45,16 @@ export function DashboardSidebar({ userName, userEmail, userInitial }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-4 border-b border-white/10 shrink-0">
         {open && (
-          <Link href="/dashboard" className="font-serif text-xl truncate">
-            HelpNest
-          </Link>
+          <WorkspaceBrandLink
+            href="/dashboard"
+            name={workspaceName}
+            logo={workspaceLogo}
+            brandText={workspaceBrandText}
+            hideNameWhenLogo
+            textClassName="font-serif text-lg text-cream"
+            markClassName="border-white/10 bg-white p-1.5"
+            fallbackClassName="text-ink"
+          />
         )}
         <button
           onClick={() => setOpen((v) => !v)}
@@ -53,7 +78,11 @@ export function DashboardSidebar({ userName, userEmail, userInitial }: Props) {
             key={item.href}
             href={item.href}
             title={!open ? item.label : undefined}
-            className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-cream/70 hover:text-cream hover:bg-white/10 transition-colors"
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+              isActive(item.href)
+                ? 'bg-white/15 text-cream font-medium'
+                : 'text-cream/70 hover:text-cream hover:bg-white/10'
+            }`}
           >
             {open ? item.label : <span className="text-xs font-medium text-cream/60">{item.label[0]}</span>}
           </Link>

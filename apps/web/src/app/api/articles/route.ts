@@ -44,7 +44,6 @@ export async function GET(request: Request) {
       excerpt: true,
       status: true,
       views: true,
-      readTime: true,
       publishedAt: true,
       createdAt: true,
       updatedAt: true,
@@ -89,7 +88,7 @@ export async function POST(request: Request) {
   // Retry on unique slug conflict to handle concurrent creates (TOCTOU-safe)
   let slug = baseSlug
   let i = 1
-  while (true) {
+  for (;;) {
     try {
       const article = await prisma.article.create({
         data: {

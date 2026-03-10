@@ -7,7 +7,12 @@ export default async function DashboardPage() {
 
   const member = await prisma.member.findFirst({
     where: { user: { email: session.user.email! } },
-    include: { workspace: true },
+    select: {
+      workspaceId: true,
+      workspace: {
+        select: { name: true },
+      },
+    },
   })
 
   if (!member) {

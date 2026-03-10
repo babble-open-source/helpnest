@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       role: { in: ['OWNER', 'ADMIN'] },
       deactivatedAt: null,
     },
-    include: { workspace: true },
+    select: { workspaceId: true },
   })
 
   if (!callerMember) {
