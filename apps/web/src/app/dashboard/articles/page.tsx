@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { isDemoMode } from '@/lib/demo'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ArticleActions } from './ArticleActions'
@@ -24,6 +25,8 @@ export default async function ArticlesPage(props: {
 }) {
   const [session, searchParams] = await Promise.all([auth(), props.searchParams])
   if (!session?.user) redirect('/login')
+
+  const demoMode = isDemoMode()
 
   const member = await prisma.member.findFirst({
     where: { user: { email: session.user.email! } },
@@ -221,6 +224,7 @@ export default async function ArticlesPage(props: {
                       articleId={article.id}
                       articleTitle={article.title}
                       articleStatus={article.status}
+                      demoMode={demoMode}
                     />
                   </td>
                 </tr>

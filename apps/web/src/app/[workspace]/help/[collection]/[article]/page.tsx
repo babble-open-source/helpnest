@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArticleContent } from '@/components/help/ArticleContent'
 import { ArticleFeedback } from '@/components/help/ArticleFeedback'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
+import { DashboardButton } from '@/components/help/DashboardButton'
 
 interface Props {
   params: Promise<{ workspace: string; collection: string; article: string }>
@@ -97,25 +98,28 @@ export default async function ArticlePage(props: Props) {
     <div className="min-h-screen bg-cream">
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-2 text-sm">
-          <WorkspaceBrandLink
-            href={`/${params.workspace}/help`}
-            name={workspace.name}
-            logo={workspace.logo}
-            brandText={brandTextRecord?.brandText ?? null}
-            hideNameWhenLogo
-            className="shrink-0"
-            textClassName="text-muted hover:text-ink transition-colors"
-          />
-          <span className="text-border">/</span>
-          <Link
-            href={`/${params.workspace}/help/${params.collection}`}
-            className="text-muted hover:text-ink transition-colors"
-          >
-            {article.collection.title}
-          </Link>
-          <span className="text-border">/</span>
-          <span className="text-ink font-medium truncate">{article.title}</span>
+        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2 text-sm">
+          <div className="flex items-center gap-2 min-w-0">
+            <WorkspaceBrandLink
+              href={`/${params.workspace}/help`}
+              name={workspace.name}
+              logo={workspace.logo}
+              brandText={brandTextRecord?.brandText ?? null}
+              hideNameWhenLogo
+              className="shrink-0"
+              textClassName="text-muted hover:text-ink transition-colors"
+            />
+            <span className="text-border">/</span>
+            <Link
+              href={`/${params.workspace}/help/${params.collection}`}
+              className="text-muted hover:text-ink transition-colors shrink-0"
+            >
+              {article.collection.title}
+            </Link>
+            <span className="text-border">/</span>
+            <span className="text-ink font-medium truncate">{article.title}</span>
+          </div>
+          <DashboardButton />
         </div>
       </nav>
 

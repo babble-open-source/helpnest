@@ -18,7 +18,7 @@ function formatDate(iso: string | null): string {
   })
 }
 
-export function ApiKeysSection() {
+export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -105,6 +105,12 @@ export function ApiKeysSection() {
         Only Owners and Admins can create or revoke keys.
       </p>
 
+      {demoMode && (
+        <p className="text-xs text-muted border border-border rounded-lg px-3 py-2 bg-cream mb-4">
+          API key management is disabled in demo mode.
+        </p>
+      )}
+
       {error && (
         <div className="mb-4 rounded-lg bg-cream border border-border px-4 py-3 text-sm text-red-500">
           {error}
@@ -140,24 +146,26 @@ export function ApiKeysSection() {
       )}
 
       {/* Create form */}
-      <form onSubmit={(e) => void handleCreate(e)} className="flex gap-2 mb-6">
-        <input
-          type="text"
-          value={newKeyName}
-          onChange={(e) => setNewKeyName(e.target.value)}
-          placeholder="Key name, e.g. CI deploy"
-          maxLength={100}
-          className="flex-1 rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
-          disabled={creating}
-        />
-        <button
-          type="submit"
-          disabled={creating || !newKeyName.trim()}
-          className="rounded-lg bg-ink text-cream px-4 py-2 text-sm font-medium hover:bg-ink/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          {creating ? 'Creating…' : 'Create'}
-        </button>
-      </form>
+      {!demoMode && (
+        <form onSubmit={(e) => void handleCreate(e)} className="flex gap-2 mb-6">
+          <input
+            type="text"
+            value={newKeyName}
+            onChange={(e) => setNewKeyName(e.target.value)}
+            placeholder="Key name, e.g. CI deploy"
+            maxLength={100}
+            className="flex-1 rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
+            disabled={creating}
+          />
+          <button
+            type="submit"
+            disabled={creating || !newKeyName.trim()}
+            className="rounded-lg bg-ink text-cream px-4 py-2 text-sm font-medium hover:bg-ink/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {creating ? 'Creating…' : 'Create'}
+          </button>
+        </form>
+      )}
 
       {/* Key list */}
       {loading ? (
@@ -176,14 +184,16 @@ export function ApiKeysSection() {
                   Last used {formatDate(key.lastUsedAt)}
                 </p>
               </div>
-              <button
-                type="button"
-                disabled={deletingId === key.id}
-                onClick={() => void handleDelete(key.id, key.name)}
-                className="ml-4 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-cream disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-              >
-                {deletingId === key.id ? 'Revoking…' : 'Revoke'}
-              </button>
+              {!demoMode && (
+                <button
+                  type="button"
+                  disabled={deletingId === key.id}
+                  onClick={() => void handleDelete(key.id, key.name)}
+                  className="ml-4 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-cream disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {deletingId === key.id ? 'Revoking…' : 'Revoke'}
+                </button>
+              )}
             </li>
           ))}
         </ul>

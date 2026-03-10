@@ -24,6 +24,7 @@ import {
 } from '@/lib/db'
 import { Prisma } from '@helpnest/db'
 import { themes } from '@/lib/themes'
+import { isDemoMode } from '@/lib/demo'
 import { NextResponse } from 'next/server'
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -130,6 +131,9 @@ export async function PATCH(request: Request) {
   }
 
   if (slug !== undefined) {
+    if (isDemoMode()) {
+      return NextResponse.json({ error: 'Slug cannot be changed in demo mode.' }, { status: 403 })
+    }
     if (typeof slug !== 'string' || !SLUG_RE.test(slug) || slug.length > 63) {
       return NextResponse.json(
         { error: 'Slug must be lowercase alphanumeric with hyphens, max 63 characters' },
@@ -138,8 +142,13 @@ export async function PATCH(request: Request) {
     }
   }
 
-  if (customDomain !== undefined && customDomain !== null && typeof customDomain !== 'string') {
-    return NextResponse.json({ error: 'Custom domain must be a string' }, { status: 400 })
+  if (customDomain !== undefined && customDomain !== null) {
+    if (isDemoMode()) {
+      return NextResponse.json({ error: 'Custom domain cannot be changed in demo mode.' }, { status: 403 })
+    }
+    if (typeof customDomain !== 'string') {
+      return NextResponse.json({ error: 'Custom domain must be a string' }, { status: 400 })
+    }
   }
 
   if (logo !== undefined && logo !== null) {

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { isDemoMode } from '@/lib/demo'
 import { MemberRole } from '@helpnest/db'
 
 const VALID_ROLES: MemberRole[] = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']
@@ -24,6 +25,10 @@ export async function POST(request: Request) {
 
   if (!callerMember) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  if (isDemoMode()) {
+    return NextResponse.json({ error: 'Inviting members is disabled in demo mode.' }, { status: 403 })
   }
 
   let body: unknown

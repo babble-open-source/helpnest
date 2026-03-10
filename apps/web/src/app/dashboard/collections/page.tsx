@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { isDemoMode } from '@/lib/demo'
 import { redirect } from 'next/navigation'
 import { NewCollectionModal } from './NewCollectionModal'
 import { CollectionActions } from './CollectionActions'
@@ -7,6 +8,8 @@ import { CollectionActions } from './CollectionActions'
 export default async function CollectionsPage() {
   const session = await auth()
   if (!session?.user) redirect('/login')
+
+  const demoMode = isDemoMode()
 
   const member = await prisma.member.findFirst({
     where: { user: { email: session.user.email! } },
@@ -73,6 +76,7 @@ export default async function CollectionsPage() {
                           emoji: col.emoji,
                           articleCount: col._count.articles,
                         }}
+                        demoMode={demoMode}
                       />
                     </div>
                   </div>

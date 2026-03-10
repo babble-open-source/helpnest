@@ -13,9 +13,10 @@ interface Props {
     emoji: string | null
     articleCount: number
   }
+  demoMode?: boolean
 }
 
-export function CollectionActions({ collection }: Props) {
+export function CollectionActions({ collection, demoMode = false }: Props) {
   const router = useRouter()
 
   // Edit state
@@ -91,12 +92,14 @@ export function CollectionActions({ collection }: Props) {
       >
         Edit
       </button>
-      <button
-        onClick={() => { setDeleteError(''); setDeleteOpen(true) }}
-        className="text-xs text-muted hover:text-red-500 transition-colors"
-      >
-        Delete
-      </button>
+      {!demoMode && (
+        <button
+          onClick={() => { setDeleteError(''); setDeleteOpen(true) }}
+          className="text-xs text-muted hover:text-red-500 transition-colors"
+        >
+          Delete
+        </button>
+      )}
 
       {/* Edit modal */}
       {editOpen && (

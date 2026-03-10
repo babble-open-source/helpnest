@@ -8,9 +8,10 @@ interface Props {
   articleId: string
   articleTitle: string
   articleStatus: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+  demoMode?: boolean
 }
 
-export function ArticleActions({ articleId, articleTitle, articleStatus }: Props) {
+export function ArticleActions({ articleId, articleTitle, articleStatus, demoMode = false }: Props) {
   const router = useRouter()
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -75,12 +76,14 @@ export function ArticleActions({ articleId, articleTitle, articleStatus }: Props
         >
           {archiving ? '…' : articleStatus === 'ARCHIVED' ? 'Unarchive' : 'Archive'}
         </button>
-        <button
-          onClick={() => { setError(''); setConfirmOpen(true) }}
-          className="text-xs text-muted hover:text-red-500 transition-colors"
-        >
-          Delete
-        </button>
+        {!demoMode && (
+          <button
+            onClick={() => { setError(''); setConfirmOpen(true) }}
+            className="text-xs text-muted hover:text-red-500 transition-colors"
+          >
+            Delete
+          </button>
+        )}
       </div>
 
       {confirmOpen && (

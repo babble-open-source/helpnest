@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { SearchTrigger } from '@/components/help/SearchTrigger'
 import { AskAI } from '@/components/help/AskAI'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
+import { DashboardButton } from '@/components/help/DashboardButton'
 
 interface Props {
   params: Promise<{ workspace: string }>
@@ -62,8 +63,9 @@ export default async function HelpCenterHome(props: Props) {
             hideNameWhenLogo
             textClassName="font-serif text-xl text-ink"
           />
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <span className="text-sm text-muted hidden sm:block">Help Center</span>
+            <DashboardButton />
           </div>
         </div>
       </nav>

@@ -18,6 +18,7 @@ interface Props {
   members: Member[]
   currentUserId: string
   callerRole: MemberRole
+  demoMode?: boolean
 }
 
 const ROLE_LABELS: Record<MemberRole, string> = {
@@ -43,7 +44,7 @@ function RoleBadge({ role }: { role: MemberRole }) {
   )
 }
 
-export function MembersSection({ members: initialMembers, currentUserId, callerRole }: Props) {
+export function MembersSection({ members: initialMembers, currentUserId, callerRole, demoMode = false }: Props) {
   const [members, setMembers] = useState<Member[]>(initialMembers)
   const [inviteEmail, setInviteEmail] = useState('')
   const [inviteRole, setInviteRole] = useState<MemberRole>('EDITOR')
@@ -54,7 +55,7 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
   const [inviteError, setInviteError] = useState('')
   const [actionError, setActionError] = useState('')
 
-  const canManage = callerRole === 'OWNER' || callerRole === 'ADMIN'
+  const canManage = !demoMode && (callerRole === 'OWNER' || callerRole === 'ADMIN')
 
   async function handleInvite(e: React.FormEvent) {
     e.preventDefault()
@@ -186,6 +187,11 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
         )}
       </div>
       <p className="text-sm text-muted mb-4">Manage who has access to this workspace.</p>
+      {demoMode && (
+        <p className="text-xs text-muted border border-border rounded-lg px-3 py-2 bg-cream mb-4">
+          Member management is disabled in demo mode.
+        </p>
+      )}
 
       {/* Invite form */}
       {showInviteForm && (

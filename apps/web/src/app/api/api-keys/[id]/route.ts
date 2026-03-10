@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { isDemoMode } from '@/lib/demo'
 
 /**
  * DELETE /api/api-keys/:id
@@ -25,6 +26,10 @@ export async function DELETE(
   })
   if (!member) {
     return NextResponse.json({ error: 'Forbidden — OWNER or ADMIN required' }, { status: 403 })
+  }
+
+  if (isDemoMode()) {
+    return NextResponse.json({ error: 'API key management is disabled in demo mode.' }, { status: 403 })
   }
 
   // Verify the key belongs to this workspace before deleting.

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { generateKey, hashKey } from '@/lib/api-key'
+import { isDemoMode } from '@/lib/demo'
 
 /** Returns the session member only if they are OWNER or ADMIN. */
 async function requireAdminMember(email: string) {
@@ -57,6 +58,10 @@ export async function POST(request: Request) {
   const member = await requireAdminMember(session.user.email)
   if (!member) {
     return NextResponse.json({ error: 'Forbidden — OWNER or ADMIN required' }, { status: 403 })
+  }
+
+  if (isDemoMode()) {
+    return NextResponse.json({ error: 'API key management is disabled in demo mode.' }, { status: 403 })
   }
 
   const body = await request.json() as { name?: string }

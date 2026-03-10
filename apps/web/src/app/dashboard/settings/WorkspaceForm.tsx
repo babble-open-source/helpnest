@@ -16,6 +16,7 @@ interface Props {
   metaTitle: string
   metaDescription: string
   appUrl: string
+  demoMode?: boolean
 }
 
 function normalizeAssetUrl(value: string): string {
@@ -44,6 +45,7 @@ export function WorkspaceForm({
   metaTitle,
   metaDescription,
   appUrl,
+  demoMode = false,
 }: Props) {
   const router = useRouter()
   const [values, setValues] = useState({
@@ -119,16 +121,20 @@ export function WorkspaceForm({
       </div>
       <div>
         <label className="block text-sm font-medium text-ink mb-1">Slug</label>
-        <div className="flex items-center border border-border rounded-lg overflow-hidden">
+        <div className={`flex items-center border border-border rounded-lg overflow-hidden${demoMode ? ' opacity-60' : ''}`}>
           <span className="px-3 py-2 bg-cream text-muted text-sm border-r border-border shrink-0">
             {appUrl.replace(/^https?:\/\//, '')}/
           </span>
           <input
             value={values.slug}
             onChange={set('slug')}
-            className="flex-1 px-3 py-2 text-sm bg-white text-ink focus:outline-none"
+            readOnly={demoMode}
+            className={`flex-1 px-3 py-2 text-sm bg-white text-ink focus:outline-none${demoMode ? ' cursor-not-allowed select-none' : ''}`}
           />
         </div>
+        {demoMode && (
+          <p className="mt-1 text-xs text-muted">Slug cannot be changed in demo mode.</p>
+        )}
       </div>
       <div>
         <label className="block text-sm font-medium text-ink mb-1">Custom Domain</label>

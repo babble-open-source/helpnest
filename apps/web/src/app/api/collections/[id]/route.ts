@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
+import { isDemoMode } from '@/lib/demo'
 
 /** For session-authenticated callers, verify they hold at least EDITOR role. */
 async function ensureEditorRole(userId: string, workspaceId: string): Promise<boolean> {
@@ -74,6 +75,10 @@ export async function DELETE(
 ) {
   const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (isDemoMode()) {
+    return NextResponse.json({ error: 'Deleting collections is disabled in demo mode.' }, { status: 403 })
+  }
 
   const { workspaceId, userId, via } = authResult
 

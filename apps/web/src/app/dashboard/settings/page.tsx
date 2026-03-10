@@ -276,6 +276,7 @@ export default async function SettingsPage() {
             metaTitle={workspaceMetaTitle?.metaTitle ?? ''}
             metaDescription={workspaceMetaDescription?.metaDescription ?? ''}
             appUrl={appUrl}
+            demoMode={demoMode}
           />
         </div>
 
@@ -284,6 +285,7 @@ export default async function SettingsPage() {
           members={serializedMembers}
           currentUserId={member.userId}
           callerRole={member.role}
+          demoMode={demoMode}
         />
 
         {/* Theme */}
@@ -324,7 +326,7 @@ export default async function SettingsPage() {
         </div>
 
         {/* API Keys */}
-        <ApiKeysSection />
+        <ApiKeysSection demoMode={demoMode} />
       </div>
     </div>
   )

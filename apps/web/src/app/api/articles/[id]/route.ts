@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
+import { isDemoMode } from '@/lib/demo'
 
 function slugify(text: string) {
   return text
@@ -104,6 +105,10 @@ export async function DELETE(
 ) {
   const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  if (isDemoMode()) {
+    return NextResponse.json({ error: 'Deleting articles is disabled in demo mode.' }, { status: 403 })
+  }
 
   // For session-based auth, role enforcement is done by requireAuth indirectly via
   // getMember — but requireAuth only checks membership, not role. For delete, we
