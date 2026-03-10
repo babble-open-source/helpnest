@@ -10,6 +10,9 @@ export interface WidgetConfig {
 
 interface ThemePayload {
   vars?: Record<string, string>
+  fontUrls?: string[]
+  logoUrl?: string | null
+  brandText?: string | null
 }
 
 interface Source {
@@ -73,7 +76,11 @@ export class HelpPanel {
     return `
       <div id="helpnest-panel" class="hidden">
         <div class="hn-panel-header">
-          <h3>${this.config.title}</h3>
+          <div class="hn-panel-brand">
+            <img class="hn-panel-logo" alt="" />
+            <span class="hn-panel-logo-text" style="display:none"></span>
+            <h3>${this.config.title}</h3>
+          </div>
           <p class="hn-ai-header-note" style="display:none">AI answers are based on published help articles.</p>
           <div class="hn-search-wrap">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -189,6 +196,7 @@ export class HelpPanel {
   private open() {
     this.isOpen = true
     this.panel?.classList.remove('hidden')
+    void this.applyWorkspaceTheme()
     setTimeout(() => {
       if (this.aiMode) {
         const aiInput = this.container?.querySelector('.hn-ai-input') as HTMLTextAreaElement | null
@@ -591,15 +599,56 @@ export class HelpPanel {
 
     try {
       const url = `${this.config.baseUrl}/api/widget/theme?workspace=${encodeURIComponent(this.config.workspace)}`
-      const res = await fetch(url)
+      const res = await fetch(url, { cache: 'no-store' })
       if (!res.ok) return
 
       const data = await res.json() as ThemePayload
-      if (!data.vars || typeof data.vars !== 'object') return
+      if (data.vars && typeof data.vars === 'object') {
+        for (const [key, value] of Object.entries(data.vars)) {
+          if (!key.startsWith('--') || typeof value !== 'string') continue
+          this.container.style.setProperty(key, value)
+        }
+      }
 
-      for (const [key, value] of Object.entries(data.vars)) {
-        if (!key.startsWith('--') || typeof value !== 'string') continue
-        this.container.style.setProperty(key, value)
+      if (Array.isArray(data.fontUrls)) {
+        for (const url of data.fontUrls) {
+          if (typeof url !== 'string' || url.length === 0) continue
+
+          const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+            (link) => (link as HTMLLinkElement).href === url,
+          )
+          if (existing) continue
+
+          const link = document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = url
+          document.head.appendChild(link)
+        }
+      }
+
+      const logoEl = this.container.querySelector('.hn-panel-logo') as HTMLImageElement | null
+      const logoTextEl = this.container.querySelector('.hn-panel-logo-text') as HTMLSpanElement | null
+      const brandText = typeof data.brandText === 'string' ? data.brandText.trim() : ''
+
+      if (logoEl) {
+        if (typeof data.logoUrl === 'string' && data.logoUrl.length > 0) {
+          logoEl.src = data.logoUrl
+          logoEl.style.display = 'block'
+          if (logoTextEl) {
+            logoTextEl.textContent = ''
+            logoTextEl.style.display = 'none'
+          }
+        } else {
+          logoEl.removeAttribute('src')
+          logoEl.style.display = 'none'
+          if (logoTextEl && brandText.length > 0) {
+            logoTextEl.textContent = brandText
+            logoTextEl.style.display = 'block'
+          } else if (logoTextEl) {
+            logoTextEl.textContent = ''
+            logoTextEl.style.display = 'none'
+          }
+        }
       }
     } catch {
       // Keep default widget colors if theme fetch fails.

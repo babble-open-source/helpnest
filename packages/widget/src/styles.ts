@@ -7,6 +7,7 @@ export const styles = `
     --color-accent: 200 98 42;
     --color-green: 45 106 79;
     --color-white: 255 255 255;
+    --font-heading: Georgia, serif;
     --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     --radius: 8px;
     --radius-sm: max(calc(var(--radius) - 2px), 0px);
@@ -83,10 +84,47 @@ export const styles = `
     padding: 16px;
   }
 
+  .hn-panel-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    min-width: 0;
+  }
+
+  .hn-panel-logo {
+    display: none;
+    height: 34px;
+    min-width: 34px;
+    max-width: 132px;
+    width: auto;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    background: rgb(var(--color-white));
+    object-fit: contain;
+    object-position: left center;
+    padding: 4px 8px;
+  }
+
+  .hn-panel-logo-text {
+    display: none;
+    max-width: 132px;
+    flex-shrink: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    color: rgb(var(--color-cream));
+    font-family: var(--font-brand, var(--font-heading));
+    font-size: 20px;
+    line-height: 1;
+  }
+
   .hn-panel-header h3 {
-    margin: 0 0 10px;
+    margin: 0;
+    min-width: 0;
     font-size: 15px;
     font-weight: 600;
+    font-family: var(--font-heading);
   }
 
   .hn-ai-header-note {
