@@ -66,12 +66,13 @@ model Workspace {
 }
 
 model User {
-  id           String   @id @default(cuid())
-  email        String   @unique
-  name         String?
-  avatar       String?
-  passwordHash String?
-  createdAt    DateTime @default(now())
+  id                String    @id @default(cuid())
+  email             String    @unique
+  name              String?
+  avatar            String?
+  passwordHash      String?
+  passwordChangedAt DateTime?
+  createdAt         DateTime  @default(now())
 
   members          Member[]
   articles         Article[]

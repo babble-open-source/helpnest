@@ -71,6 +71,7 @@ export async function PATCH(request: Request) {
     // If no passwordHash yet, allow first-time password set without current password
 
     updates.passwordHash = await bcrypt.hash(newPassword, 12)
+    ;(updates as Record<string, unknown>).passwordChangedAt = new Date()
   }
 
   if (Object.keys(updates).length === 0) {

@@ -10,7 +10,7 @@
     "db:reset": "prisma migrate reset --force"
   },
   "prisma": {
-    "seed": "node prisma/seed.js"
+    "seed": "node node_modules/tsx/dist/cli.mjs prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.13.0"

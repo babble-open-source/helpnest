@@ -21,17 +21,27 @@ import {
 } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { DashboardSidebar } from './DashboardSidebar'
+import { DefaultPasswordBanner } from './DefaultPasswordBanner'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   const userId = await resolveSessionUserId(session)
   if (!userId || !session?.user) redirect('/login')
 
-  const member = await prisma.member.findFirst({
-    where: { userId, deactivatedAt: null },
-    select: { workspaceId: true },
-  })
+  const [member, currentUser] = await Promise.all([
+    prisma.member.findFirst({
+      where: { userId, deactivatedAt: null },
+      select: { workspaceId: true },
+    }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordChangedAt: true },
+    }),
+  ])
   if (!member) redirect('/login')
+
+  const demoMode = process.env.HELPNEST_DEMO_MODE === 'true'
+  const showDefaultPasswordBanner = !demoMode && currentUser?.passwordChangedAt === null
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: member.workspaceId },
@@ -196,7 +206,9 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <link key={url} rel="stylesheet" href={url} />
       ))}
       <style dangerouslySetInnerHTML={{ __html: `:root { ${themeCSS} }` }} />
-      <div className="h-screen bg-cream flex overflow-hidden">
+      <div className="h-screen bg-cream flex flex-col overflow-hidden">
+        {showDefaultPasswordBanner && <DefaultPasswordBanner />}
+        <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar
           workspaceName={workspace.name}
           workspaceLogo={workspace.logo}
@@ -208,6 +220,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <main className="flex-1 overflow-auto">
           {children}
         </main>
+        </div>
       </div>
     </>
   )
