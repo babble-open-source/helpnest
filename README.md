@@ -7,7 +7,7 @@
     </a>
     <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome" />
     <img src="https://img.shields.io/badge/TypeScript-5.4-blue" alt="TypeScript" />
-    <img src="https://img.shields.io/badge/Next.js-14-black" alt="Next.js 14" />
+    <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js 16" />
   </p>
   <br />
 </div>
@@ -65,14 +65,24 @@ pnpm install
 pnpm dev
 ```
 
-Open **http://localhost:3000** and log in with the **dev-only** seed credentials:
+Open **http://localhost:3000/login** and sign in with the **dev-only** seed credentials:
 
 | | |
 |---|---|
 | Email | `admin@helpnest.cloud` |
 | Password | `helpnest` |
 
-> **Never use these credentials in production.** For production Docker deployments, `self-host-setup.sh` generates a strong random `ADMIN_SEED_PASSWORD` and prints it at the end.
+> **Never use these credentials in production.** For production deployments, always set `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` before running the seed. `self-host-setup.sh` generates a strong random password automatically and prints it at the end.
+
+#### First login behavior
+
+- The login page shows a **Default account** box with the email, password, and a link to your help center — visible until you change your password.
+- After signing in, a **security banner** appears in the dashboard prompting you to change your password.
+- Both disappear automatically once you update your password via **Settings → Your profile → Change password** (minimum 12 characters).
+
+#### Demo / showcase mode
+
+Set `HELPNEST_DEMO_MODE=true` to permanently show the default credentials on the login page and suppress the password-change banner — useful for live demos or staging environments where the default password is intentional. Password changes are also blocked in this mode.
 
 The seed also creates two workspaces:
 - `http://localhost:3000/helpnest/help` — HelpNest's own docs (dogfooded)
@@ -94,6 +104,15 @@ AUTH_SECRET=                    # openssl rand -base64 32
 NEXTAUTH_URL=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
+# Initial admin account — created once when running db:seed
+# Defaults to admin@helpnest.cloud / helpnest in dev. Always set in production.
+ADMIN_SEED_EMAIL=
+ADMIN_SEED_PASSWORD=            # minimum 12 characters in production
+
+# Demo / showcase mode (optional)
+# Shows default credentials on the login page and blocks password changes.
+HELPNEST_DEMO_MODE=             # set to "true" to enable
+
 # AI search (optional — falls back to full-text search without these)
 OPENAI_API_KEY=                 # for article embeddings
 ANTHROPIC_API_KEY=              # for AI-powered answers
@@ -108,7 +127,7 @@ GITHUB_CLIENT_SECRET=
 
 | Layer | Technology |
 |-------|-----------|
-| Framework | Next.js 14 App Router |
+| Framework | Next.js 16 App Router |
 | Database | PostgreSQL 16 + Prisma 5 |
 | Auth | NextAuth v5 (Credentials + GitHub OAuth) |
 | Editor | Tiptap |
@@ -123,7 +142,7 @@ GITHUB_CLIENT_SECRET=
 ```
 helpnest/
 ├── apps/
-│   ├── web/          → Help center + admin dashboard (Next.js 14, port 3000)
+│   ├── web/          → Help center + admin dashboard (Next.js 16, port 3000)
 │   └── docs/         → HelpNest's own documentation (dogfooded, port 3001)
 ├── packages/
 │   ├── db/           → @helpnest/db — Prisma schema + client (internal)
