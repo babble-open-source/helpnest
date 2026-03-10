@@ -20,6 +20,7 @@ import {
   prisma,
 } from '@/lib/db'
 import { redirect } from 'next/navigation'
+import { isDemoMode } from '@/lib/demo'
 import { DashboardSidebar } from './DashboardSidebar'
 import { DefaultPasswordBanner } from './DefaultPasswordBanner'
 
@@ -40,8 +41,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   ])
   if (!member) redirect('/login')
 
-  const demoMode = process.env.HELPNEST_DEMO_MODE === 'true'
-  const showDefaultPasswordBanner = !demoMode && currentUser?.passwordChangedAt === null
+  const showDefaultPasswordBanner = !isDemoMode() && currentUser?.passwordChangedAt === null
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: member.workspaceId },

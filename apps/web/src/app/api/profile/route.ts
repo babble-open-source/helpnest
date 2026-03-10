@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { isDemoMode } from '@/lib/demo'
 
 export async function PATCH(request: Request) {
   const session = await auth()
@@ -37,14 +38,14 @@ export async function PATCH(request: Request) {
     updates.name = name.trim()
   }
 
-  if (newPassword !== undefined && process.env.HELPNEST_DEMO_MODE === 'true') {
+  if (newPassword !== undefined && isDemoMode()) {
     return NextResponse.json({ error: 'Password changes are disabled in demo mode.' }, { status: 403 })
   }
 
   if (newPassword !== undefined) {
-    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+    if (typeof newPassword !== 'string' || newPassword.length < 12) {
       return NextResponse.json(
-        { error: 'New password must be at least 8 characters' },
+        { error: 'New password must be at least 12 characters' },
         { status: 400 },
       )
     }

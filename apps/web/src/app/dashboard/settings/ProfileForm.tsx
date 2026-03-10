@@ -22,8 +22,8 @@ export function ProfileForm({ name: initialName, demoMode }: Props) {
     const changingPassword = newPassword.length > 0 || confirmPassword.length > 0
 
     if (changingPassword) {
-      if (newPassword.length < 8) {
-        setErrorMessage('New password must be at least 8 characters.')
+      if (newPassword.length < 12) {
+        setErrorMessage('New password must be at least 12 characters.')
         return
       }
       if (newPassword !== confirmPassword) {
@@ -111,7 +111,7 @@ export function ProfileForm({ name: initialName, demoMode }: Props) {
                 onChange={(e) => setNewPassword(e.target.value)}
                 autoComplete="new-password"
                 className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-                placeholder="At least 8 characters"
+                placeholder="At least 12 characters"
               />
             </div>
             <div suppressHydrationWarning>

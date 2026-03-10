@@ -7,12 +7,11 @@ import Link from 'next/link'
 
 interface Props {
   defaultEmail: string
-  defaultPassword: string
   showDefaultCreds: boolean
   workspaceSlug: string | null
 }
 
-export function LoginForm({ defaultEmail, defaultPassword, showDefaultCreds, workspaceSlug }: Props) {
+export function LoginForm({ defaultEmail, showDefaultCreds, workspaceSlug }: Props) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -51,7 +50,7 @@ export function LoginForm({ defaultEmail, defaultPassword, showDefaultCreds, wor
               Email: <code className="bg-amber-100 px-1 rounded">{defaultEmail}</code>
             </p>
             <p className="text-amber-700">
-              Password: <code className="bg-amber-100 px-1 rounded">{defaultPassword}</code>
+              Password: <code className="bg-amber-100 px-1 rounded">helpnest</code>
             </p>
             {workspaceSlug && (
               <p className="text-amber-700 mt-1">

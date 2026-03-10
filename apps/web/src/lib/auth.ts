@@ -72,7 +72,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
 /**
  * Resolve a stable user id from session data.
- * Handles stale JWT ids after DB resets by falling back to email lookup.
+ * In production, the JWT id must match a live user record — no fallback.
+ * In development, falls back to email lookup to survive DB resets.
  */
 export async function resolveSessionUserId(session: { user?: { id?: string | null; email?: string | null } } | null): Promise<string | null> {
   if (!session?.user) return null
@@ -85,10 +86,15 @@ export async function resolveSessionUserId(session: { user?: { id?: string | nul
     if (byId) return byId.id
   }
 
-  if (!session.user.email) return null
-  const byEmail = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  })
-  return byEmail?.id ?? null
+  // Email fallback only in development — prevents stale JWT pain after DB resets.
+  // Never enabled in production: a missing id must force re-authentication.
+  if (process.env.NODE_ENV !== 'production' && session.user.email) {
+    const byEmail = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true },
+    })
+    return byEmail?.id ?? null
+  }
+
+  return null
 }

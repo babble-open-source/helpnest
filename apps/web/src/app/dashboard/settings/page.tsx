@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth'
+import { isDemoMode } from '@/lib/demo'
 import { fontPresets, radiusOptions } from '@/lib/branding'
 import {
   hasWorkspaceBrandTextColumn,
@@ -33,7 +34,7 @@ import { WorkspaceForm } from './WorkspaceForm'
 
 export default async function SettingsPage() {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://helpnest.cloud'
-  const demoMode = process.env.HELPNEST_DEMO_MODE === 'true'
+  const demoMode = isDemoMode()
   const session = await auth()
   if (!session?.user) redirect('/login')
 
