@@ -202,9 +202,6 @@ Switch themes from **Dashboard → Settings → Appearance**. Community themes a
 | [`helpnest-examples`](https://github.com/babble-open-source/helpnest-examples) | Deployment guides: Docker, Railway, Vercel, Render |
 | [`helpnest-templates`](https://github.com/babble-open-source/helpnest-templates) | Industry starter content (SaaS, fintech, healthcare…) |
 | [`awesome-helpnest`](https://github.com/babble-open-source/awesome-helpnest) | Community resources |
-| `helpnest-cloud` *(private)* | SaaS billing, plan limits, workspace provisioning |
-| `helpnest-ai-service` *(private)* | RAG pipeline, embeddings, Claude streaming |
-| `helpnest-analytics` *(private)* | Event ingestion and search insights |
 
 ## Contributing
 
