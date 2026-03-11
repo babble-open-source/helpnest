@@ -90,9 +90,13 @@ export function AskAIModal({ workspace, workspaceName, onClose }: Props) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
       <div className="absolute inset-0 bg-ink/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[80vh]">
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-lg overflow-hidden flex flex-col max-h-[90vh] sm:max-h-[80vh]">
+        {/* Mobile drag handle */}
+        <div className="sm:hidden flex justify-center pt-3 pb-0 shrink-0">
+          <div className="w-10 h-1 rounded-full bg-border" />
+        </div>
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-green text-white">
           <div className="flex items-center gap-2">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -109,7 +113,7 @@ export function AskAIModal({ workspace, workspaceName, onClose }: Props) {
 
         <div className="flex-1 overflow-y-auto p-5">
           {status === 'idle' && (
-            <div className="text-center py-8">
+            <div className="text-center py-5 sm:py-8">
               <p className="text-3xl mb-3">✦</p>
               <p className="font-medium text-ink mb-1">Ask anything</p>
               <p className="text-sm text-muted">Get instant answers from the {workspaceName} help center</p>
