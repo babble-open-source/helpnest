@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
-import { DM_Sans, Lora } from 'next/font/google'
+import { Source_Sans_3, Lora } from 'next/font/google'
 import './globals.css'
 
-const dmSans = DM_Sans({
+const sourceSans3 = Source_Sans_3({
   subsets: ['latin'],
-  variable: '--font-dm-sans',
+  weight: ['400', '500'],
+  variable: '--font-source-sans-3',
 })
 
 const lora = Lora({
@@ -26,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${dmSans.variable} ${lora.variable} font-sans bg-cream text-ink antialiased`} suppressHydrationWarning>
+      <body className={`${sourceSans3.variable} ${lora.variable} font-sans bg-cream text-ink antialiased`} suppressHydrationWarning>
         {children}
       </body>
     </html>
