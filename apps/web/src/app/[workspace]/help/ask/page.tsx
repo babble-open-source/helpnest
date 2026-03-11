@@ -1,5 +1,6 @@
 import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 import { DashboardButton } from '@/components/help/DashboardButton'
 import { AskAIClient } from './AskAIClient'
@@ -29,7 +30,28 @@ export default async function AskAIPage(props: Props) {
       {/* Nav */}
       <nav className="shrink-0 bg-cream/95 backdrop-blur border-b border-border">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
+
+          {/* Mobile: back arrow + page title */}
+          <div className="flex items-center gap-2 sm:hidden min-w-0">
+            <Link
+              href={`/${params.workspace}/help`}
+              className="p-1.5 -ml-1.5 rounded-lg text-muted hover:text-ink hover:bg-border/40 transition-colors shrink-0"
+              aria-label="Back to help center"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </Link>
+            <div className="flex items-center gap-1.5 text-sm font-medium text-ink min-w-0">
+              <svg className="w-3.5 h-3.5 text-green shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              <span>Ask AI</span>
+            </div>
+          </div>
+
+          {/* Desktop: full breadcrumb */}
+          <div className="hidden sm:flex items-center gap-2 min-w-0">
             <WorkspaceBrandLink
               href={`/${params.workspace}/help`}
               name={workspace.name}
@@ -47,6 +69,7 @@ export default async function AskAIPage(props: Props) {
               Ask AI
             </div>
           </div>
+
           <DashboardButton />
         </div>
       </nav>
