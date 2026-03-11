@@ -21,6 +21,7 @@ export interface Collection {
   slug: string
   order: number
   isPublic: boolean
+  isArchived: boolean
   parentId: string | null
   createdAt?: string
 }
@@ -91,6 +92,7 @@ export interface UpdateArticleParams {
 
 export interface ListCollectionsParams {
   isPublic?: boolean
+  isArchived?: boolean
 }
 
 export interface CreateCollectionParams {
@@ -99,6 +101,7 @@ export interface CreateCollectionParams {
   emoji?: string
   slug?: string
   isPublic?: boolean
+  isArchived?: boolean
   parentId?: string
 }
 
@@ -108,6 +111,7 @@ export interface UpdateCollectionParams {
   emoji?: string
   slug?: string
   isPublic?: boolean
+  isArchived?: boolean
   order?: number
 }
 

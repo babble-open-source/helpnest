@@ -16,9 +16,18 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
   if (!article) notFound()
 
   const collections = await prisma.collection.findMany({
-    where: { workspaceId: article.workspaceId },
-    select: { id: true, title: true, emoji: true },
-    orderBy: { order: 'asc' },
+    where: {
+      workspaceId: article.workspaceId,
+      OR: [
+        { isArchived: false },
+        { id: article.collectionId },
+      ],
+    },
+    select: { id: true, title: true, emoji: true, isArchived: true },
+    orderBy: [
+      { isArchived: 'asc' },
+      { order: 'asc' },
+    ],
   })
 
   // Load draftContent if present (unsaved edits on a published article),

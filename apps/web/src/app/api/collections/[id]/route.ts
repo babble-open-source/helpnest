@@ -42,6 +42,7 @@ export async function PATCH(
     description?: string
     emoji?: string
     isPublic?: boolean
+    isArchived?: boolean
   }
 
   // Regenerate slug when title changes, ensuring uniqueness (excluding this collection)
@@ -63,6 +64,7 @@ export async function PATCH(
       ...(body.description !== undefined && { description: body.description || null }),
       ...(body.emoji !== undefined && { emoji: body.emoji }),
       ...(body.isPublic !== undefined && { isPublic: body.isPublic }),
+      ...(body.isArchived !== undefined && { isArchived: body.isArchived }),
     },
   })
 

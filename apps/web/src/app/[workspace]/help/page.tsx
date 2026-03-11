@@ -26,14 +26,17 @@ export default async function HelpCenterHome(props: Props) {
       name: true,
       logo: true,
       collections: {
-        where: { isPublic: true, parentId: null },
+        where: { isPublic: true, isArchived: false, parentId: null },
         orderBy: { order: 'asc' },
         include: {
           _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
         },
       },
       articles: {
-        where: { status: 'PUBLISHED' },
+        where: {
+          status: 'PUBLISHED',
+          collection: { is: { isPublic: true, isArchived: false } },
+        },
         orderBy: { views: 'desc' },
         take: 5,
         include: { collection: true },

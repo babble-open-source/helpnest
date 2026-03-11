@@ -19,12 +19,19 @@ export default async function CollectionsPage() {
 
   const collections = await prisma.collection.findMany({
     where: { workspaceId: member.workspaceId, parentId: null },
-    orderBy: { order: 'asc' },
+    orderBy: [
+      { isArchived: 'asc' },
+      { order: 'asc' },
+    ],
     include: {
-      _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
+      _count: { select: { articles: true } },
       subCollections: {
+        orderBy: [
+          { isArchived: 'asc' },
+          { order: 'asc' },
+        ],
         include: {
-          _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
+          _count: { select: { articles: true } },
         },
       },
     },
@@ -53,13 +60,25 @@ export default async function CollectionsPage() {
       ) : (
         <div className="grid gap-4">
           {collections.map((col) => (
-            <div key={col.id} className="bg-white rounded-xl border border-border p-5">
+            <div
+              key={col.id}
+              className={`rounded-xl border p-5 ${
+                col.isArchived ? 'bg-stone-50 border-border/80' : 'bg-white border-border'
+              }`}
+            >
               <div className="flex items-start gap-4">
                 <span className="text-2xl">{col.emoji ?? '📄'}</span>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-4">
                     <div>
-                      <h3 className="font-medium text-ink">{col.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-medium text-ink">{col.title}</h3>
+                        {col.isArchived && (
+                          <span className="rounded-full bg-border/70 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted">
+                            Archived
+                          </span>
+                        )}
+                      </div>
                       {col.description && (
                         <p className="text-sm text-muted mt-0.5">{col.description}</p>
                       )}
@@ -75,6 +94,7 @@ export default async function CollectionsPage() {
                           description: col.description,
                           emoji: col.emoji,
                           articleCount: col._count.articles,
+                          isArchived: col.isArchived,
                         }}
                         demoMode={demoMode}
                       />
@@ -89,6 +109,7 @@ export default async function CollectionsPage() {
                         >
                           <span>{sub.emoji ?? '📂'}</span>
                           <span>{sub.title}</span>
+                          {sub.isArchived && <span className="text-xs uppercase tracking-wide">archived</span>}
                           <span className="text-xs">({sub._count.articles})</span>
                         </div>
                       ))}

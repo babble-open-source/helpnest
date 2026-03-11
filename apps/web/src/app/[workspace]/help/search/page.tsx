@@ -44,6 +44,7 @@ export default async function SearchPage(props: Props) {
         WHERE a."workspaceId" = ${workspace.id}
           AND a.status = 'PUBLISHED'
           AND c."isPublic" = true
+          AND c."isArchived" = false
           AND (
             to_tsvector('english', a.title || ' ' || a.content)
             @@ plainto_tsquery('english', ${q})

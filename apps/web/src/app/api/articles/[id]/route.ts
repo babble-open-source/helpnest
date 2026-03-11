@@ -66,6 +66,19 @@ export async function PATCH(
   })
   if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
+  if (body.collectionId !== undefined) {
+    const targetCollection = await prisma.collection.findFirst({
+      where: { id: body.collectionId, workspaceId },
+      select: { id: true, isArchived: true },
+    })
+    if (!targetCollection) {
+      return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
+    }
+    if (targetCollection.isArchived) {
+      return NextResponse.json({ error: 'Cannot move an article into an archived collection' }, { status: 409 })
+    }
+  }
+
   const data: Record<string, unknown> = {}
   if (body.title !== undefined) data.title = body.title
   if (body.excerpt !== undefined) data.excerpt = body.excerpt

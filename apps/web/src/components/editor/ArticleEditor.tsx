@@ -40,6 +40,7 @@ interface Collection {
   id: string
   title: string
   emoji: string | null
+  isArchived?: boolean
 }
 
 interface Props {

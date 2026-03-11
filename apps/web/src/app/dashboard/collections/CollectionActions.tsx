@@ -12,6 +12,7 @@ interface Props {
     description: string | null
     emoji: string | null
     articleCount: number
+    isArchived: boolean
   }
   demoMode?: boolean
 }
@@ -31,6 +32,8 @@ export function CollectionActions({ collection, demoMode = false }: Props) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
+  const [archiving, setArchiving] = useState(false)
+  const [archiveError, setArchiveError] = useState('')
 
   function openEdit() {
     setTitle(collection.title)
@@ -84,22 +87,56 @@ export function CollectionActions({ collection, demoMode = false }: Props) {
     }
   }
 
+  async function handleArchive() {
+    setArchiving(true)
+    setArchiveError('')
+    try {
+      const res = await fetch(`/api/collections/${collection.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isArchived: !collection.isArchived }),
+      })
+      if (!res.ok) {
+        const data = await res.json() as { error?: string }
+        setArchiveError(data.error ?? 'Something went wrong')
+        return
+      }
+      router.refresh()
+    } catch {
+      setArchiveError('Something went wrong')
+    } finally {
+      setArchiving(false)
+    }
+  }
+
   return (
     <>
-      <button
-        onClick={openEdit}
-        className="text-xs text-muted hover:text-accent transition-colors"
-      >
-        Edit
-      </button>
-      {!demoMode && (
-        <button
-          onClick={() => { setDeleteError(''); setDeleteOpen(true) }}
-          className="text-xs text-muted hover:text-red-500 transition-colors"
-        >
-          Delete
-        </button>
-      )}
+      <div className="flex flex-col items-end gap-1">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={openEdit}
+            className="text-xs text-muted hover:text-accent transition-colors"
+          >
+            Edit
+          </button>
+          <button
+            onClick={handleArchive}
+            disabled={archiving}
+            className="text-xs text-muted hover:text-ink transition-colors disabled:opacity-50"
+          >
+            {archiving ? '…' : collection.isArchived ? 'Unarchive' : 'Archive'}
+          </button>
+          {!demoMode && (
+            <button
+              onClick={() => { setDeleteError(''); setDeleteOpen(true) }}
+              className="text-xs text-muted hover:text-red-500 transition-colors"
+            >
+              Delete
+            </button>
+          )}
+        </div>
+        {archiveError && <p className="text-xs text-red-500">{archiveError}</p>}
+      </div>
 
       {/* Edit modal */}
       {editOpen && (

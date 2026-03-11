@@ -16,7 +16,8 @@ export default async function NewArticlePage() {
   if (!member) redirect('/dashboard')
 
   const collection = await prisma.collection.findFirst({
-    where: { workspaceId: member.workspaceId },
+    where: { workspaceId: member.workspaceId, isArchived: false },
+    orderBy: { order: 'asc' },
     select: { id: true },
   })
   if (!collection) redirect('/dashboard/collections')

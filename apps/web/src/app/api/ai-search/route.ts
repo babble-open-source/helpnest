@@ -203,7 +203,12 @@ export async function POST(request: Request) {
   if (vectorMatches.length > 0) {
     const articleIds = vectorMatches.map((m) => m.articleId)
     const rows = await prisma.article.findMany({
-      where: { id: { in: articleIds }, workspaceId: workspace.id, status: 'PUBLISHED' },
+      where: {
+        id: { in: articleIds },
+        workspaceId: workspace.id,
+        status: 'PUBLISHED',
+        collection: { is: { isPublic: true, isArchived: false } },
+      },
       select: {
         id: true, title: true, slug: true, content: true,
         collection: { select: { slug: true, title: true } },
@@ -228,6 +233,8 @@ export async function POST(request: Request) {
       JOIN "Collection" c ON a."collectionId" = c.id
       WHERE a."workspaceId" = ${workspace.id}
         AND a.status = 'PUBLISHED'
+        AND c."isPublic" = true
+        AND c."isArchived" = false
         AND to_tsvector('english', a.title || ' ' || a.content) @@ plainto_tsquery('english', ${normalizedQuery})
       ORDER BY ts_rank_cd(to_tsvector('english', a.title || ' ' || a.content), plainto_tsquery('english', ${normalizedQuery})) DESC
       LIMIT 5

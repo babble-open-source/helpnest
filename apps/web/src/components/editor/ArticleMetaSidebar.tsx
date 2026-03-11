@@ -7,6 +7,7 @@ interface Collection {
   id: string
   title: string
   emoji: string | null
+  isArchived?: boolean
 }
 
 interface Props {
@@ -96,7 +97,7 @@ export function ArticleMetaSidebar({
           >
             {collections.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.emoji} {c.title}
+                {c.emoji} {c.title}{c.isArchived ? ' (archived)' : ''}
               </option>
             ))}
           </select>

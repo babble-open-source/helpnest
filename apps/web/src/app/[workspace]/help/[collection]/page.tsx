@@ -39,14 +39,14 @@ export default async function CollectionPage(props: Props) {
         include: { author: true },
       },
       subCollections: {
-        where: { isPublic: true },
+        where: { isPublic: true, isArchived: false },
         include: {
           _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
         },
       },
     },
   })
-  if (!collection) notFound()
+  if (!collection || !collection.isPublic || collection.isArchived) notFound()
 
   return (
     <div className="min-h-screen bg-cream">

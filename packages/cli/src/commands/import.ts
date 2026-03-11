@@ -19,6 +19,7 @@ interface HelpNestExport {
       description?: string
       emoji?: string
       slug: string
+      isArchived?: boolean
       articles: Array<{
         title: string
         slug: string
@@ -103,6 +104,7 @@ export async function importCommand(options: ImportOptions) {
               emoji: col.emoji,
               slug: col.slug,
               isPublic: true,
+              isArchived: col.isArchived ?? false,
             },
           })
           for (const art of col.articles ?? []) {

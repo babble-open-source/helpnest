@@ -75,7 +75,7 @@ export default async function ArticlePage(props: Props) {
       collection: true,
     },
   })
-  if (!article || article.status !== 'PUBLISHED') notFound()
+  if (!article || article.status !== 'PUBLISHED' || !article.collection.isPublic || article.collection.isArchived) notFound()
 
   // Increment view count — buffered in Redis, flushed to DB at threshold (fire and forget)
   incrementArticleViews(article.id).catch(() => {})
@@ -85,6 +85,7 @@ export default async function ArticlePage(props: Props) {
     where: {
       collectionId: article.collectionId,
       status: 'PUBLISHED',
+      collection: { is: { isPublic: true, isArchived: false } },
       id: { not: article.id },
     },
     take: 3,

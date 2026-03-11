@@ -77,7 +77,8 @@ export async function POST(request: Request) {
 
   // Get first collection as default
   const collection = await prisma.collection.findFirst({
-    where: { workspaceId },
+    where: { workspaceId, isArchived: false },
+    orderBy: { order: 'asc' },
     select: { id: true },
   })
   if (!collection) return NextResponse.json({ error: 'Create a collection first' }, { status: 400 })
