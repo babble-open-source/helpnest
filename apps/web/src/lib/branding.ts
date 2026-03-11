@@ -54,7 +54,7 @@ function primaryFontLabel(fontFamily: string): string {
 const presetMap = new Map<string, FontPreset>()
 
 for (const theme of themes) {
-  const key = theme.fonts.headingUrl ?? theme.fonts.heading
+  const key = primaryFontLabel(theme.fonts.heading)
   if (presetMap.has(key)) continue
 
   presetMap.set(key, {
