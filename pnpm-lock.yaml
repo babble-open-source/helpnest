@@ -79,8 +79,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/db
       '@helpnest/themes':
-        specifier: ^0.1.2
-        version: 0.1.2
+        specifier: ^0.1.4
+        version: 0.1.4
       '@helpnest/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -752,8 +752,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@helpnest/themes@0.1.2':
-    resolution: {integrity: sha512-oNjfxuTTnoo9Uo/zNomRtnYAuXyhg8BW9sevB0cV1+9LDC/jNWrBtISejmo0lJZ57L/s0Z9smowx2FXQMkeMEA==}
+  '@helpnest/themes@0.1.4':
+    resolution: {integrity: sha512-0+vuhlDeGA9NLGLLb4RCaZM7HpFdY4jBdp5u1qf/I9WbyQTwUMLtUsatdv6sbRQCnc9gz6ENfdlVutS6zcABYg==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -4207,7 +4207,7 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@helpnest/themes@0.1.2': {}
+  '@helpnest/themes@0.1.4': {}
 
   '@humanfs/core@0.19.1': {}
 
