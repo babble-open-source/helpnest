@@ -82,7 +82,7 @@ function groupListItems(text: string): string {
   return result.join('\n')
 }
 
-export function renderMarkdown(md: string): string {
+function renderMarkdown(md: string): string {
   // ── 1. Extract fenced code blocks ──────────────────────────────────────────
   // Replace before any other processing so paragraph / list logic never sees
   // the raw content inside code fences.

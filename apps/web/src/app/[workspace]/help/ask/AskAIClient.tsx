@@ -2,7 +2,8 @@
 
 import { useRef, useState } from 'react'
 import Link from 'next/link'
-import { renderMarkdown } from '@/components/help/ArticleContent'
+import Markdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface Source {
   id: string
@@ -133,17 +134,12 @@ export function AskAIClient({ workspace, workspaceName }: Props) {
               <p className="text-xs font-medium text-muted uppercase tracking-wide">Answer</p>
             </div>
             <div className="bg-white rounded-xl border border-border p-4">
-              {status === 'streaming' ? (
-                <p className="text-ink text-sm leading-relaxed whitespace-pre-wrap">
-                  {answer}
+              <div className="hn-prose text-sm">
+                <Markdown remarkPlugins={[remarkGfm]}>{answer}</Markdown>
+                {status === 'streaming' && (
                   <span className="inline-block w-0.5 h-4 bg-ink/50 ml-0.5 animate-pulse align-text-bottom" />
-                </p>
-              ) : (
-                <div
-                  className="hn-prose text-sm"
-                  dangerouslySetInnerHTML={{ __html: renderMarkdown(answer) }}
-                />
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
