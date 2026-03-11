@@ -228,11 +228,16 @@ function addHeadingIds(html: string): string {
   })
 }
 
+/** Wrap bare Tiptap <table> elements in a scroll container for mobile. */
+function wrapTiptapTables(html: string): string {
+  return html.replace(/<table\b/g, '<div class="overflow-x-auto my-5 table-scroll"><table ').replace(/<\/table>/g, '</table></div>')
+}
+
 export function ArticleContent({ content }: Props) {
   // Tiptap saves HTML (starts with `<`); seed/legacy data is Markdown.
   const isTiptap = content.trimStart().startsWith('<')
   const html = isTiptap
-    ? fixOrderedListCounters(addHeadingIds(content))
+    ? wrapTiptapTables(fixOrderedListCounters(addHeadingIds(content)))
     : renderMarkdown(content)
   return (
     <div

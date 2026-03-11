@@ -31,10 +31,10 @@ export default async function CollectionsPage() {
   })
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 sm:p-8">
+      <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-serif text-3xl text-ink">Collections</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl text-ink">Collections</h1>
           <p className="text-muted text-sm mt-1">
             {collections.length} collection{collections.length !== 1 ? 's' : ''}
           </p>

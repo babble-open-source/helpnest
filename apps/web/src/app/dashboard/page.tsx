@@ -24,7 +24,7 @@ export default async function DashboardPage() {
 
   if (!member) {
     return (
-      <div className="p-8">
+      <div className="p-4 sm:p-8">
         <h1 className="font-serif text-3xl text-ink mb-2">Welcome to HelpNest</h1>
         <p className="text-muted">You are not a member of any workspace yet.</p>
       </div>
@@ -136,9 +136,9 @@ export default async function DashboardPage() {
   ]
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       <div className="mb-8">
-        <h1 className="font-serif text-3xl text-ink">Overview</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl text-ink">Overview</h1>
         <p className="text-muted mt-1">{member.workspace.name}</p>
       </div>
 

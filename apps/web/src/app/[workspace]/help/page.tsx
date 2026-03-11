@@ -71,7 +71,7 @@ export default async function HelpCenterHome(props: Props) {
       </nav>
 
       {/* Hero */}
-      <section className="bg-ink text-cream py-16 px-4">
+      <section className="bg-ink text-cream py-10 sm:py-16 px-4">
         <div className="max-w-2xl mx-auto text-center">
           <h1 className="font-serif text-4xl sm:text-5xl leading-tight mb-4">How can we help you today?</h1>
           <p className="text-cream/70 text-lg mb-8">
@@ -90,7 +90,7 @@ export default async function HelpCenterHome(props: Props) {
       </div>
 
       {/* Main content */}
-      <main className="max-w-4xl mx-auto px-4 py-12">
+      <main className="max-w-4xl mx-auto px-4 py-6 sm:py-12">
         {/* Collections */}
         <section className="mb-16">
           <h2 className="font-serif text-2xl text-ink mb-6">Browse by topic</h2>
@@ -144,7 +144,7 @@ export default async function HelpCenterHome(props: Props) {
                       <p className="text-sm text-muted mt-0.5 line-clamp-1">{article.excerpt}</p>
                     )}
                   </div>
-                  <div className="flex items-center gap-3 text-xs text-muted whitespace-nowrap">
+                  <div className="hidden sm:flex items-center gap-3 text-xs text-muted whitespace-nowrap">
                     <span className="bg-cream rounded-full px-2 py-0.5">{article.collection.title}</span>
                     <ReadTime content={article.content} />
                   </div>

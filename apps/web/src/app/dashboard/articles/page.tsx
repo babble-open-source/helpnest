@@ -52,18 +52,18 @@ export default async function ArticlesPage(props: {
   })
 
   return (
-    <div className="p-8">
+    <div className="p-4 sm:p-8">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-serif text-3xl text-ink">Articles</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl text-ink">Articles</h1>
           <p className="text-muted text-sm mt-1">
             {articles.length} article{articles.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Link
           href="/dashboard/articles/new"
-          className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium"
+          className="bg-ink text-cream px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium shrink-0"
         >
           + New Article
         </Link>
@@ -71,9 +71,9 @@ export default async function ArticlesPage(props: {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <form className="flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2">
+        <form className="flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2 w-full sm:w-auto">
           <svg
-            className="w-4 h-4 text-muted"
+            className="w-4 h-4 text-muted shrink-0"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -89,11 +89,11 @@ export default async function ArticlesPage(props: {
             name="q"
             defaultValue={searchParams.q}
             placeholder="Search articles..."
-            className="text-sm outline-none text-ink placeholder:text-muted bg-transparent w-48"
+            className="text-sm outline-none text-ink placeholder:text-muted bg-transparent flex-1 sm:w-48"
           />
         </form>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           {(['', 'DRAFT', 'PUBLISHED', 'ARCHIVED'] as const).map((s) => (
             <Link
               key={s}

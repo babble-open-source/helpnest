@@ -172,7 +172,31 @@
   margin: 1rem 0;
 }
 
+/* ── Responsive font sizes ──────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .hn-prose h1 {
+    font-size: 1.625rem;
+  }
+  .hn-prose h2 {
+    font-size: 1.25rem;
+  }
+  .hn-prose h3 {
+    font-size: 1.1rem;
+  }
+}
+
 /* ── Tables ─────────────────────────────────────────────────── */
+
+.hn-prose .table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 1.25rem 0;
+}
+
+.hn-prose .table-scroll table {
+  margin: 0;
+}
 
 .hn-prose table {
   border-collapse: collapse;
