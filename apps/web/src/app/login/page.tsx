@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/db'
 import { isDemoMode } from '@/lib/demo'
+import { auth } from '@/lib/auth'
+import { redirect } from 'next/navigation'
 import { LoginForm } from './LoginForm'
 
 export const dynamic = 'force-dynamic'
@@ -7,6 +9,8 @@ export const dynamic = 'force-dynamic'
 const DEFAULT_EMAIL = 'admin@helpnest.cloud'
 
 export default async function LoginPage() {
+  const session = await auth()
+  if (session?.user) redirect('/dashboard')
   const demoMode = isDemoMode()
   const seedEmail = process.env.ADMIN_SEED_EMAIL ?? DEFAULT_EMAIL
 
