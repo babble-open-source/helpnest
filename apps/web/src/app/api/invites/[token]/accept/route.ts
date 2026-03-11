@@ -57,17 +57,21 @@ export async function POST(
 
   // Use a transaction so user creation, member creation, and invite update are atomic
   await prisma.$transaction(async (tx) => {
-    // Upsert user: create if new, update name/password if existing
+    // Upsert user: create if new, update name/password if existing.
+    // Set passwordChangedAt so invited users are not shown the
+    // "change default password" banner (they chose their own password).
     const user = await tx.user.upsert({
       where: { email: invite.email },
       create: {
         email: invite.email,
         name: name.trim(),
         passwordHash,
+        passwordChangedAt: new Date(),
       },
       update: {
         name: name.trim(),
         passwordHash,
+        passwordChangedAt: new Date(),
       },
       select: { id: true },
     })

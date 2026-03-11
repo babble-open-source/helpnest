@@ -123,8 +123,8 @@ export default async function ArticlePage(props: Props) {
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-4 py-12">
-        <div className="flex gap-12">
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-12">
+        <div className="flex gap-8 lg:gap-12">
           {/* Main content */}
           <article className="flex-1 min-w-0 max-w-2xl">
             {/* Article header */}
@@ -139,7 +139,7 @@ export default async function ArticlePage(props: Props) {
                 <span>·</span>
                 <span>{minutes} min read</span>
               </div>
-              <h1 className="font-serif text-4xl text-ink mb-4 leading-tight">{article.title}</h1>
+              <h1 className="font-serif text-3xl sm:text-4xl text-ink mb-4 leading-tight">{article.title}</h1>
               <div className="flex items-center gap-3 text-sm text-muted">
                 <div className="w-6 h-6 rounded-full bg-border flex items-center justify-center text-xs font-medium text-ink">
                   {article.author.name?.[0] ?? 'A'}

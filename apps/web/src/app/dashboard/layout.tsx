@@ -36,13 +36,18 @@ export default async function DashboardLayout({ children }: { children: React.Re
     }),
     prisma.user.findUnique({
       where: { id: userId },
-      select: { passwordChangedAt: true },
+      select: { passwordChangedAt: true, passwordHash: true },
     }),
   ])
   if (!member) redirect('/login')
 
   const demoMode = isDemoMode()
-  const showDefaultPasswordBanner = !demoMode && currentUser?.passwordChangedAt === null
+  // Only show banner for seeded credentials users who never changed their password.
+  // Invited users set passwordChangedAt on accept; OAuth users have no passwordHash.
+  const showDefaultPasswordBanner =
+    !demoMode &&
+    currentUser?.passwordHash !== null &&
+    currentUser?.passwordChangedAt === null
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: member.workspaceId },
@@ -236,7 +241,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           userEmail={session.user.email ?? ''}
           userInitial={userInitial}
         />
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto pt-14 lg:pt-0">
           {children}
         </main>
         </div>

@@ -70,11 +70,11 @@ export default async function CollectionPage(props: Props) {
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-4 py-12">
+      <main className="max-w-3xl mx-auto px-4 py-6 sm:py-12">
         {/* Collection header */}
         <div className="mb-10">
           <div className="text-4xl mb-4">{collection.emoji ?? '📄'}</div>
-          <h1 className="font-serif text-4xl text-ink leading-snug mb-3">{collection.title}</h1>
+          <h1 className="font-serif text-3xl sm:text-4xl text-ink leading-snug mb-3">{collection.title}</h1>
           {collection.description && (
             <p className="text-muted text-lg">{collection.description}</p>
           )}

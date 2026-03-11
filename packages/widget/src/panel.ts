@@ -652,6 +652,8 @@ export class HelpPanel {
       }
     } catch {
       // Keep default widget colors if theme fetch fails.
+    } finally {
+      if (this.container) this.container.style.opacity = '1'
     }
   }
 
