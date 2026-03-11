@@ -259,7 +259,18 @@ export function ThemePicker({
         ))}
       </div>
 
-      <p className="text-sm font-medium text-ink mb-3">Font</p>
+      <div className="flex items-center gap-1 mb-3">
+        <p className="text-sm font-medium text-ink">Font</p>
+        <span className="group relative flex items-center">
+          <svg className="w-3.5 h-3.5 text-muted cursor-default" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <circle cx="12" cy="12" r="10" strokeWidth={2} />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16v-4m0-4h.01" />
+          </svg>
+          <span className="pointer-events-none absolute bottom-full left-0 mb-2 w-56 rounded-lg bg-ink px-3 py-2 text-xs text-cream opacity-0 group-hover:opacity-100 transition-opacity z-10">
+            Use the font pairing bundled with the selected theme to keep heading and body fonts in sync, or pick a custom pairing below.
+          </span>
+        </span>
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
         <button
           onClick={() => {
@@ -273,12 +284,16 @@ export function ThemePicker({
           }`}
         >
           <div className="border-b border-border bg-cream px-4 py-3">
-            <p className="text-lg text-ink font-serif">Aa</p>
-            <p className="text-xs text-muted mt-1">Use the font pairing bundled with the selected theme.</p>
+            <p className="text-lg text-ink font-serif" style={{ fontFamily: selectedTheme.fonts.heading }}>Aa</p>
+            <p className="text-sm text-ink mt-1" style={{ fontFamily: selectedTheme.fonts.body }}>
+              Help articles, search, and AI answers
+            </p>
           </div>
           <div className="bg-white px-4 py-3">
             <p className="text-sm font-medium text-ink">Match theme</p>
-            <p className="text-xs text-muted">Keeps the current theme fonts in sync.</p>
+            <p className="text-xs text-muted">
+              {selectedTheme.fonts.heading.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '')} / {selectedTheme.fonts.body.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '')}
+            </p>
           </div>
         </button>
 
