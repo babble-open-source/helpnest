@@ -87,6 +87,12 @@ async function main() {
     create: { workspaceId: docsWorkspace.id, title: 'About', description: 'The story behind HelpNest — why it was built and who built it.', emoji: '💡', slug: 'about', order: 4, isPublic: true },
   })
 
+  const colMigration = await prisma.collection.upsert({
+    where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'migration' } },
+    update: {},
+    create: { workspaceId: docsWorkspace.id, title: 'Migration', description: 'Import your existing content from other platforms into HelpNest.', emoji: '🔄', slug: 'migration', order: 5, isPublic: true },
+  })
+
   const docsArticles = [
     // About
     {
@@ -101,9 +107,9 @@ While building [Babble](https://trybabble.io/), I hit a moment most product buil
 
 I already had developer docs — but I quickly realised the audience is completely different. A developer is comfortable navigating a sidebar, scanning code snippets, and jumping between sections. A general customer isn't. They land on a page, want a quick answer, and leave if it isn't obvious. The bar for clarity is much higher.
 
-So I did a quick scan of how other companies handle this. Every company I respected had a clean, searchable help center. The pattern was clear. What surprised me was the cost — many of these tools charge per seat, per page view, or lock key features behind expensive tiers. For an early-stage product that just needs a solid place to answer customer questions, the pricing felt out of proportion.
+So I did a quick scan of how other companies handle this. Every company I respected had a clean, searchable help center. The pattern was clear. There are excellent tools out there — Intercom, Zendesk, Help Scout — that do this well, and they serve millions of businesses. But I wanted something I could self-host, fully own, and extend without limits.
 
-I searched for open source alternatives. There are several great developer documentation frameworks — Docusaurus, Mintlify, ReadMe — but they are built *for developers, by developers*. I could not find a single stable, well-maintained OSS tool focused on the general customer audience.
+I searched for open source alternatives. There are several great developer documentation frameworks — Docusaurus, Mintlify, ReadMe — but they are built *for developers, by developers*. I could not find a stable, well-maintained OSS tool focused on the general customer audience.
 
 That gap is why HelpNest exists. A clean, self-hostable help center that your customers — not just your engineers — can actually use. MIT licensed, free forever, built for the world.`,
     },
@@ -115,13 +121,13 @@ That gap is why HelpNest exists. A clean, self-hostable help center that your cu
       order: 1,
       content: `# Built with gratitude
 
-HelpNest was designed and built in close collaboration with **Claude Code** by Anthropic. From the monorepo architecture and database schema to API routes, UI components, and debugging edge cases — Claude was a thoughtful pair programmer throughout.
+HelpNest was designed and built in close collaboration with **Claude Code** (powered by Claude Opus) by Anthropic. From the monorepo architecture and database schema to API routes, UI components, and debugging edge cases — Claude was a thoughtful pair programmer throughout.
 
 What stood out wasn't just speed, but quality of reasoning: catching security issues early, considering trade-offs, and pushing back when a simpler approach existed. Anthropic's commitment to building AI that is honest and genuinely helpful shows in every interaction.
 
 **Next.js** by Vercel is the foundation HelpNest runs on. The App Router, Server Components, and seamless server/client rendering made it possible to ship a fast, themeable, SEO-friendly help center without sacrificing developer experience.
 
-HelpNest also stands on the shoulders of **Tiptap**, **Prisma**, **Tailwind CSS**, **NextAuth.js**, and **Qdrant** — and the countless open source contributors behind them. Thank you.`,
+HelpNest also stands on the shoulders of **Tiptap**, **Prisma**, **Tailwind CSS**, **NextAuth.js**, **Qdrant**, and **React Markdown** — and the countless open source contributors behind them. Thank you.`,
     },
 
     // Getting Started
@@ -141,15 +147,19 @@ HelpNest is built for support teams, small businesses, and SaaS companies that n
 
 ## Key features
 
-- **Rich article editor** — Tiptap-powered WYSIWYG editor with version history
-- **AI-powered search** — semantic search using OpenAI embeddings and Qdrant
-- **Themes** — swap your help center's look with community-built themes
+- **Rich article editor** — Tiptap-powered WYSIWYG editor with tables, task lists, code blocks, and version history
+- **Ask AI** — customers can ask questions in natural language and get instant AI-powered answers sourced from your articles
+- **Themes & branding** — 8 built-in themes plus full customisation of colours, fonts, border radius, and favicon
+- **Embeddable widget** — add a search widget to your product with a single script tag
+- **JavaScript SDK** — programmatic access to articles and collections via \`@helpnest/sdk\`
+- **Migration CLIs** — import content from Intercom, Mintlify, or Notion with one command
+- **Slack bot** — let your team search articles and ask AI from Slack
 - **Multi-workspace** — run multiple help centers from one instance
 - **Self-hostable** — MIT licensed, deploy on any server
 
-## How does it compare?
+## Who uses help centers like this?
 
-HelpNest is a direct alternative to Intercom Articles, Zendesk Guide, Freshdesk Knowledge Base, and Help Scout Docs — with no per-seat pricing and full data ownership.`,
+If you're a team that publishes customer-facing support content — FAQs, how-to guides, troubleshooting docs — HelpNest is built for you. It's an open-source option for teams that want full ownership of their knowledge base.`,
     },
     {
       collectionId: colGettingStarted.id,
@@ -223,6 +233,7 @@ Copy .env.example to .env and fill in the values below.
 ## Optional — AI Search
 
 - **OPENAI_API_KEY** — Required for generating article embeddings
+- **ANTHROPIC_API_KEY** — Required for Ask AI answers (Claude)
 - **QDRANT_URL** — Qdrant vector DB URL (default: http://localhost:6333)
 - **QDRANT_API_KEY** — Only needed if Qdrant has authentication enabled
 
@@ -297,7 +308,7 @@ pnpm install &amp;&amp; pnpm dev</code></pre><p>Code blocks support syntax highl
       slug: 'themes',
       excerpt: 'Change the look of your help center with community-built themes.',
       order: 2,
-      content: `<p>HelpNest ships with 8 built-in themes from the <code>@helpnest/themes</code> package.</p><h2>Changing the theme</h2><ol><li><p>Go to Dashboard &gt; Settings</p></li><li><p>Browse the theme gallery under <strong>Help Center Theme</strong></p></li><li><p>Click a theme to select it</p></li><li><p>Click <strong>Apply theme</strong></p></li></ol><p>The theme is applied instantly — no redeploy needed.</p><h2>Available themes</h2><ul><li><p><strong>Default</strong> — Warm cream with Instrument Serif</p></li><li><p><strong>Dark</strong> — Inverted warm tones</p></li><li><p><strong>Ocean</strong> — Clean blues, corporate feel</p></li><li><p><strong>Forest</strong> — Deep earthy greens with Lora</p></li><li><p><strong>Aurora</strong> — Violet with Syne</p></li><li><p><strong>Slate</strong> — Neutral grays, enterprise</p></li><li><p><strong>Rose</strong> — Soft pinks with Playfair Display</p></li><li><p><strong>Midnight</strong> — Deep navy, developer-focused</p></li></ul><h2>Community themes</h2><p>Additional themes are available from the <code>@helpnest/themes</code> npm package. See the helpnest-themes repository for contribution guidelines.</p>`,
+      content: `<p>HelpNest ships with 8 built-in themes from the <code>@helpnest/themes</code> package, plus full customisation options.</p><h2>Changing the theme</h2><ol><li><p>Go to Dashboard &gt; Settings</p></li><li><p>Browse the theme gallery under <strong>Help Center Theme</strong></p></li><li><p>Click a theme to select it</p></li><li><p>Click <strong>Apply theme</strong></p></li></ol><p>The theme is applied instantly — no redeploy needed.</p><h2>Available themes</h2><ul><li><p><strong>Default</strong> — Warm cream with Lora headings</p></li><li><p><strong>Dark</strong> — Inverted warm tones</p></li><li><p><strong>Ocean</strong> — Clean blues, corporate feel</p></li><li><p><strong>Forest</strong> — Deep earthy greens</p></li><li><p><strong>Aurora</strong> — Violet with Syne</p></li><li><p><strong>Slate</strong> — Neutral grays, enterprise</p></li><li><p><strong>Rose</strong> — Soft pinks with Playfair Display</p></li><li><p><strong>Midnight</strong> — Deep navy</p></li></ul><h2>Custom colours and fonts</h2><p>Beyond the preset themes, you can override individual design tokens from Settings:</p><ul><li><p><strong>Colours</strong> — customise cream (background), ink (text), accent, border, muted, and green independently</p></li><li><p><strong>Fonts</strong> — choose from font presets or provide custom heading, body, and brand font families with Google Fonts URLs</p></li><li><p><strong>Border radius</strong> — choose from none, sm, md, lg, or xl</p></li><li><p><strong>Favicon</strong> — upload a custom favicon for your help center</p></li></ul><h2>AI theme generator</h2><p>Describe the look you want in plain English and let AI generate a theme for you. Go to Settings and click <strong>Generate with AI</strong> to try it.</p><h2>Community themes</h2><p>Additional themes are available from the <code>@helpnest/themes</code> npm package. See the helpnest-themes repository for contribution guidelines.</p>`,
     },
 
     // Integrations
@@ -307,10 +318,11 @@ pnpm install &amp;&amp; pnpm dev</code></pre><p>Code blocks support syntax highl
       slug: 'widget',
       excerpt: 'Embed a help widget on any website with a single script tag.',
       order: 0,
-      content: `<p>The HelpNest widget lets your customers search your help center from any page on your site.</p><h2>Installation</h2><p>Add the following snippet before the closing <code>&lt;/body&gt;</code> tag on your website:</p><pre><code class="language-html">&lt;script&gt;
-  window.HelpNest = { workspace: 'your-workspace-slug' };
-&lt;/script&gt;
-&lt;script src="https://cdn.helpnest.cloud/widget.js" async&gt;&lt;/script&gt;</code></pre><p>Replace <code>your-workspace-slug</code> with your workspace slug from Settings.</p><h2>Self-hosted</h2><p>Point the script src at your own instance:</p><pre><code class="language-html">&lt;script src="https://your-domain.com/widget.js" async&gt;&lt;/script&gt;</code></pre><blockquote><p>The widget package is currently in development (Phase 3 of the roadmap).</p></blockquote>`,
+      content: `<p>The HelpNest widget lets your customers search your help center from any page on your site.</p><h2>Installation</h2><p>Add the following snippet before the closing <code>&lt;/body&gt;</code> tag on your website:</p><pre><code class="language-html">&lt;script
+  src="https://your-domain.com/api/widget.js"
+  data-workspace="your-workspace-slug"
+  async
+&gt;&lt;/script&gt;</code></pre><p>Replace <code>your-workspace-slug</code> with your workspace slug from Settings.</p><h2>Configuration</h2><p>The widget supports these optional data attributes on the script tag:</p><ul><li><p><code>data-workspace</code> (required) — your workspace slug</p></li><li><p><code>data-position</code> — <code>bottom-right</code> (default) or <code>bottom-left</code></p></li><li><p><code>data-title</code> — custom heading text (default: "How can we help?")</p></li><li><p><code>data-baseUrl</code> — override the API base URL (defaults to the script origin)</p></li></ul><h2>Self-hosted</h2><p>The widget script is served from your HelpNest instance at <code>/api/widget.js</code>. It automatically uses your workspace's theme colours.</p><h2>How it works</h2><p>The widget loads lazily after the page is idle, opens a search panel when clicked, and displays results from your published articles. Customers can click through to the full article on your help center.</p>`,
     },
     {
       collectionId: colIntegrations.id,
@@ -318,7 +330,84 @@ pnpm install &amp;&amp; pnpm dev</code></pre><p>Code blocks support syntax highl
       slug: 'rest-api',
       excerpt: 'Access your help center content programmatically via the REST API.',
       order: 1,
-      content: `<p>HelpNest exposes a REST API for reading and managing help center content programmatically.</p><h2>Authentication</h2><p>Pass your API key in the Authorization header:</p><pre><code class="language-bash">Authorization: Bearer hn_your_api_key</code></pre><h2>Articles</h2><ul><li><p><code>GET /api/articles</code> — list published articles</p></li><li><p><code>GET /api/articles/:id</code> — get a single article</p></li><li><p><code>PATCH /api/articles/:id</code> — update an article</p></li><li><p><code>DELETE /api/articles/:id</code> — delete an article</p></li></ul><h2>Collections</h2><ul><li><p><code>GET /api/collections</code> — list collections</p></li><li><p><code>POST /api/collections</code> — create a collection</p></li><li><p><code>PATCH /api/collections/:id</code> — update a collection</p></li><li><p><code>DELETE /api/collections/:id</code> — delete a collection</p></li></ul><blockquote><p>API key management UI and full SDK are coming in Phase 3.</p></blockquote>`,
+      content: `<p>HelpNest exposes a REST API for reading and managing help center content programmatically.</p><h2>Authentication</h2><p>Create an API key from <strong>Settings → API Keys</strong> in the dashboard. Pass it in the Authorization header:</p><pre><code class="language-bash">Authorization: Bearer hn_live_your_api_key</code></pre><h2>Articles</h2><ul><li><p><code>GET /api/articles</code> — list published articles</p></li><li><p><code>GET /api/articles/:id</code> — get a single article</p></li><li><p><code>PATCH /api/articles/:id</code> — update an article</p></li><li><p><code>DELETE /api/articles/:id</code> — delete an article</p></li></ul><h2>Collections</h2><ul><li><p><code>GET /api/collections</code> — list collections</p></li><li><p><code>POST /api/collections</code> — create a collection</p></li><li><p><code>PATCH /api/collections/:id</code> — update a collection</p></li><li><p><code>DELETE /api/collections/:id</code> — delete a collection</p></li></ul><h2>Other endpoints</h2><ul><li><p><code>GET /api/search?q=...</code> — full-text search</p></li><li><p><code>POST /api/ai-search</code> — AI-powered semantic search</p></li><li><p><code>GET /api/health</code> — health check</p></li></ul><h2>JavaScript SDK</h2><p>For a typed client, use the <code>@helpnest/sdk</code> package:</p><pre><code class="language-typescript">import { HelpNest } from '@helpnest/sdk'
+
+const client = new HelpNest({
+  apiKey: 'hn_live_xxx',
+  workspace: 'your-slug',
+})
+
+const articles = await client.articles.list({ status: 'PUBLISHED' })
+const article = await client.articles.get('article-slug')</code></pre>`,
+    },
+    {
+      collectionId: colIntegrations.id,
+      title: 'Ask AI',
+      slug: 'ask-ai',
+      excerpt: 'Let your customers ask questions in natural language and get instant AI-powered answers.',
+      order: 2,
+      content: `<p><strong>Ask AI</strong> is a built-in feature that lets your customers type a question in plain English and receive an instant answer sourced from your published articles.</p><h2>How it works</h2><ol><li><p>A customer clicks <strong>Ask AI</strong> on your help center</p></li><li><p>They type a question (e.g. "How do I reset my password?")</p></li><li><p>HelpNest searches your articles using semantic vector search</p></li><li><p>The most relevant content is passed to Claude (Anthropic) which generates a clear, concise answer</p></li><li><p>Source articles are shown below the answer so the customer can read more</p></li></ol><h2>Requirements</h2><p>Ask AI requires two API keys in your environment:</p><ul><li><p><code>OPENAI_API_KEY</code> — used to generate article embeddings</p></li><li><p><code>ANTHROPIC_API_KEY</code> — used to generate the AI answer via Claude</p></li></ul><p>You also need Qdrant running for vector storage (included in Docker Compose).</p><h2>Syncing embeddings</h2><p>After publishing or updating articles, trigger an embedding sync from <strong>Settings → AI Search</strong> or via the API at <code>POST /api/embeddings/sync</code>.</p>`,
+    },
+    {
+      collectionId: colIntegrations.id,
+      title: 'Slack Bot',
+      slug: 'slack-bot',
+      excerpt: 'Search your help center and ask AI questions directly from Slack.',
+      order: 3,
+      content: `<p>The HelpNest Slack bot lets your team search articles and get AI answers without leaving Slack.</p><h2>Commands</h2><ul><li><p><code>/helpnest [query]</code> — keyword search across your published articles (results shown privately)</p></li><li><p><code>/helpnest-ask [question]</code> — ask a question and get an AI-powered answer with source links</p></li></ul><h2>Setup</h2><ol><li><p>Clone the <code>helpnest-slack</code> repository</p></li><li><p>Create a Slack app at <a href="https://api.slack.com/apps">api.slack.com/apps</a> with slash commands</p></li><li><p>Set the following environment variables:</p><pre><code>SLACK_BOT_TOKEN=xoxb-...
+SLACK_SIGNING_SECRET=...
+HELPNEST_URL=https://your-helpnest-instance.com
+HELPNEST_API_KEY=hn_live_...
+HELPNEST_WORKSPACE=your-slug</code></pre></li><li><p>Run the bot with <code>npm run dev</code> (use ngrok for local Slack events)</p></li></ol>`,
+    },
+
+    // Migration
+    {
+      collectionId: colMigration.id,
+      title: 'Migrating from Intercom',
+      slug: 'migrating-from-intercom',
+      excerpt: 'Import your Intercom Articles into HelpNest with a single command.',
+      order: 0,
+      content: `<p>The <code>helpnest-intercom</code> CLI imports your Intercom Articles collections and articles into HelpNest.</p><h2>What gets imported</h2><ul><li><p>Intercom collections become HelpNest collections</p></li><li><p>Intercom articles are converted from HTML to Markdown and imported as HelpNest articles</p></li><li><p>Article ordering is preserved</p></li></ul><h2>Usage</h2><pre><code class="language-bash">npx helpnest-intercom migrate \\
+  --intercom-token YOUR_INTERCOM_TOKEN \\
+  --helpnest-url https://your-helpnest.com \\
+  --helpnest-key hn_live_xxx</code></pre><h2>Dry run</h2><p>Add <code>--dry-run</code> to preview what will be imported without making any changes:</p><pre><code class="language-bash">npx helpnest-intercom migrate \\
+  --intercom-token YOUR_TOKEN \\
+  --helpnest-url https://your-helpnest.com \\
+  --helpnest-key hn_live_xxx \\
+  --dry-run</code></pre><h2>Getting your Intercom token</h2><p>Go to Intercom Settings → Integrations → Developer Hub → Create an app → Generate an access token with read permissions for Articles.</p>`,
+    },
+    {
+      collectionId: colMigration.id,
+      title: 'Migrating from Notion',
+      slug: 'migrating-from-notion',
+      excerpt: 'Import a Notion database of articles into HelpNest.',
+      order: 1,
+      content: `<p>The <code>helpnest-notion</code> CLI imports pages from a Notion database into HelpNest as articles.</p><h2>What gets imported</h2><ul><li><p>Each Notion page becomes a HelpNest article</p></li><li><p>Notion page content is converted to Markdown</p></li><li><p>You can map a Notion property to the HelpNest collection</p></li></ul><h2>Usage</h2><pre><code class="language-bash">npx helpnest-notion migrate \\
+  --notion-key YOUR_NOTION_KEY \\
+  --database YOUR_DATABASE_ID \\
+  --helpnest-url https://your-helpnest.com \\
+  --helpnest-key hn_live_xxx</code></pre><h2>Incremental sync</h2><p>Use the <code>--state</code> flag to save sync state to a file. On subsequent runs, only new or updated pages are imported:</p><pre><code class="language-bash">npx helpnest-notion migrate \\
+  --notion-key YOUR_KEY \\
+  --database YOUR_DB \\
+  --helpnest-url https://your-helpnest.com \\
+  --helpnest-key hn_live_xxx \\
+  --state ./notion-sync-state.json</code></pre><h2>Getting your Notion credentials</h2><p>Create an integration at <a href="https://www.notion.so/my-integrations">notion.so/my-integrations</a>, then share the database with the integration. The database ID is in the URL when you open the database.</p>`,
+    },
+    {
+      collectionId: colMigration.id,
+      title: 'Migrating from Mintlify',
+      slug: 'migrating-from-mintlify',
+      excerpt: 'Import your Mintlify documentation into HelpNest.',
+      order: 2,
+      content: `<p>The <code>helpnest-mintlify</code> CLI reads a Mintlify docs directory and imports its content into HelpNest.</p><h2>What gets imported</h2><ul><li><p>Navigation groups from <code>mint.json</code> become HelpNest collections</p></li><li><p>MDX and Markdown files are converted to plain Markdown (JSX components are stripped)</p></li><li><p>Article ordering follows the nav structure</p></li></ul><h2>Usage</h2><pre><code class="language-bash">npx helpnest-mintlify migrate \\
+  --docs-dir ./docs \\
+  --helpnest-url https://your-helpnest.com \\
+  --helpnest-key hn_live_xxx</code></pre><h2>Dry run</h2><p>Preview the import without creating anything:</p><pre><code class="language-bash">npx helpnest-mintlify migrate \\
+  --docs-dir ./docs \\
+  --helpnest-url https://your-helpnest.com \\
+  --helpnest-key hn_live_xxx \\
+  --dry-run</code></pre>`,
     },
   ]
 
@@ -511,7 +600,7 @@ Copy your help center URL from the dashboard and share it with your customers, o
       order: 1,
       content: `# Customising your help center theme
 
-HelpNest Cloud comes with 8 built-in themes. You can switch themes instantly from the dashboard.
+HelpNest Cloud comes with 8 built-in themes, plus full customisation of colours, fonts, and more.
 
 ## How to change your theme
 
@@ -524,7 +613,7 @@ The theme is applied immediately — no downtime, no redeploy.
 
 ## Available themes
 
-- **Default** — Warm cream with Instrument Serif (what you see here)
+- **Default** — Warm cream with Lora headings
 - **Dark** — Inverted warm tones for a dark-mode feel
 - **Ocean** — Clean blues, corporate feel
 - **Forest** — Deep earthy greens
@@ -533,7 +622,15 @@ The theme is applied immediately — no downtime, no redeploy.
 - **Rose** — Soft pinks with Playfair Display
 - **Midnight** — Deep navy
 
-More themes are available in the community theme marketplace.`,
+## Custom branding
+
+Beyond themes, you can fine-tune individual design tokens from Settings:
+
+- **Colours** — override background, text, accent, border, and other colours independently
+- **Fonts** — pick from font presets or enter custom Google Fonts URLs for headings, body, and brand text
+- **Border radius** — adjust the roundness of cards, buttons, and inputs
+- **Favicon** — upload a custom favicon
+- **AI theme generator** — describe the look you want in plain English and let AI create a theme for you`,
     },
 
     // Billing
