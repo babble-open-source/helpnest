@@ -116,6 +116,9 @@ export function ThemePicker({
     customBodyFontUrl !== currentCustomBodyFontUrl
 
   const selectedTheme = themes.find((theme) => theme.id === selectedThemeId) ?? themes[0]!
+  const visibleFontPresets = fontPresets.filter(
+    (p) => JSON.stringify(p.fonts) !== JSON.stringify(selectedTheme.fonts)
+  )
   const previewColors = {
     cream: customCreamColor.trim() || selectedTheme.colors.cream,
     ink: customInkColor.trim() || selectedTheme.colors.ink,
@@ -279,7 +282,7 @@ export function ThemePicker({
           </div>
         </button>
 
-        {fontPresets.map((preset) => (
+        {visibleFontPresets.map((preset) => (
           <button
             key={preset.id}
             onClick={() => {
