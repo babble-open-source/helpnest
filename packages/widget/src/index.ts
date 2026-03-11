@@ -19,7 +19,11 @@ function init() {
   const title = script.dataset['title'] ?? 'How can we help?'
 
   const panel = new HelpPanel({ workspace, baseUrl, position, title })
-  panel.mount()
+  if ('requestIdleCallback' in window) {
+    requestIdleCallback(() => panel.mount(), { timeout: 2000 })
+  } else {
+    setTimeout(() => panel.mount(), 0)
+  }
 }
 
 if (document.readyState === 'loading') {

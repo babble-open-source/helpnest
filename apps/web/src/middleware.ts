@@ -29,6 +29,7 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   const { pathname, search } = req.nextUrl
   if (pathname.startsWith(`/${slug}/help`)) return null
   if (pathname.startsWith('/api/')) return null
+  if (pathname === '/widget.js') return null
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/login') || pathname.startsWith('/invite/')) return null
   const url = req.nextUrl.clone()
   url.pathname = `/${slug}/help${pathname === '/' ? '' : pathname}`

@@ -14,9 +14,10 @@ RUN corepack enable && corepack prepare pnpm@9.0.0 --activate
 
 # Copy workspace manifests first — this layer is cached until deps change.
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml* .npmrc* ./
-COPY apps/web/package.json     ./apps/web/
-COPY packages/db/package.json  ./packages/db/
-COPY packages/ui/package.json  ./packages/ui/
+COPY apps/web/package.json        ./apps/web/
+COPY packages/db/package.json     ./packages/db/
+COPY packages/ui/package.json     ./packages/ui/
+COPY packages/widget/package.json ./packages/widget/
 COPY packages/config/package.json ./packages/config/
 
 # Install all workspace dependencies.
@@ -97,6 +98,7 @@ ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+RUN pnpm --filter @helpnest/widget build
 RUN cd apps/web && pnpm build
 
 # ─── Stage 2: Production runner ───────────────────────────────────────────────
@@ -115,7 +117,8 @@ RUN apk add --no-cache openssl \
 # Next.js standalone output (includes traced node_modules for the app server).
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static     ./apps/web/.next/static
-RUN mkdir -p ./apps/web/public
+RUN mkdir -p ./apps/web/public ./packages/widget/dist
+COPY --from=builder /app/packages/widget/dist/widget.js ./packages/widget/dist/widget.js
 
 # Prisma schema, migrations, compiled seed, and package.json.
 # package.json must be present so `prisma db seed` reads the correct
