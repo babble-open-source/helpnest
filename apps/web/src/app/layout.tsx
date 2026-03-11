@@ -15,9 +15,26 @@ const lora = Lora({
   variable: '--font-lora',
 })
 
-export const metadata: Metadata = {
-  title: 'HelpNest',
-  description: 'The open-source help center for developer tools',
+export function generateMetadata(): Metadata {
+  // Self-hosters can set NEXT_PUBLIC_FAVICON_URL to point to their own favicon.
+  // e.g. NEXT_PUBLIC_FAVICON_URL=https://your-domain.com/favicon.ico
+  const customFavicon = process.env.NEXT_PUBLIC_FAVICON_URL
+
+  return {
+    title: 'HelpNest',
+    description: 'The open-source help center for developer tools',
+    icons: customFavicon
+      ? { icon: customFavicon, shortcut: customFavicon }
+      : {
+          icon: [
+            { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+            { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+          ],
+          apple: { url: '/apple-touch-icon.png' },
+          shortcut: '/favicon.ico',
+        },
+    manifest: '/manifest.json',
+  }
 }
 
 export default function RootLayout({
