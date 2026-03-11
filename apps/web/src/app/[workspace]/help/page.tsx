@@ -85,7 +85,7 @@ export default async function HelpCenterHome(props: Props) {
       <div className="bg-green text-white py-3 px-4">
         <div className="max-w-4xl mx-auto flex items-center justify-center gap-3 text-sm">
           <span>Get instant answers powered by AI</span>
-          <AskAI workspace={params.workspace} workspaceName={workspace.name} />
+          <AskAI workspace={params.workspace} />
         </div>
       </div>
 
