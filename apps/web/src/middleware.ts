@@ -28,6 +28,7 @@ const APP_ORIGIN =
 function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   const { pathname, search } = req.nextUrl
   if (pathname.startsWith(`/${slug}/help`)) return null
+  if (pathname.startsWith('/api/')) return null
   const url = req.nextUrl.clone()
   url.pathname = `/${slug}/help${pathname === '/' ? '' : pathname}`
   url.search = search
