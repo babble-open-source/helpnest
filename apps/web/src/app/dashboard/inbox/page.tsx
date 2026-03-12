@@ -25,11 +25,12 @@ export default async function InboxPage() {
       },
     }),
     prisma.conversation.findMany({
-      where: { workspaceId: member.workspaceId, status: 'ACTIVE' },
+      where: { workspaceId: member.workspaceId, status: { in: ['ACTIVE', 'HUMAN_ACTIVE'] } },
       orderBy: { updatedAt: 'desc' },
       take: 50,
       include: {
         messages: { take: 1, orderBy: { createdAt: 'asc' }, select: { content: true } },
+        assignedTo: { select: { user: { select: { name: true } } } },
         _count: { select: { messages: true } },
       },
     }),
@@ -42,6 +43,7 @@ export default async function InboxPage() {
       take: 50,
       include: {
         messages: { take: 1, orderBy: { createdAt: 'asc' }, select: { content: true } },
+        assignedTo: { select: { user: { select: { name: true } } } },
         _count: { select: { messages: true } },
       },
     }),

@@ -30,6 +30,7 @@ const nextConfig = {
     '@anthropic-ai/sdk',
     '@helpnest/themes',
     'ioredis',
+    '@google/generative-ai',
   ],
   async headers() {
     return [
