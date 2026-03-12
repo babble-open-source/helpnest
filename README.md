@@ -1,6 +1,6 @@
 <div align="center">
   <h1>🪺 HelpNest</h1>
-  <p><strong>The open-source customer help center. Self-host or use the cloud.</strong></p>
+  <p><strong>The open-source AI-first customer support platform.</strong></p>
   <p>
     <a href="https://github.com/babble-open-source/helpnest/blob/main/LICENSE">
       <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License" />
@@ -8,28 +8,96 @@
     <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome" />
     <img src="https://img.shields.io/badge/TypeScript-5.4-blue" alt="TypeScript" />
     <img src="https://img.shields.io/badge/Next.js-16-black" alt="Next.js 16" />
+    <a href="https://www.npmjs.com/package/@helpnest/sdk">
+      <img src="https://img.shields.io/npm/v/@helpnest/sdk.svg" alt="npm" />
+    </a>
   </p>
   <br />
 </div>
 
-HelpNest is a self-hostable help center and knowledge base for businesses — an open-source alternative to Intercom Articles, Zendesk Guide, and Help Scout Docs, with AI-powered search built in.
+**AI answers instantly. Your team handles what matters most.**
 
-> **Not a developer docs tool.** HelpNest is built for support teams and their customers, not for engineering documentation. If you need a dev docs site, look at Mintlify or Docusaurus.
+HelpNest is an open-source, AI-first customer support platform. It combines a knowledge base with a conversational AI agent that automatically answers customer questions — and brings in your team for the cases that need a human touch.
+
+> **Not a traditional helpdesk.** HelpNest is built for teams that want AI to handle routine questions at scale, so your support team can focus their time on complex, high-value conversations. If you need a developer docs site, look at Mintlify or Docusaurus.
+
+---
+
+## How it works
+
+```
+Customer asks a question
+        │
+        ▼
+┌─────────────────────┐
+│   HelpNest Widget   │  ← embedded on your site or app
+│   (conversational)  │
+└──────────┬──────────┘
+           │
+           ▼
+┌─────────────────────┐
+│     AI Agent        │  ← searches your KB, answers with sources
+│                     │  ← confidence scoring + auto-escalation
+└──────────┬──────────┘
+           │ Needs a human touch?
+           ▼
+┌─────────────────────┐
+│  Escalation Inbox   │  ← your team sees the full conversation
+│                     │  ← agent replies, AI provides context
+└──────────┬──────────┘
+           │ Recurring gaps?
+           ▼
+┌─────────────────────┐
+│   Learning Loop     │  ← "Questions your KB can't answer yet"
+│                     │  ← write one article, resolve many gaps
+└─────────────────────┘
+```
+
+---
 
 ## Features
 
-- **📚 Knowledge base** — Organize articles into collections with full CRUD from the dashboard
-- **✍️ Rich text editor** — Tiptap-powered WYSIWYG with toolbar, version history, and draft/publish flow
-- **🎨 Themes** — 8 built-in themes via [`@helpnest/themes`](https://www.npmjs.com/package/@helpnest/themes), applied instantly with no redeploy
-- **🔍 Full-text search** — Postgres-powered search with ranked results and snippets
-- **✦ AI answers** — Semantic search via OpenAI embeddings + Qdrant, answered by Claude
-- **👥 Team management** — Invite members with roles: Owner, Admin, Editor, Viewer
-- **🔑 API keys** — Create API keys to manage content programmatically
-- **🌐 Multi-workspace** — Run multiple help centers from one instance
-- **⚡ Self-hostable** — Docker Compose deployment in one command
-- **🧩 Embeddable widget** — Drop a `<script>` tag into any website *(Phase 3)*
-- **🔌 REST API + SDK** — JS/TS SDK published to npm as `@helpnest/sdk` *(Phase 3)*
-- **🛠️ CLI** — `npx helpnest` for setup, export, import, and deployment *(Phase 3)*
+### AI Agent
+- **Conversational AI** — multi-turn chat powered by your knowledge base
+- **Bring your own model** — Anthropic (Claude), OpenAI (GPT), Google (Gemini), Mistral — configure from the dashboard with your own API keys
+- **Confidence scoring** — AI knows when it doesn't know; auto-escalates below your threshold
+- **Tool-use** — agent searches articles, asks clarifying questions, and escalates autonomously
+- **Source attribution** — every AI answer cites the KB articles it used
+
+### Knowledge Base
+- **Rich text editor** — Tiptap WYSIWYG with tables, code blocks, task lists, images, version history
+- **Collections** — organize articles into nested categories
+- **Full-text search** — Postgres-powered with ranked results and snippets
+- **Vector search** — OpenAI embeddings + Qdrant for semantic search
+- **8 built-in themes** — via [`@helpnest/themes`](https://www.npmjs.com/package/@helpnest/themes)
+- **Custom branding** — logo, colors, fonts, custom domain
+
+### Escalation Inbox
+- **Focused inbox** — only escalated conversations land here, not every ticket
+- **Full context** — agents see the entire conversation, what the AI tried, and why it escalated
+- **Assignment** — claim conversations and assign to teammates
+- **Resolve flow** — resolve with an optional summary that feeds the learning loop
+
+### Learning Loop
+- **Knowledge gaps dashboard** — questions your KB can't answer, ranked by frequency
+- **One-click article creation** — pre-fills the editor with the gap question as the title
+- **Resolution tracking** — mark a gap resolved when you publish a covering article
+
+### Embeddable Widget
+- **Drop-in script tag** — one line of HTML, works on any site
+- **Chat mode** — conversational AI, not just a search box
+- **Session persistence** — customers resume conversations when they reopen the widget
+- **"Talk to a human" button** — instant escalation from the widget
+- **Search mode** — keyword + AI search (backwards compatible)
+
+### Team & Admin
+- **Multi-workspace** — multiple help centers from one instance
+- **Roles** — Owner, Admin, Editor, Viewer
+- **Invite flow** — email invites with token-based acceptance
+- **API keys** — programmatic content management
+- **Dashboard analytics** — AI resolution rate, escalation rate, conversations trend, knowledge gaps
+
+---
 
 ## Quick Start
 
@@ -41,18 +109,7 @@ cd helpnest
 ./scripts/self-host-setup.sh
 ```
 
-The setup script handles everything: generates secrets, configures `.env`, builds the Docker image, runs migrations, and seeds demo data. Your help center will be running at **http://localhost:3000**.
-
-Login credentials are printed at the end of the script.
-
-> **Manual setup** (if you prefer to control each step):
-> ```bash
-> cp .env.example .env   # fill in AUTH_SECRET, POSTGRES_PASSWORD, ADMIN_SEED_PASSWORD
-> docker compose -f docker-compose.prod.yml up -d
-> # Migrations run automatically via the "migrate" service.
-> # Seed demo data (production image uses node, not pnpm):
-> docker exec helpnest_app node /app/packages/db/prisma/seed.js
-> ```
+The setup script generates secrets, configures `.env`, builds the Docker image, runs migrations, and seeds demo data. Your help center runs at **http://localhost:3000**. Login credentials are printed at the end.
 
 ### Option 2 — Local development
 
@@ -65,37 +122,18 @@ pnpm install
 pnpm dev
 ```
 
-Open **http://localhost:3000/login** and sign in with the **dev-only** seed credentials:
+Open **http://localhost:3000/login** and sign in:
 
 | | |
 |---|---|
 | Email | `admin@helpnest.cloud` |
 | Password | `helpnest` |
 
-> **Never use these credentials in production.** For production deployments, always set `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` before running the seed. `self-host-setup.sh` generates a strong random password automatically and prints it at the end.
+> **Never use these credentials in production.** Always set `ADMIN_SEED_EMAIL` and `ADMIN_SEED_PASSWORD` before running the seed. `self-host-setup.sh` generates a strong random password automatically.
 
-#### First login behavior
-
-- The login page shows a **Default account** box with the email, password, and a link to your help center — visible until you change your password.
-- After signing in, a **security banner** appears in the dashboard prompting you to change your password.
-- Both disappear automatically once you update your password via **Settings → Your profile → Change password** (minimum 12 characters).
-
-#### Demo / showcase mode
-
-Set `HELPNEST_DEMO_MODE=true` to permanently show the default credentials on the login page and suppress the password-change banner — useful for live demos or staging environments where the default password is intentional. Password changes are also blocked in this mode.
-
-The seed also creates two workspaces:
-- `http://localhost:3000/helpnest/help` — HelpNest's own docs (dogfooded)
-- `http://localhost:3000/support/help` — Sample cloud support center
+---
 
 ## Environment Variables
-
-The root `.env` is the single source of truth. `next.config.js` loads it automatically so you do **not** need a separate `apps/web/.env.local`.
-
-```bash
-cp .env.example .env
-# edit .env — fill in AUTH_SECRET at minimum
-```
 
 ```env
 # Required
@@ -105,23 +143,76 @@ NEXTAUTH_URL=http://localhost:3000
 NEXT_PUBLIC_APP_URL=http://localhost:3000
 
 # Initial admin account — created once when running db:seed
-# Defaults to admin@helpnest.cloud / helpnest in dev. Always set in production.
 ADMIN_SEED_EMAIL=
 ADMIN_SEED_PASSWORD=            # minimum 12 characters in production
 
 # Demo / showcase mode (optional)
-# Shows default credentials on the login page and blocks password changes.
-HELPNEST_DEMO_MODE=             # set to "true" to enable
+HELPNEST_DEMO_MODE=             # set to "true" to show default credentials on login page
 
-# AI search (optional — falls back to full-text search without these)
+# Vector search — required for semantic search and AI agent
 OPENAI_API_KEY=                 # for article embeddings
-ANTHROPIC_API_KEY=              # for AI-powered answers
 QDRANT_URL=http://localhost:6333
 
 # GitHub OAuth (optional)
 GITHUB_CLIENT_ID=
 GITHUB_CLIENT_SECRET=
 ```
+
+> **AI chat provider keys** (Anthropic, OpenAI, Google, Mistral) are configured per-workspace from **Dashboard → Settings → AI Agent** — not from environment variables. This lets each workspace use their own keys and preferred model.
+
+---
+
+## Embedding the Widget
+
+Add one script tag to your site:
+
+```html
+<script
+  src="https://your-helpnest.com/api/widget.js"
+  data-workspace="your-workspace-slug"
+  async
+></script>
+```
+
+| Attribute | Default | Description |
+|-----------|---------|-------------|
+| `data-workspace` | required | Your workspace slug |
+| `data-mode` | `chat` | `chat` (AI conversation) or `search` (legacy) |
+| `data-position` | `bottom-right` | `bottom-right` or `bottom-left` |
+| `data-greeting` | workspace setting | Override the AI greeting message |
+
+---
+
+## SDK
+
+```bash
+npm install @helpnest/sdk
+```
+
+```typescript
+import { HelpNest } from '@helpnest/sdk'
+
+const client = new HelpNest({
+  apiKey: 'hn_live_xxx',
+  workspace: 'acme',
+  baseUrl: 'https://your-helpnest.com',
+})
+
+// Articles & collections
+await client.articles.list({ status: 'PUBLISHED' })
+await client.articles.create({ title, content, collectionId })
+
+// Conversations
+await client.conversations.list({ status: 'ESCALATED' })
+await client.conversations.get(id)
+await client.conversations.updateStatus(id, 'RESOLVED_HUMAN', 'Issue was a billing error.')
+
+// Messages
+await client.messages.list(conversationId)
+await client.messages.send(conversationId, { content: 'Here is how to fix that…' })
+```
+
+---
 
 ## Tech Stack
 
@@ -131,11 +222,15 @@ GITHUB_CLIENT_SECRET=
 | Database | PostgreSQL 16 + Prisma 5 |
 | Auth | NextAuth v5 (Credentials + GitHub OAuth) |
 | Editor | Tiptap |
-| AI | OpenAI `text-embedding-3-small` + Claude Haiku |
+| AI (embeddings) | OpenAI `text-embedding-3-small` |
+| AI (chat) | Anthropic Claude, OpenAI GPT, Google Gemini, Mistral |
 | Vector DB | Qdrant |
+| Cache / Rate limiting | Redis (optional, graceful fallback) |
 | Styling | Tailwind CSS |
 | Themes | `@helpnest/themes` |
 | Monorepo | Turborepo + pnpm workspaces |
+
+---
 
 ## Repository Structure
 
@@ -149,10 +244,9 @@ helpnest/
 │   ├── ui/           → @helpnest/ui — shared React components (internal)
 │   ├── config/       → @helpnest/config — shared tsconfig, ESLint, Tailwind (internal)
 │   ├── editor/       → @helpnest/editor — Tiptap rich text editor
-│   ├── search/       → @helpnest/search — search utilities
-│   ├── widget/       → @helpnest/widget — embeddable JS snippet (Phase 3)
-│   ├── sdk/          → @helpnest/sdk — JS/TS REST API SDK (Phase 3)
-│   └── cli/          → @helpnest/cli — npx helpnest CLI (Phase 3)
+│   ├── widget/       → @helpnest/widget — embeddable JS snippet
+│   ├── sdk/          → @helpnest/sdk — JS/TS REST API SDK (npm: @helpnest/sdk)
+│   └── cli/          → @helpnest/cli — npx helpnest CLI
 ├── scripts/
 │   ├── dev-setup.sh          → first-time local setup
 │   └── self-host-setup.sh    → production Docker setup
@@ -160,6 +254,8 @@ helpnest/
 ├── docker-compose.prod.yml   → self-hosting
 └── Dockerfile                → production image
 ```
+
+---
 
 ## Common Commands
 
@@ -169,7 +265,6 @@ pnpm dev              # all apps: web :3000, docs :3001
 pnpm build
 pnpm lint
 pnpm typecheck
-pnpm format
 
 # Database
 pnpm db:generate      # run after schema changes before typecheck
@@ -182,12 +277,16 @@ pnpm --filter @helpnest/db db:reset  # drop + re-migrate + re-seed
 pnpm --filter @helpnest/sdk test
 ```
 
+---
+
 ## Themes
 
-8 built-in themes ship with the [`@helpnest/themes`](https://github.com/babble-open-source/helpnest-themes) npm package:
+8 built-in themes ship with [`@helpnest/themes`](https://github.com/babble-open-source/helpnest-themes):
 **Default**, **Dark**, **Ocean**, **Forest**, **Aurora**, **Slate**, **Rose**, **Midnight**
 
 Switch themes from **Dashboard → Settings → Appearance**. Community themes are welcome — see the [`helpnest-themes`](https://github.com/babble-open-source/helpnest-themes) repo.
+
+---
 
 ## Ecosystem
 
@@ -195,17 +294,19 @@ Switch themes from **Dashboard → Settings → Appearance**. Community themes a
 |------|-------------|
 | [`helpnest`](https://github.com/babble-open-source/helpnest) | This repo — main monorepo |
 | [`helpnest-themes`](https://github.com/babble-open-source/helpnest-themes) | Theme package published as `@helpnest/themes` |
+| [`helpnest-slack`](https://github.com/babble-open-source/helpnest-slack) | Slack bot: search + AI conversations from Slack |
 | [`helpnest-intercom`](https://github.com/babble-open-source/helpnest-intercom) | Migration CLI: Intercom Articles → HelpNest |
 | [`helpnest-mintlify`](https://github.com/babble-open-source/helpnest-mintlify) | Migration CLI: Mintlify docs → HelpNest |
 | [`helpnest-notion`](https://github.com/babble-open-source/helpnest-notion) | Migration CLI: Notion databases → HelpNest |
-| [`helpnest-slack`](https://github.com/babble-open-source/helpnest-slack) | Slack bot: `/helpnest` search + `/helpnest-ask` AI |
 | [`helpnest-examples`](https://github.com/babble-open-source/helpnest-examples) | Deployment guides: Docker, Railway, Vercel, Render |
 | [`helpnest-templates`](https://github.com/babble-open-source/helpnest-templates) | Industry starter content (SaaS, fintech, healthcare…) |
 | [`awesome-helpnest`](https://github.com/babble-open-source/awesome-helpnest) | Community resources |
 
+---
+
 ## Contributing
 
-We welcome contributions. See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started.
+We welcome contributions of all kinds — bug fixes, new features, themes, migration CLIs, and deployment guides. See [CONTRIBUTING.md](./CONTRIBUTING.md) to get started.
 
 ## License
 

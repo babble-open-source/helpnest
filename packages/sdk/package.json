@@ -1,8 +1,17 @@
 {
   "name": "@helpnest/sdk",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": false,
-  "description": "JavaScript/TypeScript SDK for the HelpNest API",
+  "description": "JavaScript/TypeScript SDK for HelpNest — the open-source AI-first customer support platform",
+  "homepage": "https://github.com/babble-open-source/helpnest",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/babble-open-source/helpnest.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/babble-open-source/helpnest/issues"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
@@ -27,5 +36,16 @@
     "vitest": "^1.6.0",
     "@vitest/coverage-v8": "^1.6.0"
   },
-  "keywords": ["helpnest", "sdk", "help-center", "knowledge-base"]
+  "keywords": [
+    "helpnest",
+    "sdk",
+    "customer-support",
+    "ai-first",
+    "help-center",
+    "knowledge-base",
+    "conversations",
+    "escalation",
+    "self-hosted",
+    "open-source"
+  ]
 }
