@@ -534,6 +534,7 @@ export const styles = `
     font-size: 10px;
     color: rgb(var(--color-muted));
     text-align: center;
+    padding: 6px;
   }
 
   .hn-powered a { color: rgb(var(--color-muted)); text-decoration: none; }
