@@ -17,8 +17,10 @@ function init() {
 
   const position = (script.dataset['position'] as 'bottom-right' | 'bottom-left') ?? 'bottom-right'
   const title = script.dataset['title'] ?? 'How can we help?'
+  const mode = (script.dataset['mode'] as 'chat' | 'search') ?? 'chat'
+  const greeting = script.dataset['greeting'] ?? 'Hi! How can I help you today?'
 
-  const panel = new HelpPanel({ workspace, baseUrl, position, title })
+  const panel = new HelpPanel({ workspace, baseUrl, position, title, mode, greeting })
   if ('requestIdleCallback' in window) {
     requestIdleCallback(() => panel.mount(), { timeout: 2000 })
   } else {

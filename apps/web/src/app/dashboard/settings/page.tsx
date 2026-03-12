@@ -25,6 +25,7 @@ import {
 } from '@/lib/db'
 import { themes } from '@/lib/themes'
 import { redirect } from 'next/navigation'
+import { AiSettingsSection } from './AiSettingsSection'
 import { ApiKeysSection } from './ApiKeysSection'
 import { MembersSection } from './MembersSection'
 import { ProfileForm } from './ProfileForm'
@@ -244,6 +245,19 @@ export default async function SettingsPage() {
     orderBy: [{ role: 'asc' }, { user: { name: 'asc' } }],
   })
 
+  const aiSettings = await prisma.workspace.findUnique({
+    where: { id: member.workspaceId },
+    select: {
+      aiEnabled: true,
+      aiProvider: true,
+      aiModel: true,
+      aiApiKey: true,
+      aiGreeting: true,
+      aiInstructions: true,
+      aiEscalationThreshold: true,
+    },
+  })
+
   // Serialize deactivatedAt to string so the client component receives a plain object
   const serializedMembers = members.map((m) => ({
     ...m,
@@ -316,6 +330,18 @@ export default async function SettingsPage() {
             demoMode={demoMode}
           />
         </div>
+
+        {/* AI Agent */}
+        <AiSettingsSection
+          aiEnabled={aiSettings?.aiEnabled ?? false}
+          aiProvider={aiSettings?.aiProvider ?? null}
+          aiModel={aiSettings?.aiModel ?? null}
+          aiGreeting={aiSettings?.aiGreeting ?? null}
+          aiInstructions={aiSettings?.aiInstructions ?? null}
+          aiEscalationThreshold={aiSettings?.aiEscalationThreshold ?? 0.3}
+          hasApiKey={!!aiSettings?.aiApiKey}
+          demoMode={demoMode}
+        />
 
         {/* AI Search */}
         <div className="bg-white rounded-xl border border-border p-6">

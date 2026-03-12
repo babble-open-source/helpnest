@@ -5,15 +5,19 @@ import { useState } from 'react'
 import { signOut } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { InboxBadge } from './InboxBadge'
 
 const navItems = [
   { href: '/dashboard', label: 'Overview' },
+  { href: '/dashboard/inbox', label: 'Inbox' },
   { href: '/dashboard/articles', label: 'Articles' },
   { href: '/dashboard/collections', label: 'Collections' },
+  { href: '/dashboard/knowledge-gaps', label: 'Gaps' },
   { href: '/dashboard/settings', label: 'Settings' },
 ]
 
 interface Props {
+  workspaceId: string
   workspaceName: string
   workspaceLogo?: string | null
   workspaceBrandText?: string | null
@@ -23,6 +27,7 @@ interface Props {
 }
 
 export function DashboardSidebar({
+  workspaceId,
   workspaceName,
   workspaceLogo,
   workspaceBrandText,
@@ -145,6 +150,9 @@ export function DashboardSidebar({
               <span className={`hidden lg:block ${!open ? 'text-xs font-medium text-cream/60' : ''}`}>
                 {open ? item.label : item.label[0]}
               </span>
+              {item.href === '/dashboard/inbox' && open && (
+                <InboxBadge workspaceId={workspaceId} />
+              )}
             </Link>
           ))}
         </nav>

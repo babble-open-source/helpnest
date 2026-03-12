@@ -103,6 +103,17 @@ export default async function DashboardPage() {
     feedbackArticlesPromise,
   ])
 
+  // AI conversation metrics
+  const [totalConversations, resolvedByAI, escalatedCount, weekConversations, unresolvedGaps] = await Promise.all([
+    prisma.conversation.count({ where: { workspaceId: member.workspaceId } }),
+    prisma.conversation.count({ where: { workspaceId: member.workspaceId, status: 'RESOLVED_AI' } }),
+    prisma.conversation.count({ where: { workspaceId: member.workspaceId, status: 'ESCALATED' } }),
+    prisma.conversation.count({ where: { workspaceId: member.workspaceId, createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
+    prisma.knowledgeGap.count({ where: { workspaceId: member.workspaceId, resolvedAt: null } }),
+  ])
+  const aiResolutionRate = totalConversations > 0 ? Math.round((resolvedByAI / totalConversations) * 100) : null
+  const escalationRate = totalConversations > 0 ? Math.round((escalatedCount / totalConversations) * 100) : null
+
   const totalHelpful = feedbackTotals._sum.helpful ?? 0
   const totalNotHelpful = feedbackTotals._sum.notHelpful ?? 0
   const overallHelpfulRate = helpfulRate(totalHelpful, totalNotHelpful)
@@ -141,6 +152,24 @@ export default async function DashboardPage() {
         <h1 className="font-serif text-2xl sm:text-3xl text-ink">Overview</h1>
         <p className="text-muted mt-1">{member.workspace.name}</p>
       </div>
+
+      {/* AI Support Stats */}
+      {totalConversations > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+          {[
+            { label: 'Conversations', value: totalConversations },
+            { label: 'AI Resolution Rate', value: aiResolutionRate !== null ? `${aiResolutionRate}%` : '—', color: 'text-green' },
+            { label: 'Escalation Rate', value: escalationRate !== null ? `${escalationRate}%` : '—', color: 'text-accent' },
+            { label: 'Conversations (7d)', value: weekConversations },
+            { label: 'Knowledge Gaps', value: unresolvedGaps },
+          ].map((s) => (
+            <div key={s.label} className="bg-white rounded-xl border border-border p-5">
+              <p className={`text-2xl font-semibold ${'color' in s ? s.color : 'text-ink'}`}>{s.value}</p>
+              <p className="text-sm text-muted mt-1">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">

@@ -1,6 +1,7 @@
 import { HttpClient } from './http'
 import { ArticlesResource } from './resources/articles'
 import { CollectionsResource } from './resources/collections'
+import { ConversationsResource, MessagesResource } from './resources/conversations'
 import type { HelpNestConfig } from './types'
 
 export { HelpNestError } from './http'
@@ -9,14 +10,21 @@ export type {
   ArticleStatus,
   ArticleVersion,
   Collection,
+  Conversation,
+  ConversationMessage,
+  ConversationStatus,
   CreateArticleParams,
   CreateCollectionParams,
+  CreateConversationParams,
   HelpNestConfig,
   ListArticlesParams,
   ListCollectionsParams,
+  ListConversationsParams,
   MemberRole,
+  MessageRole,
   PaginatedResponse,
   SearchResult,
+  SendMessageParams,
   UpdateArticleParams,
   UpdateCollectionParams,
   Workspace,
@@ -45,10 +53,16 @@ export class HelpNest {
   readonly articles: ArticlesResource
   /** Collection management */
   readonly collections: CollectionsResource
+  /** Conversation management */
+  readonly conversations: ConversationsResource
+  /** Conversation message management */
+  readonly messages: MessagesResource
 
   constructor(config: HelpNestConfig) {
     const http = new HttpClient(config)
     this.articles = new ArticlesResource(http)
     this.collections = new CollectionsResource(http)
+    this.conversations = new ConversationsResource(http)
+    this.messages = new MessagesResource(http)
   }
 }

@@ -25,6 +25,29 @@ enum ArticleFeedbackType {
   NOT_HELPFUL
 }
 
+enum ConversationStatus {
+  ACTIVE
+  ESCALATED
+  HUMAN_ACTIVE
+  RESOLVED_AI
+  RESOLVED_HUMAN
+  CLOSED
+}
+
+enum MessageRole {
+  CUSTOMER
+  AI
+  AGENT
+  SYSTEM
+}
+
+enum AiProvider {
+  ANTHROPIC
+  OPENAI
+  GOOGLE
+  MISTRAL
+}
+
 model Workspace {
   id           String   @id @default(cuid())
   name         String
@@ -51,16 +74,25 @@ model Workspace {
   customBodyFontUrl       String?
   customBrandFontFamily   String?
   customBrandFontUrl      String?
+  aiEnabled                Boolean    @default(false)
+  aiProvider               AiProvider?
+  aiModel                  String?
+  aiApiKey                 String?
+  aiGreeting               String?
+  aiInstructions           String?    @db.Text
+  aiEscalationThreshold    Float      @default(0.3)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  collections Collection[]
-  articles    Article[]
-  members     Member[]
-  apiKeys     ApiKey[]
-  searchIndex SearchIndex[]
-  feedback    ArticleFeedback[]
-  invites     Invite[]
+  collections   Collection[]
+  articles      Article[]
+  members       Member[]
+  apiKeys       ApiKey[]
+  searchIndex   SearchIndex[]
+  feedback      ArticleFeedback[]
+  invites       Invite[]
+  conversations Conversation[]
+  knowledgeGaps KnowledgeGap[]
 
   @@index([slug])
 }
@@ -78,6 +110,7 @@ model User {
   articles         Article[]
   articleVersions  ArticleVersion[]
   invitesSent      Invite[]
+  resolvedGaps     KnowledgeGap[]
 }
 
 model Member {
@@ -87,8 +120,9 @@ model Member {
   role           MemberRole @default(VIEWER)
   deactivatedAt  DateTime?
 
-  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace            Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedConversations Conversation[]
 
   @@unique([workspaceId, userId])
   @@index([workspaceId])
@@ -138,12 +172,14 @@ model Article {
   updatedAt    DateTime      @updatedAt
   publishedAt  DateTime?
 
-  workspace   Workspace  @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  collection  Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
-  author      User       @relation(fields: [authorId], references: [id])
-  versions    ArticleVersion[]
-  searchIndex SearchIndex[]
-  feedback    ArticleFeedback[]
+  workspace        Workspace             @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  collection       Collection            @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  author           User                  @relation(fields: [authorId], references: [id])
+  versions         ArticleVersion[]
+  searchIndex      SearchIndex[]
+  feedback         ArticleFeedback[]
+  conversationRefs ConversationArticle[]
+  resolvedGaps     KnowledgeGap[]
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
@@ -230,4 +266,77 @@ model Invite {
 
   @@index([workspaceId])
   @@index([token])
+}
+
+model Conversation {
+  id                 String             @id @default(cuid())
+  workspaceId        String
+  status             ConversationStatus @default(ACTIVE)
+  customerName       String?
+  customerEmail      String?
+  sessionToken       String             @unique @default(cuid())
+  subject            String?
+  assignedToId       String?
+  aiConfidence       Float?
+  escalationReason   String?
+  resolutionSummary  String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assignedTo Member?              @relation(fields: [assignedToId], references: [id])
+  messages   Message[]
+  articles   ConversationArticle[]
+
+  @@index([workspaceId, status])
+  @@index([workspaceId, createdAt])
+  @@index([assignedToId])
+}
+
+model Message {
+  id               String      @id @default(cuid())
+  conversationId   String
+  role             MessageRole
+  content          String      @db.Text
+  sources          Json?
+  confidence       Float?
+  feedbackHelpful  Boolean?
+  createdAt        DateTime    @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model ConversationArticle {
+  id             String @id @default(cuid())
+  conversationId String
+  articleId      String
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  article      Article      @relation(fields: [articleId], references: [id])
+
+  @@unique([conversationId, articleId])
+  @@index([articleId])
+}
+
+model KnowledgeGap {
+  id                String    @id @default(cuid())
+  workspaceId       String
+  query             String
+  queryHash         String
+  occurrences       Int       @default(1)
+  lastSeenAt        DateTime  @default(now())
+  resolvedAt        DateTime?
+  resolvedById      String?
+  resolvedArticleId String?
+  createdAt         DateTime  @default(now())
+
+  workspace       Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  resolvedBy      User?     @relation(fields: [resolvedById], references: [id])
+  resolvedArticle Article?  @relation(fields: [resolvedArticleId], references: [id])
+
+  @@unique([workspaceId, queryHash])
+  @@index([workspaceId, resolvedAt])
+  @@index([workspaceId, occurrences])
 }

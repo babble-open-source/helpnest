@@ -1,12 +1,9 @@
 import { styles } from './styles'
 import { searchArticles } from './search'
+import { ChatManager } from './chat'
+import type { WidgetConfig, Source, ConversationMessage } from './types'
 
-export interface WidgetConfig {
-  workspace: string
-  baseUrl: string
-  position: 'bottom-right' | 'bottom-left'
-  title: string
-}
+export type { WidgetConfig }
 
 interface ThemePayload {
   vars?: Record<string, string>
@@ -15,29 +12,34 @@ interface ThemePayload {
   brandText?: string | null
 }
 
-interface Source {
-  id: string
-  title: string
-  slug: string
-  collection: { slug: string; title: string }
-}
-
 export class HelpPanel {
   private config: WidgetConfig
   private container: HTMLElement | null = null
   private panel: HTMLElement | null = null
   private isOpen = false
+
+  // Search mode state
   private searchTimer: ReturnType<typeof setTimeout> | null = null
   private aiMode = false
   private aiInFlight = false
   private aiAbortController: AbortController | null = null
 
+  // Chat mode state
+  private chatManager: ChatManager | null = null
+  private chatStreaming = false
+  private messageCount = 0
+
   constructor(config: WidgetConfig) {
     this.config = config
+    if (config.mode === 'chat') {
+      this.chatManager = new ChatManager({
+        workspace: config.workspace,
+        baseUrl: config.baseUrl,
+      })
+    }
   }
 
   mount() {
-    // Inject styles via shadow-safe style tag in head
     if (!document.getElementById('helpnest-styles')) {
       const style = document.createElement('style')
       style.id = 'helpnest-styles'
@@ -45,7 +47,6 @@ export class HelpPanel {
       document.head.appendChild(style)
     }
 
-    // Create launcher container
     this.container = document.createElement('div')
     this.container.id = 'helpnest-launcher'
     if (this.config.position === 'bottom-left') {
@@ -58,7 +59,13 @@ export class HelpPanel {
     this.panel = this.container.querySelector('#helpnest-panel')
     void this.applyWorkspaceTheme()
     this.bindEvents()
+
+    if (this.config.mode === 'chat') {
+      void this.initChat()
+    }
   }
+
+  // ─── Rendering ──────────────────────────────────────────────────────────────
 
   private renderButton(): string {
     return `
@@ -73,14 +80,60 @@ export class HelpPanel {
 
   private renderPanel(): string {
     const helpCenterUrl = `${this.config.baseUrl}/${this.config.workspace}/help`
+    const isChatMode = this.config.mode === 'chat'
+
+    if (isChatMode) {
+      return `
+        <div id="helpnest-panel" class="hidden hn-chat-mode">
+          <div class="hn-panel-header">
+            <div class="hn-panel-brand">
+              <img class="hn-panel-logo" alt="" />
+              <span class="hn-panel-logo-text" style="display:none"></span>
+            </div>
+            <h3>${this.escapeHtml(this.config.title)}</h3>
+          </div>
+          <div class="hn-panel-body">
+            <div class="hn-chat-messages" id="hn-chat-messages"></div>
+            <div class="hn-chat-status status-ai" id="hn-chat-status" style="display:none"></div>
+            <div class="hn-chat-composer">
+              <textarea
+                class="hn-chat-input"
+                id="hn-chat-input"
+                rows="1"
+                maxlength="1000"
+                placeholder="Type a message..."
+                autocomplete="off"
+                spellcheck="false"
+              ></textarea>
+              <button class="hn-chat-send" id="hn-chat-send" type="button" aria-label="Send">
+                <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="hn-panel-footer">
+            <a href="${helpCenterUrl}" target="_blank" class="hn-footer-btn hn-browse-btn">
+              <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+              Browse articles
+            </a>
+          </div>
+          <p class="hn-powered">Powered by <a href="https://helpnest.cloud" target="_blank">HelpNest</a></p>
+        </div>
+      `
+    }
+
+    // Search mode
     return `
       <div id="helpnest-panel" class="hidden">
         <div class="hn-panel-header">
           <div class="hn-panel-brand">
             <img class="hn-panel-logo" alt="" />
             <span class="hn-panel-logo-text" style="display:none"></span>
-            <h3>${this.config.title}</h3>
           </div>
+          <h3>${this.escapeHtml(this.config.title)}</h3>
           <p class="hn-ai-header-note" style="display:none">AI answers are based on published help articles.</p>
           <div class="hn-search-wrap">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -143,15 +196,41 @@ export class HelpPanel {
     `
   }
 
+  // ─── Event binding ───────────────────────────────────────────────────────────
+
   private bindEvents() {
     const btn = this.container?.querySelector('#helpnest-btn')
+    btn?.addEventListener('click', () => this.toggle())
+
+    // Close on outside click.
+    // Use composedPath() instead of contains() so that buttons which remove
+    // themselves from the DOM before the event finishes bubbling (e.g. "Talk
+    // to a human", "Start new conversation") don't accidentally trigger a close.
+    document.addEventListener('click', (e) => {
+      if (this.isOpen && this.container && !e.composedPath().includes(this.container)) {
+        this.close()
+      }
+    })
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.isOpen) this.close()
+    })
+
+    if (this.config.mode === 'chat') {
+      this.bindChatEvents()
+    } else {
+      this.bindSearchEvents()
+    }
+  }
+
+  private bindSearchEvents() {
     const input = this.container?.querySelector('.hn-search-input') as HTMLInputElement | null
     const aiToggle = this.container?.querySelector('#hn-ai-toggle') as HTMLButtonElement | null
     const aiForm = this.container?.querySelector('.hn-ai-form') as HTMLFormElement | null
     const aiInput = this.container?.querySelector('.hn-ai-input') as HTMLTextAreaElement | null
     const aiBack = this.container?.querySelector('.hn-ai-back') as HTMLButtonElement | null
 
-    btn?.addEventListener('click', () => this.toggle())
     aiToggle?.addEventListener('click', () => {
       this.setAIMode(!this.aiMode)
       if (this.aiMode) aiInput?.focus()
@@ -165,29 +244,47 @@ export class HelpPanel {
         this.handleSearch(input.value.trim())
       }, 300)
     })
+
     aiForm?.addEventListener('submit', (e) => {
       e.preventDefault()
       if (!aiInput) return
       void this.askAI(aiInput.value)
     })
+
     aiInput?.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return
       e.preventDefault()
       void this.askAI(aiInput.value)
     })
+  }
 
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (this.isOpen && !this.container?.contains(e.target as Node)) {
-        this.close()
-      }
+  private bindChatEvents() {
+    const input = this.container?.querySelector('#hn-chat-input') as HTMLTextAreaElement | null
+    const sendBtn = this.container?.querySelector('#hn-chat-send') as HTMLButtonElement | null
+
+    const submit = () => {
+      const text = input?.value.trim() ?? ''
+      if (!text || this.chatStreaming) return
+      void this.sendChatMessage(text)
+    }
+
+    sendBtn?.addEventListener('click', submit)
+
+    input?.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return
+      e.preventDefault()
+      submit()
     })
 
-    // Close on Escape
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && this.isOpen) this.close()
+    // Auto-resize textarea (single-line feel, max 4 lines)
+    input?.addEventListener('input', () => {
+      if (!input) return
+      input.style.height = 'auto'
+      input.style.height = Math.min(input.scrollHeight, 96) + 'px'
     })
   }
+
+  // ─── Open / close ────────────────────────────────────────────────────────────
 
   private toggle() {
     this.isOpen ? this.close() : this.open()
@@ -197,8 +294,12 @@ export class HelpPanel {
     this.isOpen = true
     this.panel?.classList.remove('hidden')
     void this.applyWorkspaceTheme()
+
     setTimeout(() => {
-      if (this.aiMode) {
+      if (this.config.mode === 'chat') {
+        const input = this.container?.querySelector('#hn-chat-input') as HTMLTextAreaElement | null
+        input?.focus()
+      } else if (this.aiMode) {
         const aiInput = this.container?.querySelector('.hn-ai-input') as HTMLTextAreaElement | null
         aiInput?.focus()
       } else {
@@ -211,8 +312,12 @@ export class HelpPanel {
   private close() {
     this.isOpen = false
     this.panel?.classList.add('hidden')
-    this.setAIMode(false)
+    if (this.config.mode === 'search') {
+      this.setAIMode(false)
+    }
   }
+
+  // ─── Search mode methods (unchanged logic) ───────────────────────────────────
 
   private async handleSearch(query: string) {
     const list = this.panel?.querySelector('.hn-results-list')
@@ -223,7 +328,6 @@ export class HelpPanel {
       return
     }
 
-    // Show skeleton
     list.innerHTML = `
       <li style="padding:8px 12px"><div class="hn-skeleton" style="width:80%"></div><div class="hn-skeleton" style="width:50%"></div></li>
       <li style="padding:8px 12px"><div class="hn-skeleton" style="width:70%"></div><div class="hn-skeleton" style="width:40%"></div></li>
@@ -421,6 +525,580 @@ export class HelpPanel {
     this.aiInFlight = false
   }
 
+  private renderAISources(sources: Source[]) {
+    const sourcesWrapEl = this.container?.querySelector('.hn-ai-sources-wrap') as HTMLElement | null
+    const sourcesEl = this.container?.querySelector('.hn-ai-sources') as HTMLElement | null
+    if (!sourcesEl || !sourcesWrapEl) return
+    if (sources.length === 0) {
+      sourcesWrapEl.style.display = 'none'
+      sourcesEl.innerHTML = ''
+      return
+    }
+    sourcesWrapEl.style.display = ''
+
+    sourcesEl.innerHTML = sources.map((source) => {
+      const url = `${this.config.baseUrl}/${this.config.workspace}/help/${source.collection.slug}/${source.slug}`
+      return `
+        <li class="hn-ai-source">
+          <a href="${url}" target="_blank" rel="noopener noreferrer">
+            ${this.escapeHtml(source.title)}
+          </a>
+          <span>${this.escapeHtml(source.collection.title)}</span>
+        </li>
+      `
+    }).join('')
+  }
+
+  // ─── Chat mode methods ───────────────────────────────────────────────────────
+
+  private async initChat() {
+    if (!this.chatManager) return
+
+    this.chatManager.setOnNewMessages((msgs) => {
+      this.appendChatMessages(msgs)
+      this.updateChatStatus()
+    })
+
+    const resumed = await this.chatManager.resumeSession()
+    if (resumed) {
+      // Load existing messages
+      const messages = await this.chatManager.loadMessages()
+      if (messages.length > 0) {
+        this.appendChatMessages(messages)
+        this.messageCount = messages.length
+        this.updateChatStatus()
+        return
+      }
+    }
+
+    // Show greeting for new sessions
+    this.appendGreeting(this.config.greeting)
+  }
+
+  private appendGreeting(text: string) {
+    const list = this.container?.querySelector('#hn-chat-messages')
+    if (!list) return
+
+    const wrap = document.createElement('div')
+    wrap.className = 'hn-chat-bubble-wrap ai'
+
+    const bubble = document.createElement('div')
+    bubble.className = 'hn-chat-bubble ai hn-chat-greeting'
+    bubble.innerHTML = this.renderAnswerMarkdown(text)
+
+    wrap.appendChild(bubble)
+    list.appendChild(wrap)
+    this.scrollChatToBottom()
+  }
+
+  private async sendChatMessage(text: string) {
+    if (!this.chatManager || this.chatStreaming) return
+
+    const input = this.container?.querySelector('#hn-chat-input') as HTMLTextAreaElement | null
+    const sendBtn = this.container?.querySelector('#hn-chat-send') as HTMLButtonElement | null
+
+    // Clear and disable input immediately
+    if (input) {
+      input.value = ''
+      input.style.height = 'auto'
+      input.disabled = true
+    }
+    if (sendBtn) sendBtn.disabled = true
+
+    this.chatStreaming = true
+    this.messageCount++
+
+    // Append customer bubble
+    this.appendCustomerBubble(text)
+
+    try {
+      // Create conversation on first real message if needed
+      if (!this.chatManager.getSession()) {
+        await this.chatManager.createConversation()
+      }
+
+      // Show typing indicator
+      const typingEl = this.appendTypingIndicator()
+      this.updateChatStatus('typing')
+
+      let aiText = ''
+      let aiBubble: HTMLElement | null = null
+      let aiBubbleWrap: HTMLElement | null = null
+      let pendingSources: Source[] = []
+      let renderTimer: ReturnType<typeof setTimeout> | null = null
+      let renderedText = ''
+
+      const flushRender = () => {
+        renderTimer = null
+        if (!aiBubble || renderedText === aiText) return
+        aiBubble.innerHTML = this.renderAnswerMarkdown(aiText)
+        renderedText = aiText
+        this.scrollChatToBottom()
+      }
+
+      const queueRender = () => {
+        if (renderTimer) return
+        renderTimer = setTimeout(flushRender, 60)
+      }
+
+      for await (const event of this.chatManager.sendMessage(text)) {
+        if (event.type === 'text') {
+          // Remove typing indicator and create AI bubble on first text chunk
+          if (!aiBubble) {
+            typingEl.remove()
+            const { wrap, bubble } = this.createAiBubble()
+            aiBubbleWrap = wrap
+            aiBubble = bubble
+            const list = this.container?.querySelector('#hn-chat-messages')
+            list?.appendChild(wrap)
+          }
+          aiText += event.text
+          queueRender()
+
+        } else if (event.type === 'sources') {
+          pendingSources = event.sources
+
+        } else if (event.type === 'done') {
+          if (renderTimer) clearTimeout(renderTimer)
+          flushRender()
+
+          // Render sources as chips
+          if (pendingSources.length > 0 && aiBubbleWrap) {
+            const chipsEl = this.buildSourceChips(pendingSources)
+            aiBubbleWrap.appendChild(chipsEl)
+          }
+
+          // Render feedback buttons — only if this was a substantial AI reply
+          if (aiText.length > 0 && aiBubbleWrap) {
+            const msgId = `msg_${Date.now()}`
+            if (aiBubbleWrap.dataset) aiBubbleWrap.dataset['msgId'] = msgId
+            const feedbackEl = this.buildFeedbackButtons(msgId)
+            aiBubbleWrap.appendChild(feedbackEl)
+          }
+
+          // Show "Talk to a human" after 3 messages or low confidence
+          const lowConfidence =
+            'confidence' in event && typeof event.confidence === 'number' && event.confidence < 0.5
+          if ((this.messageCount >= 3 || lowConfidence) && !this.hasEscalateButton()) {
+            this.appendEscalateButton()
+          }
+
+          // Handle escalation
+          if (event.shouldEscalate) {
+            // If AI sent no text, the typing indicator is still in the DOM — remove it
+            if (!aiBubble) typingEl.remove()
+            if (aiText.length === 0) {
+              const reason = event.escalationReason ?? "Let me connect you with a support agent."
+              this.appendSystemMessage(reason)
+            }
+            this.updateChatStatus()
+          }
+
+          // Advance lastMessageAt so the poll won't re-fetch this AI message.
+          if (aiText.length > 0) this.chatManager.advanceLastMessageAt()
+
+          this.scrollChatToBottom()
+          break
+
+        } else if (event.type === 'error') {
+          typingEl.remove()
+          this.appendSystemMessage(event.message ?? 'Something went wrong. Please try again.')
+          break
+        }
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Failed to send message'
+      this.appendSystemMessage(msg)
+    } finally {
+      this.chatStreaming = false
+      if (input) input.disabled = false
+      if (sendBtn) sendBtn.disabled = false
+      if (input && this.isOpen) input.focus()
+      this.updateChatStatus()
+    }
+  }
+
+  private appendCustomerBubble(text: string) {
+    const list = this.container?.querySelector('#hn-chat-messages')
+    if (!list) return
+
+    const wrap = document.createElement('div')
+    wrap.className = 'hn-chat-bubble-wrap customer'
+
+    const bubble = document.createElement('div')
+    bubble.className = 'hn-chat-bubble customer'
+    bubble.textContent = text
+
+    wrap.appendChild(bubble)
+    list.appendChild(wrap)
+    this.scrollChatToBottom()
+  }
+
+  private createAiBubble(): { wrap: HTMLElement; bubble: HTMLElement } {
+    const wrap = document.createElement('div')
+    wrap.className = 'hn-chat-bubble-wrap ai'
+
+    const bubble = document.createElement('div')
+    bubble.className = 'hn-chat-bubble ai'
+
+    wrap.appendChild(bubble)
+    return { wrap, bubble }
+  }
+
+  private appendTypingIndicator(): HTMLElement {
+    const list = this.container?.querySelector('#hn-chat-messages')
+    const el = document.createElement('div')
+    el.className = 'hn-chat-typing'
+    el.innerHTML = '<span></span><span></span><span></span>'
+    list?.appendChild(el)
+    this.scrollChatToBottom()
+    return el
+  }
+
+  private appendSystemMessage(text: string) {
+    const list = this.container?.querySelector('#hn-chat-messages')
+    if (!list) return
+
+    const wrap = document.createElement('div')
+    wrap.className = 'hn-chat-bubble-wrap system'
+
+    const bubble = document.createElement('div')
+    bubble.className = 'hn-chat-bubble system'
+    bubble.textContent = text
+
+    wrap.appendChild(bubble)
+    list.appendChild(wrap)
+    this.scrollChatToBottom()
+  }
+
+  private appendChatMessages(messages: ConversationMessage[]) {
+    const list = this.container?.querySelector('#hn-chat-messages')
+    if (!list) return
+
+    for (const msg of messages) {
+      const roleClass =
+        msg.role === 'CUSTOMER' ? 'customer' :
+        msg.role === 'AI' ? 'ai' :
+        msg.role === 'AGENT' ? 'agent' :
+        'system'
+
+      const wrap = document.createElement('div')
+      wrap.className = `hn-chat-bubble-wrap ${roleClass}`
+
+      const bubble = document.createElement('div')
+      bubble.className = `hn-chat-bubble ${roleClass}`
+
+      if (msg.role === 'CUSTOMER' || msg.role === 'SYSTEM') {
+        bubble.textContent = msg.content
+      } else {
+        bubble.innerHTML = this.renderAnswerMarkdown(msg.content)
+      }
+
+      wrap.appendChild(bubble)
+
+      // Source chips for AI/AGENT messages
+      if ((msg.role === 'AI' || msg.role === 'AGENT') && msg.sources && msg.sources.length > 0) {
+        wrap.appendChild(this.buildSourceChips(msg.sources))
+      }
+
+      // Feedback buttons for AI messages
+      if (msg.role === 'AI') {
+        const feedbackEl = this.buildFeedbackButtons(msg.id)
+        if (msg.feedbackHelpful === true) {
+          feedbackEl.querySelector('.hn-chat-feedback-btn[data-vote="up"]')
+            ?.classList.add('active-up')
+        } else if (msg.feedbackHelpful === false) {
+          feedbackEl.querySelector('.hn-chat-feedback-btn[data-vote="down"]')
+            ?.classList.add('active-down')
+        }
+        wrap.appendChild(feedbackEl)
+      }
+
+      list.appendChild(wrap)
+      this.messageCount++
+    }
+
+    // Show escalate button if we have enough history and haven't already
+    if (this.messageCount >= 3 && !this.hasEscalateButton()) {
+      this.appendEscalateButton()
+    }
+
+    this.scrollChatToBottom()
+  }
+
+  private buildSourceChips(sources: Source[]): HTMLElement {
+    const container = document.createElement('div')
+    container.className = 'hn-chat-sources'
+
+    for (const source of sources) {
+      const url = `${this.config.baseUrl}/${this.config.workspace}/help/${source.collection.slug}/${source.slug}`
+      const chip = document.createElement('a')
+      chip.className = 'hn-chat-source-chip'
+      chip.href = url
+      chip.target = '_blank'
+      chip.rel = 'noopener noreferrer'
+      chip.title = source.title
+      chip.innerHTML = `
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+        ${this.escapeHtml(source.title)}
+      `
+      container.appendChild(chip)
+    }
+
+    return container
+  }
+
+  private buildFeedbackButtons(messageId: string): HTMLElement {
+    const container = document.createElement('div')
+    container.className = 'hn-chat-feedback'
+
+    const label = document.createElement('span')
+    label.className = 'hn-chat-feedback-label'
+    label.textContent = 'Helpful?'
+
+    const upBtn = document.createElement('button')
+    upBtn.className = 'hn-chat-feedback-btn'
+    upBtn.type = 'button'
+    upBtn.dataset['vote'] = 'up'
+    upBtn.setAttribute('aria-label', 'Helpful')
+    upBtn.textContent = '👍'
+
+    const downBtn = document.createElement('button')
+    downBtn.className = 'hn-chat-feedback-btn'
+    downBtn.type = 'button'
+    downBtn.dataset['vote'] = 'down'
+    downBtn.setAttribute('aria-label', 'Not helpful')
+    downBtn.textContent = '👎'
+
+    const handleFeedback = (helpful: boolean) => {
+      upBtn.disabled = true
+      downBtn.disabled = true
+      upBtn.classList.toggle('active-up', helpful)
+      downBtn.classList.toggle('active-down', !helpful)
+      void this.chatManager?.sendFeedback(messageId, helpful)
+    }
+
+    upBtn.addEventListener('click', () => handleFeedback(true))
+    downBtn.addEventListener('click', () => handleFeedback(false))
+
+    container.appendChild(label)
+    container.appendChild(upBtn)
+    container.appendChild(downBtn)
+    return container
+  }
+
+  private hasEscalateButton(): boolean {
+    return !!this.container?.querySelector('.hn-chat-escalate')
+  }
+
+  private appendEscalateButton() {
+    const list = this.container?.querySelector('#hn-chat-messages')
+    if (!list) return
+
+    const state = this.chatManager?.getState()
+    // Don't show if already escalated or resolved
+    if (state === 'CHAT_HUMAN' || state === 'RESOLVED') return
+
+    const wrap = document.createElement('div')
+    wrap.className = 'hn-chat-escalate-wrap'
+
+    const btn = document.createElement('button')
+    btn.className = 'hn-chat-escalate'
+    btn.type = 'button'
+    btn.innerHTML = `
+      <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+      </svg>
+      Talk to a human
+    `
+    btn.addEventListener('click', () => {
+      wrap.remove()
+      void this.handleEscalate()
+    })
+
+    wrap.appendChild(btn)
+    list.appendChild(wrap)
+    this.scrollChatToBottom()
+  }
+
+  private async handleEscalate() {
+    if (!this.chatManager) return
+
+    // Ensure a session exists before escalating
+    if (!this.chatManager.getSession()) {
+      try {
+        await this.chatManager.createConversation()
+      } catch {
+        this.appendSystemMessage('Unable to connect. Please try again.')
+        return
+      }
+    }
+
+    this.appendSystemMessage('Connecting you to a support agent...')
+    try {
+      await this.chatManager.escalate()
+      this.updateChatStatus()
+    } catch {
+      this.appendSystemMessage('Failed to connect to support. Please try again.')
+    }
+  }
+
+  private updateChatStatus(hint?: 'typing') {
+    const statusEl = this.container?.querySelector('#hn-chat-status') as HTMLElement | null
+    if (!statusEl) return
+
+    const state = this.chatManager?.getState() ?? 'IDLE'
+
+    if (hint === 'typing') {
+      statusEl.style.display = 'flex'
+      statusEl.className = 'hn-chat-status status-ai'
+      statusEl.innerHTML = '<span class="hn-chat-status-dot pulse"></span> AI is typing...'
+      return
+    }
+
+    if (state === 'CHAT_HUMAN') {
+      statusEl.style.display = 'flex'
+      statusEl.className = 'hn-chat-status status-human'
+      statusEl.innerHTML = '<span class="hn-chat-status-dot pulse"></span> Connected to support'
+      return
+    }
+
+    if (state === 'RESOLVED') {
+      statusEl.style.display = 'flex'
+      statusEl.className = 'hn-chat-status status-resolved'
+      statusEl.innerHTML = '<span class="hn-chat-status-dot"></span> Conversation resolved'
+      const input = this.container?.querySelector('#hn-chat-input') as HTMLTextAreaElement | null
+      const sendBtn = this.container?.querySelector('#hn-chat-send') as HTMLButtonElement | null
+      if (input) { input.disabled = true; input.placeholder = 'This conversation is resolved.' }
+      if (sendBtn) sendBtn.disabled = true
+      // Show "Start new conversation" button if not already shown
+      if (!this.container?.querySelector('.hn-chat-new-conv')) {
+        const list = this.container?.querySelector('#hn-chat-messages')
+        if (list) {
+          const wrap = document.createElement('div')
+          wrap.className = 'hn-chat-bubble-wrap system'
+          const btn = document.createElement('button')
+          btn.className = 'hn-chat-new-conv'
+          btn.type = 'button'
+          btn.textContent = 'Start a new conversation'
+          btn.addEventListener('click', () => this.startNewConversation())
+          wrap.appendChild(btn)
+          list.appendChild(wrap)
+          this.scrollChatToBottom()
+        }
+      }
+      return
+    }
+
+    statusEl.style.display = 'none'
+    statusEl.innerHTML = ''
+  }
+
+  private startNewConversation() {
+    if (!this.chatManager) return
+
+    // Clear session and state
+    this.chatManager.clearSession()
+    this.messageCount = 0
+
+    // Clear message list
+    const list = this.container?.querySelector('#hn-chat-messages')
+    if (list) list.innerHTML = ''
+
+    // Re-enable input
+    const input = this.container?.querySelector('#hn-chat-input') as HTMLTextAreaElement | null
+    const sendBtn = this.container?.querySelector('#hn-chat-send') as HTMLButtonElement | null
+    if (input) { input.disabled = false; input.placeholder = 'Type a message...'; input.value = '' }
+    if (sendBtn) sendBtn.disabled = false
+
+    // Hide status bar
+    const statusEl = this.container?.querySelector('#hn-chat-status') as HTMLElement | null
+    if (statusEl) { statusEl.style.display = 'none'; statusEl.innerHTML = '' }
+
+    // Show greeting
+    this.appendGreeting(this.config.greeting)
+
+    if (this.isOpen) input?.focus()
+  }
+
+  private scrollChatToBottom() {
+    const list = this.container?.querySelector('#hn-chat-messages') as HTMLElement | null
+    if (!list) return
+    // Use requestAnimationFrame so layout has settled before we read scrollHeight
+    requestAnimationFrame(() => {
+      list.scrollTop = list.scrollHeight
+    })
+  }
+
+  // ─── Theme ───────────────────────────────────────────────────────────────────
+
+  private async applyWorkspaceTheme() {
+    if (!this.container) return
+
+    try {
+      const url = `${this.config.baseUrl}/api/widget/theme?workspace=${encodeURIComponent(this.config.workspace)}`
+      const res = await fetch(url, { cache: 'no-store' })
+      if (!res.ok) return
+
+      const data = await res.json() as ThemePayload
+      if (data.vars && typeof data.vars === 'object') {
+        for (const [key, value] of Object.entries(data.vars)) {
+          if (!key.startsWith('--') || typeof value !== 'string') continue
+          this.container.style.setProperty(key, value)
+        }
+      }
+
+      if (Array.isArray(data.fontUrls)) {
+        for (const fontUrl of data.fontUrls) {
+          if (typeof fontUrl !== 'string' || fontUrl.length === 0) continue
+
+          const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+            (link) => (link as HTMLLinkElement).href === fontUrl,
+          )
+          if (existing) continue
+
+          const link = document.createElement('link')
+          link.rel = 'stylesheet'
+          link.href = fontUrl
+          document.head.appendChild(link)
+        }
+      }
+
+      const logoEl = this.container.querySelector('.hn-panel-logo') as HTMLImageElement | null
+      const logoTextEl = this.container.querySelector('.hn-panel-logo-text') as HTMLSpanElement | null
+      const brandText = typeof data.brandText === 'string' ? data.brandText.trim() : ''
+
+      if (logoEl) {
+        if (typeof data.logoUrl === 'string' && data.logoUrl.length > 0) {
+          logoEl.src = data.logoUrl
+          logoEl.style.display = 'block'
+          if (logoTextEl) {
+            logoTextEl.textContent = ''
+            logoTextEl.style.display = 'none'
+          }
+        } else {
+          logoEl.removeAttribute('src')
+          logoEl.style.display = 'none'
+          if (logoTextEl && brandText.length > 0) {
+            logoTextEl.textContent = brandText
+            logoTextEl.style.display = 'block'
+          } else if (logoTextEl) {
+            logoTextEl.textContent = ''
+            logoTextEl.style.display = 'none'
+          }
+        }
+      }
+    } catch {
+      // Keep default widget colors if theme fetch fails.
+    } finally {
+      if (this.container) this.container.style.opacity = '1'
+    }
+  }
+
+  // ─── Markdown / HTML helpers (shared by both modes) ─────────────────────────
+
   private renderAnswerMarkdown(markdown: string): string {
     const lines = markdown.replace(/\r\n/g, '\n').split('\n')
     const html: string[] = []
@@ -429,8 +1107,6 @@ export class HelpPanel {
     let codeLines: string[] = []
     let inUl = false
     let inOl = false
-    // When a blank line appears inside a list, defer closing until we know
-    // whether the next non-empty line continues the list or not.
     let pendingListClose = false
 
     const closeLists = () => {
@@ -463,12 +1139,10 @@ export class HelpPanel {
       }
 
       if (trimmed.length === 0) {
-        // Blank line between list items: defer close until next non-empty line.
         if (inUl || inOl) pendingListClose = true
         continue
       }
 
-      // Non-empty line — resolve any pending list close first.
       if (pendingListClose) {
         pendingListClose = false
         const nextIsListItem = /^\s*[-*]\s+/.test(line) || /^\s*\d+\.\s+/.test(line)
@@ -520,14 +1194,12 @@ export class HelpPanel {
     const codeTokens: string[] = []
     const linkTokens: string[] = []
 
-    // Extract inline code first so bold/italic regexes don't touch its content.
     const withCodeTokens = text.replace(/`([^`]+)`/g, (_m, content: string) => {
       const token = `@@CODE${codeTokens.length}@@`
       codeTokens.push(`<code>${this.escapeHtml(content)}</code>`)
       return token
     })
 
-    // Extract links next (they may contain chars that confuse later steps).
     const withLinkTokens = withCodeTokens.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, label: string, href: string) => {
       const safeHref = this.normalizeSafeHref(String(href).trim())
       const token = `@@LINK${linkTokens.length}@@`
@@ -541,14 +1213,10 @@ export class HelpPanel {
       return token
     })
 
-    // Escape HTML, then apply bold/italic (@@...@@ tokens survive unharmed).
-    // Non-greedy .+? handles content that contains asterisks (e.g. math, paths)
-    // and correctly resolves ***bold italic*** as bold wrapping italic.
     let out = this.escapeHtml(withLinkTokens)
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
 
-    // Restore tokens via a function to prevent $ in URLs being mis-interpreted.
     codeTokens.forEach((tokenHtml, i) => {
       out = out.replace(`@@CODE${i}@@`, () => tokenHtml)
     })
@@ -567,93 +1235,6 @@ export class HelpPanel {
       return null
     } catch {
       return null
-    }
-  }
-
-  private renderAISources(sources: Source[]) {
-    const sourcesWrapEl = this.container?.querySelector('.hn-ai-sources-wrap') as HTMLElement | null
-    const sourcesEl = this.container?.querySelector('.hn-ai-sources') as HTMLElement | null
-    if (!sourcesEl || !sourcesWrapEl) return
-    if (sources.length === 0) {
-      sourcesWrapEl.style.display = 'none'
-      sourcesEl.innerHTML = ''
-      return
-    }
-    sourcesWrapEl.style.display = ''
-
-    sourcesEl.innerHTML = sources.map((source) => {
-      const url = `${this.config.baseUrl}/${this.config.workspace}/help/${source.collection.slug}/${source.slug}`
-      return `
-        <li class="hn-ai-source">
-          <a href="${url}" target="_blank" rel="noopener noreferrer">
-            ${this.escapeHtml(source.title)}
-          </a>
-          <span>${this.escapeHtml(source.collection.title)}</span>
-        </li>
-      `
-    }).join('')
-  }
-
-  private async applyWorkspaceTheme() {
-    if (!this.container) return
-
-    try {
-      const url = `${this.config.baseUrl}/api/widget/theme?workspace=${encodeURIComponent(this.config.workspace)}`
-      const res = await fetch(url, { cache: 'no-store' })
-      if (!res.ok) return
-
-      const data = await res.json() as ThemePayload
-      if (data.vars && typeof data.vars === 'object') {
-        for (const [key, value] of Object.entries(data.vars)) {
-          if (!key.startsWith('--') || typeof value !== 'string') continue
-          this.container.style.setProperty(key, value)
-        }
-      }
-
-      if (Array.isArray(data.fontUrls)) {
-        for (const url of data.fontUrls) {
-          if (typeof url !== 'string' || url.length === 0) continue
-
-          const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
-            (link) => (link as HTMLLinkElement).href === url,
-          )
-          if (existing) continue
-
-          const link = document.createElement('link')
-          link.rel = 'stylesheet'
-          link.href = url
-          document.head.appendChild(link)
-        }
-      }
-
-      const logoEl = this.container.querySelector('.hn-panel-logo') as HTMLImageElement | null
-      const logoTextEl = this.container.querySelector('.hn-panel-logo-text') as HTMLSpanElement | null
-      const brandText = typeof data.brandText === 'string' ? data.brandText.trim() : ''
-
-      if (logoEl) {
-        if (typeof data.logoUrl === 'string' && data.logoUrl.length > 0) {
-          logoEl.src = data.logoUrl
-          logoEl.style.display = 'block'
-          if (logoTextEl) {
-            logoTextEl.textContent = ''
-            logoTextEl.style.display = 'none'
-          }
-        } else {
-          logoEl.removeAttribute('src')
-          logoEl.style.display = 'none'
-          if (logoTextEl && brandText.length > 0) {
-            logoTextEl.textContent = brandText
-            logoTextEl.style.display = 'block'
-          } else if (logoTextEl) {
-            logoTextEl.textContent = ''
-            logoTextEl.style.display = 'none'
-          }
-        }
-      }
-    } catch {
-      // Keep default widget colors if theme fetch fails.
-    } finally {
-      if (this.container) this.container.style.opacity = '1'
     }
   }
 

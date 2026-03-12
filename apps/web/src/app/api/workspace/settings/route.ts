@@ -1,5 +1,6 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { getFontPreset, radiusOptions } from '@/lib/branding'
+import { encryptApiKey } from '@/lib/ai/resolve-provider'
 import {
   hasWorkspaceBrandTextColumn,
   hasWorkspaceFaviconColumn,
@@ -94,6 +95,13 @@ export async function PATCH(request: Request) {
     customBodyFontUrl,
     customBrandFontFamily,
     customBrandFontUrl,
+    aiEnabled,
+    aiProvider,
+    aiModel,
+    aiApiKey,
+    aiGreeting,
+    aiInstructions,
+    aiEscalationThreshold,
   } = body as {
     name?: unknown
     slug?: unknown
@@ -119,6 +127,13 @@ export async function PATCH(request: Request) {
     customBodyFontUrl?: unknown
     customBrandFontFamily?: unknown
     customBrandFontUrl?: unknown
+    aiEnabled?: unknown
+    aiProvider?: unknown
+    aiModel?: unknown
+    aiApiKey?: unknown
+    aiGreeting?: unknown
+    aiInstructions?: unknown
+    aiEscalationThreshold?: unknown
   }
 
   if (isDemoMode()) {
@@ -366,6 +381,89 @@ export async function PATCH(request: Request) {
     )
   }
 
+  // AI field validation
+  const AI_PROVIDERS = ['anthropic', 'openai', 'google', 'mistral'] as const
+  type LowercaseAiProvider = (typeof AI_PROVIDERS)[number]
+  const AI_PROVIDER_ENUM_MAP: Record<LowercaseAiProvider, 'ANTHROPIC' | 'OPENAI' | 'GOOGLE' | 'MISTRAL'> = {
+    anthropic: 'ANTHROPIC',
+    openai: 'OPENAI',
+    google: 'GOOGLE',
+    mistral: 'MISTRAL',
+  }
+
+  if (aiEnabled !== undefined && typeof aiEnabled !== 'boolean') {
+    return NextResponse.json({ error: 'aiEnabled must be a boolean' }, { status: 400 })
+  }
+
+  if (aiProvider !== undefined && aiProvider !== null) {
+    if (typeof aiProvider !== 'string' || !AI_PROVIDERS.includes(aiProvider.toLowerCase() as LowercaseAiProvider)) {
+      return NextResponse.json(
+        { error: 'aiProvider must be one of: anthropic, openai, google, mistral' },
+        { status: 400 },
+      )
+    }
+  }
+
+  if (aiModel !== undefined && aiModel !== null) {
+    if (typeof aiModel !== 'string') {
+      return NextResponse.json({ error: 'aiModel must be a string' }, { status: 400 })
+    }
+    if (aiModel.trim().length > 120) {
+      return NextResponse.json({ error: 'aiModel must be 120 characters or fewer' }, { status: 400 })
+    }
+  }
+
+  if (aiApiKey !== undefined && aiApiKey !== null) {
+    if (typeof aiApiKey !== 'string' || aiApiKey.trim().length === 0) {
+      return NextResponse.json({ error: 'aiApiKey must be a non-empty string' }, { status: 400 })
+    }
+  }
+
+  if (aiGreeting !== undefined && aiGreeting !== null) {
+    if (typeof aiGreeting !== 'string') {
+      return NextResponse.json({ error: 'aiGreeting must be a string' }, { status: 400 })
+    }
+    if (aiGreeting.trim().length > 500) {
+      return NextResponse.json({ error: 'aiGreeting must be 500 characters or fewer' }, { status: 400 })
+    }
+  }
+
+  if (aiInstructions !== undefined && aiInstructions !== null) {
+    if (typeof aiInstructions !== 'string') {
+      return NextResponse.json({ error: 'aiInstructions must be a string' }, { status: 400 })
+    }
+    if (aiInstructions.trim().length > 4000) {
+      return NextResponse.json({ error: 'aiInstructions must be 4000 characters or fewer' }, { status: 400 })
+    }
+  }
+
+  if (aiEscalationThreshold !== undefined) {
+    if (typeof aiEscalationThreshold !== 'number' || isNaN(aiEscalationThreshold)) {
+      return NextResponse.json({ error: 'aiEscalationThreshold must be a number' }, { status: 400 })
+    }
+  }
+
+  const clampedThreshold =
+    aiEscalationThreshold !== undefined
+      ? Math.min(1, Math.max(0, aiEscalationThreshold as number))
+      : undefined
+
+  const resolvedAiProvider =
+    aiProvider !== undefined && aiProvider !== null
+      ? AI_PROVIDER_ENUM_MAP[(aiProvider as string).toLowerCase() as LowercaseAiProvider]
+      : undefined
+
+  const trimmedAiModel =
+    typeof aiModel === 'string' && aiModel.trim().length > 0 ? aiModel.trim() : null
+  const trimmedAiGreeting =
+    typeof aiGreeting === 'string' && aiGreeting.trim().length > 0 ? aiGreeting.trim() : null
+  const trimmedAiInstructions =
+    typeof aiInstructions === 'string' && aiInstructions.trim().length > 0 ? aiInstructions.trim() : null
+  const encryptedAiApiKey =
+    typeof aiApiKey === 'string' && aiApiKey.trim().length > 0
+      ? encryptApiKey(aiApiKey.trim())
+      : undefined
+
   const canPersistFontPreset = fontPresetId === undefined ? false : await hasWorkspaceFontPresetColumn()
   const canPersistBrandText = brandText === undefined ? false : await hasWorkspaceBrandTextColumn()
   const canPersistFavicon = favicon === undefined ? false : await hasWorkspaceFaviconColumn()
@@ -502,6 +600,13 @@ export async function PATCH(request: Request) {
         ...(canPersistCustomBodyFontUrl ? { customBodyFontUrl: trimmedCustomBodyFontUrl } : {}),
         ...(canPersistCustomBrandFontFamily ? { customBrandFontFamily: trimmedCustomBrandFontFamily } : {}),
         ...(canPersistCustomBrandFontUrl ? { customBrandFontUrl: trimmedCustomBrandFontUrl } : {}),
+        ...(aiEnabled !== undefined ? { aiEnabled: aiEnabled as boolean } : {}),
+        ...(resolvedAiProvider !== undefined ? { aiProvider: resolvedAiProvider } : {}),
+        ...(aiModel !== undefined ? { aiModel: trimmedAiModel } : {}),
+        ...(encryptedAiApiKey !== undefined ? { aiApiKey: encryptedAiApiKey } : {}),
+        ...(aiGreeting !== undefined ? { aiGreeting: trimmedAiGreeting } : {}),
+        ...(aiInstructions !== undefined ? { aiInstructions: trimmedAiInstructions } : {}),
+        ...(clampedThreshold !== undefined ? { aiEscalationThreshold: clampedThreshold } : {}),
       },
     })
     return NextResponse.json(updated)

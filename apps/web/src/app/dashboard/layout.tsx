@@ -23,6 +23,7 @@ import { redirect } from 'next/navigation'
 import { isDemoMode } from '@/lib/demo'
 import { DashboardSidebar } from './DashboardSidebar'
 import { DefaultPasswordBanner } from './DefaultPasswordBanner'
+import { Toaster } from 'sonner'
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
@@ -234,6 +235,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         {showDefaultPasswordBanner && <DefaultPasswordBanner />}
         <div className="flex flex-1 overflow-hidden">
         <DashboardSidebar
+          workspaceId={member.workspaceId}
           workspaceName={workspace.name}
           workspaceLogo={workspace.logo}
           workspaceBrandText={brandTextRecord?.brandText ?? null}
@@ -246,6 +248,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         </main>
         </div>
       </div>
+      <Toaster position="bottom-right" theme="light" />
     </>
   )
 }

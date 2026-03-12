@@ -364,3 +364,22 @@
 .article-prose ul[data-type='taskList'] li > label input[type='checkbox'] {
   pointer-events: none;
 }
+
+/* ============================================================
+   Sonner toast — themed to HelpNest palette
+   ============================================================ */
+
+[data-sonner-toaster] {
+  font-family: var(--font-body);
+  --normal-bg: rgb(var(--color-cream));
+  --normal-border: rgb(var(--color-border));
+  --normal-text: rgb(var(--color-ink));
+  --border-radius: var(--radius);
+}
+
+/* Action button ("View") — use accent color */
+[data-sonner-toaster] [data-button] {
+  background: rgb(var(--color-accent)) !important;
+  color: rgb(var(--color-white)) !important;
+  border-radius: max(calc(var(--radius) - 4px), 0px) !important;
+}

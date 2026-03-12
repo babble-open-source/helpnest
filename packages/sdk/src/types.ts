@@ -122,6 +122,55 @@ export interface PaginatedResponse<T> {
   limit: number
 }
 
+// Conversation types
+export type ConversationStatus = 'ACTIVE' | 'ESCALATED' | 'RESOLVED_AI' | 'RESOLVED_HUMAN' | 'CLOSED'
+export type MessageRole = 'CUSTOMER' | 'AI' | 'AGENT' | 'SYSTEM'
+
+export interface Conversation {
+  id: string
+  workspaceId: string
+  status: ConversationStatus
+  customerName: string | null
+  customerEmail: string | null
+  sessionToken?: string
+  subject: string | null
+  aiConfidence: number | null
+  escalationReason: string | null
+  resolutionSummary: string | null
+  assignedTo?: { name: string | null; email: string } | null
+  messageCount?: number
+  firstMessage?: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ConversationMessage {
+  id: string
+  conversationId: string
+  role: MessageRole
+  content: string
+  sources?: unknown
+  confidence: number | null
+  feedbackHelpful: boolean | null
+  createdAt: string
+}
+
+export interface CreateConversationParams {
+  workspaceSlug: string
+  customerName?: string
+  customerEmail?: string
+}
+
+export interface ListConversationsParams {
+  status?: ConversationStatus
+  page?: number
+  limit?: number
+}
+
+export interface SendMessageParams {
+  content: string
+}
+
 export interface HelpNestConfig {
   apiKey: string
   workspace: string
