@@ -105,7 +105,7 @@ export default async function SearchPage(props: Props) {
               {results.length} result{results.length !== 1 ? 's' : ''} for &ldquo;{q}&rdquo;
             </p>
             <div className="space-y-3">
-              {results.map((r) => (
+              {results.map((r: SearchResult) => (
                 <Link
                   key={r.id}
                   href={`/${params.workspace}/help/${r.collection_slug}/${r.slug}`}
