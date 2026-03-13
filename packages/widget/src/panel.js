@@ -370,7 +370,7 @@ export class HelpPanel {
         this.aiAbortController = abortController;
         submitBtn.disabled = true;
         input.disabled = true;
-        statusEl.textContent = 'Searching and drafting answer...';
+        statusEl.textContent = 'Searching for an answer...';
         let answerText = '';
         answerEl.innerHTML = '';
         sourcesWrapEl.style.display = 'none';
