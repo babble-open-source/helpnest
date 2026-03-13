@@ -330,8 +330,8 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
       // Layer 5: Format and output instructions
       '\n\nFORMAT: HTML only. Allowed tags: h2, h3, p, ul, ol, li, strong, em, code, pre, a, blockquote, table, thead, tbody, tr, th, td, br, hr. No markdown. No <html>/<body>/<head>/<title> tags.',
       needsCollectionChoice
-        ? '\nOUTPUT: JSON only, nothing else: {"title":"...","content":"<h2>...","collectionId":"<chosen-id>"}'
-        : '\nOUTPUT: JSON only, nothing else: {"title":"...","content":"<h2>..."}',
+        ? '\nOUTPUT: JSON only, nothing else: {"title":"...","excerpt":"1-2 sentence summary of the article (plain text, no HTML, max 160 chars)","content":"<h2>...","collectionId":"<chosen-id>"}'
+        : '\nOUTPUT: JSON only, nothing else: {"title":"...","excerpt":"1-2 sentence summary of the article (plain text, no HTML, max 160 chars)","content":"<h2>..."}',
     ]
 
     // Layer 6 (conditional): Existing article content for UPDATE mode
@@ -406,10 +406,12 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
 
     let title: string
     let content: string
+    let excerpt: string | undefined
     try {
-      const parsed = JSON.parse(cleaned) as { title?: string; content?: string; collectionId?: string }
+      const parsed = JSON.parse(cleaned) as { title?: string; excerpt?: string; content?: string; collectionId?: string }
       title = parsed.title ?? ''
       content = parsed.content ?? ''
+      excerpt = typeof parsed.excerpt === 'string' ? parsed.excerpt.slice(0, 160) : undefined
       // Use LLM-chosen collection when multiple were offered
       if (needsCollectionChoice && parsed.collectionId) {
         const chosen = allCollections.find((c) => c.id === parsed.collectionId)
@@ -440,6 +442,7 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
               title,
               slug,
               content: safeContent,
+              excerpt: excerpt ?? null,
               status: 'DRAFT',
               aiGenerated: true,
               aiPrompt: searchTerm.slice(0, 1000),
@@ -474,6 +477,7 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
         where: { id: targetId },
         data: {
           draftContent: safeContent,
+          excerpt: excerpt ?? undefined,
           aiGenerated: true,
           aiPrompt: searchTerm.slice(0, 1000),
         },

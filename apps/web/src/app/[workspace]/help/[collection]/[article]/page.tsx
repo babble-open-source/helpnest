@@ -167,7 +167,7 @@ export default async function ArticlePage(props: Props) {
               <section className="mt-12 pt-8 border-t border-border">
                 <h2 className="font-serif text-xl text-ink mb-4">Related articles</h2>
                 <div className="grid gap-3">
-                  {related.map((rel) => (
+                  {related.map((rel: { id: string; title: string; slug: string }) => (
                     <Link
                       key={rel.id}
                       href={`/${params.workspace}/help/${params.collection}/${rel.slug}`}
