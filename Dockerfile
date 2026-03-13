@@ -122,6 +122,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
 RUN pnpm --filter @helpnest/widget build
+RUN pnpm --filter @helpnest/db build
 RUN cd apps/web && pnpm build
 
 # ─── Stage 2: Production runner ───────────────────────────────────────────────

@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "build": "tsc",
     "typecheck": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -24,8 +25,11 @@
     "@types/bcryptjs": "^2.4.6"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
   },
-  "main": "./src/index.ts",
-  "types": "./src/index.ts"
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts"
 }
