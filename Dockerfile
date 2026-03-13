@@ -54,7 +54,7 @@ RUN node -e " \
     cp(pkgDir, dst); \
   }; \
   const clientDir = resolvePkgDir('@prisma/client', dbPaths); \
-  cp(path.join(clientDir, '../..', '.prisma'), '/tmp/generated-prisma-client'); \
+  cp('/app/node_modules/.prisma', '/tmp/generated-prisma-client'); \
   const cliOut = '/tmp/prisma-cli-node_modules'; \
   mkdirSync(cliOut, { recursive: true }); \
   const prismaDir = resolvePkgDir('prisma', dbPaths); \
