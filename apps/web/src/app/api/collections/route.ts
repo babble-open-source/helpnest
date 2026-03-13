@@ -1,4 +1,4 @@
-import { Prisma } from '@helpnest/db'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'

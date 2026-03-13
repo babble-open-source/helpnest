@@ -28,7 +28,7 @@ import {
   hasWorkspaceBatchWindowMinutesColumn,
   prisma,
 } from '@/lib/db'
-import { Prisma } from '@helpnest/db'
+import { Prisma } from '@prisma/client'
 import { themes } from '@/lib/themes'
 import { isDemoMode } from '@/lib/demo'
 import { NextResponse } from 'next/server'

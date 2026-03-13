@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
-import { Prisma } from '@helpnest/db'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 
 export async function POST(

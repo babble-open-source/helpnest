@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { MemberRole } from '@helpnest/db'
+
+type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
 
 interface Member {
   id: string

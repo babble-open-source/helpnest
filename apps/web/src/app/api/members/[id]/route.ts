@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { isDemoMode } from '@/lib/demo'
-import { MemberRole } from '@helpnest/db'
+type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
 
 const VALID_ROLES: MemberRole[] = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']
 

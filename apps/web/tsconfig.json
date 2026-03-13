@@ -4,7 +4,6 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
-      "@helpnest/db": ["../../packages/db/index.d.ts"],
       "@prisma/client": ["../../node_modules/.prisma/client"]
     }
   },

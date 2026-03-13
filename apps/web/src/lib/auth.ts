@@ -1,4 +1,4 @@
-import NextAuth from 'next-auth'
+import NextAuth, { type NextAuthResult } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import GitHub from 'next-auth/providers/github'
 import bcrypt from 'bcryptjs'
@@ -23,52 +23,76 @@ async function isLoginRateLimited(email: string): Promise<boolean> {
   }
 }
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
-  ...authConfig,
-  providers: [
-    // Only register GitHub provider when credentials are present.
-    // Passing empty strings would silently break OAuth without a clear error.
-    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
-      ? [GitHub({
-          clientId: process.env.GITHUB_CLIENT_ID,
-          clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        })]
-      : []),
-    Credentials({
-      credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
-      },
-      async authorize(credentials) {
-        const email = credentials?.email as string | undefined
-        if (!email) return null
+let authBundle: NextAuthResult | undefined
 
-        // Rate limit by email to prevent brute-force attacks.
-        // Returns the same null as an invalid password to avoid leaking state.
-        if (await isLoginRateLimited(email)) return null
+function getAuthBundle(): NextAuthResult {
+  authBundle ??= NextAuth({
+    ...authConfig,
+    providers: [
+      // Only register GitHub provider when credentials are present.
+      // Passing empty strings would silently break OAuth without a clear error.
+      ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+        ? [GitHub({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          })]
+        : []),
+      Credentials({
+        credentials: {
+          email: { label: 'Email', type: 'email' },
+          password: { label: 'Password', type: 'password' },
+        },
+        async authorize(credentials) {
+          const email = credentials?.email as string | undefined
+          if (!email) return null
 
-        const user = await prisma.user.findUnique({
-          where: { email },
-          select: { id: true, email: true, name: true, passwordHash: true },
-        })
+          // Rate limit by email to prevent brute-force attacks.
+          // Returns the same null as an invalid password to avoid leaking state.
+          if (await isLoginRateLimited(email)) return null
 
-        if (!user) return null
+          const user = await prisma.user.findUnique({
+            where: { email },
+            select: { id: true, email: true, name: true, passwordHash: true },
+          })
 
-        // Users without a password hash must log in via OAuth.
-        // This protects OAuth-only accounts from credentials-based impersonation.
-        if (!user.passwordHash) return null
+          if (!user) return null
 
-        const password = credentials.password as string | undefined
-        if (!password) return null
+          // Users without a password hash must log in via OAuth.
+          // This protects OAuth-only accounts from credentials-based impersonation.
+          if (!user.passwordHash) return null
 
-        const valid = await bcrypt.compare(password, user.passwordHash)
-        if (!valid) return null
+          const password = credentials.password as string | undefined
+          if (!password) return null
 
-        return { id: user.id, email: user.email, name: user.name }
-      },
-    }),
-  ],
-})
+          const valid = await bcrypt.compare(password, user.passwordHash)
+          if (!valid) return null
+
+          return { id: user.id, email: user.email, name: user.name }
+        },
+      }),
+    ],
+  })
+
+  return authBundle
+}
+
+export const handlers: NextAuthResult['handlers'] = {
+  GET(req) {
+    return getAuthBundle().handlers.GET(req)
+  },
+  POST(req) {
+    return getAuthBundle().handlers.POST(req)
+  },
+}
+
+export const auth = ((...args: unknown[]) =>
+  (getAuthBundle().auth as (...innerArgs: unknown[]) => unknown)(...args)) as NextAuthResult['auth']
+
+export const signIn = ((...args: unknown[]) =>
+  (getAuthBundle().signIn as (...innerArgs: unknown[]) => unknown)(...args)) as NextAuthResult['signIn']
+
+export const signOut = ((...args: unknown[]) =>
+  (getAuthBundle().signOut as (...innerArgs: unknown[]) => unknown)(...args)) as NextAuthResult['signOut']
 
 /**
  * Resolve a stable user id from session data.
