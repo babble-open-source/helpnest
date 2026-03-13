@@ -74,3 +74,8 @@ export const hasWorkspaceCustomBodyFontFamilyColumn = () => hasWorkspaceColumn('
 export const hasWorkspaceCustomBodyFontUrlColumn = () => hasWorkspaceColumn('customBodyFontUrl')
 export const hasWorkspaceCustomBrandFontFamilyColumn = () => hasWorkspaceColumn('customBrandFontFamily')
 export const hasWorkspaceCustomBrandFontUrlColumn = () => hasWorkspaceColumn('customBrandFontUrl')
+export const hasWorkspaceProductContextColumn = () => hasWorkspaceColumn('productContext')
+export const hasWorkspaceAutoDraftGapsEnabledColumn = () => hasWorkspaceColumn('autoDraftGapsEnabled')
+export const hasWorkspaceAutoDraftGapThresholdColumn = () => hasWorkspaceColumn('autoDraftGapThreshold')
+export const hasWorkspaceAutoDraftExternalEnabledColumn = () => hasWorkspaceColumn('autoDraftExternalEnabled')
+export const hasWorkspaceBatchWindowMinutesColumn = () => hasWorkspaceColumn('batchWindowMinutes')

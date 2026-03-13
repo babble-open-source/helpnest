@@ -1,0 +1,264 @@
+import { NextResponse } from 'next/server';
+import Anthropic from '@anthropic-ai/sdk';
+import { prisma } from '@/lib/db';
+import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant';
+import { embedText } from '@/lib/embeddings';
+import { redis } from '@/lib/redis';
+// Lazily initialised so the key is read at request time, not at build/module-load time.
+// This means adding the env var and restarting the server is sufficient — no redeploy needed.
+let _anthropic = null;
+function getAnthropic() {
+    if (!_anthropic) {
+        _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' });
+    }
+    return _anthropic;
+}
+const CORS_HEADERS = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+};
+const AI_RATE_LIMIT_WINDOW_MS = 60_000;
+const AI_RATE_LIMIT_MAX_REQUESTS = 20;
+// In-memory fallback — used when Redis is unavailable or not configured.
+const aiRateBuckets = new Map();
+function getClientIp(request) {
+    const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
+    const realIp = request.headers.get('x-real-ip')?.trim();
+    return forwardedFor || realIp || 'unknown';
+}
+function consumeInMemoryRateLimit(key) {
+    const now = Date.now();
+    // Best-effort cleanup for long-lived self-hosted processes.
+    if (aiRateBuckets.size > 10_000) {
+        for (const [k, bucket] of aiRateBuckets) {
+            if (bucket.resetAt <= now)
+                aiRateBuckets.delete(k);
+        }
+    }
+    const current = aiRateBuckets.get(key);
+    if (!current || current.resetAt <= now) {
+        aiRateBuckets.set(key, { count: 1, resetAt: now + AI_RATE_LIMIT_WINDOW_MS });
+        return { limited: false, retryAfterSeconds: 0 };
+    }
+    if (current.count >= AI_RATE_LIMIT_MAX_REQUESTS) {
+        return {
+            limited: true,
+            retryAfterSeconds: Math.max(1, Math.ceil((current.resetAt - now) / 1000)),
+        };
+    }
+    current.count += 1;
+    aiRateBuckets.set(key, current);
+    return { limited: false, retryAfterSeconds: 0 };
+}
+/**
+ * Redis-backed sliding-window rate limiter.
+ * Falls back to the in-memory implementation if Redis is unavailable.
+ */
+async function consumeAiRateLimit(key) {
+    if (redis) {
+        try {
+            const windowSlot = Math.floor(Date.now() / AI_RATE_LIMIT_WINDOW_MS);
+            const redisKey = `rl:ai:${key}:${windowSlot}`;
+            const count = await redis.incr(redisKey);
+            if (count === 1) {
+                // Set TTL on the first increment so the key expires automatically.
+                await redis.pexpire(redisKey, AI_RATE_LIMIT_WINDOW_MS * 2);
+            }
+            if (count > AI_RATE_LIMIT_MAX_REQUESTS) {
+                const windowEndMs = (windowSlot + 1) * AI_RATE_LIMIT_WINDOW_MS;
+                return {
+                    limited: true,
+                    retryAfterSeconds: Math.max(1, Math.ceil((windowEndMs - Date.now()) / 1000)),
+                };
+            }
+            return { limited: false, retryAfterSeconds: 0 };
+        }
+        catch {
+            // Redis error — degrade gracefully to in-memory.
+        }
+    }
+    return consumeInMemoryRateLimit(key);
+}
+export async function OPTIONS() {
+    return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+export async function POST(request) {
+    // Fail fast with a clear error if the API key is not configured.
+    if (!process.env.ANTHROPIC_API_KEY) {
+        return NextResponse.json({ error: 'AI search is not configured. Set ANTHROPIC_API_KEY in your environment.' }, { status: 503, headers: CORS_HEADERS });
+    }
+    let body;
+    try {
+        body = await request.json();
+    }
+    catch {
+        return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: CORS_HEADERS });
+    }
+    const { query, workspaceSlug } = body;
+    if (!query?.trim() || !workspaceSlug) {
+        return NextResponse.json({ error: 'query and workspaceSlug are required' }, { status: 400, headers: CORS_HEADERS });
+    }
+    const normalizedQuery = query.trim();
+    if (normalizedQuery.length > 500) {
+        return NextResponse.json({ error: 'Query must be 500 characters or fewer' }, { status: 400, headers: CORS_HEADERS });
+    }
+    const rateKey = `${getClientIp(request)}:${workspaceSlug}`;
+    const rate = await consumeAiRateLimit(rateKey);
+    if (rate.limited) {
+        return NextResponse.json({ error: 'Too many AI requests. Please try again shortly.' }, {
+            status: 429,
+            headers: {
+                ...CORS_HEADERS,
+                'Retry-After': String(rate.retryAfterSeconds),
+            },
+        });
+    }
+    const workspace = await prisma.workspace.findUnique({
+        where: { slug: workspaceSlug },
+        select: { id: true, name: true },
+    });
+    if (!workspace) {
+        return NextResponse.json({ error: 'Workspace not found' }, { status: 404, headers: CORS_HEADERS });
+    }
+    // 1. Embed the query (requires OPENAI_API_KEY; falls back to full-text if unavailable)
+    let queryEmbedding = [];
+    try {
+        queryEmbedding = await embedText(normalizedQuery);
+    }
+    catch {
+        // fall back to full-text search below
+    }
+    // 2. Vector search in Qdrant
+    let searchResults = [];
+    if (queryEmbedding.length > 0) {
+        try {
+            await ensureCollection();
+            searchResults = await qdrant.search(COLLECTION_NAME, {
+                vector: queryEmbedding,
+                limit: 5,
+                filter: { must: [{ key: 'workspaceId', match: { value: workspace.id } }] },
+                with_payload: true,
+            });
+        }
+        catch {
+            // Qdrant unavailable — fall back to full-text
+        }
+    }
+    // 3. Resolve articles in ranked vector order (preserving first chunk per article)
+    const seenArticleIds = new Set();
+    const vectorMatches = [];
+    for (const result of searchResults) {
+        const articleId = result.payload?.['articleId'];
+        if (typeof articleId !== 'string' || seenArticleIds.has(articleId))
+            continue;
+        seenArticleIds.add(articleId);
+        const chunk = result.payload?.['chunk'];
+        vectorMatches.push({
+            articleId,
+            chunk: typeof chunk === 'string' ? chunk : undefined,
+        });
+    }
+    let articles = [];
+    if (vectorMatches.length > 0) {
+        const articleIds = vectorMatches.map((m) => m.articleId);
+        const rows = await prisma.article.findMany({
+            where: {
+                id: { in: articleIds },
+                workspaceId: workspace.id,
+                status: 'PUBLISHED',
+                collection: { is: { isPublic: true, isArchived: false } },
+            },
+            select: {
+                id: true, title: true, slug: true, content: true,
+                collection: { select: { slug: true, title: true } },
+            },
+        });
+        const byId = new Map(rows.map((row) => [row.id, row]));
+        const ordered = [];
+        for (const match of vectorMatches) {
+            const row = byId.get(match.articleId);
+            if (!row)
+                continue;
+            ordered.push({
+                ...row,
+                ...(match.chunk ? { contextChunk: match.chunk } : {}),
+            });
+        }
+        articles = ordered;
+    }
+    else {
+        articles = await prisma.$queryRaw `
+      SELECT a.id, a.title, a.slug, a.content,
+             json_build_object('slug', c.slug, 'title', c.title) as collection
+      FROM "Article" a
+      JOIN "Collection" c ON a."collectionId" = c.id
+      WHERE a."workspaceId" = ${workspace.id}
+        AND a.status = 'PUBLISHED'
+        AND c."isPublic" = true
+        AND c."isArchived" = false
+        AND to_tsvector('english', a.title || ' ' || a.content) @@ plainto_tsquery('english', ${normalizedQuery})
+      ORDER BY ts_rank_cd(to_tsvector('english', a.title || ' ' || a.content), plainto_tsquery('english', ${normalizedQuery})) DESC
+      LIMIT 5
+    `;
+    }
+    if (articles.length === 0) {
+        return NextResponse.json({
+            answer: "I couldn't find any relevant articles for your question. Try browsing the help center or contact our support team.",
+            sources: [],
+        }, { headers: CORS_HEADERS });
+    }
+    const context = articles.map((a, i) => {
+        const content = a.contextChunk ?? a.content.slice(0, 1500);
+        return `[Article ${i + 1}]: ${a.title}\n${content}`;
+    }).join('\n\n---\n\n');
+    const sources = articles.map((a) => ({
+        id: a.id,
+        title: a.title,
+        slug: a.slug,
+        collection: a.collection,
+    }));
+    // 4. Stream Claude response
+    const stream = getAnthropic().messages.stream({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: `You are a helpful customer support assistant for ${workspace.name}.
+Answer questions ONLY using the provided help center articles.
+Be concise, friendly, and accurate.
+If the articles don't contain enough information, say so and suggest contacting support.
+Format your response in plain text (no markdown).`,
+        messages: [{
+                role: 'user',
+                content: `Help center articles:\n\n${context}\n\nCustomer question: ${query}`,
+            }],
+    });
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+        async start(controller) {
+            try {
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources })}\n\n`));
+                for await (const chunk of stream) {
+                    if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+                        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'text', text: chunk.delta.text })}\n\n`));
+                    }
+                }
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`));
+            }
+            catch (err) {
+                const message = err instanceof Error ? err.message : 'AI service error';
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'error', message })}\n\n`));
+            }
+            finally {
+                controller.close();
+            }
+        },
+    });
+    return new Response(readable, {
+        headers: {
+            ...CORS_HEADERS,
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+        },
+    });
+}

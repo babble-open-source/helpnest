@@ -491,7 +491,10 @@ export async function* runAgent(
  * so callers can choose when (and whether) to record gaps — e.g. only when
  * confidence is below a threshold AND no human is available.
  */
-export async function recordKnowledgeGap(workspaceId: string, query: string): Promise<void> {
+export async function recordKnowledgeGap(
+  workspaceId: string,
+  query: string,
+): Promise<{ id: string; query: string; occurrences: number; resolvedArticleId: string | null } | null> {
   const normalized = query.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 500)
   const queryHash = crypto
     .createHash('sha256')
@@ -499,7 +502,7 @@ export async function recordKnowledgeGap(workspaceId: string, query: string): Pr
     .digest('hex')
     .slice(0, 16)
 
-  await prisma.knowledgeGap.upsert({
+  return await prisma.knowledgeGap.upsert({
     where: { workspaceId_queryHash: { workspaceId, queryHash } },
     create: {
       workspaceId,
@@ -511,6 +514,12 @@ export async function recordKnowledgeGap(workspaceId: string, query: string): Pr
     update: {
       occurrences: { increment: 1 },
       lastSeenAt: new Date(),
+    },
+    select: {
+      id: true,
+      query: true,
+      occurrences: true,
+      resolvedArticleId: true,
     },
   })
 }

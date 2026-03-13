@@ -16,7 +16,8 @@
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "prepublishOnly": "pnpm test && pnpm build"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

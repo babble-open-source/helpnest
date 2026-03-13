@@ -3,6 +3,26 @@ import { prisma } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
 
+export async function GET(request: Request) {
+  const authResult = await requireAuth(request)
+  if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { searchParams } = new URL(request.url)
+  const isPublic = searchParams.get('isPublic')
+  const isArchived = searchParams.get('isArchived')
+
+  const collections = await prisma.collection.findMany({
+    where: {
+      workspaceId: authResult.workspaceId,
+      ...(isPublic !== null ? { isPublic: isPublic === 'true' } : {}),
+      ...(isArchived !== null ? { isArchived: isArchived === 'true' } : { isArchived: false }),
+    },
+    orderBy: { order: 'asc' },
+  })
+
+  return NextResponse.json({ data: collections, total: collections.length })
+}
+
 export async function POST(request: Request) {
   const authResult = await requireAuth(request)
   if (!authResult) {

@@ -3,6 +3,24 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
 import { isDemoMode } from '@/lib/demo'
 
+export async function GET(
+  request: Request,
+  { params: paramsPromise }: { params: Promise<{ id: string }> }
+) {
+  const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
+  if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const collection = await prisma.collection.findFirst({
+    where: {
+      workspaceId: authResult.workspaceId,
+      OR: [{ id: params.id }, { slug: params.id }],
+    },
+  })
+  if (!collection) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  return NextResponse.json(collection)
+}
+
 /** For session-authenticated callers, verify they hold at least EDITOR role. */
 async function ensureEditorRole(userId: string, workspaceId: string): Promise<boolean> {
   const member = await prisma.member.findFirst({

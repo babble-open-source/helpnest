@@ -3,25 +3,11 @@ import { auth } from '@/lib/auth'
 import { isDemoMode } from '@/lib/demo'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { ArticleActions } from './ArticleActions'
-
-function nowMs() { return Date.now() }
-
-const STATUS_STYLES = {
-  PUBLISHED: 'bg-green/10 text-green',
-  DRAFT: 'bg-cream text-muted border border-border',
-  ARCHIVED: 'bg-border/50 text-muted',
-}
-
-function feedbackSummary(helpful: number, notHelpful: number) {
-  const total = helpful + notHelpful
-  const helpfulRate = total === 0 ? null : Math.round((helpful / total) * 100)
-
-  return { total, helpfulRate }
-}
+import { GenerateTopicButton } from './GenerateTopicButton'
+import { ArticlesTable } from './ArticlesTable'
 
 export default async function ArticlesPage(props: {
-  searchParams: Promise<{ status?: string; collection?: string; q?: string }>
+  searchParams: Promise<{ status?: string; collection?: string; q?: string; filter?: string }>
 }) {
   const [session, searchParams] = await Promise.all([auth(), props.searchParams])
   if (!session?.user) redirect('/login')
@@ -34,16 +20,29 @@ export default async function ArticlesPage(props: {
   })
   if (!member) redirect('/dashboard')
 
+  const aiDraftsFilter = searchParams.filter === 'ai-drafts'
+  const aiUpdatesFilter = searchParams.filter === 'ai-updates'
+
   const where = {
     workspaceId: member.workspaceId,
-    ...(searchParams.status
-      ? { status: searchParams.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' }
-      : {}),
+    ...(aiDraftsFilter
+      ? { aiGenerated: true, status: 'DRAFT' as const }
+      : aiUpdatesFilter
+        ? { aiGenerated: true, status: 'PUBLISHED' as const, NOT: { draftContent: null } }
+        : searchParams.status
+          ? { status: searchParams.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' }
+          : {}),
     ...(searchParams.collection ? { collectionId: searchParams.collection } : {}),
     ...(searchParams.q
       ? { title: { contains: searchParams.q, mode: 'insensitive' as const } }
       : {}),
   }
+
+  // Counts for tab badges — only fetch if no active AI filter to avoid redundant queries
+  const [aiDraftCount, aiUpdateCount] = await Promise.all([
+    prisma.article.count({ where: { workspaceId: member.workspaceId, aiGenerated: true, status: 'DRAFT' } }),
+    prisma.article.count({ where: { workspaceId: member.workspaceId, aiGenerated: true, status: 'PUBLISHED', NOT: { draftContent: null } } }),
+  ])
 
   const articles = await prisma.article.findMany({
     where,
@@ -61,15 +60,40 @@ export default async function ArticlesPage(props: {
             {articles.length} article{articles.length !== 1 ? 's' : ''}
           </p>
         </div>
-        <Link
-          href="/dashboard/articles/new"
-          className="bg-ink text-cream px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium shrink-0"
-        >
-          + New Article
-        </Link>
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <GenerateTopicButton />
+          <Link
+            href="/dashboard/articles/new"
+            className="bg-ink text-cream px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium shrink-0"
+          >
+            + New Article
+          </Link>
+        </div>
       </div>
 
-      {/* Filters */}
+      {/* Status tabs including AI filters */}
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {[
+          { label: 'All', href: '/dashboard/articles', active: !searchParams.status && !searchParams.filter },
+          { label: 'Published', href: '/dashboard/articles?status=PUBLISHED', active: searchParams.status === 'PUBLISHED' },
+          { label: 'Draft', href: '/dashboard/articles?status=DRAFT', active: searchParams.status === 'DRAFT' },
+          { label: 'Archived', href: '/dashboard/articles?status=ARCHIVED', active: searchParams.status === 'ARCHIVED' },
+          ...(aiDraftCount > 0 ? [{ label: `AI Drafts (${aiDraftCount})`, href: '/dashboard/articles?filter=ai-drafts', active: aiDraftsFilter }] : []),
+          ...(aiUpdateCount > 0 ? [{ label: `AI Updates (${aiUpdateCount})`, href: '/dashboard/articles?filter=ai-updates', active: aiUpdatesFilter }] : []),
+        ].map((tab) => (
+          <Link
+            key={tab.label}
+            href={tab.href}
+            className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+              tab.active ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'
+            }`}
+          >
+            {tab.label}
+          </Link>
+        ))}
+      </div>
+
+      {/* Search */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
         <form className="flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2 w-full sm:w-auto">
           <svg
@@ -92,22 +116,6 @@ export default async function ArticlesPage(props: {
             className="text-sm outline-none text-ink placeholder:text-muted bg-transparent flex-1 sm:w-48"
           />
         </form>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          {(['', 'DRAFT', 'PUBLISHED', 'ARCHIVED'] as const).map((s) => (
-            <Link
-              key={s}
-              href={`/dashboard/articles${s ? `?status=${s}` : ''}`}
-              className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                (searchParams.status ?? '') === s
-                  ? 'bg-ink text-cream'
-                  : 'text-muted hover:text-ink hover:bg-cream'
-              }`}
-            >
-              {s || 'All'}
-            </Link>
-          ))}
-        </div>
       </div>
 
       {/* Table */}
@@ -126,113 +134,7 @@ export default async function ArticlesPage(props: {
           </Link>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-border overflow-hidden">
-          <table className="w-full">
-            <thead className="border-b border-border">
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
-                  Title
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden sm:table-cell">
-                  Collection
-                </th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
-                  Status
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden md:table-cell">
-                  Views
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
-                  Feedback
-                </th>
-                <th className="text-right px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
-                  Updated
-                </th>
-                <th className="px-4 py-3" />
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {articles.map((article) => (
-                <tr key={article.id} className="hover:bg-cream/30 transition-colors">
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-ink text-sm truncate max-w-xs">
-                      {article.title}
-                    </p>
-                    {article.excerpt && (
-                      <p className="text-xs text-muted mt-0.5 truncate max-w-xs">
-                        {article.excerpt}
-                      </p>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
-                    <span className="text-sm text-muted">{article.collection.title}</span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs px-2 py-0.5 rounded-full ${
-                        STATUS_STYLES[article.status]
-                      }`}
-                    >
-                      {article.status.charAt(0) + article.status.slice(1).toLowerCase()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right hidden md:table-cell">
-                    <span className="text-sm text-muted">
-                      {article.views.toLocaleString()}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right hidden lg:table-cell">
-                    {(() => {
-                      const summary = feedbackSummary(article.helpful, article.notHelpful)
-
-                      if (summary.total === 0) {
-                        return <span className="text-sm text-muted">No votes</span>
-                      }
-
-                      const rateTone =
-                        (summary.helpfulRate ?? 0) >= 80
-                          ? 'text-green'
-                          : (summary.helpfulRate ?? 0) >= 60
-                            ? 'text-ink'
-                            : 'text-accent'
-
-                      return (
-                        <div className="space-y-0.5">
-                          <p className={`text-sm font-medium ${rateTone}`}>
-                            {summary.helpfulRate}% helpful
-                          </p>
-                          <p className="text-xs text-muted">
-                            {summary.total} vote{summary.total === 1 ? '' : 's'}
-                          </p>
-                        </div>
-                      )
-                    })()}
-                  </td>
-                  <td className="px-4 py-3 text-right hidden lg:table-cell">
-                    <span className="text-sm text-muted">
-                      {new Intl.RelativeTimeFormat('en', { numeric: 'auto' }).format(
-                        Math.round(
-                          (article.updatedAt.getTime() - nowMs()) /
-                            (1000 * 60 * 60 * 24)
-                        ),
-                        'day'
-                      )}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <ArticleActions
-                      articleId={article.id}
-                      articleTitle={article.title}
-                      articleStatus={article.status}
-                      demoMode={demoMode}
-                      isSeeded={article.isSeeded}
-                    />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <ArticlesTable articles={articles} demoMode={demoMode} />
       )}
     </div>
   )

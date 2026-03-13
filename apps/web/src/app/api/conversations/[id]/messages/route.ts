@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { runAgent, recordKnowledgeGap } from '@/lib/ai-agent'
 import { redis } from '@/lib/redis'
+import { draftArticle } from '@/lib/article-drafter'
 import type { ChatMessage } from '@/lib/ai/types'
 
 const CORS_HEADERS = {
@@ -169,6 +170,8 @@ export async function POST(
             aiModel: true,
             aiInstructions: true,
             aiEscalationThreshold: true,
+            autoDraftGapsEnabled: true,
+            autoDraftGapThreshold: true,
           },
         },
       },
@@ -310,8 +313,20 @@ export async function POST(
 
           // Record a knowledge gap when confidence is very low — signals content
           // the KB is missing that would have resolved this question.
-          if (confidence < 0.3) {
-            await recordKnowledgeGap(conversation.workspaceId, content).catch(() => {})
+          // Use the same threshold as escalation so gaps and escalations stay in sync.
+          if (confidence < (conversation.workspace.aiEscalationThreshold ?? 0.3)) {
+            const gap = await recordKnowledgeGap(conversation.workspaceId, content).catch(() => null)
+            if (
+              gap &&
+              conversation.workspace.autoDraftGapsEnabled &&
+              gap.occurrences >= (conversation.workspace.autoDraftGapThreshold ?? 2) &&
+              !gap.resolvedArticleId
+            ) {
+              void draftArticle({
+                workspaceId: conversation.workspaceId,
+                gap: { id: gap.id, query: gap.query },
+              }).catch(() => {})
+            }
           }
 
           // Send sources then the terminal done event.

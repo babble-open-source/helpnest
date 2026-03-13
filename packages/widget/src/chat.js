@@ -1,0 +1,220 @@
+const STORAGE_KEY_PREFIX = 'helpnest:chat:';
+const POLL_INTERVAL = 5000;
+const POLL_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+export class ChatManager {
+    config;
+    session = null;
+    state = 'IDLE';
+    pollTimer = null;
+    onNewMessages = null;
+    constructor(config) {
+        this.config = config;
+    }
+    getState() {
+        return this.state;
+    }
+    getSession() {
+        return this.session;
+    }
+    setOnNewMessages(cb) {
+        this.onNewMessages = cb;
+    }
+    clearSession() {
+        this.stopPolling();
+        this.session = null;
+        this.state = 'IDLE';
+        localStorage.removeItem(STORAGE_KEY_PREFIX + this.config.workspace);
+    }
+    async resumeSession() {
+        const stored = localStorage.getItem(STORAGE_KEY_PREFIX + this.config.workspace);
+        if (!stored)
+            return false;
+        try {
+            const session = JSON.parse(stored);
+            const res = await fetch(`${this.config.baseUrl}/api/conversations/${session.conversationId}`, { headers: { 'X-Session-Token': session.sessionToken } });
+            if (!res.ok) {
+                localStorage.removeItem(STORAGE_KEY_PREFIX + this.config.workspace);
+                return false;
+            }
+            const conv = await res.json();
+            this.session = session;
+            this.updateState(conv.status);
+            return true;
+        }
+        catch {
+            return false;
+        }
+    }
+    async createConversation() {
+        const res = await fetch(`${this.config.baseUrl}/api/conversations`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workspaceSlug: this.config.workspace }),
+        });
+        if (!res.ok)
+            throw new Error('Failed to create conversation');
+        const data = await res.json();
+        this.session = {
+            sessionToken: data.sessionToken,
+            conversationId: data.id,
+            lastMessageAt: Date.now(),
+        };
+        this.saveSession();
+        this.state = 'CHAT_AI';
+        return { greeting: data.greeting ?? 'Hi! How can I help?' };
+    }
+    async *sendMessage(content) {
+        if (!this.session)
+            throw new Error('No active session');
+        const res = await fetch(`${this.config.baseUrl}/api/conversations/${this.session.conversationId}/messages`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Session-Token': this.session.sessionToken,
+            },
+            body: JSON.stringify({ content }),
+        });
+        if (!res.ok) {
+            const err = await res.json().catch(() => null);
+            throw new Error(err?.error ?? 'Failed to send message');
+        }
+        this.session.lastMessageAt = Date.now();
+        this.saveSession();
+        const contentType = res.headers.get('content-type') ?? '';
+        if (!contentType.includes('text/event-stream')) {
+            yield { type: 'done' };
+            return;
+        }
+        const reader = res.body?.getReader();
+        if (!reader)
+            return;
+        const decoder = new TextDecoder();
+        let buffer = '';
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done)
+                break;
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop() ?? '';
+            for (const line of lines) {
+                if (!line.startsWith('data: '))
+                    continue;
+                try {
+                    const event = JSON.parse(line.slice(6));
+                    yield event;
+                    if (event.type === 'done') {
+                        if (event.shouldEscalate) {
+                            this.state = 'CHAT_HUMAN';
+                            this.startPolling();
+                        }
+                        return;
+                    }
+                }
+                catch {
+                    // skip invalid JSON lines
+                }
+            }
+        }
+    }
+    async loadMessages(since) {
+        if (!this.session)
+            return [];
+        const url = new URL(`${this.config.baseUrl}/api/conversations/${this.session.conversationId}/messages`);
+        if (since)
+            url.searchParams.set('since', since);
+        try {
+            const res = await fetch(url.toString(), {
+                headers: { 'X-Session-Token': this.session.sessionToken },
+            });
+            if (!res.ok)
+                return [];
+            const data = await res.json();
+            return data.messages ?? [];
+        }
+        catch {
+            return [];
+        }
+    }
+    async escalate() {
+        if (!this.session)
+            return;
+        await fetch(`${this.config.baseUrl}/api/conversations/${this.session.conversationId}/escalate`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Session-Token': this.session.sessionToken,
+            },
+        });
+        this.state = 'CHAT_HUMAN';
+        this.startPolling();
+    }
+    async sendFeedback(messageId, helpful) {
+        if (!this.session)
+            return;
+        await fetch(`${this.config.baseUrl}/api/conversations/${this.session.conversationId}/feedback`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Session-Token': this.session.sessionToken,
+            },
+            body: JSON.stringify({ messageId, helpful }),
+        });
+    }
+    // Called after a streaming AI response completes so the poll's `since`
+    // timestamp advances past the AI message, preventing it being fetched again.
+    advanceLastMessageAt() {
+        if (this.session) {
+            this.session.lastMessageAt = Date.now();
+            this.saveSession();
+        }
+    }
+    // --- Private helpers ---
+    saveSession() {
+        if (this.session) {
+            localStorage.setItem(STORAGE_KEY_PREFIX + this.config.workspace, JSON.stringify(this.session));
+        }
+    }
+    updateState(status) {
+        switch (status) {
+            case 'ESCALATED':
+            case 'HUMAN_ACTIVE':
+                this.state = 'CHAT_HUMAN';
+                this.startPolling();
+                break;
+            case 'RESOLVED_AI':
+            case 'RESOLVED_HUMAN':
+            case 'CLOSED':
+                this.state = 'RESOLVED';
+                break;
+            default:
+                this.state = 'CHAT_AI';
+        }
+    }
+    startPolling() {
+        this.stopPolling();
+        const startedAt = Date.now();
+        this.pollTimer = setInterval(() => {
+            void this.doPoll(startedAt);
+        }, POLL_INTERVAL);
+    }
+    async doPoll(startedAt) {
+        if (Date.now() - (this.session?.lastMessageAt ?? startedAt) > POLL_TIMEOUT) {
+            this.stopPolling();
+            return;
+        }
+        const since = new Date(this.session?.lastMessageAt ?? 0).toISOString();
+        const msgs = await this.loadMessages(since);
+        if (msgs.length > 0) {
+            this.session.lastMessageAt = Date.now();
+            this.saveSession();
+            this.onNewMessages?.(msgs);
+        }
+    }
+    stopPolling() {
+        if (this.pollTimer) {
+            clearInterval(this.pollTimer);
+            this.pollTimer = null;
+        }
+    }
+}

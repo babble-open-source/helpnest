@@ -1,0 +1,47 @@
+name: HelpNest Draft Article
+description: Auto-draft or queue a HelpNest KB article on PR merge
+inputs:
+  api-key:
+    required: true
+    description: HelpNest API key (hn_live_xxx)
+  workspace:
+    required: false
+    description: Workspace slug — optional, used only for idempotency deduplication across re-runs
+  github-token:
+    required: false
+    description: GitHub token for reading PR files. Required only when send-diff=true or send-file-content=true. Commit subjects are fetched automatically when a token is available.
+  base-url:
+    required: false
+    default: https://helpnest.cloud
+    description: HelpNest base URL (override for self-hosted)
+  collection:
+    required: false
+    description: Target collection slug or ID
+  feature-id:
+    required: false
+    description: Shared ID for multi-repo features (Linear/Jira ticket ID)
+  send-diff:
+    required: false
+    default: "false"
+    description: Send code diff with the request (opt-in; code stays in CI by default)
+  diff-max-lines:
+    required: false
+    default: "150"
+    description: Maximum diff lines to send when send-diff is true
+  send-file-content:
+    required: false
+    default: "false"
+    description: >
+      Send current content of changed files (recommended over send-diff).
+      Code never leaves CI unless this is true.
+  file-content-max-files:
+    required: false
+    default: "5"
+    description: Max number of changed files to include content for when send-file-content is true
+  skip-labels:
+    required: false
+    default: "no-docs,chore,dependencies,deps,ci,refactor"
+    description: Comma-separated PR labels that skip article generation
+runs:
+  using: node20
+  main: dist/index.js

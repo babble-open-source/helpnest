@@ -93,6 +93,12 @@ async function main() {
     create: { workspaceId: docsWorkspace.id, title: 'Migration', description: 'Import your existing content from other platforms into HelpNest.', emoji: '🔄', slug: 'migration', order: 5, isPublic: true },
   })
 
+  const colAiDraft = await prisma.collection.upsert({
+    where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'ai-auto-draft' } },
+    update: {},
+    create: { workspaceId: docsWorkspace.id, title: 'AI Auto-Draft', description: 'Automatically draft KB articles from code changes and unanswered customer questions.', emoji: '✨', slug: 'ai-auto-draft', order: 6, isPublic: true },
+  })
+
   const docsArticles = [
     // About
     {
@@ -394,6 +400,109 @@ HELPNEST_WORKSPACE=your-slug</code></pre></li><li><p>Run the bot with <code>npm 
   --helpnest-key hn_live_xxx \\
   --state ./notion-sync-state.json</code></pre><h2>Getting your Notion credentials</h2><p>Create an integration at <a href="https://www.notion.so/my-integrations">notion.so/my-integrations</a>, then share the database with the integration. The database ID is in the URL when you open the database.</p>`,
     },
+    // AI Auto-Draft
+    {
+      collectionId: colAiDraft.id,
+      title: 'AI Auto-Draft — Overview',
+      slug: 'ai-auto-draft-overview',
+      excerpt: 'Automatically draft KB articles from PR merges and unanswered customer questions.',
+      order: 0,
+      content: `<p>AI Auto-Draft keeps your knowledge base in sync with your product automatically. Instead of writing articles by hand after every release, HelpNest can draft them for you — triggered by code changes or by gaps in customer support coverage.</p><h2>Two triggers</h2><h3>Proactive: code changes</h3><p>When a PR is merged in your GitHub repository, a GitHub Action sends the PR title, description, and optionally a code diff to HelpNest. The AI drafts or updates an article about what changed. This runs in your CI pipeline and never fails the build.</p><h3>Reactive: knowledge gaps</h3><p>When a customer asks a question your AI cannot answer (confidence below threshold), HelpNest records it as a knowledge gap. Once the same question has been asked a configurable number of times, HelpNest automatically drafts an article to fill that gap.</p><h2>Review queue</h2><p>All AI-generated content lands in a draft state — never published automatically. A human reviews, edits if needed, and publishes. The dashboard overview shows counts for <strong>AI Drafts to Review</strong> and <strong>AI Article Updates</strong>, with direct links to filter the article list.</p><h2>Two modes</h2><ul><li><p><strong>Create mode</strong> — AI writes a brand-new DRAFT article when the topic is not yet covered in your KB (RAG similarity score below 0.85)</p></li><li><p><strong>Update mode</strong> — AI proposes changes to an existing published article when the topic is closely related (score at or above 0.85). The update is stored as a draft edit — the live article is unchanged until a human publishes it.</p></li></ul><h2>Safety</h2><ul><li><p>Distributed lock prevents duplicate drafts for the same topic running in parallel</p></li><li><p>Rate limit of 20 drafts per hour per workspace applies to API-triggered drafts</p></li><li><p>Idempotency key prevents duplicate drafts from CI re-runs</p></li><li><p>HTML output is sanitised through a whitelist before storage — no XSS possible</p></li><li><p>All AI drafts are scoped to the workspace — no cross-workspace data leaks</p></li></ul>`,
+    },
+    {
+      collectionId: colAiDraft.id,
+      title: 'Auto-Draft: From Knowledge Gaps',
+      slug: 'auto-draft-knowledge-gaps',
+      excerpt: 'Draft articles automatically when customers ask questions your AI cannot answer.',
+      order: 1,
+      content: `<p>When a customer asks a question and the AI cannot find a good answer (confidence below the escalation threshold), HelpNest records it as a <strong>knowledge gap</strong>. Once the same question has been asked enough times, an article draft is created automatically.</p><h2>How it works</h2><ol><li><p>Customer sends a message in the chat widget</p></li><li><p>The AI answers using your published articles</p></li><li><p>If confidence is below 0.3, the question is recorded as a knowledge gap (normalised and deduplicated by hash)</p></li><li><p>When occurrences of that question reach the configured threshold, a DRAFT article is created</p></li><li><p>The gap is linked to the draft — it will be marked resolved once the article is published</p></li></ol><h2>Configuring the threshold</h2><p>Go to <strong>Settings → AI Agent → Auto-Draft: From Unanswered Questions</strong>.</p><ul><li><p><strong>Toggle</strong> — enable or disable reactive auto-drafting entirely</p></li><li><p><strong>Occurrence threshold</strong> — default is 2. Set to 1 to draft on the first occurrence, or higher to wait for more signal before drafting</p></li></ul><h2>Viewing knowledge gaps</h2><p>The dashboard overview shows a <strong>Knowledge Gaps</strong> count when AI conversations are enabled. This reflects all unresolved gaps. Go to the Conversations section to see individual gaps and their occurrence counts.</p><h2>Reviewing the draft</h2><p>When a gap triggers a draft, it appears in <strong>Dashboard → Articles → AI Drafts</strong>. The editor shows a banner: <em>"AI Draft — Created automatically from a customer question. Review carefully before publishing."</em></p>`,
+    },
+    {
+      collectionId: colAiDraft.id,
+      title: 'Auto-Draft: GitHub Action',
+      slug: 'auto-draft-github-action',
+      excerpt: 'Draft articles automatically when a PR is merged using the HelpNest GitHub Action.',
+      order: 2,
+      content: `<p>The <code>helpnest/draft-article-action</code> GitHub Action fires after a PR is merged and sends the PR details to HelpNest, which drafts or updates a KB article.</p><h2>Setup</h2><p>Add a workflow file to your repository:</p><pre><code class="language-yaml"># .github/workflows/helpnest-draft.yml
+name: HelpNest Draft Article
+on:
+  pull_request:
+    types: [closed]
+jobs:
+  draft:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: helpnest/draft-article-action@v1
+        with:
+          api-key: \${{ secrets.HELPNEST_API_KEY }}
+          workspace: your-workspace-slug
+          github-token: \${{ secrets.GITHUB_TOKEN }}</code></pre><h2>Inputs</h2><table><thead><tr><th><p>Input</p></th><th><p>Required</p></th><th><p>Default</p></th><th><p>Description</p></th></tr></thead><tbody><tr><td><p><code>api-key</code></p></td><td><p>Yes</p></td><td><p></p></td><td><p>HelpNest API key from Settings → API Keys</p></td></tr><tr><td><p><code>workspace</code></p></td><td><p>Yes</p></td><td><p></p></td><td><p>Your workspace slug</p></td></tr><tr><td><p><code>github-token</code></p></td><td><p>Yes</p></td><td><p></p></td><td><p>GitHub token (use <code>secrets.GITHUB_TOKEN</code>)</p></td></tr><tr><td><p><code>base-url</code></p></td><td><p>No</p></td><td><p>https://helpnest.cloud</p></td><td><p>Override for self-hosted instances</p></td></tr><tr><td><p><code>collection</code></p></td><td><p>No</p></td><td><p></p></td><td><p>Target collection ID or slug</p></td></tr><tr><td><p><code>feature-id</code></p></td><td><p>No</p></td><td><p></p></td><td><p>Shared ID for multi-repo batching</p></td></tr><tr><td><p><code>send-diff</code></p></td><td><p>No</p></td><td><p>false</p></td><td><p>Send code diff (opt-in — code stays in CI by default)</p></td></tr><tr><td><p><code>skip-labels</code></p></td><td><p>No</p></td><td><p>no-docs,chore,dependencies,deps,ci,refactor</p></td><td><p>PR labels that skip article generation</p></td></tr></tbody></table><h2>Privacy</h2><p>By default the action only sends the PR title, description, repository name, and PR URL. Code never leaves your CI environment unless you explicitly set <code>send-diff: true</code>.</p><h2>Failure behaviour</h2><p>The action <strong>never fails your build</strong>. If HelpNest is unreachable or returns an error, the step emits a warning and passes. CI is never blocked.</p><h2>Prerequisites</h2><p>Enable external API drafting in <strong>Settings → AI Agent → Auto-Draft: From Code Changes</strong>. Create an API key from <strong>Settings → API Keys</strong> and store it as a repository secret (<code>HELPNEST_API_KEY</code>).</p>`,
+    },
+    {
+      collectionId: colAiDraft.id,
+      title: 'Auto-Draft: CLI (helpnest draft)',
+      slug: 'auto-draft-cli',
+      excerpt: 'Trigger article drafts from the command line — works with any CI system.',
+      order: 3,
+      content: `<p>The <code>helpnest draft</code> command lets you trigger article drafts from any CI environment — GitLab CI, Jenkins, CircleCI, Bitbucket Pipelines, or a local terminal.</p><h2>Usage</h2><pre><code class="language-bash"># Minimal — just a PR title
+HELPNEST_API_KEY=hn_live_xxx HELPNEST_WORKSPACE=myproduct \\
+helpnest draft --pr-title "Add dark mode toggle"
+
+# With description
+helpnest draft \\
+  --api-key hn_live_xxx \\
+  --workspace myproduct \\
+  --pr-title "Add dark mode" \\
+  --pr-body "Users can now toggle dark mode in Settings &gt; Appearance"
+
+# With diff (opt-in)
+helpnest draft \\
+  --workspace myproduct \\
+  --pr-title "Add dark mode" \\
+  --diff "\$(git diff main...HEAD -- 'src/' ':!*.test.*' | head -150)" \\
+  --collection new-features
+
+# Multi-repo batching
+helpnest draft \\
+  --workspace myproduct \\
+  --feature-id FEAT-1234 \\
+  --pr-title "Dark mode API endpoint"</code></pre><h2>Options</h2><table><thead><tr><th><p>Option</p></th><th><p>Description</p></th></tr></thead><tbody><tr><td><p><code>--pr-title</code></p></td><td><p>PR or change title (required)</p></td></tr><tr><td><p><code>--pr-body</code></p></td><td><p>PR description</p></td></tr><tr><td><p><code>--diff</code></p></td><td><p>Code diff (opt-in)</p></td></tr><tr><td><p><code>--collection</code></p></td><td><p>Target collection ID</p></td></tr><tr><td><p><code>--feature-id</code></p></td><td><p>Shared feature ID for multi-repo batching</p></td></tr><tr><td><p><code>--api-key</code></p></td><td><p>API key (or set <code>HELPNEST_API_KEY</code>)</p></td></tr><tr><td><p><code>--workspace</code></p></td><td><p>Workspace slug (or set <code>HELPNEST_WORKSPACE</code>)</p></td></tr><tr><td><p><code>--base-url</code></p></td><td><p>HelpNest base URL (default: https://helpnest.cloud)</p></td></tr></tbody></table><h2>Environment variables</h2><p>Set <code>HELPNEST_API_KEY</code> and <code>HELPNEST_WORKSPACE</code> to avoid passing flags every time. In GitLab CI, add them as CI/CD variables. In Jenkins, use Credentials Binding.</p><h2>Output</h2><pre><code>Draft created: "Dark Mode in HelpNest"
+Edit: https://helpnest.cloud/dashboard/articles/clxxx/edit</code></pre>`,
+    },
+    {
+      collectionId: colAiDraft.id,
+      title: 'Multi-Repo Feature Batching',
+      slug: 'multi-repo-batching',
+      excerpt: 'Combine PR context from multiple repos into one article using a shared feature ID.',
+      order: 4,
+      content: `<p>When a feature spans multiple repositories — for example, a backend API change and a frontend UI change for the same feature — you can collect all the PR context before generating a single, coherent article.</p><h2>How it works</h2><ol><li><p>Each repo's workflow sends its PR context to HelpNest with a shared <code>feature-id</code></p></li><li><p>HelpNest accumulates the contexts in Redis (up to 24 hours)</p></li><li><p>After the batch window has elapsed since the last PR, the batch processor combines all contexts and generates one article</p></li></ol><h2>GitHub Action setup</h2><pre><code class="language-yaml"># backend repo
+- uses: helpnest/draft-article-action@v1
+  with:
+    api-key: \${{ secrets.HELPNEST_API_KEY }}
+    workspace: myproduct
+    github-token: \${{ secrets.GITHUB_TOKEN }}
+    feature-id: FEAT-1234   # same ID in all repos
+
+# frontend repo
+- uses: helpnest/draft-article-action@v1
+  with:
+    api-key: \${{ secrets.HELPNEST_API_KEY }}
+    workspace: myproduct
+    github-token: \${{ secrets.GITHUB_TOKEN }}
+    feature-id: FEAT-1234   # same ID</code></pre><h2>CLI setup</h2><pre><code class="language-bash">helpnest draft --workspace myproduct --feature-id FEAT-1234 --pr-title "Dark mode API"
+helpnest draft --workspace myproduct --feature-id FEAT-1234 --pr-title "Dark mode UI toggle"</code></pre><h2>Batch window</h2><p>Configure the wait time in <strong>Settings → AI Agent → Auto-Draft: From Code Changes → Multi-repo batch window</strong>. The default is 60 minutes. After the last PR for a feature-id, HelpNest waits this long before generating the combined article.</p><h2>Requirements</h2><p>Multi-repo batching requires Redis. It uses <code>POST /api/ai/push-feature-context</code> to accumulate contexts and a cron job at <code>GET /api/ai/process-pending-drafts</code> to drain the queue. On Vercel, add a cron entry to <code>vercel.json</code>:</p><pre><code class="language-json">{ "crons": [{ "path": "/api/ai/process-pending-drafts", "schedule": "*/15 * * * *" }] }</code></pre>`,
+    },
+    {
+      collectionId: colAiDraft.id,
+      title: 'Reviewing AI Drafts',
+      slug: 'reviewing-ai-drafts',
+      excerpt: 'Find, review, edit, and publish AI-generated articles from the dashboard.',
+      order: 5,
+      content: `<p>All AI-generated content lands as a draft — never published automatically. This article explains how to find and review AI drafts.</p><h2>Finding AI drafts</h2><p>The <strong>Overview</strong> dashboard shows two cards when AI drafts exist:</p><ul><li><p><strong>AI Drafts to Review</strong> — new DRAFT articles generated by AI. Click to go directly to the filtered article list.</p></li><li><p><strong>AI Article Updates</strong> — proposed edits to existing published articles. Click to see which articles have pending AI suggestions.</p></li></ul><p>You can also filter from <strong>Dashboard → Articles</strong> using the <strong>AI Drafts</strong> or <strong>AI Updates</strong> tabs in the status filter row. AI draft articles show an <strong>AI</strong> badge pill next to their title.</p><h2>Draft banner</h2><p>When you open an AI-generated draft, a dismissible banner appears at the top of the editor:</p><ul><li><p><strong>For new drafts:</strong> "AI Draft — Created automatically from a customer question or code change. Review carefully before publishing."</p></li><li><p><strong>For update suggestions:</strong> "AI Update Suggested — AI proposes changes based on a recent code change. Review the proposed update below before publishing."</p></li></ul><h2>Review checklist</h2><ul><li><p>Check that the article title is specific and accurate</p></li><li><p>Verify all facts — AI may hallucinate details not in the source material</p></li><li><p>Adjust tone to match your help center's voice</p></li><li><p>Add screenshots or diagrams if helpful</p></li><li><p>Set the correct collection</p></li><li><p>Write a clear excerpt for the article list</p></li></ul><h2>Publishing</h2><p>When satisfied, click <strong>Publish</strong>. For update suggestions, click <strong>Update</strong> to replace the live content. The AI banner disappears after publishing.</p><h2>Disabling auto-draft</h2><p>To stop generating drafts from knowledge gaps or code changes, toggle the relevant option off in <strong>Settings → AI Agent</strong>.</p>`,
+    },
+
+    // Migration articles
     {
       collectionId: colMigration.id,
       title: 'Migrating from Mintlify',
@@ -691,6 +800,60 @@ Go to **Dashboard** to see a usage summary with progress bars for each limit.
 - **API calls** — requests return a 429 error
 
 Usage resets on the first of each month.`,
+    },
+
+    // AI Auto-Draft (support workspace)
+    {
+      collectionId: sColSetup.id,
+      title: 'Setting up AI Auto-Draft',
+      slug: 'setting-up-auto-draft',
+      excerpt: 'Automatically generate KB article drafts from code changes and unanswered questions.',
+      order: 2,
+      content: `# Setting up AI Auto-Draft
+
+AI Auto-Draft generates knowledge base article drafts for you — either when a PR is merged in your codebase or when customers ask questions your AI cannot answer.
+
+## Step 1 — Enable AI
+
+AI must be enabled before auto-draft will work. Go to **Settings → AI Agent**, toggle AI on, configure your provider and API key, then click **Save AI Settings**.
+
+## Step 2 — Configure auto-draft settings
+
+Under **Settings → AI Agent**, you will find two auto-draft sections:
+
+**Auto-Draft: From Unanswered Questions**
+
+Toggle this on to automatically draft articles when customers ask questions the AI cannot answer. Configure the occurrence threshold — the default of 2 means the same question must be asked twice before a draft is created.
+
+**Auto-Draft: From Code Changes**
+
+Toggle this on to allow GitHub Actions and CI pipelines to trigger drafts via your API key. Set the multi-repo batch window (default: 60 minutes) if you use feature IDs across multiple repositories.
+
+## Step 3 — Add product context
+
+Under **Settings → AI Agent → Product Context**, describe your product, target users, and key terminology. The AI uses this when generating articles to match your brand voice and product language.
+
+Example:
+
+> We build a project management tool for remote software teams. Key features: boards, sprints, tasks, time tracking. Users: developers and engineering managers. Tone: direct, practical, friendly.
+
+## Step 4 — Connect your CI (optional)
+
+To auto-draft from code changes, add the GitHub Action to any repository:
+
+\`\`\`yaml
+- uses: helpnest/draft-article-action@v1
+  with:
+    api-key: \${{ secrets.HELPNEST_API_KEY }}
+    workspace: your-workspace-slug
+    github-token: \${{ secrets.GITHUB_TOKEN }}
+\`\`\`
+
+Create an API key from **Settings → API Keys** and add it to your repository secrets.
+
+## Reviewing drafts
+
+All AI-generated content is created as a draft — never published automatically. Check the **Overview** dashboard for "AI Drafts to Review" and "AI Article Updates" cards, or filter the article list using the **AI Drafts** tab.`,
     },
 
     // Custom Domains

@@ -21,6 +21,11 @@ import {
   hasWorkspaceFontPresetColumn,
   hasWorkspaceMetaDescriptionColumn,
   hasWorkspaceMetaTitleColumn,
+  hasWorkspaceProductContextColumn,
+  hasWorkspaceAutoDraftGapsEnabledColumn,
+  hasWorkspaceAutoDraftGapThresholdColumn,
+  hasWorkspaceAutoDraftExternalEnabledColumn,
+  hasWorkspaceBatchWindowMinutesColumn,
   prisma,
 } from '@/lib/db'
 import { Prisma } from '@helpnest/db'
@@ -102,6 +107,11 @@ export async function PATCH(request: Request) {
     aiGreeting,
     aiInstructions,
     aiEscalationThreshold,
+    productContext,
+    autoDraftGapsEnabled,
+    autoDraftGapThreshold,
+    autoDraftExternalEnabled,
+    batchWindowMinutes,
   } = body as {
     name?: unknown
     slug?: unknown
@@ -134,6 +144,11 @@ export async function PATCH(request: Request) {
     aiGreeting?: unknown
     aiInstructions?: unknown
     aiEscalationThreshold?: unknown
+    productContext?: unknown
+    autoDraftGapsEnabled?: unknown
+    autoDraftGapThreshold?: unknown
+    autoDraftExternalEnabled?: unknown
+    batchWindowMinutes?: unknown
   }
 
   if (isDemoMode()) {
@@ -443,6 +458,35 @@ export async function PATCH(request: Request) {
     }
   }
 
+  if (productContext !== undefined && productContext !== null) {
+    if (typeof productContext !== 'string') {
+      return NextResponse.json({ error: 'productContext must be a string' }, { status: 400 })
+    }
+    if (productContext.trim().length > 4000) {
+      return NextResponse.json({ error: 'productContext must be 4000 characters or fewer' }, { status: 400 })
+    }
+  }
+
+  if (autoDraftGapsEnabled !== undefined && typeof autoDraftGapsEnabled !== 'boolean') {
+    return NextResponse.json({ error: 'autoDraftGapsEnabled must be a boolean' }, { status: 400 })
+  }
+
+  if (autoDraftGapThreshold !== undefined) {
+    if (typeof autoDraftGapThreshold !== 'number' || !Number.isInteger(autoDraftGapThreshold) || autoDraftGapThreshold < 1 || autoDraftGapThreshold > 100) {
+      return NextResponse.json({ error: 'autoDraftGapThreshold must be an integer between 1 and 100' }, { status: 400 })
+    }
+  }
+
+  if (autoDraftExternalEnabled !== undefined && typeof autoDraftExternalEnabled !== 'boolean') {
+    return NextResponse.json({ error: 'autoDraftExternalEnabled must be a boolean' }, { status: 400 })
+  }
+
+  if (batchWindowMinutes !== undefined) {
+    if (typeof batchWindowMinutes !== 'number' || !Number.isInteger(batchWindowMinutes) || batchWindowMinutes < 1 || batchWindowMinutes > 1440) {
+      return NextResponse.json({ error: 'batchWindowMinutes must be an integer between 1 and 1440' }, { status: 400 })
+    }
+  }
+
   const clampedThreshold =
     aiEscalationThreshold !== undefined
       ? Math.min(1, Math.max(0, aiEscalationThreshold as number))
@@ -498,6 +542,20 @@ export async function PATCH(request: Request) {
     customBrandFontFamily === undefined ? false : await hasWorkspaceCustomBrandFontFamilyColumn()
   const canPersistCustomBrandFontUrl =
     customBrandFontUrl === undefined ? false : await hasWorkspaceCustomBrandFontUrlColumn()
+  const trimmedProductContext =
+    typeof productContext === 'string' && productContext.trim().length > 0
+      ? productContext.trim()
+      : null
+  const canPersistProductContext =
+    productContext === undefined ? false : await hasWorkspaceProductContextColumn()
+  const canPersistAutoDraftGapsEnabled =
+    autoDraftGapsEnabled === undefined ? false : await hasWorkspaceAutoDraftGapsEnabledColumn()
+  const canPersistAutoDraftGapThreshold =
+    autoDraftGapThreshold === undefined ? false : await hasWorkspaceAutoDraftGapThresholdColumn()
+  const canPersistAutoDraftExternalEnabled =
+    autoDraftExternalEnabled === undefined ? false : await hasWorkspaceAutoDraftExternalEnabledColumn()
+  const canPersistBatchWindowMinutes =
+    batchWindowMinutes === undefined ? false : await hasWorkspaceBatchWindowMinutesColumn()
 
   // 409 only when the client is trying to SET a non-empty value for a column that
   // doesn't exist yet (migration pending). Sending null/empty to clear a missing
@@ -607,6 +665,11 @@ export async function PATCH(request: Request) {
         ...(aiGreeting !== undefined ? { aiGreeting: trimmedAiGreeting } : {}),
         ...(aiInstructions !== undefined ? { aiInstructions: trimmedAiInstructions } : {}),
         ...(clampedThreshold !== undefined ? { aiEscalationThreshold: clampedThreshold } : {}),
+        ...(canPersistProductContext ? { productContext: trimmedProductContext } : {}),
+        ...(canPersistAutoDraftGapsEnabled ? { autoDraftGapsEnabled: autoDraftGapsEnabled as boolean } : {}),
+        ...(canPersistAutoDraftGapThreshold ? { autoDraftGapThreshold: autoDraftGapThreshold as number } : {}),
+        ...(canPersistAutoDraftExternalEnabled ? { autoDraftExternalEnabled: autoDraftExternalEnabled as boolean } : {}),
+        ...(canPersistBatchWindowMinutes ? { batchWindowMinutes: batchWindowMinutes as number } : {}),
       },
     })
     return NextResponse.json(updated)

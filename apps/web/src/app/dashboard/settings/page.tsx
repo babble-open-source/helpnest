@@ -255,6 +255,11 @@ export default async function SettingsPage() {
       aiGreeting: true,
       aiInstructions: true,
       aiEscalationThreshold: true,
+      productContext: true,
+      autoDraftGapsEnabled: true,
+      autoDraftGapThreshold: true,
+      autoDraftExternalEnabled: true,
+      batchWindowMinutes: true,
     },
   })
 
@@ -341,6 +346,11 @@ export default async function SettingsPage() {
           aiEscalationThreshold={aiSettings?.aiEscalationThreshold ?? 0.3}
           hasApiKey={!!aiSettings?.aiApiKey}
           demoMode={demoMode}
+          productContext={aiSettings?.productContext ?? null}
+          autoDraftGapsEnabled={aiSettings?.autoDraftGapsEnabled ?? true}
+          autoDraftGapThreshold={aiSettings?.autoDraftGapThreshold ?? 2}
+          autoDraftExternalEnabled={aiSettings?.autoDraftExternalEnabled ?? true}
+          batchWindowMinutes={aiSettings?.batchWindowMinutes ?? 60}
         />
 
         {/* AI Search */}

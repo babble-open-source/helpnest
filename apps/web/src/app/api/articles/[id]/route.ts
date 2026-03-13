@@ -19,7 +19,10 @@ export async function GET(
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const article = await prisma.article.findFirst({
-    where: { id: params.id, workspaceId: authResult.workspaceId },
+    where: {
+      workspaceId: authResult.workspaceId,
+      OR: [{ id: params.id }, { slug: params.id }],
+    },
     include: { collection: true, author: true },
   })
   if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })

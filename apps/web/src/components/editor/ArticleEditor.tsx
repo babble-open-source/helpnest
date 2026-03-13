@@ -34,6 +34,7 @@ interface Article {
   status: string
   collectionId: string
   hasDraft?: boolean
+  aiGenerated?: boolean
 }
 
 interface Collection {
@@ -61,6 +62,8 @@ type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 
 export function ArticleEditor({ article, collections }: Props) {
   const [hasDraft, setHasDraft] = useState(article.hasDraft ?? false)
+  // dismissedAiBanner: user explicitly dismissed; bannerVisible: derives from current state
+  const [dismissedAiBanner, setDismissedAiBanner] = useState(false)
   const [title, setTitle] = useState(article.title)
   const [slug, setSlug] = useState(article.slug)
   const [excerpt, setExcerpt] = useState(article.excerpt)
@@ -358,6 +361,22 @@ export function ArticleEditor({ article, collections }: Props) {
         )}
 
         <div className="flex-1 overflow-y-auto">
+          {/* AI banner: derive visibility from current state so it clears automatically after publish */}
+          {!dismissedAiBanner && article.aiGenerated && (status === 'DRAFT' || (status === 'PUBLISHED' && hasDraft)) && (
+            <div className="border-b border-border bg-accent/5 px-6 py-3 flex items-start justify-between gap-4">
+              <p className="text-sm text-ink">
+                {status === 'DRAFT'
+                  ? 'AI Draft — Created automatically from a customer question or code change. Review carefully before publishing.'
+                  : 'AI Update Suggested — AI proposes changes based on a recent code change. Review the proposed update below before publishing.'}
+              </p>
+              <button
+                onClick={() => setDismissedAiBanner(true)}
+                className="shrink-0 text-muted hover:text-ink text-xs mt-0.5"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
           <div className="max-w-2xl mx-auto px-8 py-10">
             {/* Title */}
             <input

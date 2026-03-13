@@ -75,6 +75,9 @@ export class HttpClient {
       } catch {}
       throw new HelpNestError(message, res.status)
     }
+    if (res.status === 204 || res.headers.get('content-length') === '0') {
+      return { success: true } as T
+    }
     return res.json() as Promise<T>
   }
 }

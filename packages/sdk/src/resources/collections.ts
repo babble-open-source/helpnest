@@ -3,6 +3,7 @@ import type {
   Collection,
   CreateCollectionParams,
   ListCollectionsParams,
+  PaginatedResponse,
   UpdateCollectionParams,
 } from '../types'
 
@@ -12,8 +13,8 @@ export class CollectionsResource {
   /**
    * List all collections in the workspace.
    */
-  async list(params?: ListCollectionsParams): Promise<Collection[]> {
-    return this.http.get<Collection[]>('/collections', params as Record<string, string | number | boolean | undefined>)
+  async list(params?: ListCollectionsParams): Promise<PaginatedResponse<Collection>> {
+    return this.http.get<PaginatedResponse<Collection>>('/collections', params as Record<string, string | number | boolean | undefined>)
   }
 
   /**

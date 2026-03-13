@@ -104,12 +104,14 @@ export default async function DashboardPage() {
   ])
 
   // AI conversation metrics
-  const [totalConversations, resolvedByAI, escalatedCount, weekConversations, unresolvedGaps] = await Promise.all([
+  const [totalConversations, resolvedByAI, escalatedCount, weekConversations, unresolvedGaps, aiNewDraftCount, aiUpdateCount] = await Promise.all([
     prisma.conversation.count({ where: { workspaceId: member.workspaceId } }),
     prisma.conversation.count({ where: { workspaceId: member.workspaceId, status: 'RESOLVED_AI' } }),
     prisma.conversation.count({ where: { workspaceId: member.workspaceId, status: 'ESCALATED' } }),
     prisma.conversation.count({ where: { workspaceId: member.workspaceId, createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } } }),
     prisma.knowledgeGap.count({ where: { workspaceId: member.workspaceId, resolvedAt: null } }),
+    prisma.article.count({ where: { workspaceId: member.workspaceId, aiGenerated: true, status: 'DRAFT' } }),
+    prisma.article.count({ where: { workspaceId: member.workspaceId, aiGenerated: true, status: 'PUBLISHED', NOT: { draftContent: null } } }),
   ])
   const aiResolutionRate = totalConversations > 0 ? Math.round((resolvedByAI / totalConversations) * 100) : null
   const escalationRate = totalConversations > 0 ? Math.round((escalatedCount / totalConversations) * 100) : null
@@ -168,6 +170,30 @@ export default async function DashboardPage() {
               <p className="text-sm text-muted mt-1">{s.label}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* AI Draft Review Cards */}
+      {(aiNewDraftCount > 0 || aiUpdateCount > 0) && (
+        <div className="flex flex-wrap gap-4 mb-10">
+          {aiNewDraftCount > 0 && (
+            <a
+              href="/dashboard/articles?filter=ai-drafts"
+              className="bg-white rounded-xl border border-border p-5 hover:border-accent transition-colors"
+            >
+              <p className="text-2xl font-semibold text-ink">{aiNewDraftCount}</p>
+              <p className="text-sm text-muted mt-1">AI Drafts to Review</p>
+            </a>
+          )}
+          {aiUpdateCount > 0 && (
+            <a
+              href="/dashboard/articles?filter=ai-updates"
+              className="bg-white rounded-xl border border-border p-5 hover:border-accent transition-colors"
+            >
+              <p className="text-2xl font-semibold text-ink">{aiUpdateCount}</p>
+              <p className="text-sm text-muted mt-1">AI Article Updates</p>
+            </a>
+          )}
         </div>
       )}
 

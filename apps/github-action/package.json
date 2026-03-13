@@ -1,0 +1,20 @@
+{
+  "name": "helpnest-draft-article-action",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Auto-draft HelpNest KB articles from PR merges",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc && ncc build dist/index.js -o dist --minify",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@actions/core": "^1.10.0",
+    "@actions/github": "^6.0.0"
+  },
+  "devDependencies": {
+    "@vercel/ncc": "^0.38.0",
+    "@types/node": "^20.0.0",
+    "typescript": "^5.4.0"
+  }
+}

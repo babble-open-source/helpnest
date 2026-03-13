@@ -4,6 +4,7 @@ import type {
   ArticleVersion,
   CreateArticleParams,
   ListArticlesParams,
+  PaginatedResponse,
   SearchResult,
   UpdateArticleParams,
 } from '../types'
@@ -15,8 +16,8 @@ export class ArticlesResource {
    * List articles in the workspace.
    * Optionally filter by collection, status, or paginate.
    */
-  async list(params?: ListArticlesParams): Promise<Article[]> {
-    return this.http.get<Article[]>('/articles', params as Record<string, string | number | boolean | undefined>)
+  async list(params?: ListArticlesParams): Promise<PaginatedResponse<Article>> {
+    return this.http.get<PaginatedResponse<Article>>('/articles', params as Record<string, string | number | boolean | undefined>)
   }
 
   /**

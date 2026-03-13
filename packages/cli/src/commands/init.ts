@@ -58,11 +58,16 @@ export async function initCommand() {
     console.log(chalk.dim('  Created .env'))
   }
 
+  // Resolve packages/db — works whether CLI is run from repo root or packages/cli
+  const dbDir = fs.existsSync(path.join(process.cwd(), 'packages/db'))
+    ? path.join(process.cwd(), 'packages/db')
+    : path.resolve(path.dirname(new URL(import.meta.url).pathname), '../../db')
+
   // Run migrations
   const migrateSpinner = ora('Running database migrations...').start()
   try {
-    await execa('pnpm', ['prisma', 'migrate', 'deploy'], {
-      cwd: path.join(process.cwd(), 'packages/db'),
+    await execa('npx', ['prisma', 'migrate', 'deploy'], {
+      cwd: dbDir,
       env: { ...process.env, DATABASE_URL: answers.dbUrl },
     })
     migrateSpinner.succeed('Migrations complete')
@@ -75,8 +80,8 @@ export async function initCommand() {
   // Seed initial workspace via API or direct DB call
   const seedSpinner = ora('Creating workspace...').start()
   try {
-    await execa('pnpm', ['prisma', 'db', 'seed'], {
-      cwd: path.join(process.cwd(), 'packages/db'),
+    await execa('npx', ['prisma', 'db', 'seed'], {
+      cwd: dbDir,
       env: {
         ...process.env,
         DATABASE_URL: answers.dbUrl,

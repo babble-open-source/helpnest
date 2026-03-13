@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -81,6 +82,11 @@ model Workspace {
   aiGreeting               String?
   aiInstructions           String?    @db.Text
   aiEscalationThreshold    Float      @default(0.3)
+  autoDraftGapsEnabled      Boolean    @default(true)
+  autoDraftGapThreshold     Int        @default(2)
+  autoDraftExternalEnabled  Boolean    @default(true)
+  batchWindowMinutes        Int        @default(60)
+  productContext            String?    @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -167,6 +173,8 @@ model Article {
   helpful      Int           @default(0)
   notHelpful   Int           @default(0)
   isSeeded     Boolean       @default(false)
+  aiGenerated  Boolean       @default(false)
+  aiPrompt     String?       @db.Text
   authorId     String
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt

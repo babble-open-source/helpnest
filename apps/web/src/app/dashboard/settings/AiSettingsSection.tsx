@@ -11,6 +11,11 @@ interface Props {
   aiEscalationThreshold: number
   hasApiKey: boolean
   demoMode: boolean
+  productContext: string | null
+  autoDraftGapsEnabled: boolean
+  autoDraftGapThreshold: number
+  autoDraftExternalEnabled: boolean
+  batchWindowMinutes: number
 }
 
 export function AiSettingsSection({
@@ -22,6 +27,11 @@ export function AiSettingsSection({
   aiEscalationThreshold: initThreshold,
   hasApiKey,
   demoMode,
+  productContext: initProductContext,
+  autoDraftGapsEnabled: initAutoDraftGapsEnabled,
+  autoDraftGapThreshold: initAutoDraftGapThreshold,
+  autoDraftExternalEnabled: initAutoDraftExternalEnabled,
+  batchWindowMinutes: initBatchWindowMinutes,
 }: Props) {
   const [enabled, setEnabled] = useState(initEnabled)
   const [provider, setProvider] = useState((initProvider || 'anthropic').toLowerCase())
@@ -30,6 +40,11 @@ export function AiSettingsSection({
   const [greeting, setGreeting] = useState(initGreeting || '')
   const [instructions, setInstructions] = useState(initInstructions || '')
   const [threshold, setThreshold] = useState(initThreshold)
+  const [productContext, setProductContext] = useState(initProductContext || '')
+  const [autoDraftGapsEnabled, setAutoDraftGapsEnabled] = useState(initAutoDraftGapsEnabled)
+  const [autoDraftGapThreshold, setAutoDraftGapThreshold] = useState(initAutoDraftGapThreshold)
+  const [autoDraftExternalEnabled, setAutoDraftExternalEnabled] = useState(initAutoDraftExternalEnabled)
+  const [batchWindowMinutes, setBatchWindowMinutes] = useState(initBatchWindowMinutes)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -45,6 +60,11 @@ export function AiSettingsSection({
         aiGreeting: greeting || null,
         aiInstructions: instructions || null,
         aiEscalationThreshold: threshold,
+        productContext: productContext || null,
+        autoDraftGapsEnabled,
+        autoDraftGapThreshold,
+        autoDraftExternalEnabled,
+        batchWindowMinutes,
       }
       if (apiKey) body.aiApiKey = apiKey
       const res = await fetch('/api/workspace/settings', {
@@ -103,7 +123,7 @@ export function AiSettingsSection({
               value={provider}
               onChange={(e) => setProvider(e.target.value)}
               disabled={demoMode}
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white focus:outline-none focus:border-green disabled:opacity-50"
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
             >
               {providers.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -129,7 +149,7 @@ export function AiSettingsSection({
                       ? 'gemini-1.5-flash'
                       : 'mistral-small-latest'
               }
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-green disabled:opacity-50"
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
             />
             <p className="text-xs text-muted mt-1">Leave blank to use the provider default.</p>
           </div>
@@ -142,7 +162,7 @@ export function AiSettingsSection({
               onChange={(e) => setApiKey(e.target.value)}
               disabled={demoMode}
               placeholder={hasApiKey ? '••••••••• (configured)' : 'Enter API key...'}
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-green disabled:opacity-50"
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
             />
             <p className="text-xs text-muted mt-1">
               {hasApiKey
@@ -159,7 +179,7 @@ export function AiSettingsSection({
               onChange={(e) => setGreeting(e.target.value)}
               disabled={demoMode}
               placeholder="Hi! How can I help you today?"
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:border-green disabled:opacity-50"
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
             />
           </div>
 
@@ -171,7 +191,7 @@ export function AiSettingsSection({
               disabled={demoMode}
               rows={4}
               placeholder="e.g. Always suggest contacting sales for pricing questions."
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm resize-none focus:outline-none focus:border-green disabled:opacity-50"
+              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink resize-none focus:outline-none focus:border-green disabled:opacity-50"
             />
             <p className="text-xs text-muted mt-1">Prepended to the AI system prompt.</p>
           </div>
@@ -193,6 +213,103 @@ export function AiSettingsSection({
             <p className="text-xs text-muted mt-1">
               Auto-escalate to a human when AI confidence falls below this threshold.
             </p>
+          </div>
+
+          <div className="border-t border-border pt-4 space-y-4">
+            <h3 className="text-sm font-medium text-ink">Product Context</h3>
+            <div>
+              <label className="block text-sm text-muted mb-1">
+                Describe your product for AI article generation
+              </label>
+              <textarea
+                value={productContext}
+                onChange={(e) => setProductContext(e.target.value)}
+                disabled={demoMode}
+                rows={4}
+                maxLength={4000}
+                placeholder="We build a project management tool for remote teams. Key features: boards, sprints, tasks. Users: developers and PMs. Tone: friendly, concise, action-oriented."
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink resize-none focus:outline-none focus:border-green disabled:opacity-50"
+              />
+              <p className="text-xs text-muted mt-1">
+                AI uses this when drafting KB articles automatically.
+              </p>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-ink">Auto-Draft: From Unanswered Questions</h3>
+                <p className="text-xs text-muted mt-0.5">
+                  Draft articles when customers ask questions AI cannot answer.
+                </p>
+              </div>
+              <button
+                onClick={() => setAutoDraftGapsEnabled(!autoDraftGapsEnabled)}
+                disabled={demoMode}
+                aria-checked={autoDraftGapsEnabled}
+                role="switch"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${autoDraftGapsEnabled ? 'bg-green' : 'bg-border'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${autoDraftGapsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+            {autoDraftGapsEnabled && (
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1">
+                  Draft after <input
+                    type="number"
+                    min={1}
+                    max={100}
+                    value={autoDraftGapThreshold}
+                    onChange={(e) => setAutoDraftGapThreshold(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                    disabled={demoMode}
+                    className="inline-block w-16 mx-1 px-2 py-0.5 border border-border rounded text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
+                  /> or more occurrences
+                </label>
+                <p className="text-xs text-muted mt-1">
+                  Minimum number of times a question must be asked before an article is drafted.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <div className="border-t border-border pt-4 space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-medium text-ink">Auto-Draft: From Code Changes</h3>
+                <p className="text-xs text-muted mt-0.5">
+                  Allow GitHub Actions and CI pipelines to draft articles via API key.
+                </p>
+              </div>
+              <button
+                onClick={() => setAutoDraftExternalEnabled(!autoDraftExternalEnabled)}
+                disabled={demoMode}
+                aria-checked={autoDraftExternalEnabled}
+                role="switch"
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${autoDraftExternalEnabled ? 'bg-green' : 'bg-border'}`}
+              >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${autoDraftExternalEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+            {autoDraftExternalEnabled && (
+              <div>
+                <label className="block text-sm font-medium text-ink mb-1">
+                  Multi-repo batch window: <input
+                    type="number"
+                    min={1}
+                    max={1440}
+                    value={batchWindowMinutes}
+                    onChange={(e) => setBatchWindowMinutes(Math.max(1, parseInt(e.target.value, 10) || 60))}
+                    disabled={demoMode}
+                    className="inline-block w-20 mx-1 px-2 py-0.5 border border-border rounded text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
+                  /> minutes
+                </label>
+                <p className="text-xs text-muted mt-1">
+                  When using a shared feature ID across repos, wait this long after the last PR before generating.
+                </p>
+              </div>
+            )}
           </div>
 
           <button

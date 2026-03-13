@@ -47,6 +47,7 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
         status: article.status,
         collectionId: article.collectionId,
         hasDraft,
+        aiGenerated: article.aiGenerated,
       }}
       collections={collections}
     />

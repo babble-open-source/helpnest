@@ -214,6 +214,63 @@ await client.messages.send(conversationId, { content: 'Here is how to fix that�
 
 ---
 
+## AI Drafting CLI
+
+The `helpnest` npm package bootstraps your KB by reading your codebase and auto-drafting articles.
+
+```bash
+npm install -g helpnest
+```
+
+**Draft a single article from a PR:**
+```bash
+helpnest draft \
+  --api-key hn_live_xxx \
+  --pr-title "Add dark mode toggle" \
+  --pr-body "Users can now switch themes in Settings > Appearance"
+```
+
+**Seed from a local repo (no GitHub token needed):**
+```bash
+helpnest seed --local ./my-project --api-key hn_live_xxx
+```
+
+This uses a two-pass AI approach: first the CLI sends the repo file tree to your HelpNest instance, which uses your configured LLM to identify feature domains (conversations, auth, billing, etc.). Then it reads the actual source files for each domain and generates a KB article per feature. The code is always the source of truth — even when the README is stale.
+
+**Seed from GitHub (README + docs + releases + PRs):**
+```bash
+helpnest seed \
+  --repo owner/repo \
+  --token ghp_xxx \
+  --api-key hn_live_xxx
+```
+
+**Source options:**
+
+| Source | GitHub mode | Local mode |
+|--------|-------------|------------|
+| `readme` | fetches README via GitHub API | reads README from disk |
+| `docs` | fetches `.md` files under `docs/` | reads `.md` files from disk |
+| `releases` | fetches GitHub Releases | not available |
+| `prs` | fetches merged PRs + diffs | not available |
+| `code` | not available | AI-driven feature domain discovery |
+| `all` | readme + docs + releases + prs | readme + docs + code |
+
+```bash
+# Dry run — preview what would be generated, no articles created
+helpnest seed --local ./my-project --dry-run
+
+# GitHub mode, docs and releases only
+helpnest seed --repo owner/repo --token ghp_xxx --source docs,releases
+
+# Local mode, code analysis only
+helpnest seed --local ./my-project --source code
+```
+
+All articles are created as `DRAFT` with `aiGenerated: true`. Review and publish from **Dashboard > AI Drafts**.
+
+---
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -246,7 +303,8 @@ helpnest/
 │   ├── editor/       → @helpnest/editor — Tiptap rich text editor
 │   ├── widget/       → @helpnest/widget — embeddable JS snippet
 │   ├── sdk/          → @helpnest/sdk — JS/TS REST API SDK (npm: @helpnest/sdk)
-│   └── cli/          → @helpnest/cli — npx helpnest CLI
+│   ├── helpnest/     → helpnest — AI drafting CLI: draft + seed (npm: helpnest)
+│   └── cli/          → @helpnest/cli — self-hosting CLI: init, dev, deploy, export, import
 ├── scripts/
 │   ├── dev-setup.sh          → first-time local setup
 │   └── self-host-setup.sh    → production Docker setup

@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     orderBy: { updatedAt: 'desc' },
   })
 
-  return NextResponse.json({ articles, total: articles.length })
+  return NextResponse.json({ data: articles, total: articles.length })
 }
 
 export async function POST(request: Request) {
@@ -62,8 +62,6 @@ export async function POST(request: Request) {
 
   const { workspaceId, userId } = authResult
 
-  // For session auth, userId comes from the member lookup in requireAuth.
-  // For API key auth, we need to find any user in the workspace to assign as author.
   let authorId = userId
   if (!authorId) {
     const member = await prisma.member.findFirst({
@@ -75,18 +73,37 @@ export async function POST(request: Request) {
     authorId = member.userId
   }
 
-  // Get first collection as default
-  const collection = await prisma.collection.findFirst({
-    where: { workspaceId, isArchived: false },
-    orderBy: { order: 'asc' },
-    select: { id: true },
-  })
-  if (!collection) return NextResponse.json({ error: 'Create a collection first' }, { status: 400 })
+  const body = await request.json() as {
+    title?: string
+    content?: string
+    excerpt?: string
+    collectionId?: string
+    status?: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
+  }
 
-  const title = 'Untitled article'
+  const title = body.title?.trim() || 'Untitled article'
+
+  // Resolve collection: use provided collectionId or fall back to first collection
+  let collectionId = body.collectionId
+  if (!collectionId) {
+    const defaultCollection = await prisma.collection.findFirst({
+      where: { workspaceId, isArchived: false },
+      orderBy: { order: 'asc' },
+      select: { id: true },
+    })
+    if (!defaultCollection) return NextResponse.json({ error: 'Create a collection first' }, { status: 400 })
+    collectionId = defaultCollection.id
+  } else {
+    const col = await prisma.collection.findFirst({
+      where: { id: collectionId, workspaceId },
+      select: { id: true },
+    })
+    if (!col) return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
+  }
+
+  const status = body.status ?? 'DRAFT'
   const baseSlug = slugify(title)
 
-  // Retry on unique slug conflict to handle concurrent creates (TOCTOU-safe)
   let slug = baseSlug
   let i = 1
   for (;;) {
@@ -94,15 +111,17 @@ export async function POST(request: Request) {
       const article = await prisma.article.create({
         data: {
           workspaceId,
-          collectionId: collection.id,
+          collectionId,
           authorId,
           title,
           slug,
-          content: '',
-          status: 'DRAFT',
+          content: body.content ?? '',
+          excerpt: body.excerpt ?? null,
+          status,
+          ...(status === 'PUBLISHED' ? { publishedAt: new Date() } : {}),
         },
       })
-      return NextResponse.json({ id: article.id })
+      return NextResponse.json(article, { status: 201 })
     } catch (e: unknown) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
         slug = `${baseSlug}-${i++}`
