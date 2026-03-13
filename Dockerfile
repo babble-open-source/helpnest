@@ -31,6 +31,19 @@ COPY . .
 # query engine binary is produced for the target platform.
 RUN cd packages/db && pnpm prisma generate
 
+# pnpm stores @prisma/client in its virtual store (.pnpm/…/node_modules/@prisma/client).
+# Node.js resolves __dirname to the real path (following symlinks), so the generated
+# .prisma/client must live next to @prisma/client inside that virtual store directory.
+RUN node -e " \
+  const path = require('path'); \
+  const { cpSync, realpathSync } = require('fs'); \
+  const clientPkg = require.resolve('@prisma/client/package.json', { paths: ['/app/apps/web'] }); \
+  const realClientDir = realpathSync(path.dirname(clientPkg)); \
+  const target = path.join(path.dirname(realClientDir), '.prisma'); \
+  cpSync('/app/packages/db/node_modules/.prisma', target, { recursive: true, force: true }); \
+  console.log('Copied .prisma to ' + target); \
+"
+
 # Stage the generated Prisma client plus a flat Prisma CLI node_modules tree.
 # resolvePkgDir walks up from the resolved entry point to find the package root,
 # which is necessary because pnpm resolves some packages to sub-paths.
@@ -54,7 +67,7 @@ RUN node -e " \
     cp(pkgDir, dst); \
   }; \
   const clientDir = resolvePkgDir('@prisma/client', dbPaths); \
-  cp('/app/node_modules/.prisma', '/tmp/generated-prisma-client'); \
+  cp('/app/packages/db/node_modules/.prisma', '/tmp/generated-prisma-client'); \
   const cliOut = '/tmp/prisma-cli-node_modules'; \
   mkdirSync(cliOut, { recursive: true }); \
   const prismaDir = resolvePkgDir('prisma', dbPaths); \
