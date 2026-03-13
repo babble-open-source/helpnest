@@ -13,7 +13,7 @@
     "declaration": true,
     "baseUrl": ".",
     "paths": {
-      "@prisma/client": ["../../packages/db/node_modules/.prisma/client"]
+      "@prisma/client": ["../../node_modules/.prisma/client"]
     }
   },
   "include": ["src/**/*"],

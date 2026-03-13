@@ -4,7 +4,7 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
-      "@prisma/client": ["../../packages/db/node_modules/.prisma/client"]
+      "@prisma/client": ["../../node_modules/.prisma/client"]
     }
   },
   "include": ["next-env.d.ts", "src/**/*.ts", "src/**/*.tsx", ".next/types/**/*.ts"],
