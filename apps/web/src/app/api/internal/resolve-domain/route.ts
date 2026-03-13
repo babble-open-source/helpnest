@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { timingSafeEqual } from 'node:crypto'
 import { prisma } from '@/lib/db'
 
 /**
@@ -20,7 +21,11 @@ export async function GET(request: Request) {
   const configuredSecret = process.env.INTERNAL_SECRET
   if (configuredSecret) {
     const provided = request.headers.get('x-internal-secret')
-    if (!provided || provided !== configuredSecret) {
+    const valid = provided !== null && timingSafeEqual(
+      Buffer.from(provided),
+      Buffer.from(configuredSecret),
+    )
+    if (!valid) {
       return NextResponse.json({ slug: null }, { status: 401 })
     }
   }

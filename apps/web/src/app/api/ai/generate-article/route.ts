@@ -70,6 +70,15 @@ export async function POST(request: Request) {
     codeContext?: unknown
   }
 
+  // Rate limit — check before DB query to reduce load under abuse
+  const rate = await checkRateLimit(authResult.workspaceId)
+  if (rate.limited) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Maximum 20 drafts per hour per workspace.' },
+      { status: 429 },
+    )
+  }
+
   // Validate workspace is allowed to use external API drafting
   const workspace = await prisma.workspace.findUnique({
     where: { id: authResult.workspaceId },
@@ -85,15 +94,6 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: 'External API drafting is disabled for this workspace' },
       { status: 403 },
-    )
-  }
-
-  // Rate limit
-  const rate = await checkRateLimit(authResult.workspaceId)
-  if (rate.limited) {
-    return NextResponse.json(
-      { error: 'Rate limit exceeded. Maximum 20 drafts per hour per workspace.' },
-      { status: 429 },
     )
   }
 
