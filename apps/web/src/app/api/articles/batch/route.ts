@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   }
 
   // Verify all articles belong to this workspace
-  const articles = await prisma.article.findMany({
+  const articles: Array<{ id: string; isSeeded: boolean }> = await prisma.article.findMany({
     where: { id: { in: ids as string[] }, workspaceId: authResult.workspaceId },
     select: { id: true, isSeeded: true },
   })

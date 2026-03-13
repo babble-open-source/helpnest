@@ -218,7 +218,7 @@ export async function POST(
     }
 
     // Load full conversation history for multi-turn context.
-    const history = await prisma.message.findMany({
+    const history: Array<{ role: string; content: string }> = await prisma.message.findMany({
       where: { conversationId: id },
       orderBy: { createdAt: 'asc' },
       select: { role: true, content: true },

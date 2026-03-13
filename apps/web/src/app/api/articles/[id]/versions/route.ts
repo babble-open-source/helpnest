@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
+import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 
 export async function GET(
@@ -70,7 +71,7 @@ export async function POST(
 
   // Use a transaction to atomically read the last version number and create the new one,
   // preventing duplicate version numbers from concurrent requests.
-  const version = await prisma.$transaction(async (tx) => {
+  const version = await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const last = await tx.articleVersion.findFirst({
       where: { articleId: params.id },
       orderBy: { version: 'desc' },

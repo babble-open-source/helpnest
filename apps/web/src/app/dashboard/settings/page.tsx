@@ -239,7 +239,13 @@ export default async function SettingsPage() {
       : Promise.resolve(null),
   ])
 
-  const members = await prisma.member.findMany({
+  type MemberWithUser = {
+    id: string
+    role: string
+    deactivatedAt: Date | null
+    user: { id: string; email: string; name: string | null }
+  }
+  const members: MemberWithUser[] = await prisma.member.findMany({
     where: { workspaceId: member.workspaceId },
     include: { user: { select: { id: true, email: true, name: true } } },
     orderBy: [{ role: 'asc' }, { user: { name: 'asc' } }],

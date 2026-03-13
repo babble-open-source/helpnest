@@ -167,7 +167,7 @@ async function searchRelatedArticles(
 
       if (items.length > 0) {
         const articleIds = items.map((i) => i.articleId)
-        const rows = await prisma.article.findMany({
+        const rows: Array<{ id: string; title: string; content: string }> = await prisma.article.findMany({
           where: { id: { in: articleIds }, workspaceId, status: 'PUBLISHED' },
           select: { id: true, title: true, content: true },
         })
@@ -187,7 +187,7 @@ async function searchRelatedArticles(
 
   // --- Full-text search fallback ---
   type FtsRow = { articleId: string; title: string; content: string }
-  const rows = await prisma.$queryRaw<FtsRow[]>`
+  const rows: FtsRow[] = await prisma.$queryRaw<FtsRow[]>`
     SELECT id AS "articleId", title, LEFT(content, 800) AS content
     FROM "Article"
     WHERE "workspaceId" = ${workspaceId}
@@ -460,7 +460,7 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
           }
 
           return { articleId: article.id, title: article.title, mode: 'created' }
-        } catch (e) {
+        } catch (e: unknown) {
           if (isPrismaUniqueError(e) && attempt < 5) {
             slug = `${baseSlug}-${++attempt}`
           } else {

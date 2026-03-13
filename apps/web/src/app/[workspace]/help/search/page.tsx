@@ -26,15 +26,16 @@ export default async function SearchPage(props: Props) {
 
   const q = searchParams.q?.trim() ?? ''
 
-  const results = q.length >= 2
-    ? await prisma.$queryRaw<Array<{
-        id: string
-        title: string
-        slug: string
-        excerpt: string | null
-        collection_title: string
-        collection_slug: string
-      }>>`
+  type SearchResult = {
+    id: string
+    title: string
+    slug: string
+    excerpt: string | null
+    collection_title: string
+    collection_slug: string
+  }
+  const results: SearchResult[] = q.length >= 2
+    ? await prisma.$queryRaw<SearchResult[]>`
         SELECT
           a.id, a.title, a.slug, a.excerpt,
           c.title as collection_title,

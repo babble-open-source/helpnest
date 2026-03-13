@@ -46,7 +46,13 @@ export default async function DashboardPage() {
     }
   }
 
-  const recentArticlesPromise = prisma.article.findMany({
+  type RecentArticle = {
+    id: string
+    title: string
+    status: string
+    collection: { id: string; title: string; slug: string }
+  }
+  const recentArticlesPromise: Promise<RecentArticle[]> = prisma.article.findMany({
     where: { workspaceId: member.workspaceId },
     orderBy: { updatedAt: 'desc' },
     take: 5,
@@ -68,7 +74,16 @@ export default async function DashboardPage() {
       notHelpful: true,
     },
   })
-  const feedbackArticlesPromise = prisma.article.findMany({
+  type FeedbackArticle = {
+    id: string
+    title: string
+    slug: string
+    helpful: number
+    notHelpful: number
+    views: number
+    collection: { slug: string; title: string }
+  }
+  const feedbackArticlesPromise: Promise<FeedbackArticle[]> = prisma.article.findMany({
     where: {
       workspaceId: member.workspaceId,
       status: 'PUBLISHED',

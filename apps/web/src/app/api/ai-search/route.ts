@@ -202,7 +202,7 @@ export async function POST(request: Request) {
 
   if (vectorMatches.length > 0) {
     const articleIds = vectorMatches.map((m) => m.articleId)
-    const rows = await prisma.article.findMany({
+    const rows: ArticleRow[] = await prisma.article.findMany({
       where: {
         id: { in: articleIds },
         workspaceId: workspace.id,

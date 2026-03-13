@@ -192,7 +192,7 @@ async function searchArticles(query: string, workspaceId: string): Promise<Artic
       }
 
       if (articleIds.length > 0) {
-        const rows = await prisma.article.findMany({
+        const rows: ArticleRow[] = await prisma.article.findMany({
           where: {
             id: { in: articleIds },
             workspaceId,

@@ -49,7 +49,7 @@ export function hasWorkspaceColumn(columnName: string): Promise<boolean> {
           AND column_name = ${columnName}
       ) AS "exists"
     `)
-    .then((rows) => rows[0]?.exists ?? false)
+    .then((rows: Array<{ exists: boolean }>) => rows[0]?.exists ?? false)
     .catch(() => false)
 
   return cache[columnName]!

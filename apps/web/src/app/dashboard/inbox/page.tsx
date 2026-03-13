@@ -13,7 +13,22 @@ export default async function InboxPage() {
   })
   if (!member) redirect('/dashboard')
 
-  const [escalated, active, resolved] = await Promise.all([
+  type InboxConv = {
+    id: string
+    status: string
+    customerName: string | null
+    customerEmail: string | null
+    subject: string | null
+    aiConfidence: number | null
+    escalationReason: string | null
+    assignedTo: { user: { name: string | null } } | null
+    messages: Array<{ content: string }>
+    _count: { messages: number }
+    createdAt: Date
+    updatedAt: Date
+  }
+
+  const [escalated, active, resolved]: [InboxConv[], InboxConv[], InboxConv[]] = await Promise.all([
     prisma.conversation.findMany({
       where: { workspaceId: member.workspaceId, status: 'ESCALATED' },
       orderBy: { updatedAt: 'desc' },
@@ -51,7 +66,7 @@ export default async function InboxPage() {
 
   // Serialize dates for client component — Date objects are not serializable across
   // the server/client boundary in Next.js App Router.
-  const serialize = (convs: typeof escalated) =>
+  const serialize = (convs: InboxConv[]) =>
     convs.map((c) => ({
       id: c.id,
       status: c.status,
@@ -60,7 +75,7 @@ export default async function InboxPage() {
       subject: c.subject,
       aiConfidence: c.aiConfidence,
       escalationReason: c.escalationReason,
-      assignedTo: (c as typeof escalated[0]).assignedTo?.user?.name ?? null,
+      assignedTo: c.assignedTo?.user?.name ?? null,
       firstMessage: c.messages[0]?.content?.slice(0, 200) ?? null,
       messageCount: c._count.messages,
       createdAt: c.createdAt.toISOString(),

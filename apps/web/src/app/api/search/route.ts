@@ -35,18 +35,17 @@ export async function GET(request: Request) {
 
   // Postgres full-text search using raw query for tsvector.
   // ts_headline generates the snippet server-side, avoiding fetching full content over the wire.
-  const results = await prisma.$queryRaw<
-    Array<{
-      id: string
-      title: string
-      slug: string
-      snippet: string
-      collection_title: string
-      collection_slug: string
-      views: number
-      word_count: number
-    }>
-  >`
+  type SearchRow = {
+    id: string
+    title: string
+    slug: string
+    snippet: string
+    collection_title: string
+    collection_slug: string
+    views: number
+    word_count: number
+  }
+  const results: SearchRow[] = await prisma.$queryRaw<SearchRow[]>`
     SELECT
       a.id,
       a.title,

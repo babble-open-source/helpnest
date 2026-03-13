@@ -159,7 +159,21 @@ export async function GET(request: Request) {
     where.status = status
   }
 
-  const [conversations, total] = await Promise.all([
+  type ConversationRow = {
+    id: string
+    status: string
+    customerName: string | null
+    customerEmail: string | null
+    subject: string | null
+    aiConfidence: number | null
+    escalationReason: string | null
+    assignedTo: { user: { name: string | null; email: string } } | null
+    messages: Array<{ content: string; role: string }>
+    _count: { messages: number }
+    createdAt: Date
+    updatedAt: Date
+  }
+  const [conversations, total]: [ConversationRow[], number] = await Promise.all([
     prisma.conversation.findMany({
       where,
       orderBy: { updatedAt: 'desc' },

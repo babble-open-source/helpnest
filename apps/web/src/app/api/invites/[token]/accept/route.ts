@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
+import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 
 export async function POST(
@@ -56,7 +57,7 @@ export async function POST(
   const passwordHash = await bcrypt.hash(password, 12)
 
   // Use a transaction so user creation, member creation, and invite update are atomic
-  await prisma.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     // Upsert user: create if new, update name/password if existing.
     // Set passwordChangedAt so invited users are not shown the
     // "change default password" banner (they chose their own password).

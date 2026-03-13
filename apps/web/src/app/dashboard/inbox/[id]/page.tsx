@@ -46,7 +46,7 @@ export default async function ConversationPage({
 
   if (!conversation) notFound()
 
-  const members = await prisma.member.findMany({
+  const members: Array<{ id: string; user: { name: string | null; email: string } }> = await prisma.member.findMany({
     where: { workspaceId: member.workspaceId, deactivatedAt: null },
     select: { id: true, user: { select: { name: true, email: true } } },
     orderBy: { user: { name: 'asc' } },
@@ -69,13 +69,28 @@ export default async function ConversationPage({
           email: conversation.assignedTo.user.email,
         }
       : null,
-    articles: conversation.articles.map((ca) => ({
+    articles: (conversation.articles as Array<{
+      article: {
+        id: string
+        title: string
+        slug: string
+        collection: { slug: string; title: string }
+      }
+    }>).map((ca) => ({
       id: ca.article.id,
       title: ca.article.title,
       slug: ca.article.slug,
       collection: ca.article.collection,
     })),
-    messages: conversation.messages.map((m) => ({
+    messages: (conversation.messages as Array<{
+      id: string
+      role: string
+      content: string
+      sources: unknown
+      confidence: number | null
+      feedbackHelpful: boolean | null
+      createdAt: Date
+    }>).map((m) => ({
       id: m.id,
       role: m.role,
       content: m.content,

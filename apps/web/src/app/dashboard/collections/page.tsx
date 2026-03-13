@@ -17,7 +17,23 @@ export default async function CollectionsPage() {
   })
   if (!member) redirect('/dashboard')
 
-  const collections = await prisma.collection.findMany({
+  type SubCollection = {
+    id: string
+    title: string
+    emoji: string | null
+    isArchived: boolean
+    _count: { articles: number }
+  }
+  type CollectionWithSubs = {
+    id: string
+    title: string
+    description: string | null
+    emoji: string | null
+    isArchived: boolean
+    _count: { articles: number }
+    subCollections: SubCollection[]
+  }
+  const collections: CollectionWithSubs[] = await prisma.collection.findMany({
     where: { workspaceId: member.workspaceId, parentId: null },
     orderBy: [
       { isArchived: 'asc' },

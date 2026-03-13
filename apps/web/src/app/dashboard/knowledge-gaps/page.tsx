@@ -13,7 +13,18 @@ export default async function KnowledgeGapsPage() {
   })
   if (!member) redirect('/dashboard')
 
-  const [unresolved, resolved] = await Promise.all([
+  type KnowledgeGapRow = {
+    id: string
+    query: string
+    occurrences: number
+    lastSeenAt: Date
+    resolvedAt: Date | null
+    resolvedBy: { name: string | null } | null
+    resolvedArticle: { id: string; title: string } | null
+    createdAt: Date
+  }
+
+  const [unresolved, resolved]: [KnowledgeGapRow[], KnowledgeGapRow[]] = await Promise.all([
     prisma.knowledgeGap.findMany({
       where: { workspaceId: member.workspaceId, resolvedAt: null },
       orderBy: { occurrences: 'desc' },
@@ -34,7 +45,7 @@ export default async function KnowledgeGapsPage() {
     }),
   ])
 
-  const serialize = (gaps: typeof unresolved) =>
+  const serialize = (gaps: KnowledgeGapRow[]) =>
     gaps.map((g) => ({
       id: g.id,
       query: g.query,
