@@ -20,8 +20,14 @@ if (fs.existsSync(rootEnv)) {
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  // Required for monorepo: traces node_modules outside apps/web into standalone output.
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   transpilePackages: ['@helpnest/ui', '@helpnest/db'],
   serverExternalPackages: [
+    // Prisma must be external so the native query-engine binary is resolved at runtime,
+    // not bundled by webpack (which cannot include platform-specific .node files).
+    '@prisma/client',
+    'prisma',
     '@qdrant/js-client-rest',
     'undici',
     'openai',

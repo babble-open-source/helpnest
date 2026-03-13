@@ -75,9 +75,9 @@ RUN node -e " \
   }; \
   const clientDir = resolvePkgDir('@prisma/client', dbPaths); \
   const { execSync: exec } = require('child_process'); \
-  const prismaDir = exec('find /app -path \"*/.prisma/client\" -type d 2>/dev/null').toString().trim().split('\n').filter(Boolean).map(p => require('path').dirname(p))[0]; \
-  if (!prismaDir) throw new Error('Cannot find .prisma directory to stage'); \
-  cp(prismaDir, '/tmp/generated-prisma-client'); \
+  const generatedPrismaDir = exec('find /app -path \"*/.prisma/client\" -type d 2>/dev/null').toString().trim().split('\n').filter(Boolean).map(p => require('path').dirname(p))[0]; \
+  if (!generatedPrismaDir) throw new Error('Cannot find .prisma directory to stage'); \
+  cp(generatedPrismaDir, '/tmp/generated-prisma-client'); \
   const cliOut = '/tmp/prisma-cli-node_modules'; \
   mkdirSync(cliOut, { recursive: true }); \
   const prismaDir = resolvePkgDir('prisma', dbPaths); \
@@ -140,7 +140,8 @@ RUN apk add --no-cache openssl \
 # Next.js standalone output (includes traced node_modules for the app server).
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static     ./apps/web/.next/static
-RUN mkdir -p ./apps/web/public ./packages/widget/dist
+RUN mkdir -p ./packages/widget/dist
+COPY --from=builder /app/apps/web/public              ./apps/web/public
 COPY --from=builder /app/packages/widget/dist/widget.js ./packages/widget/dist/widget.js
 
 # Prisma schema, migrations, compiled seed, and package.json.
