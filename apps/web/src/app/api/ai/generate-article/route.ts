@@ -120,7 +120,7 @@ export async function POST(request: Request) {
     if (prTitle) {
       codeContexts = [{
         prTitle,
-        prBody: typeof ctx.prBody === 'string' ? ctx.prBody.slice(0, 2000) : undefined,
+        prBody: typeof ctx.prBody === 'string' ? ctx.prBody.slice(0, 6000) : undefined,
         diff: typeof ctx.diff === 'string' ? ctx.diff.slice(0, 5000) : undefined,
         changedFiles: Array.isArray(ctx.changedFiles)
           ? (ctx.changedFiles as unknown[]).filter((f): f is string => typeof f === 'string').slice(0, 50)

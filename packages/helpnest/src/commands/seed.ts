@@ -2,6 +2,7 @@ import chalk from 'chalk'
 import { createHash } from 'crypto'
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs'
 import { join, relative, resolve, extname, basename } from 'path'
+import { walkTree, readFileForContext, readPackageJson, fetchDomains, fetchFilesForTopics, buildCodeBody } from '../utils.js'
 
 interface SeedOptions {
   repo?: string
@@ -15,13 +16,16 @@ interface SeedOptions {
   delay: string
   collection?: string
   dryRun?: boolean
+  topics?: string
+  rounds?: string
 }
 
 interface SeedItem {
-  sourceType: 'readme' | 'docs' | 'release' | 'pr' | 'code'
+  sourceType: 'readme' | 'docs' | 'release' | 'pr' | 'code' | 'topic'
   label: string
   idempotencyKey: string
-  codeContext: {
+  topic?: string
+  codeContext?: {
     prTitle: string
     prBody?: string
     diff?: string
@@ -487,140 +491,30 @@ async function collectPRsGitHub(
 // Code source (local only) — AI-driven feature domain discovery
 // ---------------------------------------------------------------------------
 
-const SKIP_DIRS = new Set([
-  'node_modules', '.next', 'dist', 'build', '.git', '__pycache__',
-  '.cache', 'coverage', '.turbo', 'out', '.vercel', '.idea', '.vscode',
-])
-
-const CODE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.py', '.go', '.java', '.rb'])
-
-const SKIP_FILE_PATTERNS = ['.test.', '.spec.', '.d.ts', '.stories.', '__tests__', '__mocks__']
-
-function isSkippableFile(filename: string): boolean {
-  return SKIP_FILE_PATTERNS.some((p) => filename.includes(p))
-}
-
-function walkTree(repoPath: string, maxEntries = 5000): string[] {
-  const paths: string[] = []
-
-  function walk(currentPath: string, depth: number): void {
-    if (depth > 8 || paths.length >= maxEntries) return
-    let entries: string[]
-    try { entries = readdirSync(currentPath) } catch { return }
-
-    for (const entry of entries) {
-      if (paths.length >= maxEntries) return
-      if (SKIP_DIRS.has(entry) || entry.startsWith('.')) continue
-
-      const fullPath = join(currentPath, entry)
-      let stat
-      try { stat = statSync(fullPath) } catch { continue }
-
-      const relPath = relative(repoPath, fullPath)
-      if (stat.isDirectory()) {
-        walk(fullPath, depth + 1)
-      } else if (stat.isFile()) {
-        paths.push(relPath)
-      }
-    }
-  }
-
-  walk(repoPath, 0)
-  return paths
-}
-
-function readFileForContext(repoPath: string, relPath: string, maxChars = 3000): string {
-  try {
-    const content = readFileSync(join(repoPath, relPath), 'utf8')
-    // Strip import lines — noise for KB generation
-    const stripped = content
-      .split('\n')
-      .filter((line) => {
-        const t = line.trim()
-        if (/^import\s/.test(t)) return false
-        if (/^from\s+['"]/.test(t)) return false
-        if (/^const\s+\w+\s*=\s*require\(/.test(t)) return false
-        return true
-      })
-      .join('\n')
-      .replace(/\n{3,}/g, '\n\n')
-      .trim()
-    return stripped.slice(0, maxChars)
-  } catch {
-    return ''
-  }
-}
-
 async function collectCodeLocal(
   repoPath: string,
   scope: string,
   baseUrl: string,
   apiKey: string,
-): Promise<SeedItem[]> {
+  maxRounds = 3,
+): Promise<{ items: SeedItem[]; domains: Record<string, string[]> }> {
   // 1. Build the file tree (paths only — no contents sent in pass 1)
   console.log(chalk.dim('  Scanning repository structure...'))
   const tree = walkTree(repoPath, 5000)
 
-  // 2. Read package.json and README excerpt for context
-  let packageJson: string | undefined
-  for (const name of ['package.json', 'pyproject.toml', 'go.mod', 'Gemfile']) {
-    const p = join(repoPath, name)
-    if (existsSync(p)) {
-      try { packageJson = readFileSync(p, 'utf8').slice(0, 1000) } catch { /* skip */ }
-      break
-    }
-  }
-
-  let readmeExcerpt: string | undefined
-  for (const name of ['README.md', 'readme.md', 'README.MD', 'README.rst']) {
-    const p = join(repoPath, name)
-    if (existsSync(p)) {
-      try { readmeExcerpt = readFileSync(p, 'utf8').slice(0, 500) } catch { /* skip */ }
-      break
-    }
-  }
+  // 2. Read package manifest for context
+  const packageJson = readPackageJson(repoPath)
 
   // 3. Ask the server's LLM to identify feature domains
   console.log(chalk.dim('  Asking AI to identify feature domains...'))
-  const analyzeRes = await fetch(`${baseUrl}/api/ai/analyze-repo-structure`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ tree, packageJson, readmeExcerpt }),
-  })
-
-  if (!analyzeRes.ok) {
-    const text = await analyzeRes.text().catch(() => `HTTP ${analyzeRes.status}`)
-    throw new Error(`analyze-repo-structure failed: ${text}`)
-  }
-
-  const { domains } = (await analyzeRes.json()) as { domains: Record<string, string[]> }
-
-  if (!domains || typeof domains !== 'object') {
-    throw new Error('Invalid response from analyze-repo-structure')
-  }
+  const domains = await fetchDomains(tree, packageJson, repoPath, baseUrl, apiKey, maxRounds)
 
   // 4. For each domain, read the actual file contents and build a SeedItem
   const items: SeedItem[] = []
 
   for (const [domainName, filePaths] of Object.entries(domains)) {
-    const parts: string[] = []
-    let totalChars = 0
-    const maxPerDomain = 3000
-
-    for (const relPath of filePaths) {
-      if (totalChars >= maxPerDomain) break
-      const ext = extname(relPath).toLowerCase()
-      if (!CODE_EXTENSIONS.has(ext) && !relPath.endsWith('.prisma')) continue
-      if (isSkippableFile(basename(relPath))) continue
-
-      const content = readFileForContext(repoPath, relPath, maxPerDomain - totalChars)
-      if (content.length < 30) continue
-
-      parts.push(`// ${relPath}\n${content}`)
-      totalChars += content.length
-    }
-
-    if (parts.length === 0) continue
+    const prBody = buildCodeBody(repoPath, filePaths)
+    if (!prBody) continue
 
     items.push({
       sourceType: 'code',
@@ -628,12 +522,12 @@ async function collectCodeLocal(
       idempotencyKey: makeKey(scope, 'code', domainName),
       codeContext: {
         prTitle: domainName,
-        prBody: parts.join('\n\n'),
+        prBody,
       },
     })
   }
 
-  return items
+  return { items, domains }
 }
 
 // ---------------------------------------------------------------------------
@@ -646,6 +540,7 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
   const isLocalMode = !!options.local
   const limit = parseInt(options.limit, 10) || 50
   const delay = parseInt(options.delay, 10) || 200
+  const maxRounds = parseInt(options.rounds ?? '3', 10)
   const baseUrl = options.baseUrl.replace(/\/$/, '')
   const fromDate = options.from ? normalizeFromDate(options.from) : undefined
   const dryRun = options.dryRun ?? false
@@ -658,9 +553,9 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
         : ['readme', 'docs', 'releases', 'prs']
       : options.source.split(',').map((s) => s.trim().toLowerCase())
 
-  // Validation: need either --local or --repo
-  if (!isLocalMode && !options.repo) {
-    console.error(chalk.red('Error: Either --local <path> or --repo <owner/repo> is required.'))
+  // Validation: need --local, --repo, or --topics
+  if (!isLocalMode && !options.repo && !options.topics) {
+    console.error(chalk.red('Error: Provide --local <path>, --repo <owner/repo>, or --topics <topics>.'))
     process.exit(1)
   }
 
@@ -677,10 +572,10 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
   }
 
   // Scope is used as the namespace for idempotency key generation
-  const scope = options.repo ?? localPath!
+  const scope = options.repo ?? localPath ?? undefined
 
-  // GitHub token validation: only required when using GitHub sources
-  if (!isLocalMode) {
+  // GitHub token validation: only required when using GitHub sources with a repo
+  if (!isLocalMode && options.repo) {
     const githubNeeded = requestedSources.some((s) => ['readme', 'docs', 'releases', 'prs'].includes(s))
     if (githubNeeded && !githubToken) {
       console.error(chalk.red('Error: GitHub token required for GitHub mode. Set --token or GITHUB_TOKEN env var.'))
@@ -732,7 +627,7 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
     console.log(chalk.dim('Collecting docs files...'))
     try {
       const items = isLocalMode
-        ? collectDocsLocal(localPath!, scope)
+        ? collectDocsLocal(localPath!, scope!)
         : await collectDocsGitHub(options.repo!, githubToken!)
       allItems.push(...items)
       sourceCounts['docs'] = items.length
@@ -775,7 +670,7 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
   if (requestedSources.includes('code') && isLocalMode) {
     console.log(chalk.dim('Analyzing codebase for feature domains...'))
     try {
-      const items = await collectCodeLocal(localPath!, scope, baseUrl, apiKey!)
+      const { items } = await collectCodeLocal(localPath!, scope!, baseUrl, apiKey!, maxRounds)
       allItems.push(...items)
       sourceCounts['code'] = items.length
       console.log(chalk.dim(`  Found ${items.length} feature domains`))
@@ -783,6 +678,53 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
       console.warn(chalk.yellow(`  Warning: Could not analyze codebase: ${err instanceof Error ? err.message : String(err)}`))
       sourceCounts['code'] = 0
     }
+  }
+
+  // Topics — plain text prompts, optionally grounded in local codebase via LLM file matching
+  if (options.topics) {
+    const topicList = options.topics
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, 50)
+
+    let topicFilesMap: Record<string, string[]> = {}
+
+    if (isLocalMode && localPath) {
+      console.log(chalk.dim('  Matching topics to codebase files...'))
+      try {
+        const tree = walkTree(localPath)
+        const packageJson = readPackageJson(localPath)
+        topicFilesMap = await fetchFilesForTopics(tree, packageJson, localPath, topicList, baseUrl, apiKey!, maxRounds)
+      } catch (err) {
+        console.warn(chalk.yellow(`  Warning: Could not analyze codebase: ${err instanceof Error ? err.message : String(err)}`))
+      }
+    } else {
+      console.warn(chalk.yellow('  Tip: Pass --local <path> alongside --topics to ground articles in your codebase.'))
+    }
+
+    const items: SeedItem[] = topicList.map((t) => {
+      const files = topicFilesMap[t] ?? []
+      const codeContext = files.length > 0
+        ? { prTitle: t.slice(0, 200), prBody: buildCodeBody(localPath!, files) }
+        : undefined
+
+      if (files.length === 0 && Object.keys(topicFilesMap).length > 0) {
+        console.warn(chalk.dim(`  No files matched topic "${t}" — generating without code context`))
+      }
+
+      return {
+        sourceType: 'topic' as const,
+        label: `Topic: ${t}`,
+        idempotencyKey: makeKey(scope ?? 'topics', 'topic', t.toLowerCase()),
+        topic: t,
+        codeContext,
+      }
+    })
+
+    allItems.push(...items)
+    sourceCounts['topics'] = items.length
+    console.log(chalk.dim(`  Added ${items.length} topics`))
   }
 
   if (allItems.length === 0) {
@@ -824,7 +766,13 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
     const body: Record<string, unknown> = {
       collectionId: options.collection,
       idempotencyKey: item.idempotencyKey,
-      codeContext: item.codeContext,
+    }
+    if (item.sourceType === 'topic') {
+      body.topic = item.topic
+      // codeContext may be present when --local grounds the topic in source files
+      if (item.codeContext) body.codeContext = item.codeContext
+    } else {
+      body.codeContext = item.codeContext
     }
 
     try {

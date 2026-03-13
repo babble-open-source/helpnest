@@ -16,7 +16,7 @@ const HELP_CENTER_DOMAIN = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? 'helpne
 const CUSTOM_DOMAIN = process.env.HELPNEST_CUSTOM_DOMAIN
 const CUSTOM_DOMAIN_SLUG = process.env.HELPNEST_CUSTOM_DOMAIN_SLUG
 
-// Base URL of this Next.js app — used by middleware to call the internal
+// Base URL of this Next.js app — used by proxy to call the internal
 // resolve-domain API (loopback). Must equal NEXT_PUBLIC_APP_URL / NEXTAUTH_URL.
 // Using the env var (not req.nextUrl.origin) so the call always goes to the
 // canonical server address, never to the incoming custom domain.
@@ -60,7 +60,7 @@ function handleCustomDomain(req: NextRequest): NextResponse | null {
 /**
  * DB-backed custom domain resolution — for domains saved via the settings UI.
  *
- * Middleware (Edge Runtime) cannot query Postgres directly, so we call the
+ * Proxy (Edge Runtime) cannot query Postgres directly, so we call the
  * internal /api/internal/resolve-domain endpoint via fetch (loopback).
  *
  * This runs ONLY when the host is not a known subdomain and not covered by
