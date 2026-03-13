@@ -43,6 +43,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'featureId is required' }, { status: 400 })
   }
 
+  // Validate featureId to prevent Redis key injection.
+  // Only allow alphanumeric characters, hyphens, underscores, and forward slashes (max 128 chars).
+  const trimmedFeatureId = featureId.trim()
+  if (trimmedFeatureId.length > 128 || !/^[a-zA-Z0-9_\-/]+$/.test(trimmedFeatureId)) {
+    return NextResponse.json(
+      { error: 'featureId may only contain alphanumeric characters, hyphens, underscores, and forward slashes (max 128 chars)' },
+      { status: 400 },
+    )
+  }
+
   if (!codeContext || typeof codeContext !== 'object' || Array.isArray(codeContext)) {
     return NextResponse.json({ error: 'codeContext is required' }, { status: 400 })
   }
@@ -77,7 +87,7 @@ export async function POST(request: Request) {
     prUrl: typeof ctx.prUrl === 'string' ? ctx.prUrl.slice(0, 500) : undefined,
   }
 
-  const redisKey = `pending-draft:${authResult.workspaceId}:${featureId.trim()}`
+  const redisKey = `pending-draft:${authResult.workspaceId}:${trimmedFeatureId}`
 
   if (!redis) {
     return NextResponse.json(
@@ -110,7 +120,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       queued: true,
-      featureId: featureId.trim(),
+      featureId: trimmedFeatureId,
       contextsCollected: entry.contexts.length,
     })
   } catch (err) {

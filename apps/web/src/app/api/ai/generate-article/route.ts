@@ -8,6 +8,10 @@ import type { CodeContext } from '@/lib/article-drafter'
 const RATE_LIMIT_MAX = 20
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hour
 
+// In-memory fallback used when Redis is unavailable.
+// Tracks per-workspace request counts within the current time slot.
+const _articleMemFallback = new Map<string, number>()
+
 async function checkRateLimit(workspaceId: string): Promise<{ limited: boolean }> {
   if (redis) {
     try {
@@ -17,8 +21,20 @@ async function checkRateLimit(workspaceId: string): Promise<{ limited: boolean }
       if (count === 1) await redis.pexpire(key, RATE_LIMIT_WINDOW_MS * 2)
       return { limited: count > RATE_LIMIT_MAX }
     } catch {
-      // Redis unavailable — allow request
+      // Redis unavailable — fall through to in-memory fallback
     }
+  }
+  // In-memory fallback: rate-limit per process when Redis is down.
+  // This is a best-effort secondary control; a cold restart resets the counter.
+  const now = Date.now()
+  const slot = Math.floor(now / RATE_LIMIT_WINDOW_MS)
+  const memKey = `${workspaceId}:${slot}`
+  const current = _articleMemFallback.get(memKey) ?? 0
+  if (current >= RATE_LIMIT_MAX) return { limited: true }
+  _articleMemFallback.set(memKey, current + 1)
+  // Prune stale slots to prevent unbounded memory growth
+  for (const k of _articleMemFallback.keys()) {
+    if (!k.endsWith(`:${slot}`)) _articleMemFallback.delete(k)
   }
   return { limited: false }
 }

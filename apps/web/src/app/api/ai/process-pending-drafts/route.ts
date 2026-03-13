@@ -32,13 +32,19 @@ export async function GET(request: Request) {
   // Accept INTERNAL_SECRET header (cron) or authenticated session (admin manual trigger)
   const internalSecret = request.headers.get('x-internal-secret')
   const configuredSecret = process.env.INTERNAL_SECRET
+  let isInternalCall = false
+  let callerWorkspaceId: string | undefined
+
   if (internalSecret && configuredSecret && timingSafeEqual(internalSecret, configuredSecret)) {
-    // Authorized via internal secret
+    // Authorized via internal secret — may process all workspaces
+    isInternalCall = true
   } else {
     const authResult = await requireAuth(request)
     if (!authResult) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
+    // Session / API key callers may only process their own workspace's pending drafts
+    callerWorkspaceId = authResult.workspaceId
   }
 
   if (!redis) {
@@ -48,13 +54,19 @@ export async function GET(request: Request) {
   const generated: Array<{ featureId: string; articleId: string; mode: string }> = []
   const errors: Array<{ featureId: string; error: string }> = []
 
+  // Scope the Redis SCAN to the caller's workspace when not an internal call.
+  // This prevents a session/API-key caller from processing other workspaces' drafts.
+  const scanPattern = isInternalCall
+    ? 'pending-draft:*'
+    : `pending-draft:${callerWorkspaceId}:*`
+
   try {
-    // Scan for all pending draft keys
+    // Scan for pending draft keys scoped to the authorised workspace (or all for cron)
     let cursor = '0'
     const keysToProcess: string[] = []
 
     do {
-      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', 'pending-draft:*', 'COUNT', 100)
+      const [nextCursor, keys] = await redis.scan(cursor, 'MATCH', scanPattern, 'COUNT', 100)
       cursor = nextCursor
       keysToProcess.push(...keys)
     } while (cursor !== '0')

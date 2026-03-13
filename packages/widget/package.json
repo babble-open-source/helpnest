@@ -1,11 +1,35 @@
 {
   "name": "@helpnest/widget",
-  "version": "0.0.1",
-  "private": true,
+  "version": "0.1.0",
+  "description": "Embeddable help widget for HelpNest — AI chat and article search for any website",
+  "license": "MIT",
+  "homepage": "https://github.com/babble-open-source/helpnest",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/babble-open-source/helpnest.git",
+    "directory": "packages/widget"
+  },
+  "bugs": {
+    "url": "https://github.com/babble-open-source/helpnest/issues"
+  },
+  "keywords": [
+    "helpnest",
+    "widget",
+    "help-center",
+    "customer-support",
+    "ai-chat",
+    "knowledge-base",
+    "embeddable",
+    "self-hosted",
+    "open-source"
+  ],
+  "files": ["dist"],
+  "main": "./dist/widget.js",
   "scripts": {
     "build": "node scripts/build.js",
     "dev": "node scripts/build.js --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "devDependencies": {
     "esbuild": "^0.21.0",

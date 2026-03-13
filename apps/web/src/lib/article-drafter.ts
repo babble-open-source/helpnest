@@ -68,7 +68,7 @@ const ALLOWED_TAGS: Record<string, string[]> = {
   a: ['href', 'title'],
 }
 
-function sanitizeHtml(html: string): string {
+export function sanitizeHtml(html: string): string {
   // Strip whole dangerous elements including their contents
   let out = html
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '')
@@ -96,7 +96,7 @@ function sanitizeHtml(html: string): string {
       const m = attrs.match(new RegExp(`\\b${attr}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, 'i'))
       if (!m) continue
       const value = (m[1] ?? m[2] ?? m[3] ?? '').trim()
-      if (attr === 'href' && /^(javascript|data):/i.test(value)) continue
+      if (attr === 'href' && !/^(https?:\/\/|\/)/.test(value)) continue
       parts.push(`${attr}="${value}"`)
     }
 

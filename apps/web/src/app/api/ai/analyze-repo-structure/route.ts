@@ -1,13 +1,55 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
 import { prisma } from '@/lib/db'
+import { redis } from '@/lib/redis'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
+
+// Lower limit than generate-article: each call makes a 4096-token LLM request
+const RATE_LIMIT_MAX = 5
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hour
+
+async function checkRateLimit(workspaceId: string): Promise<{ limited: boolean }> {
+  if (redis) {
+    try {
+      const slot = Math.floor(Date.now() / RATE_LIMIT_WINDOW_MS)
+      const key = `rl:analyze-repo-structure:${workspaceId}:${slot}`
+      const count = await redis.incr(key)
+      if (count === 1) await redis.pexpire(key, RATE_LIMIT_WINDOW_MS * 2)
+      return { limited: count > RATE_LIMIT_MAX }
+    } catch {
+      // Redis unavailable — fall through to in-memory fallback below
+    }
+  }
+  // In-memory fallback: apply a conservative per-process limit when Redis is down
+  const now = Date.now()
+  const slot = Math.floor(now / RATE_LIMIT_WINDOW_MS)
+  const memKey = `${workspaceId}:${slot}`
+  const current = _memFallback.get(memKey) ?? 0
+  if (current >= RATE_LIMIT_MAX) return { limited: true }
+  _memFallback.set(memKey, current + 1)
+  // Prune stale slots to avoid unbounded memory growth
+  for (const k of _memFallback.keys()) {
+    if (!k.endsWith(`:${slot}`)) _memFallback.delete(k)
+  }
+  return { limited: false }
+}
+
+const _memFallback = new Map<string, number>()
 
 export async function POST(request: Request) {
   // 1. Auth
   const authResult = await requireAuth(request)
   if (!authResult) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  // 2. Rate limit
+  const rate = await checkRateLimit(authResult.workspaceId)
+  if (rate.limited) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Maximum 5 repository analyses per hour per workspace.' },
+      { status: 429 },
+    )
   }
 
   // 2. Parse + validate body
