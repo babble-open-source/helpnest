@@ -22,8 +22,6 @@ const nextConfig = {
   output: 'standalone',
   transpilePackages: ['@helpnest/ui', '@helpnest/db'],
   serverExternalPackages: [
-    '@prisma/client',
-    'prisma',
     '@qdrant/js-client-rest',
     'undici',
     'openai',
