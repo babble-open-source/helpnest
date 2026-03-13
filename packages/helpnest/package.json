@@ -1,6 +1,6 @@
 {
   "name": "helpnest",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "HelpNest CLI — auto-draft KB articles from PRs and GitHub history",
   "homepage": "https://github.com/babble-open-source/helpnest",
   "repository": {
@@ -16,7 +16,9 @@
   "bin": {
     "helpnest": "./dist/index.js"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
