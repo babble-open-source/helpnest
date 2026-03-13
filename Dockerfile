@@ -37,7 +37,7 @@ RUN cd packages/db && pnpm prisma generate
 RUN node -e " \
   const path = require('path'); \
   const { cpSync, realpathSync } = require('fs'); \
-  const clientPkg = require.resolve('@prisma/client/package.json', { paths: ['/app/apps/web'] }); \
+  const clientPkg = require.resolve('@prisma/client/package.json', { paths: ['/app/packages/db'] }); \
   const realClientDir = realpathSync(path.dirname(clientPkg)); \
   const target = path.join(path.dirname(realClientDir), '.prisma'); \
   cpSync('/app/packages/db/node_modules/.prisma', target, { recursive: true, force: true }); \
