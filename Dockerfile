@@ -38,7 +38,7 @@ RUN cd packages/db && pnpm exec prisma generate
 # the path that @prisma/client will resolve at build/runtime.
 RUN node -e " \
   const path = require('path'); \
-  const { cpSync, realpathSync } = require('fs'); \
+  const { cpSync, mkdirSync, realpathSync } = require('fs'); \
   const { execSync } = require('child_process'); \
   const found = execSync('find /app -path \"*/.prisma/client\" -type d 2>/dev/null').toString().trim().split('\n').filter(Boolean); \
   console.log('prisma generate output dirs found:', found); \
@@ -48,6 +48,9 @@ RUN node -e " \
   const realClientDir = realpathSync(path.dirname(clientPkg)); \
   const target = path.join(path.dirname(realClientDir), '.prisma'); \
   if (src !== target) { cpSync(src, target, { recursive: true, force: true }); } \
+  mkdirSync('/app/packages/db/node_modules', { recursive: true }); \
+  cpSync(src, '/app/packages/db/node_modules/.prisma', { recursive: true, force: true }); \
+  cpSync(src, '/app/apps/web/.prisma', { recursive: true, force: true }); \
   console.log('src=' + src + '  target=' + target); \
 "
 
