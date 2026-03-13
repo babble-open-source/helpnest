@@ -15,6 +15,16 @@ import { prisma } from '@/lib/db'
  * Cloud: same pattern, internal network call.
  */
 export async function GET(request: Request) {
+  // When INTERNAL_SECRET is configured, require it to prevent unauthenticated
+  // enumeration of custom domains. The middleware always sends the header.
+  const configuredSecret = process.env.INTERNAL_SECRET
+  if (configuredSecret) {
+    const provided = request.headers.get('x-internal-secret')
+    if (!provided || provided !== configuredSecret) {
+      return NextResponse.json({ slug: null }, { status: 401 })
+    }
+  }
+
   const host = new URL(request.url).searchParams.get('host')?.toLowerCase().trim()
   if (!host) return NextResponse.json({ slug: null })
 

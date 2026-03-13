@@ -88,7 +88,12 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
 
     const res = await fetch(
       `${APP_ORIGIN}/api/internal/resolve-domain?host=${encodeURIComponent(host)}`,
-      { signal: controller.signal },
+      {
+        signal: controller.signal,
+        headers: process.env.INTERNAL_SECRET
+          ? { 'X-Internal-Secret': process.env.INTERNAL_SECRET }
+          : {},
+      },
     )
     clearTimeout(timeout)
 

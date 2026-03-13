@@ -138,7 +138,11 @@ function renderMarkdown(md: string): string {
     .replace(/^[-*] (.+)$/gm, '<li-ul class="text-ink/90 my-1">$1</li-ul>')
     .replace(/^\d+\. (.+)$/gm, '<li-ol class="text-ink/90 my-1">$1</li-ol>')
     .replace(/^---$/gm, '<hr class="border-border my-8" />')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-accent hover:underline" target="_blank" rel="noopener">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_, text: string, href: string) => {
+      // Only allow http/https and root-relative links — block javascript:, vbscript:, data: etc.
+      const safeHref = /^(https?:\/\/|\/)/.test(href) ? href : '#'
+      return `<a href="${safeHref}" class="text-accent hover:underline" target="_blank" rel="noopener">${text}</a>`
+    })
 
   // ── 4. Group list items ─────────────────────────────────────────────────────
   // Must run before paragraph wrapping so <ol>/<ul> containers are known.

@@ -1,6 +1,31 @@
 import { NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
 import { auth, resolveSessionUserId } from '@/lib/auth'
+import { redis } from '@/lib/redis'
+
+const RATE_LIMIT_MAX = 10
+const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hour
+const _themeMemFallback = new Map<string, number>()
+
+async function checkRateLimit(userId: string): Promise<boolean> {
+  const slot = Math.floor(Date.now() / RATE_LIMIT_WINDOW_MS)
+  if (redis) {
+    try {
+      const key = `rl:generate-theme:${userId}:${slot}`
+      const count = await redis.incr(key)
+      if (count === 1) await redis.pexpire(key, RATE_LIMIT_WINDOW_MS * 2)
+      return count > RATE_LIMIT_MAX
+    } catch { /* fall through to in-memory */ }
+  }
+  const memKey = `${userId}:${slot}`
+  const current = _themeMemFallback.get(memKey) ?? 0
+  if (current >= RATE_LIMIT_MAX) return true
+  _themeMemFallback.set(memKey, current + 1)
+  for (const k of _themeMemFallback.keys()) {
+    if (!k.endsWith(`:${slot}`)) _themeMemFallback.delete(k)
+  }
+  return false
+}
 
 // Lazily initialised so the key is read at request time, not at build/module-load time.
 let _anthropic: Anthropic | null = null
@@ -52,6 +77,13 @@ export async function POST(request: Request) {
   const userId = await resolveSessionUserId(session)
   if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  if (await checkRateLimit(userId)) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Maximum 10 theme generations per hour.' },
+      { status: 429 },
+    )
   }
 
   if (!process.env.ANTHROPIC_API_KEY) {
