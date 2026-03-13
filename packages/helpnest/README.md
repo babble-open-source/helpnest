@@ -138,6 +138,17 @@ If you're running HelpNest on your own infrastructure, point the CLI at your ins
 helpnest seed --repo acme/my-app --base-url https://help.acme.com --api-key hn_xxx
 ```
 
+## Publishing
+
+Publish this package from `packages/helpnest`:
+
+```bash
+pnpm build
+npm publish --access public
+```
+
+For a new release, bump `version` in `package.json` first, then publish.
+
 ## License
 
 MIT
