@@ -85,7 +85,7 @@ export default async function CollectionPage(props: Props) {
           <section className="mb-8">
             <h2 className="text-sm font-medium text-muted uppercase tracking-wide mb-3">Subcategories</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {collection.subCollections.map((sub) => (
+              {collection.subCollections.map((sub: { id: string; slug: string; emoji: string | null; title: string; _count: { articles: number } }) => (
                 <Link
                   key={sub.id}
                   href={`/${params.workspace}/help/${sub.slug}`}
@@ -110,7 +110,7 @@ export default async function CollectionPage(props: Props) {
             </div>
           ) : (
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
-              {collection.articles.map((article) => (
+              {collection.articles.map((article: { id: string; title: string; slug: string; excerpt: string | null; content: string; author: { name: string | null } }) => (
                 <Link
                   key={article.id}
                   href={`/${params.workspace}/help/${params.collection}/${article.slug}`}

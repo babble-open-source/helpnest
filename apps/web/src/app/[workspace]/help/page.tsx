@@ -101,7 +101,7 @@ export default async function HelpCenterHome(props: Props) {
             <p className="text-muted">No collections yet.</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {workspace.collections.map((col) => (
+              {workspace.collections.map((col: { id: string; slug: string; emoji: string | null; title: string; description: string | null; _count: { articles: number } }) => (
                 <Link
                   key={col.id}
                   href={`/${params.workspace}/help/${col.slug}`}
@@ -128,7 +128,7 @@ export default async function HelpCenterHome(props: Props) {
           <section className="mb-16">
             <h2 className="font-serif text-2xl text-ink mb-6">Popular articles</h2>
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
-              {workspace.articles.map((article) => (
+              {workspace.articles.map((article: { id: string; slug: string; title: string; excerpt: string | null; collection: { slug: string } }) => (
                 <Link
                   key={article.id}
                   href={`/${params.workspace}/help/${article.collection.slug}/${article.slug}`}
