@@ -29,19 +29,26 @@ COPY . .
 # Generate Prisma client.
 # prisma generate runs inside the AMD64 container so the correct native
 # query engine binary is produced for the target platform.
-RUN cd packages/db && pnpm prisma generate
+RUN cd packages/db && pnpm exec prisma generate
 
 # pnpm stores @prisma/client in its virtual store (.pnpm/…/node_modules/@prisma/client).
-# Node.js resolves __dirname to the real path (following symlinks), so the generated
-# .prisma/client must live next to @prisma/client inside that virtual store directory.
+# Node.js resolves __dirname via symlinks, so the generated .prisma/client must be placed
+# alongside @prisma/client in the pnpm virtual store — NOT in packages/db/node_modules/.
+# We use find to locate where prisma generate actually wrote the client, then copy it to
+# the path that @prisma/client will resolve at build/runtime.
 RUN node -e " \
   const path = require('path'); \
   const { cpSync, realpathSync } = require('fs'); \
+  const { execSync } = require('child_process'); \
+  const found = execSync('find /app -path \"*/.prisma/client\" -type d 2>/dev/null').toString().trim().split('\n').filter(Boolean); \
+  console.log('prisma generate output dirs found:', found); \
+  if (!found.length) throw new Error('prisma generate produced no .prisma/client directory'); \
+  const src = path.dirname(found[0]); \
   const clientPkg = require.resolve('@prisma/client/package.json', { paths: ['/app/packages/db'] }); \
   const realClientDir = realpathSync(path.dirname(clientPkg)); \
   const target = path.join(path.dirname(realClientDir), '.prisma'); \
-  cpSync('/app/packages/db/node_modules/.prisma', target, { recursive: true, force: true }); \
-  console.log('Copied .prisma to ' + target); \
+  if (src !== target) { cpSync(src, target, { recursive: true, force: true }); } \
+  console.log('src=' + src + '  target=' + target); \
 "
 
 # Stage the generated Prisma client plus a flat Prisma CLI node_modules tree.
@@ -67,7 +74,10 @@ RUN node -e " \
     cp(pkgDir, dst); \
   }; \
   const clientDir = resolvePkgDir('@prisma/client', dbPaths); \
-  cp('/app/packages/db/node_modules/.prisma', '/tmp/generated-prisma-client'); \
+  const { execSync: exec } = require('child_process'); \
+  const prismaDir = exec('find /app -path \"*/.prisma/client\" -type d 2>/dev/null').toString().trim().split('\n').filter(Boolean).map(p => require('path').dirname(p))[0]; \
+  if (!prismaDir) throw new Error('Cannot find .prisma directory to stage'); \
+  cp(prismaDir, '/tmp/generated-prisma-client'); \
   const cliOut = '/tmp/prisma-cli-node_modules'; \
   mkdirSync(cliOut, { recursive: true }); \
   const prismaDir = resolvePkgDir('prisma', dbPaths); \
