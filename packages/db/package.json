@@ -26,7 +26,9 @@
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "default": "./index.js"
+      "import": "./index.mjs",
+      "require": "./index.js",
+      "default": "./index.mjs"
     }
   },
   "main": "./index.js",
