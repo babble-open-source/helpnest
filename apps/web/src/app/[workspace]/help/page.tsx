@@ -128,7 +128,7 @@ export default async function HelpCenterHome(props: Props) {
           <section className="mb-16">
             <h2 className="font-serif text-2xl text-ink mb-6">Popular articles</h2>
             <div className="bg-white rounded-xl border border-border divide-y divide-border">
-              {workspace.articles.map((article: { id: string; slug: string; title: string; excerpt: string | null; collection: { slug: string } }) => (
+              {workspace.articles.map((article: { id: string; slug: string; title: string; excerpt: string | null; content: string; collection: { slug: string; title: string } }) => (
                 <Link
                   key={article.id}
                   href={`/${params.workspace}/help/${article.collection.slug}/${article.slug}`}
