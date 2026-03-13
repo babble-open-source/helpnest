@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "build": "tsc",
     "typecheck": "prisma generate",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
@@ -26,10 +25,10 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+      "types": "./index.d.ts",
+      "default": "./index.js"
     }
   },
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts"
+  "main": "./index.js",
+  "types": "./index.d.ts"
 }
