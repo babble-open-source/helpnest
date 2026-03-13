@@ -88,6 +88,7 @@ export default async function ArticlePage(props: Props) {
       collection: { is: { isPublic: true, isArchived: false } },
       id: { not: article.id },
     },
+    select: { id: true, title: true, slug: true },
     take: 3,
     orderBy: { views: 'desc' },
   })
