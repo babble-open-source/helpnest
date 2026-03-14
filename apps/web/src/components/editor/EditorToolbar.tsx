@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import type { Editor } from '@tiptap/react'
+import { Tooltip } from '@/components/ui/Tooltip'
 
 interface Props {
   editor: Editor
@@ -12,17 +14,19 @@ function ToolbarButton({
   title,
   children,
   className,
+  align,
 }: {
   onClick: () => void
   active?: boolean
   title: string
   children: React.ReactNode
   className?: string
+  align?: 'center' | 'start' | 'end'
 }) {
-  return (
+  const btn = (
     <button
       onMouseDown={(e) => { e.preventDefault(); onClick() }}
-      title={title}
+      aria-label={title}
       className={`p-1.5 rounded text-sm transition-colors ${
         active
           ? 'bg-ink text-cream'
@@ -32,23 +36,39 @@ function ToolbarButton({
       {children}
     </button>
   )
+  return <Tooltip content={title} align={align}>{btn}</Tooltip>
 }
 
 export function EditorToolbar({ editor }: Props) {
+  // Force re-render whenever the editor selection or content changes
+  // so isActive() calls reflect the current cursor position.
+  const [, forceUpdate] = useState(0)
+  useEffect(() => {
+    const update = () => forceUpdate(n => n + 1)
+    editor.on('selectionUpdate', update)
+    editor.on('transaction', update)
+    return () => {
+      editor.off('selectionUpdate', update)
+      editor.off('transaction', update)
+    }
+  }, [editor])
+
   return (
     <div className="flex flex-wrap items-center gap-0.5 px-4 py-2 bg-white border-b border-border shrink-0">
       {/* Text style */}
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}
         active={editor.isActive('bold')}
-        title="Bold"
+        title="Bold (⌘B)"
+        align="start"
       >
         <strong>B</strong>
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleItalic().run()}
         active={editor.isActive('italic')}
-        title="Italic"
+        title="Italic (⌘I)"
+        align="start"
       >
         <em>I</em>
       </ToolbarButton>
@@ -56,13 +76,15 @@ export function EditorToolbar({ editor }: Props) {
         onClick={() => editor.chain().focus().toggleStrike().run()}
         active={editor.isActive('strike')}
         title="Strikethrough"
+        align="start"
       >
         <s>S</s>
       </ToolbarButton>
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         active={editor.isActive('underline')}
-        title="Underline"
+        title="Underline (⌘U)"
+        align="start"
       >
         <span className="underline font-medium">U</span>
       </ToolbarButton>
@@ -70,6 +92,7 @@ export function EditorToolbar({ editor }: Props) {
         onClick={() => editor.chain().focus().toggleCode().run()}
         active={editor.isActive('code')}
         title="Inline code"
+        align="start"
       >
         {'<>'}
       </ToolbarButton>
@@ -165,7 +188,7 @@ export function EditorToolbar({ editor }: Props) {
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleTaskList().run()}
         active={editor.isActive('taskList')}
-        title="Task list"
+        title="Task list / Checklist"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <rect x="3" y="5" width="4" height="4" rx="1"/><line x1="9" y1="7" x2="21" y2="7"/>
@@ -183,7 +206,7 @@ export function EditorToolbar({ editor }: Props) {
           if (url) editor.chain().focus().setLink({ href: url }).run()
         }}
         active={editor.isActive('link')}
-        title="Add link"
+        title="Insert link (⌘K)"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
@@ -203,6 +226,20 @@ export function EditorToolbar({ editor }: Props) {
         </svg>
       </ToolbarButton>
 
+      {/* YouTube embed */}
+      <ToolbarButton
+        onClick={() => {
+          const url = window.prompt('YouTube URL:')
+          if (url) editor.chain().focus().setYoutubeVideo({ src: url }).run()
+        }}
+        active={editor.isActive('youtube')}
+        title="Embed YouTube video"
+      >
+        <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+        </svg>
+      </ToolbarButton>
+
       <div className="w-px h-5 bg-border mx-1" />
 
       {/* Code block */}
@@ -219,7 +256,7 @@ export function EditorToolbar({ editor }: Props) {
       {/* Horizontal rule */}
       <ToolbarButton
         onClick={() => editor.chain().focus().setHorizontalRule().run()}
-        title="Horizontal rule"
+        title="Horizontal divider"
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
@@ -251,7 +288,8 @@ export function EditorToolbar({ editor }: Props) {
         {/* Undo/Redo */}
         <ToolbarButton
           onClick={() => editor.chain().focus().undo().run()}
-          title="Undo"
+          title="Undo (⌘Z)"
+          align="end"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
@@ -259,7 +297,8 @@ export function EditorToolbar({ editor }: Props) {
         </ToolbarButton>
         <ToolbarButton
           onClick={() => editor.chain().focus().redo().run()}
-          title="Redo"
+          title="Redo (⌘⇧Z)"
+          align="end"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 10H11a8 8 0 00-8 8v2m18-10l-6 6m6-6l-6-6" />

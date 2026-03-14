@@ -15,6 +15,11 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
   })
   if (!article) notFound()
 
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: article.workspaceId },
+    select: { slug: true },
+  })
+
   const collections = await prisma.collection.findMany({
     where: {
       workspaceId: article.workspaceId,
@@ -46,10 +51,12 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
         excerpt: article.excerpt ?? '',
         status: article.status,
         collectionId: article.collectionId,
+        collectionSlug: article.collection.slug,
         hasDraft,
         aiGenerated: article.aiGenerated,
       }}
       collections={collections}
+      workspaceSlug={workspace?.slug ?? ''}
     />
   )
 }

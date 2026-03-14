@@ -1,6 +1,6 @@
 'use client'
 
-import { BubbleMenu } from '@tiptap/react'
+import { BubbleMenu } from '@tiptap/react/menus'
 import type { Editor } from '@tiptap/react'
 import { useState } from 'react'
 
@@ -26,8 +26,8 @@ export function EditorBubbleMenu({ editor, active }: Props) {
   return (
     <BubbleMenu
       editor={editor}
-      tippyOptions={{ duration: 100, appendTo: () => document.body }}
-      shouldShow={({ from, to }) => active && from !== to}
+      appendTo={() => document.body}
+      shouldShow={({ from, to }: { from: number; to: number }) => active && from !== to}
     >
       <div className="flex items-center gap-0.5 bg-ink rounded-lg px-1.5 py-1 shadow-lg">
         {showLinkInput ? (

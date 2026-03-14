@@ -10,11 +10,17 @@ interface Collection {
   isArchived?: boolean
 }
 
+function sanitizeSlug(val: string): string {
+  return val.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 200)
+}
+
 interface Props {
   articleId: string
   articleTitle: string
   slug: string
+  savedSlug: string
   onSlugChange: (v: string) => void
+  onSlugSave: () => void
   excerpt: string
   onExcerptChange: (v: string) => void
   collectionId: string
@@ -27,7 +33,9 @@ export function ArticleMetaSidebar({
   articleId,
   articleTitle,
   slug,
+  savedSlug,
   onSlugChange,
+  onSlugSave,
   excerpt,
   onExcerptChange,
   collectionId,
@@ -115,10 +123,37 @@ export function ArticleMetaSidebar({
           </label>
           <input
             value={slug}
-            onChange={(e) => onSlugChange(e.target.value)}
+            onChange={(e) => onSlugChange(sanitizeSlug(e.target.value))}
+            onBlur={() => { if (!slug.trim()) onSlugChange(savedSlug) }}
+            maxLength={200}
             className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent font-mono"
           />
-          <p className="text-xs text-muted mt-1">
+          {!slug.trim() && (
+            <p className="text-xs text-red-500 mt-1">Slug cannot be empty</p>
+          )}
+          <div className="flex items-center justify-between mt-1">
+            <span className={`text-xs ${
+              !slug.trim() ? 'text-red-500' :
+              slug.length >= 180 ? 'text-red-500' :
+              slug.length >= 150 ? 'text-amber-500' :
+              'text-muted'
+            }`}>
+              {slug.length}/200
+            </span>
+            {slug !== savedSlug && (
+              <button
+                onClick={onSlugSave}
+                disabled={!slug.trim()}
+                className="text-xs text-accent hover:underline font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                Save slug
+              </button>
+            )}
+          </div>
+          <p
+            className="text-xs text-muted mt-1 overflow-hidden text-ellipsis whitespace-nowrap"
+            title={`help/collection/${slug}`}
+          >
             help/collection/<strong>{slug}</strong>
           </p>
         </div>

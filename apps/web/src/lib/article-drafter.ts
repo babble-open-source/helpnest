@@ -114,7 +114,7 @@ function slugify(text: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
-    .slice(0, 80)
+    .slice(0, 200)
 }
 
 function isPrismaUniqueError(e: unknown): boolean {

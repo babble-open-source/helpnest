@@ -11,7 +11,7 @@ function slugify(text: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
-    .slice(0, 80)
+    .slice(0, 200)
 }
 
 export async function GET(request: Request) {

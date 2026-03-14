@@ -33,6 +33,8 @@ const nextConfig = {
     '@helpnest/themes',
     'ioredis',
     '@google/generative-ai',
+    '@notionhq/client',
+    'notion-to-md',
   ],
   async headers() {
     return [

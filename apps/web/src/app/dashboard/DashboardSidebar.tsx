@@ -13,6 +13,7 @@ const navItems = [
   { href: '/dashboard/articles', label: 'Articles' },
   { href: '/dashboard/collections', label: 'Collections' },
   { href: '/dashboard/knowledge-gaps', label: 'Gaps' },
+  { href: '/dashboard/imports', label: 'Imports' },
   { href: '/dashboard/settings', label: 'Settings' },
 ]
 

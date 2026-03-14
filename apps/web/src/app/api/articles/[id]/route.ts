@@ -8,7 +8,7 @@ function slugify(text: string) {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/(^-|-$)/g, '')
-    .slice(0, 80)
+    .slice(0, 200)
 }
 
 export async function GET(
@@ -51,6 +51,14 @@ export async function PATCH(
 
   // Auto-generate slug from title if title changed and no explicit slug
   let slug = body.slug
+  if (slug !== undefined && !slug.trim()) {
+    // Empty slug provided — look up the current article title to regenerate
+    const current = await prisma.article.findFirst({
+      where: { id: (await paramsPromise).id, workspaceId },
+      select: { title: true },
+    })
+    slug = current ? slugify(current.title) : undefined
+  }
   if (body.title && !body.slug) {
     slug = slugify(body.title)
     let i = 1

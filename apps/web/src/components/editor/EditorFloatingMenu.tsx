@@ -1,7 +1,8 @@
 'use client'
 
-import { FloatingMenu } from '@tiptap/react'
+import { FloatingMenu } from '@tiptap/react/menus'
 import type { Editor } from '@tiptap/react'
+import type { EditorState } from '@tiptap/pm/state'
 
 interface Props {
   editor: Editor
@@ -26,8 +27,8 @@ export function EditorFloatingMenu({ editor, active }: Props) {
   return (
     <FloatingMenu
       editor={editor}
-      tippyOptions={{ duration: 100, appendTo: () => document.body }}
-      shouldShow={({ state }) => {
+      appendTo={() => document.body}
+      shouldShow={({ state }: { state: EditorState }) => {
         if (!active) return false
         const { $from } = state.selection
         return $from.node().type.name === 'paragraph' && $from.node().textContent === ''

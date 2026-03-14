@@ -9,7 +9,7 @@ import Placeholder from '@tiptap/extension-placeholder'
 import CharacterCount from '@tiptap/extension-character-count'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
 import { common, createLowlight } from 'lowlight'
-import Table from '@tiptap/extension-table'
+import { Table } from '@tiptap/extension-table'
 import TableRow from '@tiptap/extension-table-row'
 import TableHeader from '@tiptap/extension-table-header'
 import TableCell from '@tiptap/extension-table-cell'
@@ -17,12 +17,14 @@ import TaskList from '@tiptap/extension-task-list'
 import TaskItem from '@tiptap/extension-task-item'
 import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
+import Youtube from '@tiptap/extension-youtube'
 import { EditorToolbar } from './EditorToolbar'
 import { ArticleMetaSidebar } from './ArticleMetaSidebar'
 import { EditorOutline } from './EditorOutline'
 import { EditorBubbleMenu } from './EditorBubbleMenu'
 import { EditorFloatingMenu } from './EditorFloatingMenu'
 import { fixOrderedListCounters } from '@/components/help/ArticleContent'
+import { Tooltip } from '@/components/ui/Tooltip'
 import NextLink from 'next/link'
 
 interface Article {
@@ -33,6 +35,7 @@ interface Article {
   excerpt: string
   status: string
   collectionId: string
+  collectionSlug: string
   hasDraft?: boolean
   aiGenerated?: boolean
 }
@@ -47,6 +50,7 @@ interface Collection {
 interface Props {
   article: Article
   collections: Collection[]
+  workspaceSlug: string
 }
 
 interface ArticleVersion {
@@ -60,7 +64,7 @@ interface ArticleVersion {
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 
-export function ArticleEditor({ article, collections }: Props) {
+export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
   const [hasDraft, setHasDraft] = useState(article.hasDraft ?? false)
   // dismissedAiBanner: user explicitly dismissed; bannerVisible: derives from current state
   const [dismissedAiBanner, setDismissedAiBanner] = useState(false)
@@ -68,6 +72,11 @@ export function ArticleEditor({ article, collections }: Props) {
   const [slug, setSlug] = useState(article.slug)
   const [excerpt, setExcerpt] = useState(article.excerpt)
   const [collectionId, setCollectionId] = useState(article.collectionId)
+  const [collectionSlug, setCollectionSlug] = useState(article.collectionSlug)
+  // Track the last *saved* slug/collectionSlug separately — the live link must
+  // point to the URL that actually exists, not the unsaved draft in the field.
+  const [savedSlug, setSavedSlug] = useState(article.slug)
+  const [savedCollectionSlug, setSavedCollectionSlug] = useState(article.collectionSlug)
   const [status, setStatus] = useState(article.status)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('saved')
   const [showVersions, setShowVersions] = useState(false)
@@ -128,6 +137,7 @@ export function ArticleEditor({ article, collections }: Props) {
       TaskItem.configure({ nested: true }),
       Underline,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
+      Youtube.configure({ nocookie: true, width: 640, height: 360 }),
     ],
     content: article.content?.trimStart().startsWith('<')
       ? fixOrderedListCounters(article.content)
@@ -171,6 +181,8 @@ export function ArticleEditor({ article, collections }: Props) {
         status: currentStatus,
       }
       setSaveStatus('saved')
+      setSavedSlug(currentSlug)
+      setSavedCollectionSlug(collectionSlug)
       if (opts?.publishDraft) setHasDraft(false)
       else if (statusRef.current === 'PUBLISHED') setHasDraft(true)
 
@@ -251,96 +263,137 @@ export function ArticleEditor({ article, collections }: Props) {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-border shrink-0">
-          <div className="flex items-center gap-3">
-            <NextLink href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm">
+          <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
+            <NextLink href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm shrink-0">
               &larr; Articles
             </NextLink>
             <div className="flex items-center gap-1 border-l border-border pl-3">
               {/* Outline toggle */}
-              <button
-                onClick={() => setShowOutline((v) => !v)}
-                title="Toggle outline"
-                className={`p-1.5 rounded transition-colors ${showOutline ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h8M4 14h12M4 18h6" />
-                </svg>
-              </button>
+              <Tooltip content="Toggle outline panel" side="bottom" align="start">
+                <button
+                  onClick={() => setShowOutline((v) => !v)}
+                  aria-label="Toggle outline panel"
+                  className={`p-1.5 rounded transition-colors ${showOutline ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h8M4 14h12M4 18h6" />
+                  </svg>
+                </button>
+              </Tooltip>
               {/* Meta sidebar toggle */}
-              <button
-                onClick={() => setShowMeta((v) => !v)}
-                title="Toggle properties panel"
-                className={`p-1.5 rounded transition-colors ${showMeta ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
-                  <rect x="14" y="10" width="6" height="8" rx="1" strokeWidth={2} />
-                </svg>
-              </button>
+              <Tooltip content="Toggle properties panel" side="bottom" align="start">
+                <button
+                  onClick={() => setShowMeta((v) => !v)}
+                  aria-label="Toggle properties panel"
+                  className={`p-1.5 rounded transition-colors ${showMeta ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+                    <rect x="14" y="10" width="6" height="8" rx="1" strokeWidth={2} />
+                  </svg>
+                </button>
+              </Tooltip>
               {/* Editor mode switch */}
               <div className="ml-1 inline-flex items-center rounded-lg border border-border bg-cream p-0.5">
-                <button
-                  onClick={() => setAndPersistEditorMode('classic')}
-                  aria-pressed={editorMode === 'classic'}
-                  title="Classic editor"
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                    editorMode === 'classic'
-                      ? 'bg-white text-ink shadow-sm'
-                      : 'text-muted hover:text-ink'
-                  }`}
-                >
-                  Classic
-                </button>
-                <button
-                  onClick={() => setAndPersistEditorMode('notion')}
-                  aria-pressed={editorMode === 'notion'}
-                  title="Notion-style editor"
-                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-                    editorMode === 'notion'
-                      ? 'bg-white text-ink shadow-sm'
-                      : 'text-muted hover:text-ink'
-                  }`}
-                >
-                  Notion
-                </button>
+                <Tooltip content="Classic toolbar editor" side="bottom" align="start">
+                  <button
+                    onClick={() => setAndPersistEditorMode('classic')}
+                    aria-pressed={editorMode === 'classic'}
+                    aria-label="Classic toolbar editor"
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                      editorMode === 'classic'
+                        ? 'bg-white text-ink shadow-sm'
+                        : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    Classic
+                  </button>
+                </Tooltip>
+                <Tooltip content="Notion-style slash command editor" side="bottom" align="start">
+                  <button
+                    onClick={() => setAndPersistEditorMode('notion')}
+                    aria-pressed={editorMode === 'notion'}
+                    aria-label="Notion-style slash command editor"
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                      editorMode === 'notion'
+                        ? 'bg-white text-ink shadow-sm'
+                        : 'text-muted hover:text-ink'
+                    }`}
+                  >
+                    Notion
+                  </button>
+                </Tooltip>
               </div>
             </div>
-            <span className={`text-xs px-2 py-0.5 rounded-full ${
+            <span className={`min-w-0 shrink-0 text-xs px-2 py-0.5 rounded-full ${
               saveStatus === 'saved' ? 'text-green bg-green/10' :
               saveStatus === 'saving' ? 'text-muted bg-cream' :
               saveStatus === 'error' ? 'text-red-500 bg-cream' :
-              'text-muted bg-cream'
+              'text-accent bg-accent/10'
             }`}>
               {saveStatus === 'saved' ? '✓ Saved' :
                saveStatus === 'saving' ? 'Saving...' :
                saveStatus === 'error' ? 'Save failed' :
                'Unsaved changes'}
             </span>
+          </div>
+          <div className="flex items-center gap-1 shrink-0">
             {hasDraft && saveStatus === 'saved' && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                Unpublished changes
+                Draft pending publish
               </span>
             )}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={loadVersions}
-              className="text-sm text-muted hover:text-ink transition-colors px-3 py-1.5"
+            {status === 'PUBLISHED' && (
+              <>
+                <NextLink
+                  href={`/${workspaceSlug}/help/${savedCollectionSlug}/${savedSlug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink transition-colors border border-border rounded-lg px-3 py-1.5"
+                  title={
+                    slug !== savedSlug || collectionSlug !== savedCollectionSlug
+                      ? 'URL has unsaved changes — save to update the live link'
+                      : 'Open customer-facing article'
+                  }
+                >
+                  <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+                  View live
+                </NextLink>
+                <div className="w-px h-4 bg-border shrink-0" />
+              </>
+            )}
+            <Tooltip content="View and restore previous versions" side="bottom" align="end">
+              <button
+                onClick={loadVersions}
+                className="text-sm text-muted hover:text-ink transition-colors px-3 py-1.5"
+              >
+                History
+              </button>
+            </Tooltip>
+            <Tooltip content="Save current changes without publishing" side="bottom" align="end">
+              <button
+                onClick={() => save()}
+                className="text-sm text-muted hover:text-ink transition-colors px-3 py-1.5"
+              >
+                Save
+              </button>
+            </Tooltip>
+            <Tooltip
+              content={status === 'PUBLISHED'
+                ? 'Publish the latest draft changes to the live article'
+                : 'Publish this article and make it visible to readers'}
+              side="bottom"
+              align="end"
             >
-              History
-            </button>
-            <button
-              onClick={() => save()}
-              className="text-sm text-muted hover:text-ink transition-colors border border-border rounded-lg px-3 py-1.5"
-            >
-              Save draft
-            </button>
-            <button
-              onClick={publish}
-              className="text-sm bg-accent text-white rounded-lg px-4 py-1.5 hover:bg-accent/90 transition-colors font-medium"
-            >
-              {status === 'PUBLISHED' ? 'Update' : 'Publish'}
-            </button>
+              <button
+                onClick={publish}
+                className="text-sm bg-accent text-white rounded-lg px-4 py-1.5 hover:bg-accent/90 transition-colors font-medium"
+              >
+                {status === 'PUBLISHED' ? 'Update' : 'Publish'}
+              </button>
+            </Tooltip>
           </div>
         </div>
 
@@ -406,11 +459,17 @@ export function ArticleEditor({ article, collections }: Props) {
         articleId={article.id}
         articleTitle={title}
         slug={slug}
+        savedSlug={savedSlug}
         onSlugChange={setSlug}
+        onSlugSave={() => save()}
         excerpt={excerpt}
         onExcerptChange={setExcerpt}
         collectionId={collectionId}
-        onCollectionChange={setCollectionId}
+        onCollectionChange={(id) => {
+          setCollectionId(id)
+          const col = collections.find((c) => c.id === id)
+          if (col) setCollectionSlug(col.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
+        }}
         status={status}
         collections={collections}
       />}
