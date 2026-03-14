@@ -45,6 +45,10 @@ cd packages/db
 pnpm prisma migrate deploy
 echo "✅ Migrations complete!"
 
+echo "⚙️  Generating Prisma client..."
+pnpm prisma generate
+echo "✅ Prisma client generated!"
+
 # Run seed
 echo "🌱 Seeding database..."
 pnpm db:seed
