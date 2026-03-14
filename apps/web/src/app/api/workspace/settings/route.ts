@@ -1,34 +1,8 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { getFontPreset, radiusOptions } from '@/lib/branding'
 import { encryptApiKey } from '@/lib/ai/resolve-provider'
-import {
-  hasWorkspaceBrandTextColumn,
-  hasWorkspaceFaviconColumn,
-  hasWorkspaceCustomAccentColorColumn,
-  hasWorkspaceCustomBrandFontFamilyColumn,
-  hasWorkspaceCustomBrandFontUrlColumn,
-  hasWorkspaceCustomBodyFontFamilyColumn,
-  hasWorkspaceCustomBodyFontUrlColumn,
-  hasWorkspaceCustomBorderColorColumn,
-  hasWorkspaceCustomCreamColorColumn,
-  hasWorkspaceCustomGreenColorColumn,
-  hasWorkspaceCustomHeadingFontFamilyColumn,
-  hasWorkspaceCustomHeadingFontUrlColumn,
-  hasWorkspaceCustomInkColorColumn,
-  hasWorkspaceCustomMutedColorColumn,
-  hasWorkspaceCustomRadiusColumn,
-  hasWorkspaceCustomWhiteColorColumn,
-  hasWorkspaceFontPresetColumn,
-  hasWorkspaceMetaDescriptionColumn,
-  hasWorkspaceMetaTitleColumn,
-  hasWorkspaceProductContextColumn,
-  hasWorkspaceAutoDraftGapsEnabledColumn,
-  hasWorkspaceAutoDraftGapThresholdColumn,
-  hasWorkspaceAutoDraftExternalEnabledColumn,
-  hasWorkspaceBatchWindowMinutesColumn,
-  prisma,
-} from '@/lib/db'
-import { Prisma } from '@prisma/client'
+import { getWorkspaceColumnSet, prisma } from '@/lib/db'
+import { Prisma } from '@helpnest/db'
 import { themes } from '@/lib/themes'
 import { isDemoMode } from '@/lib/demo'
 import { NextResponse } from 'next/server'
@@ -153,6 +127,15 @@ export async function PATCH(request: Request) {
 
   if (isDemoMode()) {
     return NextResponse.json({ error: 'Workspace settings cannot be changed in demo mode.' }, { status: 403 })
+  }
+
+  // Authorise early — must be OWNER or ADMIN before any validation or DB reads
+  const member = await prisma.member.findFirst({
+    where: { userId, role: { in: ['OWNER', 'ADMIN'] } },
+    select: { workspaceId: true },
+  })
+  if (!member) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   if (name !== undefined) {
@@ -456,6 +439,9 @@ export async function PATCH(request: Request) {
     if (typeof aiEscalationThreshold !== 'number' || isNaN(aiEscalationThreshold)) {
       return NextResponse.json({ error: 'aiEscalationThreshold must be a number' }, { status: 400 })
     }
+    if (aiEscalationThreshold < 0 || aiEscalationThreshold > 1) {
+      return NextResponse.json({ error: 'aiEscalationThreshold must be between 0 and 1' }, { status: 400 })
+    }
   }
 
   if (productContext !== undefined && productContext !== null) {
@@ -488,9 +474,7 @@ export async function PATCH(request: Request) {
   }
 
   const clampedThreshold =
-    aiEscalationThreshold !== undefined
-      ? Math.min(1, Math.max(0, aiEscalationThreshold as number))
-      : undefined
+    aiEscalationThreshold !== undefined ? (aiEscalationThreshold as number) : undefined
 
   const resolvedAiProvider =
     aiProvider !== undefined && aiProvider !== null
@@ -511,54 +495,39 @@ export async function PATCH(request: Request) {
         ? encryptApiKey(aiApiKey.trim())
         : undefined
 
-  const canPersistFontPreset = fontPresetId === undefined ? false : await hasWorkspaceFontPresetColumn()
-  const canPersistBrandText = brandText === undefined ? false : await hasWorkspaceBrandTextColumn()
-  const canPersistFavicon = favicon === undefined ? false : await hasWorkspaceFaviconColumn()
-  const canPersistMetaTitle = metaTitle === undefined ? false : await hasWorkspaceMetaTitleColumn()
-  const canPersistMetaDescription =
-    metaDescription === undefined ? false : await hasWorkspaceMetaDescriptionColumn()
-  const canPersistCustomCreamColor =
-    customCreamColor === undefined ? false : await hasWorkspaceCustomCreamColorColumn()
-  const canPersistCustomInkColor =
-    customInkColor === undefined ? false : await hasWorkspaceCustomInkColorColumn()
-  const canPersistCustomMutedColor =
-    customMutedColor === undefined ? false : await hasWorkspaceCustomMutedColorColumn()
-  const canPersistCustomBorderColor =
-    customBorderColor === undefined ? false : await hasWorkspaceCustomBorderColorColumn()
-  const canPersistCustomAccentColor =
-    customAccentColor === undefined ? false : await hasWorkspaceCustomAccentColorColumn()
-  const canPersistCustomGreenColor =
-    customGreenColor === undefined ? false : await hasWorkspaceCustomGreenColorColumn()
-  const canPersistCustomWhiteColor =
-    customWhiteColor === undefined ? false : await hasWorkspaceCustomWhiteColorColumn()
-  const canPersistCustomRadius =
-    customRadius === undefined ? false : await hasWorkspaceCustomRadiusColumn()
-  const canPersistCustomHeadingFontFamily =
-    customHeadingFontFamily === undefined ? false : await hasWorkspaceCustomHeadingFontFamilyColumn()
-  const canPersistCustomHeadingFontUrl =
-    customHeadingFontUrl === undefined ? false : await hasWorkspaceCustomHeadingFontUrlColumn()
-  const canPersistCustomBodyFontFamily =
-    customBodyFontFamily === undefined ? false : await hasWorkspaceCustomBodyFontFamilyColumn()
-  const canPersistCustomBodyFontUrl =
-    customBodyFontUrl === undefined ? false : await hasWorkspaceCustomBodyFontUrlColumn()
-  const canPersistCustomBrandFontFamily =
-    customBrandFontFamily === undefined ? false : await hasWorkspaceCustomBrandFontFamilyColumn()
-  const canPersistCustomBrandFontUrl =
-    customBrandFontUrl === undefined ? false : await hasWorkspaceCustomBrandFontUrlColumn()
+  // Single schema introspection query — results are process-lifetime cached.
+  // Note: after adding a column via migration, a process restart is required
+  // to clear this cache and allow the new column to be persisted.
+  const cols = await getWorkspaceColumnSet()
+
+  const canPersistFontPreset = fontPresetId !== undefined && cols.has('fontPresetId')
+  const canPersistBrandText = brandText !== undefined && cols.has('brandText')
+  const canPersistFavicon = favicon !== undefined && cols.has('favicon')
+  const canPersistMetaTitle = metaTitle !== undefined && cols.has('metaTitle')
+  const canPersistMetaDescription = metaDescription !== undefined && cols.has('metaDescription')
+  const canPersistCustomCreamColor = customCreamColor !== undefined && cols.has('customCreamColor')
+  const canPersistCustomInkColor = customInkColor !== undefined && cols.has('customInkColor')
+  const canPersistCustomMutedColor = customMutedColor !== undefined && cols.has('customMutedColor')
+  const canPersistCustomBorderColor = customBorderColor !== undefined && cols.has('customBorderColor')
+  const canPersistCustomAccentColor = customAccentColor !== undefined && cols.has('customAccentColor')
+  const canPersistCustomGreenColor = customGreenColor !== undefined && cols.has('customGreenColor')
+  const canPersistCustomWhiteColor = customWhiteColor !== undefined && cols.has('customWhiteColor')
+  const canPersistCustomRadius = customRadius !== undefined && cols.has('customRadius')
+  const canPersistCustomHeadingFontFamily = customHeadingFontFamily !== undefined && cols.has('customHeadingFontFamily')
+  const canPersistCustomHeadingFontUrl = customHeadingFontUrl !== undefined && cols.has('customHeadingFontUrl')
+  const canPersistCustomBodyFontFamily = customBodyFontFamily !== undefined && cols.has('customBodyFontFamily')
+  const canPersistCustomBodyFontUrl = customBodyFontUrl !== undefined && cols.has('customBodyFontUrl')
+  const canPersistCustomBrandFontFamily = customBrandFontFamily !== undefined && cols.has('customBrandFontFamily')
+  const canPersistCustomBrandFontUrl = customBrandFontUrl !== undefined && cols.has('customBrandFontUrl')
   const trimmedProductContext =
     typeof productContext === 'string' && productContext.trim().length > 0
       ? productContext.trim()
       : null
-  const canPersistProductContext =
-    productContext === undefined ? false : await hasWorkspaceProductContextColumn()
-  const canPersistAutoDraftGapsEnabled =
-    autoDraftGapsEnabled === undefined ? false : await hasWorkspaceAutoDraftGapsEnabledColumn()
-  const canPersistAutoDraftGapThreshold =
-    autoDraftGapThreshold === undefined ? false : await hasWorkspaceAutoDraftGapThresholdColumn()
-  const canPersistAutoDraftExternalEnabled =
-    autoDraftExternalEnabled === undefined ? false : await hasWorkspaceAutoDraftExternalEnabledColumn()
-  const canPersistBatchWindowMinutes =
-    batchWindowMinutes === undefined ? false : await hasWorkspaceBatchWindowMinutesColumn()
+  const canPersistProductContext = productContext !== undefined && cols.has('productContext')
+  const canPersistAutoDraftGapsEnabled = autoDraftGapsEnabled !== undefined && cols.has('autoDraftGapsEnabled')
+  const canPersistAutoDraftGapThreshold = autoDraftGapThreshold !== undefined && cols.has('autoDraftGapThreshold')
+  const canPersistAutoDraftExternalEnabled = autoDraftExternalEnabled !== undefined && cols.has('autoDraftExternalEnabled')
+  const canPersistBatchWindowMinutes = batchWindowMinutes !== undefined && cols.has('batchWindowMinutes')
 
   // 409 only when the client is trying to SET a non-empty value for a column that
   // doesn't exist yet (migration pending). Sending null/empty to clear a missing
@@ -607,19 +576,6 @@ export async function PATCH(request: Request) {
       { error: 'Brand and content font overrides require the latest database migration.' },
       { status: 409 },
     )
-  }
-
-  // Find the workspace the current user owns/admins
-  const member = await prisma.member.findFirst({
-    where: {
-      userId,
-      role: { in: ['OWNER', 'ADMIN'] },
-    },
-    select: { workspaceId: true },
-  })
-
-  if (!member) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   try {
@@ -675,7 +631,10 @@ export async function PATCH(request: Request) {
         ...(canPersistBatchWindowMinutes ? { batchWindowMinutes: batchWindowMinutes as number } : {}),
       },
     })
-    return NextResponse.json(updated)
+    // Exclude aiApiKey from the response — the ciphertext has no client use
+    // and if encryption is not configured the plaintext would be echoed back.
+    const { aiApiKey: _omit, ...safeWorkspace } = updated as typeof updated & { aiApiKey?: unknown }
+    return NextResponse.json(safeWorkspace)
   } catch (e: unknown) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
       return NextResponse.json({ error: 'This slug is already taken' }, { status: 409 })

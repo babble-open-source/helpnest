@@ -2,7 +2,7 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@helpnest/db'
 
 interface ExportOptions {
   output: string
@@ -12,7 +12,7 @@ export async function exportCommand(options: ExportOptions) {
   console.log()
   const spinner = ora('Exporting articles...').start()
 
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient(process.env.DATABASE_URL ?? '')
 
   try {
     const workspaces = await prisma.workspace.findMany({

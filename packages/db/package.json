@@ -3,34 +3,41 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "typecheck": "prisma generate",
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
-    "db:seed": "node prisma/seed.js",
+    "db:seed": "node dist/seed.js",
     "db:reset": "prisma migrate reset --force"
   },
   "prisma": {
-    "seed": "node prisma/seed.ts"
+    "seed": "node dist/seed.js"
   },
   "dependencies": {
-    "@prisma/client": "^5.13.0",
-    "bcryptjs": "^2.4.3"
+    "@prisma/adapter-pg": "^7.5.0",
+    "@prisma/client": "^7.5.0",
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.0",
+    "pg": "^8.11.0"
   },
   "devDependencies": {
-    "prisma": "^5.13.0",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/pg": "^8.11.0",
+    "prisma": "^7.5.0",
+    "tsup": "^8.0.0",
     "tsx": "^4.7.0",
-    "typescript": "^5.4.0",
-    "@types/bcryptjs": "^2.4.6"
+    "typescript": "^5.4.0"
   },
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "import": "./index.mjs",
-      "require": "./index.js",
-      "default": "./index.mjs"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "default": "./dist/index.mjs"
     }
   },
-  "main": "./index.js",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
   "types": "./index.d.ts"
 }

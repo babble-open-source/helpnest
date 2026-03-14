@@ -7,26 +7,57 @@ This package is private and not published to npm.
 ## Exports
 
 ```ts
-import { PrismaClient, Prisma } from '@helpnest/db'
+import { PrismaClient, Prisma, createPrismaClient, PrismaPg } from '@helpnest/db'
 
 // Named type exports
 import type {
   Workspace, User, Member, Collection,
   Article, ArticleVersion, ApiKey,
   SearchIndex, ArticleFeedback, Invite,
+  Conversation, Message, ConversationArticle, KnowledgeGap,
+} from '@helpnest/db'
+
+// Enum exports
+import {
   MemberRole, ArticleStatus, ArticleFeedbackType,
+  ConversationStatus, MessageRole, AiProvider,
 } from '@helpnest/db'
 ```
 
+`createPrismaClient(connectionString)` — factory used by CLI tools and scripts that need their own client instance. For the Next.js app, use the singleton at `apps/web/src/lib/db.ts`.
+
 ## Scripts
 
+Run from the **monorepo root** (`helpnest/`) unless noted:
+
+```bash
+pnpm db:generate   # regenerate Prisma client after schema changes (run from root)
+pnpm db:migrate    # run pending migrations in dev (run from root)
+pnpm db:studio     # open Prisma Studio GUI (run from root)
+pnpm --filter @helpnest/db build     # compile src/ → dist/ (lib + seed)
+pnpm --filter @helpnest/db db:seed   # seed initial workspace and admin user
+pnpm --filter @helpnest/db db:reset  # drop and recreate the database (destructive)
 ```
-pnpm db:generate   # regenerate Prisma client after schema changes
-pnpm db:migrate    # run pending migrations in dev
-pnpm db:studio     # open Prisma Studio GUI
-pnpm db:seed       # seed initial workspace and admin user
-pnpm db:reset      # drop and recreate the database (destructive)
+
+For Prisma CLI commands that require the schema context (e.g. `migrate dev`, `migrate reset`), run from `packages/db/` directly:
+
+```bash
+cd packages/db
+pnpm exec prisma migrate dev --name add_column
+pnpm exec prisma studio
 ```
+
+## Build output
+
+`pnpm build` (via `tsup`) produces:
+
+| File | Purpose |
+|------|---------|
+| `dist/index.js` | CJS build of the public `@helpnest/db` API |
+| `dist/index.mjs` | ESM build of the public `@helpnest/db` API |
+| `dist/seed.js` | Compiled seed script — used by `db:seed` in both local dev and production Docker |
+
+`dist/` is gitignored. It is rebuilt on every `pnpm build` run.
 
 ## Schema
 
@@ -118,18 +149,22 @@ Tracks unanswered customer questions and triggers auto-draft workflows.
 
 `MemberRole`, `ArticleStatus`, `ArticleFeedbackType`, `ConversationStatus`, `MessageRole`, `AiProvider`
 
-## Seed Environment Variables
+## Seed environment variables
 
-| Variable | Description |
-|---|---|
-| `SEED_WORKSPACE_NAME` | Display name for the initial workspace |
-| `SEED_WORKSPACE_SLUG` | URL slug for the initial workspace |
-| `SEED_ADMIN_EMAIL` | Email address for the initial admin user |
+| Variable | Default | Description |
+|---|---|---|
+| `DATABASE_URL` | — | Required. PostgreSQL connection string |
+| `ADMIN_SEED_EMAIL` | `admin@helpnest.cloud` | Email for the initial admin user |
+| `ADMIN_SEED_PASSWORD` | `helpnest` | Password for the initial admin user — **must be set in production** |
 
 ## Dependencies
 
 | Package | Version |
 |---|---|
-| `@prisma/client` | `^5.13.0` |
+| `@prisma/client` | `^7.5.0` |
+| `@prisma/adapter-pg` | `^7.5.0` |
+| `pg` | `^8.11.0` |
 | `bcryptjs` | — |
+| `prisma` (dev) | `^7.5.0` |
+| `tsup` (dev) | — |
 | `tsx` (dev) | — |

@@ -1,4 +1,5 @@
-import { Prisma, PrismaClient } from '@prisma/client'
+import { Prisma, PrismaClient } from '@helpnest/db'
+import { PrismaPg } from '@prisma/adapter-pg'
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
@@ -13,7 +14,7 @@ const globalForPrisma = globalThis as unknown as {
  */
 function buildDatabaseUrl(): string {
   const url = process.env.DATABASE_URL
-  if (!url) return ''
+  if (!url) throw new Error('DATABASE_URL is not set')
   try {
     const parsed = new URL(url)
     if (!parsed.searchParams.has('connection_limit')) {
@@ -28,20 +29,27 @@ function buildDatabaseUrl(): string {
   }
 }
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    datasources: { db: { url: buildDatabaseUrl() } },
+function createPrismaClient(): PrismaClient {
+  const connectionString = buildDatabaseUrl()
+  const adapter = new PrismaPg({ connectionString })
+  return new PrismaClient({
+    adapter,
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
   })
+}
+
+export const prisma = globalForPrisma.prisma ?? createPrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 /**
  * Returns the full set of column names for the Workspace table in one query.
  * Cached in process memory — only hits the DB once per server process lifetime.
- * Use this in page/route handlers that need to check multiple columns; prefer
- * it over calling hasWorkspaceColumn() 19 times.
+ * Use this in page/route handlers that need to check multiple columns.
+ *
+ * ⚠️  Zero-downtime migration note: if a column is added while this process is
+ * running, the cache stays stale until the next restart. Always restart the
+ * server after running a Workspace migration.
  */
 export function getWorkspaceColumnSet(): Promise<Set<string>> {
   return (globalForPrisma.workspaceColumnSet ??= prisma

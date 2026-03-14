@@ -33,11 +33,11 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "prisma generate --schema ../../packages/db/prisma/schema.prisma && tsc --noEmit",
+    "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {
-    "@prisma/client": "^5.13.0",
+    "@helpnest/db": "workspace:*",
     "chalk": "^5.3.0",
     "commander": "^12.0.0",
     "execa": "^8.0.1",
@@ -47,7 +47,7 @@
   "devDependencies": {
     "@types/inquirer": "^9.0.7",
     "@types/node": "^20.0.0",
-    "prisma": "^5.13.0",
+    "prisma": "^7.5.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0"
   }

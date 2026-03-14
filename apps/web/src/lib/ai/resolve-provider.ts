@@ -12,12 +12,12 @@ interface WorkspaceAiSettings {
 /**
  * Decrypts an AES-256-GCM encrypted API key stored in the database.
  *
- * Format on disk: `<iv-hex>:<authTag-hex>:<ciphertext-hex>`
+ * Supported formats:
+ *   v2 (current): `<iv-hex>:<salt-hex>:<authTag-hex>:<ciphertext-hex>` — random salt per call
+ *   v1 (legacy):  `<iv-hex>:<authTag-hex>:<ciphertext-hex>` — static salt (migration path)
  *
- * If the value does not match this format (e.g. a plaintext key stored
- * during development or before encryption was enabled), the raw value is
- * returned unchanged. This provides a safe migration path: existing
- * plaintext keys continue to work and new keys will be stored encrypted.
+ * If the value matches neither format it is returned unchanged — this covers
+ * plaintext keys stored in development or before encryption was enabled.
  */
 function decryptApiKey(encrypted: string): string {
   const secret = process.env.AI_KEY_ENCRYPTION_SECRET
@@ -29,26 +29,35 @@ function decryptApiKey(encrypted: string): string {
 
   try {
     // require() is used here intentionally: the crypto module is only needed
-    // on the server and this file is only ever imported from server-side code
-    // (API routes / server components). Using require() avoids a webpack
-    // bundling issue with the native `crypto` module in some Next.js configs.
+    // on the server. Using require() avoids a webpack bundling issue with the
+    // native `crypto` module in some Next.js configs.
     const crypto = require('crypto') as typeof import('crypto')
     const parts = encrypted.split(':')
-    if (parts.length !== 3) {
-      // Not in the expected encrypted format — treat as plaintext (dev / legacy)
-      return encrypted
+
+    if (parts.length === 4) {
+      // v2: iv:salt:authTag:ciphertext — unique salt per encryption call
+      const [ivHex, saltHex, authTagHex, cipherHex] = parts as [string, string, string, string]
+      const key = crypto.scryptSync(secret, Buffer.from(saltHex, 'hex'), 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'))
+      decipher.setAuthTag(Buffer.from(authTagHex, 'hex'))
+      let decrypted = decipher.update(cipherHex, 'hex', 'utf8')
+      decrypted += decipher.final('utf8')
+      return decrypted
     }
-    const [ivHex, authTagHex, cipherHex] = parts as [string, string, string]
-    const key = crypto.scryptSync(secret, 'helpnest-ai-key-salt', 32)
-    const decipher = crypto.createDecipheriv(
-      'aes-256-gcm',
-      key,
-      Buffer.from(ivHex, 'hex'),
-    )
-    decipher.setAuthTag(Buffer.from(authTagHex, 'hex'))
-    let decrypted = decipher.update(cipherHex, 'hex', 'utf8')
-    decrypted += decipher.final('utf8')
-    return decrypted
+
+    if (parts.length === 3) {
+      // v1 legacy: iv:authTag:ciphertext — static salt, kept for backward compat
+      const [ivHex, authTagHex, cipherHex] = parts as [string, string, string]
+      const key = crypto.scryptSync(secret, 'helpnest-ai-key-salt', 32)
+      const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'))
+      decipher.setAuthTag(Buffer.from(authTagHex, 'hex'))
+      let decrypted = decipher.update(cipherHex, 'hex', 'utf8')
+      decrypted += decipher.final('utf8')
+      return decrypted
+    }
+
+    // Not in any recognised format — treat as plaintext (dev / legacy)
+    return encrypted
   } catch {
     // Decryption failed — assume plaintext key (dev / migration scenario)
     return encrypted
@@ -56,29 +65,29 @@ function decryptApiKey(encrypted: string): string {
 }
 
 /**
- * Encrypts a plaintext API key for storage in the database.
+ * Encrypts a plaintext API key for storage in the database using AES-256-GCM
+ * with a unique random salt per call (v2 format: iv:salt:authTag:ciphertext).
  *
  * Returns the raw plaintext when AI_KEY_ENCRYPTION_SECRET is not configured
- * (development / self-hosted without encryption). This means the key is
- * functional but unencrypted at rest — operators should set the secret in
- * production.
+ * (development / self-hosted without encryption). Operators must configure
+ * this secret before going to production.
  */
 export function encryptApiKey(plaintext: string): string {
   const secret = process.env.AI_KEY_ENCRYPTION_SECRET
   if (!secret) {
-    // No encryption configured — store as-is (acceptable for local dev;
-    // operators should configure this secret before going to production)
     return plaintext
   }
 
   const crypto = require('crypto') as typeof import('crypto')
-  const key = crypto.scryptSync(secret, 'helpnest-ai-key-salt', 32)
+  const salt = crypto.randomBytes(16) // unique salt per encryption call
+  const key = crypto.scryptSync(secret, salt, 32)
   const iv = crypto.randomBytes(12) // 96-bit IV recommended for GCM
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv)
   let encrypted = cipher.update(plaintext, 'utf8', 'hex')
   encrypted += cipher.final('hex')
   const authTag = cipher.getAuthTag().toString('hex')
-  return `${iv.toString('hex')}:${authTag}:${encrypted}`
+  // v2 format: iv:salt:authTag:ciphertext
+  return `${iv.toString('hex')}:${salt.toString('hex')}:${authTag}:${encrypted}`
 }
 
 /**

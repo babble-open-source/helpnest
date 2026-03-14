@@ -70,11 +70,13 @@ async function consumeAiRateLimit(key: string): Promise<{ limited: boolean; retr
     try {
       const windowSlot = Math.floor(Date.now() / AI_RATE_LIMIT_WINDOW_MS)
       const redisKey = `rl:ai:${key}:${windowSlot}`
-      const count = await redis.incr(redisKey)
-      if (count === 1) {
-        // Set TTL on the first increment so the key expires automatically.
-        await redis.pexpire(redisKey, AI_RATE_LIMIT_WINDOW_MS * 2)
-      }
+      // Pipeline makes INCR + PEXPIRE atomic — avoids a missing TTL if the
+      // process crashes between the two calls.
+      const [[, count]] = (await redis
+        .pipeline()
+        .incr(redisKey)
+        .pexpire(redisKey, AI_RATE_LIMIT_WINDOW_MS * 2)
+        .exec()) as [[null, number], [null, number]]
       if (count > AI_RATE_LIMIT_MAX_REQUESTS) {
         const windowEndMs = (windowSlot + 1) * AI_RATE_LIMIT_WINDOW_MS
         return {
@@ -255,7 +257,11 @@ export async function POST(request: Request) {
   }
 
   const context = articles.map((a, i) => {
-    const content = a.contextChunk ?? a.content.slice(0, 1500)
+    const raw = a.contextChunk ?? a.content.slice(0, 1500)
+    // Strip HTML tags — article content may be stored as Tiptap HTML
+    const content = raw.trimStart().startsWith('<')
+      ? raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+      : raw
     return `[Article ${i + 1}]: ${a.title}\n${content}`
   }).join('\n\n---\n\n')
 

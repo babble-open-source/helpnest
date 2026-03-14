@@ -11,10 +11,7 @@
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "declaration": true,
-    "baseUrl": ".",
-    "paths": {
-      "@prisma/client": ["../../node_modules/.prisma/client"]
-    }
+    "baseUrl": "."
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

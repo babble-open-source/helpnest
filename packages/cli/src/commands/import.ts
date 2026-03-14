@@ -2,7 +2,7 @@ import ora from 'ora'
 import chalk from 'chalk'
 import * as fs from 'fs'
 import * as path from 'path'
-import { PrismaClient } from '@prisma/client'
+import { createPrismaClient } from '@helpnest/db'
 
 interface ImportOptions {
   file?: string
@@ -70,7 +70,7 @@ export async function importCommand(options: ImportOptions) {
 
   const spinner = ora(`Importing from ${options.format}...`).start()
 
-  const prisma = new PrismaClient()
+  const prisma = createPrismaClient(process.env.DATABASE_URL ?? '')
 
   try {
     const raw = fs.readFileSync(filePath, 'utf-8')

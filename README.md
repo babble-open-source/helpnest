@@ -146,6 +146,17 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 ADMIN_SEED_EMAIL=
 ADMIN_SEED_PASSWORD=            # minimum 12 characters in production
 
+# AI key encryption — REQUIRED in production
+# Encrypts per-workspace API keys at rest using AES-256-GCM with a unique
+# random salt per key. Without this, keys are stored as plaintext.
+# Generate with: openssl rand -base64 32
+AI_KEY_ENCRYPTION_SECRET=
+
+# Redis — required for distributed rate limiting (ai-search endpoint)
+# Without Redis, rate limiting falls back to in-memory per-instance,
+# which is ineffective in multi-instance / serverless deployments.
+REDIS_URL=redis://localhost:6379
+
 # Demo / showcase mode (optional)
 HELPNEST_DEMO_MODE=             # set to "true" to show default credentials on login page
 
@@ -159,6 +170,8 @@ GITHUB_CLIENT_SECRET=
 ```
 
 > **AI chat provider keys** (Anthropic, OpenAI, Google, Mistral) are configured per-workspace from **Dashboard → Settings → AI Agent** — not from environment variables. This lets each workspace use their own keys and preferred model.
+
+> **Production checklist:** Set `AI_KEY_ENCRYPTION_SECRET` before any workspace saves an API key. Set `REDIS_URL` before scaling beyond a single instance. Restart the server after running Workspace schema migrations (the column cache is process-lifetime).
 
 ---
 
@@ -276,7 +289,7 @@ All articles are created as `DRAFT` with `aiGenerated: true`. Review and publish
 | Layer | Technology |
 |-------|-----------|
 | Framework | Next.js 16 App Router |
-| Database | PostgreSQL 16 + Prisma 5 |
+| Database | PostgreSQL 16 + Prisma 7 |
 | Auth | NextAuth v5 (Credentials + GitHub OAuth) |
 | Editor | Tiptap |
 | AI (embeddings) | OpenAI `text-embedding-3-small` |
@@ -320,7 +333,7 @@ helpnest/
 ```bash
 # Development
 pnpm dev              # all apps: web :3000, docs :3001
-pnpm build
+pnpm build            # compiles all packages (including @helpnest/db) then Next.js
 pnpm lint
 pnpm typecheck
 
@@ -330,6 +343,9 @@ pnpm db:migrate       # apply pending migrations
 pnpm db:studio        # open Prisma Studio
 pnpm --filter @helpnest/db db:seed   # seed with demo data
 pnpm --filter @helpnest/db db:reset  # drop + re-migrate + re-seed
+
+# After a Workspace migration, restart the server so the column cache refreshes:
+# pnpm --filter @helpnest/web restart  (or redeploy)
 
 # Tests
 pnpm --filter @helpnest/sdk test

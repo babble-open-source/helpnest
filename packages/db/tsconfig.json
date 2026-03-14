@@ -2,10 +2,10 @@
   "extends": "@helpnest/config/tsconfig",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src",
-    "noEmit": false,
-    "module": "CommonJS",
-    "moduleResolution": "node"
+    "noEmit": true,
+    "incremental": false,
+    "module": "Node16",
+    "moduleResolution": "node16"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

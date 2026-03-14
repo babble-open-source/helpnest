@@ -26,95 +26,13 @@ RUN pnpm install --frozen-lockfile
 # Copy full source (.env files excluded by .dockerignore).
 COPY . .
 
-# Generate Prisma client.
-# prisma generate runs inside the AMD64 container so the correct native
-# query engine binary is produced for the target platform.
+# Generate Prisma client (TypeScript source → packages/db/generated/prisma/).
+# Runs inside the container so the schema-engine binary matches the target platform.
 RUN cd packages/db && pnpm exec prisma generate
 
-# pnpm stores @prisma/client in its virtual store (.pnpm/…/node_modules/@prisma/client).
-# Node.js resolves __dirname via symlinks, so the generated .prisma/client must be placed
-# alongside @prisma/client in the pnpm virtual store — NOT in packages/db/node_modules/.
-# We use find to locate where prisma generate actually wrote the client, then copy it to
-# the path that @prisma/client will resolve at build/runtime.
-RUN node -e " \
-  const path = require('path'); \
-  const { cpSync, mkdirSync, realpathSync } = require('fs'); \
-  const { execSync } = require('child_process'); \
-  const found = execSync('find /app -path \"*/.prisma/client\" -type d 2>/dev/null').toString().trim().split('\n').filter(Boolean); \
-  console.log('prisma generate output dirs found:', found); \
-  if (!found.length) throw new Error('prisma generate produced no .prisma/client directory'); \
-  const src = path.dirname(found[0]); \
-  const clientPkg = require.resolve('@prisma/client/package.json', { paths: ['/app/packages/db'] }); \
-  const realClientDir = realpathSync(path.dirname(clientPkg)); \
-  const target = path.join(path.dirname(realClientDir), '.prisma'); \
-  if (src !== target) { cpSync(src, target, { recursive: true, force: true }); } \
-  mkdirSync('/app/packages/db/node_modules', { recursive: true }); \
-  cpSync(src, '/app/packages/db/node_modules/.prisma', { recursive: true, force: true }); \
-  cpSync(src, '/app/apps/web/.prisma', { recursive: true, force: true }); \
-  console.log('src=' + src + '  target=' + target); \
-"
-
-# Stage the generated Prisma client plus a flat Prisma CLI node_modules tree.
-# resolvePkgDir walks up from the resolved entry point to find the package root,
-# which is necessary because pnpm resolves some packages to sub-paths.
-RUN node -e " \
-  const { cpSync, mkdirSync, existsSync } = require('fs'); \
-  const path = require('path'); \
-  const dbPaths = ['/app/packages/db']; \
-  const cp = (src, dst) => cpSync(src, dst, { recursive: true, dereference: true }); \
-  const resolvePkgDir = (name, paths) => { \
-    let dir = path.dirname(require.resolve(name, { paths })); \
-    while (!existsSync(path.join(dir, 'package.json'))) { \
-      const parent = path.dirname(dir); \
-      if (parent === dir) throw new Error('Could not find package root for ' + name); \
-      dir = parent; \
-    } \
-    return dir; \
-  }; \
-  const copyPkg = (pkgDir, name, outDir) => { \
-    const dst = path.join(outDir, ...name.split('/')); \
-    mkdirSync(path.dirname(dst), { recursive: true }); \
-    cp(pkgDir, dst); \
-  }; \
-  const clientDir = resolvePkgDir('@prisma/client', dbPaths); \
-  const { execSync: exec } = require('child_process'); \
-  const generatedPrismaDir = exec('find /app -path \"*/.prisma/client\" -type d 2>/dev/null').toString().trim().split('\n').filter(Boolean).map(p => require('path').dirname(p))[0]; \
-  if (!generatedPrismaDir) throw new Error('Cannot find .prisma directory to stage'); \
-  cp(generatedPrismaDir, '/tmp/generated-prisma-client'); \
-  const cliOut = '/tmp/prisma-cli-node_modules'; \
-  mkdirSync(cliOut, { recursive: true }); \
-  const prismaDir = resolvePkgDir('prisma', dbPaths); \
-  const prismaNodeModules = path.dirname(path.dirname(prismaDir)); \
-  const enginesDir = resolvePkgDir('@prisma/engines', [prismaNodeModules]); \
-  const enginesNodeModules = path.dirname(path.dirname(enginesDir)); \
-  copyPkg(prismaDir, 'prisma', cliOut); \
-  copyPkg(enginesDir, '@prisma/engines', cliOut); \
-  copyPkg(resolvePkgDir('@prisma/debug', [enginesNodeModules]), '@prisma/debug', cliOut); \
-  copyPkg(resolvePkgDir('@prisma/fetch-engine', [enginesNodeModules]), '@prisma/fetch-engine', cliOut); \
-  copyPkg(resolvePkgDir('@prisma/get-platform', [enginesNodeModules]), '@prisma/get-platform', cliOut); \
-  copyPkg(resolvePkgDir('@prisma/engines-version', [enginesNodeModules]), '@prisma/engines-version', cliOut); \
-  copyPkg(clientDir, '@prisma/client', cliOut); \
-"
-
-# Compile seed.ts to a self-contained JS bundle.
-# esbuild is a dep of tsx and is fully installed (including @esbuild/linux-x64)
-# in the builder stage by pnpm. bcryptjs is bundled inline. @prisma/client
-# stays external and resolves from packages/db/node_modules at runtime.
-# The runner needs no tsx, no esbuild, and no platform-specific binaries to seed.
-RUN node -e " \
-  const path = require('path'); \
-  const dbPaths = ['/app/packages/db']; \
-  const tsxDir = path.dirname(require.resolve('tsx/package.json', { paths: dbPaths })); \
-  const esbuild = require(require.resolve('esbuild', { paths: [tsxDir] })); \
-  esbuild.buildSync({ \
-    entryPoints: ['/app/packages/db/prisma/seed.ts'], \
-    bundle: true, \
-    platform: 'node', \
-    target: 'node20', \
-    external: ['@prisma/client'], \
-    outfile: '/tmp/seed.js', \
-  }); \
-"
+# Compile @helpnest/db TypeScript → packages/db/dist/ (CJS + ESM + seed.js).
+# dist/seed.js is the compiled seed script used in both local dev and production.
+RUN pnpm --filter @helpnest/db build
 
 # NEXT_PUBLIC_* vars are baked into the client bundle at build time.
 # Pass --build-arg NEXT_PUBLIC_APP_URL=https://your-domain.com when building
@@ -126,6 +44,45 @@ ENV NODE_ENV=production
 
 RUN pnpm --filter @helpnest/widget build
 RUN cd apps/web && pnpm build
+
+# Stage the Prisma CLI dependency tree needed by the runner's init container
+# to run `prisma migrate deploy`. Only schema-engine (migration binary) is
+# required — the query engine is now WASM and lives in @prisma/client/runtime/.
+RUN node -e " \
+  const { cpSync, mkdirSync, existsSync } = require('fs'); \
+  const path = require('path'); \
+  const dbPaths = ['/app/packages/db']; \
+  const cp = (src, dst) => cpSync(src, dst, { recursive: true, dereference: true }); \
+  const resolvePkgDir = (name, paths) => { \
+    let dir = path.dirname(require.resolve(name + '/package.json', { paths })); \
+    while (!existsSync(path.join(dir, 'package.json'))) { \
+      const parent = path.dirname(dir); \
+      if (parent === dir) throw new Error('Could not find package root for ' + name); \
+      dir = parent; \
+    } \
+    return dir; \
+  }; \
+  const copyPkg = (name, outDir, fromPaths) => { \
+    const src = resolvePkgDir(name, fromPaths ?? dbPaths); \
+    const dst = path.join(outDir, ...name.split('/')); \
+    mkdirSync(path.dirname(dst), { recursive: true }); \
+    cp(src, dst); \
+  }; \
+  const cliOut = '/tmp/prisma-cli-node_modules'; \
+  mkdirSync(cliOut, { recursive: true }); \
+  const prismaDir = resolvePkgDir('prisma', dbPaths); \
+  const prismaNodeModules = path.join(prismaDir, 'node_modules'); \
+  copyPkg('prisma', cliOut); \
+  copyPkg('@prisma/engines', cliOut, [prismaNodeModules]); \
+  copyPkg('@prisma/client', cliOut); \
+  copyPkg('@prisma/adapter-pg', cliOut); \
+  copyPkg('pg', cliOut); \
+  copyPkg('@prisma/config', cliOut, [prismaNodeModules]); \
+  copyPkg('@prisma/debug', cliOut, [prismaNodeModules]); \
+  copyPkg('@prisma/fetch-engine', cliOut, [prismaNodeModules]); \
+  copyPkg('@prisma/get-platform', cliOut, [prismaNodeModules]); \
+  copyPkg('@prisma/engines-version', cliOut, [prismaNodeModules]); \
+"
 
 # ─── Stage 2: Production runner ───────────────────────────────────────────────
 FROM node:20-alpine AS runner
@@ -147,23 +104,22 @@ RUN mkdir -p ./packages/widget/dist
 COPY --from=builder /app/apps/web/public              ./apps/web/public
 COPY --from=builder /app/packages/widget/dist/widget.js ./packages/widget/dist/widget.js
 
+# @helpnest/db compiled runtime — loaded by the app via serverExternalPackages.
+# Standalone tracing may include this, but we copy explicitly as a safety net.
+COPY --from=builder /app/packages/db/dist       ./packages/db/dist
+COPY --from=builder /app/packages/db/index.d.ts ./packages/db/index.d.ts
+COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
+
 # Prisma schema, migrations, compiled seed, and package.json.
 # package.json must be present so `prisma db seed` reads the correct
 # "prisma.seed" config ("node prisma/seed.js") from the right location.
-COPY --from=builder /app/packages/db/package.json ./packages/db/package.json
-COPY --from=builder /app/packages/db/prisma       ./packages/db/prisma
-COPY --from=builder /tmp/seed.js                  ./packages/db/prisma/seed.js
+COPY --from=builder /app/packages/db/prisma        ./packages/db/prisma
+COPY --from=builder /app/packages/db/dist/seed.js  ./packages/db/dist/seed.js
 
-# Prisma CLI dependency tree (prisma, engines, debug, fetch-engine, get-platform,
-# engines-version, @prisma/client) — all copied as real files, no pnpm symlinks.
+# Prisma CLI + schema-engine binary for `prisma migrate deploy`,
+# plus @prisma/client (WASM runtime) and @prisma/adapter-pg for the seed.
+# pg is a native module — resolved from the standalone node_modules trace.
 COPY --from=builder /tmp/prisma-cli-node_modules/ ./packages/db/node_modules/
-
-# Copy the generated Prisma client (query engine binary + generated types) to
-# both locations that Prisma searches at runtime:
-#   packages/db/node_modules/.prisma  — initContainer (migrate / seed)
-#   apps/web/.prisma                  — Next.js app server (standalone searches here)
-COPY --from=builder /tmp/generated-prisma-client ./packages/db/node_modules/.prisma
-COPY --from=builder /tmp/generated-prisma-client ./apps/web/.prisma
 
 RUN chown -R nextjs:nodejs /app
 

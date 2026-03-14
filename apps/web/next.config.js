@@ -4,17 +4,11 @@ const path = require('path')
 // Load the monorepo root .env for local development only.
 // In Docker/production, env vars come from the Kubernetes Secret — .env is
 // excluded by .dockerignore so this block is a no-op in CI/CD builds.
+// dotenv handles quoted values, multi-line strings, and special characters
+// correctly — never override vars that are already set in the environment.
 const rootEnv = path.resolve(__dirname, '../../.env')
 if (fs.existsSync(rootEnv)) {
-  for (const line of fs.readFileSync(rootEnv, 'utf8').split('\n')) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const eq = trimmed.indexOf('=')
-    if (eq === -1) continue
-    const key = trimmed.slice(0, eq).trim()
-    const val = trimmed.slice(eq + 1).trim().replace(/^["']|["']$/g, '')
-    if (key && !(key in process.env)) process.env[key] = val
-  }
+  require('dotenv').config({ path: rootEnv, override: false })
 }
 
 /** @type {import('next').NextConfig} */
@@ -27,8 +21,11 @@ const nextConfig = {
     '@helpnest/db',
     // Prisma must be external so the native query-engine binary is resolved at runtime,
     // not bundled by webpack (which cannot include platform-specific .node files).
-    '@prisma/client',
+    // @prisma/client is no longer listed directly — the generated client lives under
+    // packages/db/generated/prisma and is accessed exclusively through @helpnest/db.
     'prisma',
+    '@prisma/adapter-pg',
+    'pg',
     '@qdrant/js-client-rest',
     'undici',
     'openai',
