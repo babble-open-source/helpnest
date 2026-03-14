@@ -3,6 +3,7 @@ import { Prisma, PrismaClient } from '@prisma/client'
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined
   workspaceColumnExists: Record<string, Promise<boolean> | undefined> | undefined
+  workspaceColumnSet: Promise<Set<string>> | undefined
 }
 
 /**
@@ -35,6 +36,24 @@ export const prisma =
   })
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+
+/**
+ * Returns the full set of column names for the Workspace table in one query.
+ * Cached in process memory — only hits the DB once per server process lifetime.
+ * Use this in page/route handlers that need to check multiple columns; prefer
+ * it over calling hasWorkspaceColumn() 19 times.
+ */
+export function getWorkspaceColumnSet(): Promise<Set<string>> {
+  return (globalForPrisma.workspaceColumnSet ??= prisma
+    .$queryRaw<Array<{ column_name: string }>>(Prisma.sql`
+      SELECT column_name
+      FROM information_schema.columns
+      WHERE table_schema = current_schema()
+        AND table_name = 'Workspace'
+    `)
+    .then((rows) => new Set(rows.map((r) => r.column_name)))
+    .catch(() => new Set<string>()))
+}
 
 export function hasWorkspaceColumn(columnName: string): Promise<boolean> {
   const cache = (globalForPrisma.workspaceColumnExists ??= {})

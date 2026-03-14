@@ -1,28 +1,7 @@
 import { auth } from '@/lib/auth'
 import { isDemoMode } from '@/lib/demo'
 import { fontPresets, radiusOptions } from '@/lib/branding'
-import {
-  hasWorkspaceBrandTextColumn,
-  hasWorkspaceFaviconColumn,
-  hasWorkspaceCustomAccentColorColumn,
-  hasWorkspaceCustomBrandFontFamilyColumn,
-  hasWorkspaceCustomBrandFontUrlColumn,
-  hasWorkspaceCustomBodyFontFamilyColumn,
-  hasWorkspaceCustomBodyFontUrlColumn,
-  hasWorkspaceCustomBorderColorColumn,
-  hasWorkspaceCustomCreamColorColumn,
-  hasWorkspaceCustomGreenColorColumn,
-  hasWorkspaceCustomHeadingFontFamilyColumn,
-  hasWorkspaceCustomHeadingFontUrlColumn,
-  hasWorkspaceCustomInkColorColumn,
-  hasWorkspaceCustomMutedColorColumn,
-  hasWorkspaceCustomRadiusColumn,
-  hasWorkspaceCustomWhiteColorColumn,
-  hasWorkspaceFontPresetColumn,
-  hasWorkspaceMetaDescriptionColumn,
-  hasWorkspaceMetaTitleColumn,
-  prisma,
-} from '@/lib/db'
+import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { themes } from '@/lib/themes'
 import { redirect } from 'next/navigation'
 import { AiSettingsSection } from './AiSettingsSection'
@@ -39,231 +18,75 @@ export default async function SettingsPage() {
   const session = await auth()
   if (!session?.user) redirect('/login')
 
-  const [
-    fontPresetColumnExists,
-    brandTextColumnExists,
-    faviconColumnExists,
-    metaTitleColumnExists,
-    metaDescriptionColumnExists,
-    customCreamColorColumnExists,
-    customInkColorColumnExists,
-    customMutedColorColumnExists,
-    customBorderColorColumnExists,
-    customAccentColorColumnExists,
-    customGreenColorColumnExists,
-    customWhiteColorColumnExists,
-    customRadiusColumnExists,
-    customHeadingFontFamilyColumnExists,
-    customHeadingFontUrlColumnExists,
-    customBodyFontFamilyColumnExists,
-    customBodyFontUrlColumnExists,
-    customBrandFontFamilyColumnExists,
-    customBrandFontUrlColumnExists,
-  ] = await Promise.all([
-    hasWorkspaceFontPresetColumn(),
-    hasWorkspaceBrandTextColumn(),
-    hasWorkspaceFaviconColumn(),
-    hasWorkspaceMetaTitleColumn(),
-    hasWorkspaceMetaDescriptionColumn(),
-    hasWorkspaceCustomCreamColorColumn(),
-    hasWorkspaceCustomInkColorColumn(),
-    hasWorkspaceCustomMutedColorColumn(),
-    hasWorkspaceCustomBorderColorColumn(),
-    hasWorkspaceCustomAccentColorColumn(),
-    hasWorkspaceCustomGreenColorColumn(),
-    hasWorkspaceCustomWhiteColorColumn(),
-    hasWorkspaceCustomRadiusColumn(),
-    hasWorkspaceCustomHeadingFontFamilyColumn(),
-    hasWorkspaceCustomHeadingFontUrlColumn(),
-    hasWorkspaceCustomBodyFontFamilyColumn(),
-    hasWorkspaceCustomBodyFontUrlColumn(),
-    hasWorkspaceCustomBrandFontFamilyColumn(),
-    hasWorkspaceCustomBrandFontUrlColumn(),
+  // Parallel: member lookup + column set (single schema query, cached for process lifetime)
+  const [member, columns] = await Promise.all([
+    prisma.member.findFirst({
+      where: { user: { email: session.user.email! } },
+      select: {
+        workspaceId: true,
+        userId: true,
+        role: true,
+        user: { select: { id: true, name: true, email: true } },
+      },
+    }),
+    getWorkspaceColumnSet(),
   ])
-  const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
-    select: {
-      workspaceId: true,
-      userId: true,
-      role: true,
-      user: {
-        select: { id: true, name: true, email: true },
-      },
-      workspace: {
-        select: {
-          name: true,
-          slug: true,
-          customDomain: true,
-          logo: true,
-          themeId: true,
-        },
-      },
-    },
-  })
+
   if (!member) redirect('/dashboard')
 
-  const [
-    workspaceFontPreset,
-    workspaceBrandText,
-    workspaceFavicon,
-    workspaceMetaTitle,
-    workspaceMetaDescription,
-    workspaceCustomCreamColor,
-    workspaceCustomInkColor,
-    workspaceCustomMutedColor,
-    workspaceCustomBorderColor,
-    workspaceCustomAccentColor,
-    workspaceCustomGreenColor,
-    workspaceCustomWhiteColor,
-    workspaceCustomRadius,
-    workspaceCustomHeadingFontFamily,
-    workspaceCustomHeadingFontUrl,
-    workspaceCustomBodyFontFamily,
-    workspaceCustomBodyFontUrl,
-    workspaceCustomBrandFontFamily,
-    workspaceCustomBrandFontUrl,
-  ] = await Promise.all([
-    fontPresetColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { fontPresetId: true },
-        })
-      : Promise.resolve(null),
-    brandTextColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { brandText: true },
-        })
-      : Promise.resolve(null),
-    faviconColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { favicon: true },
-        })
-      : Promise.resolve(null),
-    metaTitleColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { metaTitle: true },
-        })
-      : Promise.resolve(null),
-    metaDescriptionColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { metaDescription: true },
-        })
-      : Promise.resolve(null),
-    customCreamColorColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customCreamColor: true },
-        })
-      : Promise.resolve(null),
-    customInkColorColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customInkColor: true },
-        })
-      : Promise.resolve(null),
-    customMutedColorColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customMutedColor: true },
-        })
-      : Promise.resolve(null),
-    customBorderColorColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customBorderColor: true },
-        })
-      : Promise.resolve(null),
-    customAccentColorColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customAccentColor: true },
-        })
-      : Promise.resolve(null),
-    customGreenColorColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customGreenColor: true },
-        })
-      : Promise.resolve(null),
-    customWhiteColorColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customWhiteColor: true },
-        })
-      : Promise.resolve(null),
-    customRadiusColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customRadius: true },
-        })
-      : Promise.resolve(null),
-    customHeadingFontFamilyColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customHeadingFontFamily: true },
-        })
-      : Promise.resolve(null),
-    customHeadingFontUrlColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customHeadingFontUrl: true },
-        })
-      : Promise.resolve(null),
-    customBodyFontFamilyColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customBodyFontFamily: true },
-        })
-      : Promise.resolve(null),
-    customBodyFontUrlColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customBodyFontUrl: true },
-        })
-      : Promise.resolve(null),
-    customBrandFontFamilyColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customBrandFontFamily: true },
-        })
-      : Promise.resolve(null),
-    customBrandFontUrlColumnExists
-      ? prisma.workspace.findUnique({
-          where: { id: member.workspaceId },
-          select: { customBrandFontUrl: true },
-        })
-      : Promise.resolve(null),
+  // Parallel: single workspace query (all fields in one trip) + team list
+  const [workspace, members] = await Promise.all([
+    prisma.workspace.findUnique({
+      where: { id: member.workspaceId },
+      select: {
+        // Base fields
+        name: true,
+        slug: true,
+        logo: true,
+        themeId: true,
+        customDomain: true,
+        // AI settings
+        aiEnabled: true,
+        aiProvider: true,
+        aiModel: true,
+        aiApiKey: true,
+        aiGreeting: true,
+        aiInstructions: true,
+        aiEscalationThreshold: true,
+        productContext: true,
+        autoDraftGapsEnabled: true,
+        autoDraftGapThreshold: true,
+        autoDraftExternalEnabled: true,
+        batchWindowMinutes: true,
+        // Migration-guarded branding fields — only selected when the column exists
+        ...(columns.has('fontPresetId') ? { fontPresetId: true } : {}),
+        ...(columns.has('brandText') ? { brandText: true } : {}),
+        ...(columns.has('favicon') ? { favicon: true } : {}),
+        ...(columns.has('metaTitle') ? { metaTitle: true } : {}),
+        ...(columns.has('metaDescription') ? { metaDescription: true } : {}),
+        ...(columns.has('customCreamColor') ? { customCreamColor: true } : {}),
+        ...(columns.has('customInkColor') ? { customInkColor: true } : {}),
+        ...(columns.has('customMutedColor') ? { customMutedColor: true } : {}),
+        ...(columns.has('customBorderColor') ? { customBorderColor: true } : {}),
+        ...(columns.has('customAccentColor') ? { customAccentColor: true } : {}),
+        ...(columns.has('customGreenColor') ? { customGreenColor: true } : {}),
+        ...(columns.has('customWhiteColor') ? { customWhiteColor: true } : {}),
+        ...(columns.has('customRadius') ? { customRadius: true } : {}),
+        ...(columns.has('customHeadingFontFamily') ? { customHeadingFontFamily: true } : {}),
+        ...(columns.has('customHeadingFontUrl') ? { customHeadingFontUrl: true } : {}),
+        ...(columns.has('customBodyFontFamily') ? { customBodyFontFamily: true } : {}),
+        ...(columns.has('customBodyFontUrl') ? { customBodyFontUrl: true } : {}),
+        ...(columns.has('customBrandFontFamily') ? { customBrandFontFamily: true } : {}),
+        ...(columns.has('customBrandFontUrl') ? { customBrandFontUrl: true } : {}),
+      },
+    }),
+    prisma.member.findMany({
+      where: { workspaceId: member.workspaceId },
+      include: { user: { select: { id: true, email: true, name: true } } },
+      orderBy: [{ role: 'asc' }, { user: { name: 'asc' } }],
+    }),
   ])
 
-  const members = await prisma.member.findMany({
-    where: { workspaceId: member.workspaceId },
-    include: { user: { select: { id: true, email: true, name: true } } },
-    orderBy: [{ role: 'asc' }, { user: { name: 'asc' } }],
-  })
-
-  const aiSettings = await prisma.workspace.findUnique({
-    where: { id: member.workspaceId },
-    select: {
-      aiEnabled: true,
-      aiProvider: true,
-      aiModel: true,
-      aiApiKey: true,
-      aiGreeting: true,
-      aiInstructions: true,
-      aiEscalationThreshold: true,
-      productContext: true,
-      autoDraftGapsEnabled: true,
-      autoDraftGapThreshold: true,
-      autoDraftExternalEnabled: true,
-      batchWindowMinutes: true,
-    },
-  })
-
-  // Serialize deactivatedAt to string so the client component receives a plain object
   const serializedMembers = members.map((m) => ({
     ...m,
     deactivatedAt: m.deactivatedAt ? m.deactivatedAt.toISOString() : null,
@@ -284,16 +107,16 @@ export default async function SettingsPage() {
         <div className="bg-white rounded-xl border border-border p-6">
           <h2 className="font-medium text-ink mb-4">Workspace</h2>
           <WorkspaceForm
-            name={member.workspace.name}
-            slug={member.workspace.slug}
-            customDomain={member.workspace.customDomain ?? ''}
-            logo={member.workspace.logo ?? ''}
-            brandText={workspaceBrandText?.brandText ?? ''}
-            customBrandFontFamily={workspaceCustomBrandFontFamily?.customBrandFontFamily ?? ''}
-            customBrandFontUrl={workspaceCustomBrandFontUrl?.customBrandFontUrl ?? ''}
-            favicon={workspaceFavicon?.favicon ?? ''}
-            metaTitle={workspaceMetaTitle?.metaTitle ?? ''}
-            metaDescription={workspaceMetaDescription?.metaDescription ?? ''}
+            name={workspace?.name ?? ''}
+            slug={workspace?.slug ?? ''}
+            customDomain={workspace?.customDomain ?? ''}
+            logo={workspace?.logo ?? ''}
+            brandText={workspace?.brandText ?? ''}
+            customBrandFontFamily={workspace?.customBrandFontFamily ?? ''}
+            customBrandFontUrl={workspace?.customBrandFontUrl ?? ''}
+            favicon={workspace?.favicon ?? ''}
+            metaTitle={workspace?.metaTitle ?? ''}
+            metaDescription={workspace?.metaDescription ?? ''}
             appUrl={appUrl}
             demoMode={demoMode}
           />
@@ -317,40 +140,40 @@ export default async function SettingsPage() {
             themes={themes}
             fontPresets={fontPresets}
             radiusOptions={radiusOptions}
-            currentThemeId={member.workspace.themeId}
-            currentFontPresetId={workspaceFontPreset?.fontPresetId ?? null}
-            currentCustomCreamColor={workspaceCustomCreamColor?.customCreamColor ?? ''}
-            currentCustomInkColor={workspaceCustomInkColor?.customInkColor ?? ''}
-            currentCustomMutedColor={workspaceCustomMutedColor?.customMutedColor ?? ''}
-            currentCustomBorderColor={workspaceCustomBorderColor?.customBorderColor ?? ''}
-            currentCustomAccentColor={workspaceCustomAccentColor?.customAccentColor ?? ''}
-            currentCustomGreenColor={workspaceCustomGreenColor?.customGreenColor ?? ''}
-            currentCustomWhiteColor={workspaceCustomWhiteColor?.customWhiteColor ?? ''}
-            currentCustomRadius={workspaceCustomRadius?.customRadius ?? ''}
-            currentCustomHeadingFontFamily={workspaceCustomHeadingFontFamily?.customHeadingFontFamily ?? ''}
-            currentCustomHeadingFontUrl={workspaceCustomHeadingFontUrl?.customHeadingFontUrl ?? ''}
-            currentCustomBodyFontFamily={workspaceCustomBodyFontFamily?.customBodyFontFamily ?? ''}
-            currentCustomBodyFontUrl={workspaceCustomBodyFontUrl?.customBodyFontUrl ?? ''}
-            workspaceSlug={member.workspace.slug}
+            currentThemeId={workspace?.themeId ?? ''}
+            currentFontPresetId={workspace?.fontPresetId ?? null}
+            currentCustomCreamColor={workspace?.customCreamColor ?? ''}
+            currentCustomInkColor={workspace?.customInkColor ?? ''}
+            currentCustomMutedColor={workspace?.customMutedColor ?? ''}
+            currentCustomBorderColor={workspace?.customBorderColor ?? ''}
+            currentCustomAccentColor={workspace?.customAccentColor ?? ''}
+            currentCustomGreenColor={workspace?.customGreenColor ?? ''}
+            currentCustomWhiteColor={workspace?.customWhiteColor ?? ''}
+            currentCustomRadius={workspace?.customRadius ?? ''}
+            currentCustomHeadingFontFamily={workspace?.customHeadingFontFamily ?? ''}
+            currentCustomHeadingFontUrl={workspace?.customHeadingFontUrl ?? ''}
+            currentCustomBodyFontFamily={workspace?.customBodyFontFamily ?? ''}
+            currentCustomBodyFontUrl={workspace?.customBodyFontUrl ?? ''}
+            workspaceSlug={workspace?.slug ?? ''}
             demoMode={demoMode}
           />
         </div>
 
         {/* AI Agent */}
         <AiSettingsSection
-          aiEnabled={aiSettings?.aiEnabled ?? false}
-          aiProvider={aiSettings?.aiProvider ?? null}
-          aiModel={aiSettings?.aiModel ?? null}
-          aiGreeting={aiSettings?.aiGreeting ?? null}
-          aiInstructions={aiSettings?.aiInstructions ?? null}
-          aiEscalationThreshold={aiSettings?.aiEscalationThreshold ?? 0.3}
-          hasApiKey={!!aiSettings?.aiApiKey}
+          aiEnabled={workspace?.aiEnabled ?? false}
+          aiProvider={workspace?.aiProvider ?? null}
+          aiModel={workspace?.aiModel ?? null}
+          aiGreeting={workspace?.aiGreeting ?? null}
+          aiInstructions={workspace?.aiInstructions ?? null}
+          aiEscalationThreshold={workspace?.aiEscalationThreshold ?? 0.3}
+          hasApiKey={!!workspace?.aiApiKey}
           demoMode={demoMode}
-          productContext={aiSettings?.productContext ?? null}
-          autoDraftGapsEnabled={aiSettings?.autoDraftGapsEnabled ?? true}
-          autoDraftGapThreshold={aiSettings?.autoDraftGapThreshold ?? 2}
-          autoDraftExternalEnabled={aiSettings?.autoDraftExternalEnabled ?? true}
-          batchWindowMinutes={aiSettings?.batchWindowMinutes ?? 60}
+          productContext={workspace?.productContext ?? null}
+          autoDraftGapsEnabled={workspace?.autoDraftGapsEnabled ?? true}
+          autoDraftGapThreshold={workspace?.autoDraftGapThreshold ?? 2}
+          autoDraftExternalEnabled={workspace?.autoDraftExternalEnabled ?? true}
+          batchWindowMinutes={workspace?.batchWindowMinutes ?? 60}
         />
 
         {/* AI Search */}
