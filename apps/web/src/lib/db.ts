@@ -38,9 +38,19 @@ function createPrismaClient(): PrismaClient {
   })
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
+function getOrCreatePrisma(): PrismaClient {
+  return (globalForPrisma.prisma ??= createPrismaClient())
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+// Lazily initialised so DATABASE_URL is read at request time, not at module-load
+// time (which happens during `next build` when collecting page data).
+export const prisma: PrismaClient = new Proxy({} as PrismaClient, {
+  get(_target, prop, receiver) {
+    const client = getOrCreatePrisma()
+    const value = Reflect.get(client, prop, receiver)
+    return typeof value === 'function' ? value.bind(client) : value
+  },
+})
 
 /**
  * Returns the full set of column names for the Workspace table in one query.
