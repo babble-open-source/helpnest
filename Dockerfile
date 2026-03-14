@@ -60,7 +60,7 @@ RUN node -e " \
   const dbPaths = ['/app/packages/db']; \
   const cp = (src, dst) => cpSync(src, dst, { recursive: true, dereference: true }); \
   const resolvePkgDir = (name, paths) => { \
-    let dir = path.dirname(require.resolve(name + '/package.json', { paths })); \
+    let dir = path.dirname(require.resolve(name, { paths })); \
     while (!existsSync(path.join(dir, 'package.json'))) { \
       const parent = path.dirname(dir); \
       if (parent === dir) throw new Error('Could not find package root for ' + name); \
