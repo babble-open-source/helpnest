@@ -42,6 +42,12 @@ ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
+# Placeholder DATABASE_URL so Next.js can import route modules during page-data
+# collection without the Prisma client throwing on an empty connection string.
+# All API routes are fully dynamic — the DB is never actually queried at build time.
+# The real DATABASE_URL is injected at runtime via Kubernetes Secret / docker run --env-file.
+ENV DATABASE_URL=postgresql://build:build@localhost:5432/build_placeholder
+
 RUN pnpm --filter @helpnest/widget build
 RUN cd apps/web && pnpm build
 
