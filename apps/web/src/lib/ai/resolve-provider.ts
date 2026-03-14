@@ -113,6 +113,9 @@ export function resolveProvider(workspace: WorkspaceAiSettings): ModelProvider {
       case 'google':
         apiKey = process.env.GOOGLE_AI_API_KEY ?? null
         break
+      case 'mistral':
+        apiKey = process.env.MISTRAL_API_KEY ?? null
+        break
       default:
         apiKey = process.env.ANTHROPIC_API_KEY ?? null
     }

@@ -37,6 +37,7 @@ export function AiSettingsSection({
   const [provider, setProvider] = useState((initProvider || 'anthropic').toLowerCase())
   const [model, setModel] = useState(initModel || '')
   const [apiKey, setApiKey] = useState('')
+  const [removeApiKey, setRemoveApiKey] = useState(false)
   const [greeting, setGreeting] = useState(initGreeting || '')
   const [instructions, setInstructions] = useState(initInstructions || '')
   const [threshold, setThreshold] = useState(initThreshold)
@@ -47,11 +48,13 @@ export function AiSettingsSection({
   const [batchWindowMinutes, setBatchWindowMinutes] = useState(initBatchWindowMinutes)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   async function handleSave() {
     if (demoMode) return
     setSaving(true)
     setSaved(false)
+    setSaveError(null)
     try {
       const body: Record<string, unknown> = {
         aiEnabled: enabled,
@@ -66,7 +69,8 @@ export function AiSettingsSection({
         autoDraftExternalEnabled,
         batchWindowMinutes,
       }
-      if (apiKey) body.aiApiKey = apiKey
+      if (removeApiKey) body.aiApiKey = null
+      else if (apiKey) body.aiApiKey = apiKey
       const res = await fetch('/api/workspace/settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -75,8 +79,14 @@ export function AiSettingsSection({
       if (res.ok) {
         setSaved(true)
         setApiKey('')
+        setRemoveApiKey(false)
         setTimeout(() => setSaved(false), 3000)
+      } else {
+        const data = await res.json() as { error?: string }
+        setSaveError(data.error ?? 'Failed to save settings.')
       }
+    } catch {
+      setSaveError('Network error. Please try again.')
     } finally {
       setSaving(false)
     }
@@ -115,22 +125,28 @@ export function AiSettingsSection({
         </button>
       </div>
 
+      <div className="space-y-4 border-t border-border pt-4">
       {enabled && (
-        <div className="space-y-4 border-t border-border pt-4">
+        <>
           <div>
             <label className="block text-sm font-medium text-ink mb-1">AI Provider</label>
-            <select
-              value={provider}
-              onChange={(e) => setProvider(e.target.value)}
-              disabled={demoMode}
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
-            >
-              {providers.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <select
+                value={provider}
+                onChange={(e) => { setProvider(e.target.value); setModel('') }}
+                disabled={demoMode}
+                className="w-full appearance-none px-3 py-2 pr-8 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50 cursor-pointer"
+              >
+                {providers.map((p) => (
+                  <option key={p.value} value={p.value}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+              <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
           </div>
 
           <div>
@@ -156,19 +172,40 @@ export function AiSettingsSection({
 
           <div>
             <label className="block text-sm font-medium text-ink mb-1">API Key</label>
-            <input
-              type="password"
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              disabled={demoMode}
-              placeholder={hasApiKey ? '••••••••• (configured)' : 'Enter API key...'}
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
-            />
-            <p className="text-xs text-muted mt-1">
-              {hasApiKey
-                ? 'Enter a new key to replace the existing one.'
-                : 'Encrypted at rest. Leave blank to use server environment variables.'}
-            </p>
+            {removeApiKey ? (
+              <div className="flex items-center gap-2 px-3 py-2 border border-red-200 rounded-lg bg-red-50 text-sm text-red-600">
+                <span className="flex-1">Key will be removed on save — AI will use server environment variables.</span>
+                <button type="button" onClick={() => setRemoveApiKey(false)} className="underline hover:no-underline shrink-0">Undo</button>
+              </div>
+            ) : (
+              <input
+                type="password"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                disabled={demoMode}
+                placeholder={hasApiKey ? '••••••••• (configured — enter new key to replace)' : 'Enter API key...'}
+                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
+              />
+            )}
+            <div className="flex items-center justify-between mt-1">
+              <p className="text-xs text-muted">
+                {hasApiKey && !removeApiKey
+                  ? 'Encrypted at rest.'
+                  : !hasApiKey
+                    ? 'Encrypted at rest. Leave blank to use server environment variables.'
+                    : ''}
+              </p>
+              {hasApiKey && !removeApiKey && (
+                <button
+                  type="button"
+                  onClick={() => { setRemoveApiKey(true); setApiKey('') }}
+                  disabled={demoMode}
+                  className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                >
+                  Remove key
+                </button>
+              )}
+            </div>
           </div>
 
           <div>
@@ -197,9 +234,10 @@ export function AiSettingsSection({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">
-              Escalation Threshold: {Math.round(threshold * 100)}%
-            </label>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-sm font-medium text-ink">Escalation Threshold</label>
+              <span className="text-sm text-muted">{Math.round(threshold * 100)}% confidence required</span>
+            </div>
             <input
               type="range"
               min="0"
@@ -210,8 +248,12 @@ export function AiSettingsSection({
               disabled={demoMode}
               className="w-full accent-green disabled:opacity-50"
             />
+            <div className="flex justify-between text-xs text-muted mt-0.5">
+              <span>AI handles everything</span>
+              <span>Always escalate</span>
+            </div>
             <p className="text-xs text-muted mt-1">
-              Auto-escalate to a human when AI confidence falls below this threshold.
+              Hand off to a human agent when AI confidence is below this level.
             </p>
           </div>
 
@@ -312,15 +354,20 @@ export function AiSettingsSection({
             )}
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving || demoMode}
-            className="px-4 py-2 bg-green text-white rounded-lg text-sm font-medium hover:bg-green/90 disabled:opacity-50 transition-colors"
-          >
-            {saving ? 'Saving...' : saved ? 'Saved!' : 'Save AI Settings'}
-          </button>
-        </div>
+        </>
       )}
+
+      {saveError && (
+        <p className="text-sm text-red-500">{saveError}</p>
+      )}
+      <button
+        onClick={handleSave}
+        disabled={saving || demoMode}
+        className="px-4 py-2 bg-green text-white rounded-lg text-sm font-medium hover:bg-green/90 disabled:opacity-50 transition-colors"
+      >
+        {saving ? 'Saving...' : saved ? 'Saved!' : 'Save AI Settings'}
+      </button>
+      </div>
     </div>
   )
 }

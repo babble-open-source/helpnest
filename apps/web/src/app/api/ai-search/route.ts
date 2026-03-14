@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server'
-import Anthropic from '@anthropic-ai/sdk'
 import { prisma } from '@/lib/db'
 import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import { embedText } from '@/lib/embeddings'
 import { redis } from '@/lib/redis'
-
-// Lazily initialised so the key is read at request time, not at build/module-load time.
-// This means adding the env var and restarting the server is sufficient — no redeploy needed.
-let _anthropic: Anthropic | null = null
-function getAnthropic(): Anthropic {
-  if (!_anthropic) {
-    _anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY ?? '' })
-  }
-  return _anthropic
-}
+import { resolveProvider } from '@/lib/ai/resolve-provider'
 
 type SearchResultLike = { payload?: Record<string, unknown> | null }
 type ArticleRow = {
@@ -105,14 +95,6 @@ export async function OPTIONS() {
 }
 
 export async function POST(request: Request) {
-  // Fail fast with a clear error if the API key is not configured.
-  if (!process.env.ANTHROPIC_API_KEY) {
-    return NextResponse.json(
-      { error: 'AI search is not configured. Set ANTHROPIC_API_KEY in your environment.' },
-      { status: 503, headers: CORS_HEADERS },
-    )
-  }
-
   let body: { query?: string; workspaceSlug?: string }
   try {
     body = await request.json() as { query?: string; workspaceSlug?: string }
@@ -154,10 +136,31 @@ export async function POST(request: Request) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { slug: workspaceSlug },
-    select: { id: true, name: true },
+    select: { id: true, name: true, aiEnabled: true, aiProvider: true, aiApiKey: true, aiModel: true },
   })
   if (!workspace) {
     return NextResponse.json({ error: 'Workspace not found' }, { status: 404, headers: CORS_HEADERS })
+  }
+
+  if (!workspace.aiEnabled) {
+    return NextResponse.json(
+      { error: 'AI search is not enabled for this workspace.' },
+      { status: 503, headers: CORS_HEADERS },
+    )
+  }
+
+  let aiProvider: ReturnType<typeof resolveProvider>
+  try {
+    aiProvider = resolveProvider({
+      aiProvider: workspace.aiProvider,
+      aiApiKey: workspace.aiApiKey,
+      aiModel: workspace.aiModel,
+    })
+  } catch (e) {
+    return NextResponse.json(
+      { error: e instanceof Error ? e.message : 'AI provider not configured.' },
+      { status: 503, headers: CORS_HEADERS },
+    )
   }
 
   // 1. Embed the query (requires OPENAI_API_KEY; falls back to full-text if unavailable)
@@ -263,21 +266,7 @@ export async function POST(request: Request) {
     collection: a.collection,
   }))
 
-  // 4. Stream Claude response
-  const stream = getAnthropic().messages.stream({
-    model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
-    system: `You are a helpful customer support assistant for ${workspace.name}.
-Answer questions ONLY using the provided help center articles.
-Be concise, friendly, and accurate.
-If the articles don't contain enough information, say so and suggest contacting support.
-Format your response in plain text (no markdown).`,
-    messages: [{
-      role: 'user',
-      content: `Help center articles:\n\n${context}\n\nCustomer question: ${query}`,
-    }],
-  })
-
+  // 4. Stream response via workspace-configured provider
   const encoder = new TextEncoder()
   const readable = new ReadableStream({
     async start(controller) {
@@ -285,14 +274,31 @@ Format your response in plain text (no markdown).`,
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources })}\n\n`)
         )
-        for await (const chunk of stream) {
-          if (chunk.type === 'content_block_delta' && chunk.delta.type === 'text_delta') {
+        for await (const event of aiProvider.streamChat({
+          model: workspace.aiModel ?? undefined,
+          maxTokens: 1024,
+          system: `You are a helpful customer support assistant for ${workspace.name}.
+Answer questions ONLY using the provided help center articles.
+Be concise, friendly, and accurate.
+If the articles don't contain enough information, say so and suggest contacting support.
+Format your response in plain text (no markdown).`,
+          messages: [{
+            role: 'user',
+            content: `Help center articles:\n\n${context}\n\nCustomer question: ${query}`,
+          }],
+        })) {
+          if (event.type === 'text') {
             controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ type: 'text', text: chunk.delta.text })}\n\n`)
+              encoder.encode(`data: ${JSON.stringify({ type: 'text', text: event.text })}\n\n`)
+            )
+          } else if (event.type === 'done') {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
+          } else if (event.type === 'error') {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: 'error', message: event.message })}\n\n`)
             )
           }
         }
-        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
       } catch (err) {
         const message = err instanceof Error ? err.message : 'AI service error'
         controller.enqueue(

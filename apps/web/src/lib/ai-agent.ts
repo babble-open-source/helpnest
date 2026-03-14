@@ -349,6 +349,7 @@ export async function* runAgent(
       messages,
       tools: AGENT_TOOLS,
       maxTokens: 1024,
+      model: ctx.aiModel ?? undefined,
     })) {
       switch (event.type) {
         case 'text':

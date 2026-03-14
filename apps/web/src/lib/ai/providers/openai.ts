@@ -27,7 +27,7 @@ export class OpenAIProvider implements ModelProvider {
     ]
 
     const stream = await this.client.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: params.model ?? 'gpt-4o-mini',
       max_tokens: params.maxTokens ?? 1024,
       messages,
       ...(tools && tools.length > 0 ? { tools } : {}),

@@ -16,7 +16,7 @@ export class AnthropicProvider implements ModelProvider {
     }))
 
     const stream = this.client.messages.stream({
-      model: 'claude-haiku-4-5-20251001',
+      model: params.model ?? 'claude-haiku-4-5-20251001',
       max_tokens: params.maxTokens ?? 1024,
       system: params.system,
       messages: params.messages.map((m) => ({

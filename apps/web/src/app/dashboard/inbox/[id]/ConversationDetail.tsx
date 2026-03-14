@@ -393,18 +393,23 @@ export function ConversationDetail({
           <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">
             Assigned to
           </h3>
-          <select
-            value={conversation.assignedTo?.id ?? ''}
-            onChange={(e) => void handleAssign(e.target.value || null)}
-            className="w-full px-2 py-1.5 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-green transition-colors"
-          >
-            <option value="">Unassigned</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.name ?? m.email}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={conversation.assignedTo?.id ?? ''}
+              onChange={(e) => void handleAssign(e.target.value || null)}
+              className="w-full appearance-none px-2 py-1.5 pr-7 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-green transition-colors cursor-pointer"
+            >
+              <option value="">Unassigned</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name ?? m.email}
+                </option>
+              ))}
+            </select>
+            <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
 
         {/* Referenced articles */}

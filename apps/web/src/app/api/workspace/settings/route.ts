@@ -503,10 +503,13 @@ export async function PATCH(request: Request) {
     typeof aiGreeting === 'string' && aiGreeting.trim().length > 0 ? aiGreeting.trim() : null
   const trimmedAiInstructions =
     typeof aiInstructions === 'string' && aiInstructions.trim().length > 0 ? aiInstructions.trim() : null
+  // null = explicit removal (revert to env vars); string = encrypt and store; undefined = no change
   const encryptedAiApiKey =
-    typeof aiApiKey === 'string' && aiApiKey.trim().length > 0
-      ? encryptApiKey(aiApiKey.trim())
-      : undefined
+    aiApiKey === null
+      ? null
+      : typeof aiApiKey === 'string' && aiApiKey.trim().length > 0
+        ? encryptApiKey(aiApiKey.trim())
+        : undefined
 
   const canPersistFontPreset = fontPresetId === undefined ? false : await hasWorkspaceFontPresetColumn()
   const canPersistBrandText = brandText === undefined ? false : await hasWorkspaceBrandTextColumn()

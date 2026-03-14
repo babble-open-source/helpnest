@@ -28,7 +28,7 @@ export class GoogleProvider implements ModelProvider {
     }
 
     const genAI = new GoogleGenerativeAI(this.apiKey)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+    const genModel = genAI.getGenerativeModel({ model: params.model ?? 'gemini-1.5-flash' })
 
     // Google's chat API expects all messages except the last as history
     const history = params.messages.slice(0, -1).map((m: ChatMessage) => ({
@@ -36,7 +36,7 @@ export class GoogleProvider implements ModelProvider {
       parts: [{ text: m.content }],
     }))
 
-    const chat = model.startChat({
+    const chat = genModel.startChat({
       history,
       systemInstruction: params.system,
     })

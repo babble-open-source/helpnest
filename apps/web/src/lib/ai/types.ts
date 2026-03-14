@@ -20,6 +20,7 @@ export interface StreamChatParams {
   messages: ChatMessage[]
   tools?: ToolDefinition[]
   maxTokens?: number
+  model?: string
 }
 
 export interface ModelProvider {

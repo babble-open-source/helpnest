@@ -90,10 +90,11 @@ export function ArticleMetaSidebar({
           <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
             Collection
           </label>
+          <div className="relative">
           <select
             value={collectionId}
             onChange={(e) => onCollectionChange(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white text-ink"
+            className="w-full appearance-none px-3 py-2 pr-8 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white text-ink cursor-pointer"
           >
             {collections.map((c) => (
               <option key={c.id} value={c.id}>
@@ -101,6 +102,10 @@ export function ArticleMetaSidebar({
               </option>
             ))}
           </select>
+          <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          </svg>
+          </div>
         </div>
 
         {/* Slug */}
