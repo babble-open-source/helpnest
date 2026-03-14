@@ -60,13 +60,17 @@ RUN node -e " \
   const dbPaths = ['/app/packages/db']; \
   const cp = (src, dst) => cpSync(src, dst, { recursive: true, dereference: true }); \
   const resolvePkgDir = (name, paths) => { \
-    let dir = path.dirname(require.resolve(name, { paths })); \
-    while (!existsSync(path.join(dir, 'package.json'))) { \
-      const parent = path.dirname(dir); \
-      if (parent === dir) throw new Error('Could not find package root for ' + name); \
-      dir = parent; \
+    try { \
+      return path.dirname(require.resolve(name + '/package.json', { paths })); \
+    } catch (_) { \
+      let dir = path.dirname(require.resolve(name, { paths })); \
+      while (!existsSync(path.join(dir, 'package.json'))) { \
+        const parent = path.dirname(dir); \
+        if (parent === dir) throw new Error('Cannot find package root for ' + name); \
+        dir = parent; \
+      } \
+      return dir; \
     } \
-    return dir; \
   }; \
   const copyPkg = (name, outDir, fromPaths) => { \
     const src = resolvePkgDir(name, fromPaths ?? dbPaths); \
@@ -77,7 +81,7 @@ RUN node -e " \
   const cliOut = '/tmp/prisma-cli-node_modules'; \
   mkdirSync(cliOut, { recursive: true }); \
   const prismaDir = resolvePkgDir('prisma', dbPaths); \
-  const prismaNodeModules = path.join(prismaDir, 'node_modules'); \
+  const prismaNodeModules = path.dirname(prismaDir); \
   copyPkg('prisma', cliOut); \
   copyPkg('@prisma/engines', cliOut, [prismaNodeModules]); \
   copyPkg('@prisma/client', cliOut); \
