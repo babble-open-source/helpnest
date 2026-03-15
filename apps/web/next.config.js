@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const createNextIntlPlugin = require('next-intl/plugin')
 
 // Load the monorepo root .env for local development only.
 // In Docker/production, env vars come from the Kubernetes Secret — .env is
@@ -10,6 +11,8 @@ const rootEnv = path.resolve(__dirname, '../../.env')
 if (fs.existsSync(rootEnv)) {
   require('dotenv').config({ path: rootEnv, override: false })
 }
+
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts')
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -54,4 +57,4 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+module.exports = withNextIntl(nextConfig)

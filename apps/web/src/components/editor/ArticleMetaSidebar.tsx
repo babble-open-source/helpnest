@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
 interface Collection {
   id: string
@@ -44,6 +45,8 @@ export function ArticleMetaSidebar({
   collections,
 }: Props) {
   const router = useRouter()
+  const t = useTranslations('articleMeta')
+  const tCommon = useTranslations('common')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState('')
@@ -55,13 +58,13 @@ export function ArticleMetaSidebar({
       const res = await fetch(`/api/articles/${articleId}`, { method: 'DELETE' })
       if (!res.ok) {
         const data = await res.json() as { error?: string }
-        setDeleteError(data.error ?? 'Something went wrong')
+        setDeleteError(data.error ?? tCommon('somethingWentWrong'))
         return
       }
       router.push('/dashboard/articles')
       router.refresh()
     } catch {
-      setDeleteError('Something went wrong')
+      setDeleteError(tCommon('somethingWentWrong'))
     } finally {
       setDeleting(false)
     }
@@ -70,14 +73,14 @@ export function ArticleMetaSidebar({
   return (
     <aside className="w-72 bg-white border-l border-border flex flex-col shrink-0 overflow-y-auto">
       <div className="p-5 border-b border-border">
-        <p className="text-xs font-medium text-muted uppercase tracking-wide">Article settings</p>
+        <p className="text-xs font-medium text-muted uppercase tracking-wide">{t('articleSettings')}</p>
       </div>
 
       <div className="p-5 space-y-5 flex-1">
         {/* Status badge */}
         <div>
           <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-            Status
+            {t('status')}
           </label>
           <span className={`inline-flex items-center gap-1.5 text-sm px-2.5 py-1 rounded-full ${
             status === 'PUBLISHED'
@@ -89,14 +92,14 @@ export function ArticleMetaSidebar({
             <span className={`w-1.5 h-1.5 rounded-full ${
               status === 'PUBLISHED' ? 'bg-green' : 'bg-muted'
             }`} />
-            {status.charAt(0) + status.slice(1).toLowerCase()}
+            {status === 'PUBLISHED' ? tCommon('published') : status === 'ARCHIVED' ? tCommon('archived') : tCommon('draft')}
           </span>
         </div>
 
         {/* Collection */}
         <div>
           <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-            Collection
+            {t('collection')}
           </label>
           <div className="relative">
           <select
@@ -106,7 +109,7 @@ export function ArticleMetaSidebar({
           >
             {collections.map((c) => (
               <option key={c.id} value={c.id}>
-                {c.emoji} {c.title}{c.isArchived ? ' (archived)' : ''}
+                {c.emoji} {c.title}{c.isArchived ? ` (${tCommon('archived')})` : ''}
               </option>
             ))}
           </select>
@@ -119,7 +122,7 @@ export function ArticleMetaSidebar({
         {/* Slug */}
         <div>
           <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-            URL slug
+            {t('urlSlug')}
           </label>
           <input
             value={slug}
@@ -129,7 +132,7 @@ export function ArticleMetaSidebar({
             className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent font-mono"
           />
           {!slug.trim() && (
-            <p className="text-xs text-red-500 mt-1">Slug cannot be empty</p>
+            <p className="text-xs text-red-500 mt-1">{t('slugEmpty')}</p>
           )}
           <div className="flex items-center justify-between mt-1">
             <span className={`text-xs ${
@@ -146,27 +149,27 @@ export function ArticleMetaSidebar({
                 disabled={!slug.trim()}
                 className="text-xs text-accent hover:underline font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                Save slug
+                {t('saveSlug')}
               </button>
             )}
           </div>
           <p
             className="text-xs text-muted mt-1 overflow-hidden text-ellipsis whitespace-nowrap"
-            title={`help/collection/${slug}`}
+            title={`${t('helpCollectionPath')}/${slug}`}
           >
-            help/collection/<strong>{slug}</strong>
+            {t('helpCollectionPath')}/<strong>{slug}</strong>
           </p>
         </div>
 
         {/* Excerpt */}
         <div>
           <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-            Excerpt
+            {t('excerpt')}
           </label>
           <textarea
             value={excerpt}
             onChange={(e) => onExcerptChange(e.target.value)}
-            placeholder="Brief summary shown in article lists..."
+            placeholder={t('excerptPlaceholder')}
             rows={3}
             className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none"
           />
@@ -180,26 +183,26 @@ export function ArticleMetaSidebar({
             onClick={() => { setDeleteError(''); setConfirmDelete(true) }}
             className="w-full text-xs text-muted hover:text-red-500 transition-colors py-1"
           >
-            Delete article
+            {t('deleteArticle')}
           </button>
         ) : (
           <div className="space-y-2">
-            <p className="text-xs text-ink font-medium">Delete &ldquo;{articleTitle}&rdquo;?</p>
-            <p className="text-xs text-muted">This cannot be undone. All version history will also be deleted.</p>
+            <p className="text-xs text-ink font-medium">{t('deleteConfirmTitle', { title: articleTitle })}</p>
+            <p className="text-xs text-muted">{t('deleteConfirmMessage')}</p>
             {deleteError && <p className="text-xs text-red-500">{deleteError}</p>}
             <div className="flex gap-2">
               <button
                 onClick={() => setConfirmDelete(false)}
                 className="flex-1 text-xs text-muted hover:text-ink transition-colors py-1.5 border border-border rounded-lg"
               >
-                Cancel
+                {tCommon('cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
                 className="flex-1 text-xs bg-red-500 text-white rounded-lg py-1.5 hover:bg-red-600 transition-colors disabled:opacity-50"
               >
-                {deleting ? 'Deleting…' : 'Delete'}
+                {deleting ? tCommon('deleting') : tCommon('delete')}
               </button>
             </div>
           </div>

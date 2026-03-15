@@ -25,7 +25,8 @@ import { EditorBubbleMenu } from './EditorBubbleMenu'
 import { EditorFloatingMenu } from './EditorFloatingMenu'
 import { fixOrderedListCounters } from '@/components/help/ArticleContent'
 import { Tooltip } from '@/components/ui/Tooltip'
-import NextLink from 'next/link'
+import { Link as LocaleLink } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
 interface Article {
   id: string
@@ -65,6 +66,8 @@ interface ArticleVersion {
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 
 export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
+  const t = useTranslations('editor')
+  const tCommon = useTranslations('common')
   const [hasDraft, setHasDraft] = useState(article.hasDraft ?? false)
   // dismissedAiBanner: user explicitly dismissed; bannerVisible: derives from current state
   const [dismissedAiBanner, setDismissedAiBanner] = useState(false)
@@ -126,7 +129,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
       StarterKit.configure({ codeBlock: false }),
       Image,
       Link.configure({ openOnClick: false }),
-      Placeholder.configure({ placeholder: 'Start writing your article...' }),
+      Placeholder.configure({ placeholder: t('startWriting') }),
       CharacterCount,
       CodeBlockLowlight.configure({ lowlight: createLowlight(common) }),
       Table.configure({ resizable: true }),
@@ -264,15 +267,15 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-border shrink-0">
           <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
-            <NextLink href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm shrink-0">
-              &larr; Articles
-            </NextLink>
+            <LocaleLink href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm shrink-0">
+              {t('backToArticles')}
+            </LocaleLink>
             <div className="flex items-center gap-1 border-l border-border pl-3">
               {/* Outline toggle */}
-              <Tooltip content="Toggle outline panel" side="bottom" align="start">
+              <Tooltip content={t('toggleOutline')} side="bottom" align="start">
                 <button
                   onClick={() => setShowOutline((v) => !v)}
-                  aria-label="Toggle outline panel"
+                  aria-label={t('toggleOutline')}
                   className={`p-1.5 rounded transition-colors ${showOutline ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -281,10 +284,10 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
                 </button>
               </Tooltip>
               {/* Meta sidebar toggle */}
-              <Tooltip content="Toggle properties panel" side="bottom" align="start">
+              <Tooltip content={t('toggleProperties')} side="bottom" align="start">
                 <button
                   onClick={() => setShowMeta((v) => !v)}
-                  aria-label="Toggle properties panel"
+                  aria-label={t('toggleProperties')}
                   className={`p-1.5 rounded transition-colors ${showMeta ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -295,32 +298,32 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
               </Tooltip>
               {/* Editor mode switch */}
               <div className="ml-1 inline-flex items-center rounded-lg border border-border bg-cream p-0.5">
-                <Tooltip content="Classic toolbar editor" side="bottom" align="start">
+                <Tooltip content={t('classicToolbar')} side="bottom" align="start">
                   <button
                     onClick={() => setAndPersistEditorMode('classic')}
                     aria-pressed={editorMode === 'classic'}
-                    aria-label="Classic toolbar editor"
+                    aria-label={t('classicToolbar')}
                     className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                       editorMode === 'classic'
                         ? 'bg-white text-ink shadow-sm'
                         : 'text-muted hover:text-ink'
                     }`}
                   >
-                    Classic
+                    {t('classic')}
                   </button>
                 </Tooltip>
-                <Tooltip content="Notion-style slash command editor" side="bottom" align="start">
+                <Tooltip content={t('notionStyle')} side="bottom" align="start">
                   <button
                     onClick={() => setAndPersistEditorMode('notion')}
                     aria-pressed={editorMode === 'notion'}
-                    aria-label="Notion-style slash command editor"
+                    aria-label={t('notionStyle')}
                     className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                       editorMode === 'notion'
                         ? 'bg-white text-ink shadow-sm'
                         : 'text-muted hover:text-ink'
                     }`}
                   >
-                    Notion
+                    {t('notion')}
                   </button>
                 </Tooltip>
               </div>
@@ -331,59 +334,59 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
               saveStatus === 'error' ? 'text-red-500 bg-cream' :
               'text-accent bg-accent/10'
             }`}>
-              {saveStatus === 'saved' ? '✓ Saved' :
-               saveStatus === 'saving' ? 'Saving...' :
-               saveStatus === 'error' ? 'Save failed' :
-               'Unsaved changes'}
+              {saveStatus === 'saved' ? t('saved') :
+               saveStatus === 'saving' ? tCommon('saving') :
+               saveStatus === 'error' ? t('saveFailed') :
+               t('unsavedChanges')}
             </span>
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {hasDraft && saveStatus === 'saved' && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent">
-                Draft pending publish
+                {t('draftPendingPublish')}
               </span>
             )}
             {status === 'PUBLISHED' && (
               <>
-                <NextLink
+                <LocaleLink
                   href={`/${workspaceSlug}/help/${savedCollectionSlug}/${savedSlug}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink transition-colors border border-border rounded-lg px-3 py-1.5"
                   title={
                     slug !== savedSlug || collectionSlug !== savedCollectionSlug
-                      ? 'URL has unsaved changes — save to update the live link'
-                      : 'Open customer-facing article'
+                      ? t('urlUnsaved')
+                      : t('openArticle')
                   }
                 >
                   <svg className="w-3.5 h-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                   </svg>
-                  View live
-                </NextLink>
+                  {t('viewLive')}
+                </LocaleLink>
                 <div className="w-px h-4 bg-border shrink-0" />
               </>
             )}
-            <Tooltip content="View and restore previous versions" side="bottom" align="end">
+            <Tooltip content={t('history')} side="bottom" align="end">
               <button
                 onClick={loadVersions}
                 className="text-sm text-muted hover:text-ink transition-colors px-3 py-1.5"
               >
-                History
+                {t('history')}
               </button>
             </Tooltip>
-            <Tooltip content="Save current changes without publishing" side="bottom" align="end">
+            <Tooltip content={t('saveDescription')} side="bottom" align="end">
               <button
                 onClick={() => save()}
                 className="text-sm text-muted hover:text-ink transition-colors px-3 py-1.5"
               >
-                Save
+                {tCommon('save')}
               </button>
             </Tooltip>
             <Tooltip
               content={status === 'PUBLISHED'
-                ? 'Publish the latest draft changes to the live article'
-                : 'Publish this article and make it visible to readers'}
+                ? t('publishDescription')
+                : t('publishFirstDescription')}
               side="bottom"
               align="end"
             >
@@ -391,7 +394,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
                 onClick={publish}
                 className="text-sm bg-accent text-white rounded-lg px-4 py-1.5 hover:bg-accent/90 transition-colors font-medium"
               >
-                {status === 'PUBLISHED' ? 'Update' : 'Publish'}
+                {status === 'PUBLISHED' ? tCommon('update') : tCommon('publish')}
               </button>
             </Tooltip>
           </div>
@@ -419,14 +422,14 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
             <div className="border-b border-border bg-accent/5 px-6 py-3 flex items-start justify-between gap-4">
               <p className="text-sm text-ink">
                 {status === 'DRAFT'
-                  ? 'AI Draft — Created automatically from a customer question or code change. Review carefully before publishing.'
-                  : 'AI Update Suggested — AI proposes changes based on a recent code change. Review the proposed update below before publishing.'}
+                  ? t('aiDraftBanner')
+                  : t('aiUpdateBanner')}
               </p>
               <button
                 onClick={() => setDismissedAiBanner(true)}
                 className="shrink-0 text-muted hover:text-ink text-xs mt-0.5"
               >
-                Dismiss
+                {t('dismiss')}
               </button>
             </div>
           )}
@@ -435,7 +438,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Article title"
+              placeholder={t('articleTitle')}
               className="w-full font-serif text-4xl text-ink bg-transparent outline-none placeholder:text-muted/40 mb-6 leading-tight"
             />
             {/* Editor body */}
@@ -448,9 +451,9 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
 
         {/* Footer */}
         <div className="px-6 py-2 border-t border-border bg-white flex items-center gap-4 text-xs text-muted shrink-0">
-          <span>{wordCount} words</span>
+          <span>{wordCount} {t('words')}</span>
           <span>&middot;</span>
-          <span>{readTime} min read</span>
+          <span>{readTime} {t('readTime')}</span>
         </div>
       </div>
 
@@ -485,7 +488,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="font-medium text-ink">Version History</h2>
+              <h2 className="font-medium text-ink">{t('versionHistory')}</h2>
               <button
                 onClick={() => setShowVersions(false)}
                 className="text-muted hover:text-ink"
@@ -495,12 +498,12 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
             </div>
             <div className="max-h-96 overflow-y-auto divide-y divide-border">
               {versions.length === 0 ? (
-                <p className="p-6 text-center text-muted text-sm">No versions saved yet.</p>
+                <p className="p-6 text-center text-muted text-sm">{t('noVersions')}</p>
               ) : (
                 versions.map((v) => (
                   <div key={v.id} className="flex items-center justify-between p-4 hover:bg-cream">
                     <div>
-                      <p className="text-sm font-medium text-ink">Version {v.version}</p>
+                      <p className="text-sm font-medium text-ink">{t('version')} {v.version}</p>
                       <p className="text-xs text-muted mt-0.5">
                         {new Date(v.createdAt).toLocaleString()} &middot; {v.author.name ?? v.author.email}
                       </p>
@@ -509,7 +512,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
                       onClick={() => restoreVersion(v.content, v.title)}
                       className="text-xs text-accent hover:underline"
                     >
-                      Restore
+                      {t('restore')}
                     </button>
                   </div>
                 ))

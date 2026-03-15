@@ -1,0 +1,341 @@
+'use client'
+
+import type { ChangeEvent } from 'react'
+import { useRouter } from '@/i18n/navigation'
+import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
+
+interface Props {
+  name: string
+  slug: string
+  customDomain: string
+  logo: string
+  brandText: string
+  customBrandFontFamily: string
+  customBrandFontUrl: string
+  favicon: string
+  metaTitle: string
+  metaDescription: string
+  appUrl: string
+  demoMode?: boolean
+}
+
+function normalizeAssetUrl(value: string): string {
+  return value.trim().replace(/\/+$/, '')
+}
+
+function looksLikeFaviconAsset(value: string): boolean {
+  const lower = value.toLowerCase()
+  return (
+    lower.includes('.ico') ||
+    lower.includes('favicon') ||
+    lower.includes('apple-touch-icon') ||
+    lower.includes('mask-icon')
+  )
+}
+
+export function WorkspaceForm({
+  name,
+  slug,
+  customDomain,
+  logo,
+  brandText,
+  customBrandFontFamily,
+  customBrandFontUrl,
+  favicon,
+  metaTitle,
+  metaDescription,
+  appUrl,
+  demoMode = false,
+}: Props) {
+  const router = useRouter()
+  const t = useTranslations('workspace')
+  const tc = useTranslations('common')
+  const [values, setValues] = useState({
+    name,
+    slug,
+    customDomain,
+    logo,
+    brandText,
+    customBrandFontFamily,
+    customBrandFontUrl,
+    favicon,
+    metaTitle,
+    metaDescription,
+  })
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const normalizedLogo = normalizeAssetUrl(values.logo)
+  const normalizedFavicon = normalizeAssetUrl(values.favicon)
+  const logoLooksLikeFavicon = normalizedLogo.length > 0 && looksLikeFaviconAsset(normalizedLogo)
+  const logoMatchesFavicon =
+    normalizedLogo.length > 0 &&
+    normalizedFavicon.length > 0 &&
+    normalizedLogo === normalizedFavicon
+  const logoWarning = logoLooksLikeFavicon
+    ? t('logoFaviconWarning')
+    : logoMatchesFavicon
+      ? t('logoMatchesFavicon')
+      : null
+  const previewBrandText = values.brandText.trim() || values.name.trim() || 'Brand'
+
+  useEffect(() => {
+    const trimmedBrandFontUrl = values.customBrandFontUrl.trim()
+    if (trimmedBrandFontUrl.length === 0) return
+
+    const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
+      (link) => (link as HTMLLinkElement).href === trimmedBrandFontUrl
+    )
+    if (existing) return
+
+    const link = document.createElement('link')
+    link.rel = 'stylesheet'
+    link.href = trimmedBrandFontUrl
+    document.head.appendChild(link)
+  }, [values.customBrandFontUrl])
+
+  function set(field: keyof typeof values) {
+    return (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setValues((v) => ({ ...v, [field]: e.target.value }))
+  }
+
+  async function save() {
+    setStatus('saving')
+    const res = await fetch('/api/workspace/settings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(values),
+    })
+    setStatus(res.ok ? 'saved' : 'error')
+    if (res.ok) {
+      router.refresh()
+      setTimeout(() => setStatus('idle'), 2000)
+    }
+  }
+
+  const inputClass = `w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed`
+
+  return (
+    <div className="space-y-4">
+      {demoMode && (
+        <p className="text-sm text-muted">{t('demoDisabled')}</p>
+      )}
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('name')}</label>
+        <input
+          value={values.name}
+          onChange={set('name')}
+          disabled={demoMode}
+          className={inputClass}
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('slug')}</label>
+        <div className={`flex items-center border border-border rounded-lg overflow-hidden${demoMode ? ' opacity-60' : ''}`}>
+          <span className="px-3 py-2 bg-cream text-muted text-sm border-r border-border shrink-0">
+            {appUrl.replace(/^https?:\/\//, '')}/
+          </span>
+          <input
+            value={values.slug}
+            onChange={set('slug')}
+            readOnly={demoMode}
+            className={`flex-1 px-3 py-2 text-sm bg-white text-ink focus:outline-none${demoMode ? ' cursor-not-allowed select-none' : ''}`}
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('customDomain')}</label>
+        <input
+          value={values.customDomain}
+          onChange={set('customDomain')}
+          placeholder={t('customDomainPlaceholder')}
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
+        />
+        <p className="mt-1 text-xs text-muted">
+          {t('customDomainHelp')}
+        </p>
+        {values.customDomain.trim().length > 0 && (
+          <div className="mt-2 rounded-lg border border-border bg-cream px-3 py-2 text-xs text-muted space-y-0.5">
+            <p className="font-medium text-ink">{t('dnsSetup')}</p>
+            <p>{t('dnsInstruction', { domain: values.customDomain.trim(), target: appUrl.replace(/^https?:\/\//, '') })}</p>
+          </div>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('companyLogo')}</label>
+        <input
+          value={values.logo}
+          onChange={set('logo')}
+          placeholder={t('logoPlaceholder')}
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
+        />
+        <p className="mt-1 text-xs text-muted">
+          {t('logoHelp')}
+        </p>
+        {logoWarning && (
+          <div className="mt-3 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            {logoWarning}
+          </div>
+        )}
+        {values.logo.trim().length > 0 && (
+          <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-border bg-cream px-3 py-2">
+            <div className="flex h-12 min-w-[3rem] max-w-[12rem] items-center justify-start overflow-hidden rounded-lg border border-border bg-white px-2 py-1.5">
+              <img
+                src={values.logo.trim()}
+                alt={`${values.name} logo preview`}
+                className="block h-full w-auto max-w-full object-contain object-left"
+              />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-ink">{t('logoPreview')}</p>
+              <p className="text-xs text-muted">
+                {t('logoPreviewHelp')}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('brandWordmark')}</label>
+        <input
+          value={values.brandText}
+          onChange={set('brandText')}
+          placeholder={values.name || 'Acme'}
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
+        />
+        <p className="mt-1 text-xs text-muted">
+          {t('brandWordmarkHelp')}
+        </p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('brandFontFamily')}</label>
+        <input
+          value={values.customBrandFontFamily}
+          onChange={set('customBrandFontFamily')}
+          placeholder="Sohne, DM Sans, Avenir Next"
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
+        />
+        <p className="mt-1 text-xs text-muted">
+          {t('brandFontFamilyHelp')}
+        </p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('brandFontUrl')}</label>
+        <input
+          value={values.customBrandFontUrl}
+          onChange={set('customBrandFontUrl')}
+          placeholder="https://fonts.googleapis.com/css2?family=Your+Brand+Font"
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
+        />
+        <p className="mt-1 text-xs text-muted">
+          {t('brandFontUrlHelp')}
+        </p>
+        {(values.brandText.trim().length > 0 || values.customBrandFontFamily.trim().length > 0) && (
+          <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-border bg-cream px-3 py-2">
+            <div className="rounded-lg border border-border bg-white px-4 py-2">
+              <span
+                className="block text-2xl text-ink"
+                style={
+                  values.customBrandFontFamily.trim().length > 0
+                    ? { fontFamily: values.customBrandFontFamily.trim() }
+                    : undefined
+                }
+              >
+                {previewBrandText}
+              </span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-ink">{t('wordmarkPreview')}</p>
+              <p className="text-xs text-muted">
+                {t('wordmarkPreviewHelp')}
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('favicon')}</label>
+        <input
+          value={values.favicon}
+          onChange={set('favicon')}
+          placeholder={t('faviconPlaceholder')}
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
+        />
+        <p className="mt-1 text-xs text-muted">
+          {t('faviconHelp')}
+        </p>
+        {values.favicon.trim().length > 0 && (
+          <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-border bg-cream px-3 py-2">
+            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1">
+              <img
+                src={values.favicon.trim()}
+                alt={`${values.name} favicon preview`}
+                className="h-full w-full object-contain"
+              />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-ink">{t('faviconPreview')}</p>
+              <p className="text-xs text-muted">{t('faviconPreviewHelp')}</p>
+            </div>
+          </div>
+        )}
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('metaTitle')}</label>
+        <input
+          value={values.metaTitle}
+          onChange={set('metaTitle')}
+          placeholder={t('metaTitlePlaceholder', { name: values.name })}
+          disabled={demoMode}
+          className={inputClass + ' placeholder:text-muted'}
+        />
+        <p className="mt-1 text-xs text-muted">{t('metaTitleHelp')}</p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-ink mb-1">{t('metaDescription')}</label>
+        <textarea
+          value={values.metaDescription}
+          onChange={set('metaDescription')}
+          placeholder={t('metaDescriptionPlaceholder', { name: values.name })}
+          rows={4}
+          disabled={demoMode}
+          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-y disabled:opacity-50 disabled:cursor-not-allowed"
+        />
+        <p className="mt-1 text-xs text-muted">
+          {t('metaDescriptionHelp')}
+        </p>
+      </div>
+
+      {!demoMode && (
+        <div className="flex items-center gap-3 pt-1">
+          <button
+            onClick={save}
+            disabled={status === 'saving'}
+            className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
+          >
+            {status === 'saving' ? tc('saving') : t('saveChanges')}
+          </button>
+          {status === 'saved' && <span className="text-sm text-green">{t('saved')}</span>}
+          {status === 'error' && <span className="text-sm text-red-500">{t('saveFailed')}</span>}
+        </div>
+      )}
+
+      <div className="pt-3 border-t border-border">
+        <p className="text-xs text-muted mb-0.5">{t('helpCenterUrl')}</p>
+        <a
+          href={`${appUrl}/${values.slug}/help`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm font-mono text-accent hover:underline break-all"
+        >
+          {appUrl}/{values.slug}/help
+        </a>
+      </div>
+    </div>
+  )
+}

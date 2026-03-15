@@ -1,5 +1,6 @@
 'use client'
 
+import { useTranslations } from 'next-intl'
 import { SearchModal } from './SearchModal'
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function SearchTrigger({ workspace }: Props) {
+  const t = useTranslations('search')
   function handleClick() {
     window.dispatchEvent(new CustomEvent('helpnest:search:open'))
   }
@@ -30,9 +32,9 @@ export function SearchTrigger({ workspace }: Props) {
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           />
         </svg>
-        <span className="text-cream/50 flex-1">Search articles...</span>
+        <span className="text-cream/50 flex-1">{t('placeholder')}</span>
         <kbd className="hidden sm:block text-xs text-cream/30 bg-white/10 rounded px-1.5 py-0.5">
-          ⌘K
+          {t('shortcut')}
         </kbd>
       </button>
       <SearchModal workspace={workspace} />

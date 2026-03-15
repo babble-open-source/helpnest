@@ -1,7 +1,8 @@
 'use client'
 
 import { useRef, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { useSearch } from '@/hooks/useSearch'
 
 interface Props {
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function SearchModal({ workspace }: Props) {
+  const t = useTranslations('search')
   const router = useRouter()
   const {
     isOpen,
@@ -87,7 +89,7 @@ export function SearchModal({ workspace }: Props) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder="Search articles..."
+            placeholder={t('placeholder')}
             className="flex-1 outline-none text-ink placeholder:text-muted text-base bg-transparent"
           />
           {query && (
@@ -95,11 +97,11 @@ export function SearchModal({ workspace }: Props) {
               onClick={() => setQuery('')}
               className="text-muted hover:text-ink text-xs"
             >
-              Clear
+              {t('clear')}
             </button>
           )}
           <kbd className="text-xs text-muted bg-cream border border-border rounded px-1.5 py-0.5">
-            Esc
+            {t('esc')}
           </kbd>
         </div>
 
@@ -118,8 +120,8 @@ export function SearchModal({ workspace }: Props) {
 
           {!isLoading && query.length >= 2 && results.length === 0 && (
             <div className="p-8 text-center text-muted">
-              <p className="text-lg mb-1">No results for &ldquo;{query}&rdquo;</p>
-              <p className="text-sm">Try different keywords or browse collections</p>
+              <p className="text-lg mb-1">{t('noResults', { query })}</p>
+              <p className="text-sm">{t('tryDifferent')}</p>
             </div>
           )}
 
@@ -188,7 +190,7 @@ export function SearchModal({ workspace }: Props) {
           {!query && recentSearches.length > 0 && (
             <div className="p-4">
               <p className="text-xs font-medium text-muted uppercase tracking-wide mb-2">
-                Recent
+                {t('recent')}
               </p>
               <ul className="space-y-1">
                 {recentSearches.map((s) => (
@@ -220,7 +222,7 @@ export function SearchModal({ workspace }: Props) {
 
           {!query && recentSearches.length === 0 && (
             <div className="p-6 text-center text-muted text-sm">
-              Type to search articles...
+              {t('typeToSearch')}
             </div>
           )}
         </div>
@@ -228,13 +230,13 @@ export function SearchModal({ workspace }: Props) {
         {/* Footer */}
         <div className="border-t border-border px-4 py-2 flex items-center gap-4 text-xs text-muted">
           <span className="flex items-center gap-1">
-            <kbd className="bg-cream border border-border rounded px-1">↑↓</kbd> navigate
+            <kbd className="bg-cream border border-border rounded px-1">↑↓</kbd> {t('navigateHint')}
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="bg-cream border border-border rounded px-1">↵</kbd> open
+            <kbd className="bg-cream border border-border rounded px-1">↵</kbd> {t('openHint')}
           </span>
           <span className="flex items-center gap-1">
-            <kbd className="bg-cream border border-border rounded px-1">Esc</kbd> close
+            <kbd className="bg-cream border border-border rounded px-1">{t('esc')}</kbd> {t('escHint')}
           </span>
         </div>
       </div>

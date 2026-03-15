@@ -1,12 +1,14 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTranslations } from 'next-intl'
 
 interface Props {
   articleId: string
 }
 
 export function ArticleFeedback({ articleId }: Props) {
+  const t = useTranslations('feedback')
   const [voted, setVoted] = useState<'helpful' | 'not' | null>(null)
   const storageKey = `helpnest-feedback:${articleId}`
 
@@ -38,28 +40,26 @@ export function ArticleFeedback({ articleId }: Props) {
       {voted ? (
         <div>
           <p className="text-2xl mb-2">{voted === 'helpful' ? '🙏' : '😕'}</p>
-          <p className="font-medium text-ink">Thanks for your feedback!</p>
+          <p className="font-medium text-ink">{t('thanks')}</p>
           <p className="text-muted text-sm mt-1">
-            {voted === 'helpful'
-              ? 'Glad this article helped.'
-              : 'We\'ll work on improving this article.'}
+            {voted === 'helpful' ? t('gladHelped') : t('willImprove')}
           </p>
         </div>
       ) : (
         <div>
-          <p className="font-medium text-ink mb-4">Was this article helpful?</p>
+          <p className="font-medium text-ink mb-4">{t('wasHelpful')}</p>
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={() => vote('helpful')}
               className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm hover:border-green hover:text-green transition-colors"
             >
-              <span>👍</span> Yes, helpful
+              {t('yesHelpful')}
             </button>
             <button
               onClick={() => vote('not')}
               className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg text-sm hover:border-accent hover:text-accent transition-colors"
             >
-              <span>👎</span> Not really
+              {t('notReally')}
             </button>
           </div>
         </div>
