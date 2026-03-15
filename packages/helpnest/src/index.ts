@@ -6,7 +6,7 @@ import { seedCommand } from './commands/seed.js'
 program
   .name('helpnest')
   .description('HelpNest CLI — auto-draft KB articles from PRs and GitHub history')
-  .version('0.2.1')
+  .version('0.3.0')
 
 program
   .command('draft')
