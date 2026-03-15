@@ -71,7 +71,7 @@ export function ArticleMetaSidebar({
   }
 
   return (
-    <aside className="w-72 bg-white border-l border-border flex flex-col shrink-0 overflow-y-auto">
+    <aside className="w-72 bg-white border-s border-border flex flex-col shrink-0 overflow-y-auto">
       <div className="p-5 border-b border-border">
         <p className="text-xs font-medium text-muted uppercase tracking-wide">{t('articleSettings')}</p>
       </div>
@@ -105,7 +105,7 @@ export function ArticleMetaSidebar({
           <select
             value={collectionId}
             onChange={(e) => onCollectionChange(e.target.value)}
-            className="w-full appearance-none px-3 py-2 pr-8 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white text-ink cursor-pointer"
+            className="w-full appearance-none px-3 py-2 pe-8 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white text-ink cursor-pointer"
           >
             {collections.map((c) => (
               <option key={c.id} value={c.id}>
@@ -113,7 +113,7 @@ export function ArticleMetaSidebar({
               </option>
             ))}
           </select>
-          <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
           </div>

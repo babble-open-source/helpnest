@@ -194,7 +194,7 @@ export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
                   type="button"
                   disabled={deletingId === key.id}
                   onClick={() => void handleDelete(key.id, key.name)}
-                  className="ml-4 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-cream disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="ms-4 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-cream disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {deletingId === key.id ? t('revoking') : t('revoke')}
                 </button>

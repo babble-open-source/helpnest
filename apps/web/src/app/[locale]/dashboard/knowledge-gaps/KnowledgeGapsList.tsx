@@ -73,7 +73,7 @@ export function KnowledgeGapsList({ unresolved, resolved, workspaceSlug }: Props
         >
           {t('unresolved')}
           {unresolved.length > 0 && (
-            <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-accent/10 text-accent">
+            <span className="ms-2 text-xs px-1.5 py-0.5 rounded-full bg-accent/10 text-accent">
               {unresolved.length}
             </span>
           )}

@@ -243,7 +243,7 @@ export default async function DashboardPage() {
                     <p className="font-medium text-ink truncate">{article.title}</p>
                     <p className="text-sm text-muted mt-0.5">{article.collection.title}</p>
                   </div>
-                  <div className="text-right shrink-0">
+                  <div className="text-end shrink-0">
                     <p className={`text-sm font-medium ${(article.helpfulRate ?? 0) >= 70 ? 'text-ink' : 'text-accent'}`}>
                       {t('percentHelpful', { rate: article.helpfulRate ?? 0 })}
                     </p>

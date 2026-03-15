@@ -74,7 +74,7 @@ export function InboxList({ escalated, active, resolved }: Props) {
               {tab.label}
               {count > 0 && (
                 <span
-                  className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+                  className={`ms-2 text-xs px-1.5 py-0.5 rounded-full ${
                     tab.key === 'escalated'
                       ? 'bg-accent/10 text-accent'
                       : 'bg-border text-muted'
@@ -134,7 +134,7 @@ export function InboxList({ escalated, active, resolved }: Props) {
                     <p className="text-xs text-accent mt-1 truncate">{conv.escalationReason}</p>
                   )}
                 </div>
-                <div className="text-right shrink-0">
+                <div className="text-end shrink-0">
                   <p className="text-xs text-muted">{timeAgo(conv.updatedAt)}</p>
                   <p className="text-xs text-muted mt-1">{conv.messageCount} {t('msgs')}</p>
                   {conv.assignedTo && (

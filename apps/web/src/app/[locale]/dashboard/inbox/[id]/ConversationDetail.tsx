@@ -318,7 +318,7 @@ export function ConversationDetail({
       </div>
 
       {/* ── Sidebar ── */}
-      <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-l border-border p-4 space-y-6 shrink-0 overflow-y-auto">
+      <div className="w-full lg:w-72 border-t lg:border-t-0 lg:border-s border-border p-4 space-y-6 shrink-0 overflow-y-auto">
         {/* Actions */}
         <div>
           <h3 className="text-xs font-semibold text-muted uppercase tracking-wider mb-3">
@@ -400,7 +400,7 @@ export function ConversationDetail({
             <select
               value={conversation.assignedTo?.id ?? ''}
               onChange={(e) => void handleAssign(e.target.value || null)}
-              className="w-full appearance-none px-2 py-1.5 pr-7 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-green transition-colors cursor-pointer"
+              className="w-full appearance-none px-2 py-1.5 pe-7 text-sm border border-border rounded-lg bg-white focus:outline-none focus:border-green transition-colors cursor-pointer"
             >
               <option value="">{t('unassigned')}</option>
               {members.map((m) => (
@@ -409,7 +409,7 @@ export function ConversationDetail({
                 </option>
               ))}
             </select>
-            <svg className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="pointer-events-none absolute end-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </div>

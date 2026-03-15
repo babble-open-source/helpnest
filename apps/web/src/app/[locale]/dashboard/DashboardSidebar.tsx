@@ -54,7 +54,7 @@ export function DashboardSidebar({
         <button
           onClick={() => setMobileOpen(true)}
           title={tc('openMenu')}
-          className="p-1.5 rounded text-cream/60 hover:text-cream hover:bg-white/10 transition-colors -ml-1 mr-3 shrink-0"
+          className="p-1.5 rounded text-cream/60 hover:text-cream hover:bg-white/10 transition-colors -ms-1 me-3 shrink-0"
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -85,9 +85,9 @@ export function DashboardSidebar({
         className={[
           'bg-ink text-cream flex flex-col shrink-0 overflow-hidden',
           // Mobile: fixed drawer that slides in from left
-          'fixed inset-y-0 left-0 z-40 w-64',
+          'fixed inset-y-0 start-0 z-40 w-64',
           'transition-transform duration-200',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full',
+          mobileOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full rtl:lg:translate-x-0',
           // Desktop: static, width-based collapse
           'lg:static lg:translate-x-0 lg:transition-[width] lg:duration-200',
           open ? 'lg:w-60' : 'lg:w-12',

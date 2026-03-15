@@ -270,7 +270,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
             <LocaleLink href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm shrink-0">
               {t('backToArticles')}
             </LocaleLink>
-            <div className="flex items-center gap-1 border-l border-border pl-3">
+            <div className="flex items-center gap-1 border-s border-border ps-3">
               {/* Outline toggle */}
               <Tooltip content={t('toggleOutline')} side="bottom" align="start">
                 <button
@@ -297,7 +297,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
                 </button>
               </Tooltip>
               {/* Editor mode switch */}
-              <div className="ml-1 inline-flex items-center rounded-lg border border-border bg-cream p-0.5">
+              <div className="ms-1 inline-flex items-center rounded-lg border border-border bg-cream p-0.5">
                 <Tooltip content={t('classicToolbar')} side="bottom" align="start">
                   <button
                     onClick={() => setAndPersistEditorMode('classic')}

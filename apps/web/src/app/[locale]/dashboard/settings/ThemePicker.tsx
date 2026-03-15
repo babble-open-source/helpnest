@@ -211,7 +211,7 @@ export function ThemePicker({
               setSaved(false)
               setSelectedThemeId(theme.id)
             }}
-            className={`text-left rounded-xl border-2 overflow-hidden transition-all ${
+            className={`text-start rounded-xl border-2 overflow-hidden transition-all ${
               selectedThemeId === theme.id
                 ? 'border-accent shadow-sm'
                 : 'border-border hover:border-muted'
@@ -269,7 +269,7 @@ export function ThemePicker({
             <circle cx="12" cy="12" r="10" strokeWidth={2} />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16v-4m0-4h.01" />
           </svg>
-          <span className="pointer-events-none absolute bottom-full left-0 mb-2 w-56 rounded-lg bg-ink px-3 py-2 text-xs text-cream opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <span className="pointer-events-none absolute bottom-full start-0 mb-2 w-56 rounded-lg bg-ink px-3 py-2 text-xs text-cream opacity-0 group-hover:opacity-100 transition-opacity z-10">
             {t('fontTooltip')}
           </span>
         </span>
@@ -280,7 +280,7 @@ export function ThemePicker({
             setSaved(false)
             setSelectedFontPresetId('')
           }}
-          className={`text-left rounded-xl border-2 overflow-hidden transition-all ${
+          className={`text-start rounded-xl border-2 overflow-hidden transition-all ${
             selectedFontPresetId.length === 0
               ? 'border-accent shadow-sm'
               : 'border-border hover:border-muted'
@@ -307,7 +307,7 @@ export function ThemePicker({
               setSaved(false)
               setSelectedFontPresetId(preset.id)
             }}
-            className={`text-left rounded-xl border-2 overflow-hidden transition-all ${
+            className={`text-start rounded-xl border-2 overflow-hidden transition-all ${
               selectedFontPresetId === preset.id
                 ? 'border-accent shadow-sm'
                 : 'border-border hover:border-muted'
@@ -394,7 +394,7 @@ export function ThemePicker({
                 setSaved(false)
                 setCustomRadius(event.target.value)
               }}
-              className="w-full appearance-none rounded-lg border border-border bg-white px-3 py-2 pr-8 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+              className="w-full appearance-none rounded-lg border border-border bg-white px-3 py-2 pe-8 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
             >
               <option value="">{t('useThemeRadius')}</option>
               {radiusOptions.map((option) => (
@@ -403,7 +403,7 @@ export function ThemePicker({
                 </option>
               ))}
             </select>
-            <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
             </div>

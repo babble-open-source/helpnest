@@ -232,13 +232,13 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
                   <select
                     value={inviteRole}
                     onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                    className="appearance-none pl-3 pr-8 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
+                    className="appearance-none ps-3 pe-8 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
                   >
                     {ROLE_ORDER.map((r) => (
                       <option key={r} value={r}>{tRoles(r)}</option>
                     ))}
                   </select>
-                  <svg className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
@@ -275,7 +275,7 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={`text-sm font-medium truncate ${isDeactivated ? 'text-muted' : 'text-ink'}`}>
                     {displayName}
-                    {isSelf && <span className="ml-1 text-xs text-muted">{t('you')}</span>}
+                    {isSelf && <span className="ms-1 text-xs text-muted">{t('you')}</span>}
                   </span>
                   <RoleBadge role={member.role} tRoles={tRoles} />
                   {isDeactivated && (
@@ -288,19 +288,19 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
               </div>
 
               {canManage && !isSelf && (
-                <div className="flex items-center gap-2 ml-4 shrink-0">
+                <div className="flex items-center gap-2 ms-4 shrink-0">
                   {!isDeactivated && (
                     <div className="relative">
                       <select
                         value={member.role}
                         onChange={(e) => void handleRoleChange(member.id, e.target.value as MemberRole)}
-                        className="appearance-none pl-2 pr-6 py-1 border border-border rounded text-xs bg-white text-ink focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+                        className="appearance-none ps-2 pe-6 py-1 border border-border rounded text-xs bg-white text-ink focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
                       >
                         {ROLE_ORDER.map((r) => (
                           <option key={r} value={r}>{tRoles(r)}</option>
                         ))}
                       </select>
-                      <svg className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="pointer-events-none absolute end-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                       </svg>
                     </div>

@@ -122,22 +122,22 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                   aria-label={t('selectAll')}
                 />
               </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
+              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
                 {t('title')}
               </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden sm:table-cell">
+              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden sm:table-cell">
                 {t('collection')}
               </th>
-              <th className="text-left px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
+              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
                 {t('status')}
               </th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden md:table-cell">
+              <th className="text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden md:table-cell">
                 {t('views')}
               </th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
+              <th className="text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
                 {t('feedbackCol')}
               </th>
-              <th className="text-right px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
+              <th className="text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
                 {t('updated')}
               </th>
               <th className="px-4 py-3" />
@@ -190,10 +190,10 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                       {{ PUBLISHED: tc('published'), DRAFT: tc('draft'), ARCHIVED: tc('archived') }[article.status] ?? article.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right hidden md:table-cell">
+                  <td className="px-4 py-3 text-end hidden md:table-cell">
                     <span className="text-sm text-muted">{article.views.toLocaleString()}</span>
                   </td>
-                  <td className="px-4 py-3 text-right hidden lg:table-cell">
+                  <td className="px-4 py-3 text-end hidden lg:table-cell">
                     {(() => {
                       const summary = feedbackSummary(article.helpful, article.notHelpful)
                       if (summary.total === 0) {
@@ -217,7 +217,7 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                       )
                     })()}
                   </td>
-                  <td className="px-4 py-3 text-right hidden lg:table-cell">
+                  <td className="px-4 py-3 text-end hidden lg:table-cell">
                     <span className="text-sm text-muted">
                       {new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
                         Math.round((article.updatedAt.getTime() - nowMs()) / (1000 * 60 * 60 * 24)),

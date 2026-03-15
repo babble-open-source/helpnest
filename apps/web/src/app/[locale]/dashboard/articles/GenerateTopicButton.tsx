@@ -87,7 +87,7 @@ export function GenerateTopicButton() {
           </a>
           <button
             onClick={handleClose}
-            className="text-xs text-muted hover:text-ink transition-colors text-left"
+            className="text-xs text-muted hover:text-ink transition-colors text-start"
           >
             {t('generateAnother')}
           </button>
@@ -120,7 +120,7 @@ export function GenerateTopicButton() {
 
           <button
             onClick={handleClose}
-            className="text-xs text-muted hover:text-ink transition-colors text-left"
+            className="text-xs text-muted hover:text-ink transition-colors text-start"
           >
             {t('cancel')}
           </button>

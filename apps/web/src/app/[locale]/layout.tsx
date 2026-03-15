@@ -3,6 +3,7 @@ import { getMessages } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { routing } from '@/i18n/routing'
 import { isRtlLocale, type Locale } from '@/i18n/config'
+import { SetDocumentDir } from './SetDocumentDir'
 
 export default async function LocaleLayout({
   children,
@@ -18,9 +19,11 @@ export default async function LocaleLayout({
   }
 
   const messages = await getMessages()
+  const dir = isRtlLocale(locale) ? 'rtl' : 'ltr'
 
   return (
-    <div lang={locale} dir={isRtlLocale(locale) ? 'rtl' : 'ltr'}>
+    <div lang={locale} dir={dir}>
+      <SetDocumentDir dir={dir} />
       <NextIntlClientProvider messages={messages}>
         {children}
       </NextIntlClientProvider>

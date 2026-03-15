@@ -17,7 +17,7 @@ export function SearchTrigger({ workspace }: Props) {
     <>
       <button
         onClick={handleClick}
-        className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition-colors rounded-xl px-5 py-3 max-w-lg mx-auto w-full text-left"
+        className="flex items-center gap-3 bg-white/10 hover:bg-white/20 transition-colors rounded-xl px-5 py-3 max-w-lg mx-auto w-full text-start"
       >
         <svg
           className="w-5 h-5 text-cream/50"

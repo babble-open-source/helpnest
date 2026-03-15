@@ -133,7 +133,7 @@ export function SearchModal({ workspace }: Props) {
                     onClick={() =>
                       navigate(result.collection.slug, result.slug, query)
                     }
-                    className={`w-full text-left px-4 py-3 hover:bg-cream transition-colors ${
+                    className={`w-full text-start px-4 py-3 hover:bg-cream transition-colors ${
                       activeIndex === i ? 'bg-cream' : ''
                     }`}
                   >
@@ -197,7 +197,7 @@ export function SearchModal({ workspace }: Props) {
                   <li key={s}>
                     <button
                       onClick={() => setQuery(s)}
-                      className="flex items-center gap-2 w-full text-left text-sm text-ink hover:text-accent py-1 transition-colors"
+                      className="flex items-center gap-2 w-full text-start text-sm text-ink hover:text-accent py-1 transition-colors"
                     >
                       <svg
                         className="w-3.5 h-3.5 text-muted"

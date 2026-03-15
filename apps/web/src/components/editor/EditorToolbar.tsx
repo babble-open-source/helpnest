@@ -266,7 +266,7 @@ export function EditorToolbar({ editor }: Props) {
       </ToolbarButton>
 
       {/* Table */}
-      <div className="flex items-center border-l border-border pl-1 ml-1">
+      <div className="flex items-center border-s border-border ps-1 ms-1">
         <ToolbarButton
           onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
           title={t('insertTable')}
@@ -286,7 +286,7 @@ export function EditorToolbar({ editor }: Props) {
         )}
       </div>
 
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ms-auto flex items-center gap-1">
         {/* Undo/Redo */}
         <ToolbarButton
           onClick={() => editor.chain().focus().undo().run()}

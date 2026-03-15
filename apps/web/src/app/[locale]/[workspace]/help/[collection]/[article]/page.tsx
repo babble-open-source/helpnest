@@ -211,7 +211,7 @@ export default async function ArticlePage(props: Props) {
                       key={h.id}
                       href={`#${h.id}`}
                       className={`block text-sm text-muted hover:text-ink transition-colors py-0.5 ${
-                        h.level === 2 ? 'pl-0' : h.level === 3 ? 'pl-3' : 'pl-0'
+                        h.level === 2 ? 'ps-0' : h.level === 3 ? 'ps-3' : 'ps-0'
                       }`}
                     >
                       {h.text}

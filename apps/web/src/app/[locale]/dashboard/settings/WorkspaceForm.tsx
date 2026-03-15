@@ -131,7 +131,7 @@ export function WorkspaceForm({
       <div>
         <label className="block text-sm font-medium text-ink mb-1">{t('slug')}</label>
         <div className={`flex items-center border border-border rounded-lg overflow-hidden${demoMode ? ' opacity-60' : ''}`}>
-          <span className="px-3 py-2 bg-cream text-muted text-sm border-r border-border shrink-0">
+          <span className="px-3 py-2 bg-cream text-muted text-sm border-e border-border shrink-0">
             {appUrl.replace(/^https?:\/\//, '')}/
           </span>
           <input

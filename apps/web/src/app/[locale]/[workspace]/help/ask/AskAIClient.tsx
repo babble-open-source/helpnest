@@ -140,7 +140,7 @@ export function AskAIClient({ workspace, workspaceName }: Props) {
               <div className="hn-prose text-sm">
                 <Markdown remarkPlugins={[remarkGfm]}>{answer}</Markdown>
                 {status === 'streaming' && (
-                  <span className="inline-block w-0.5 h-4 bg-ink/50 ml-0.5 animate-pulse align-text-bottom" />
+                  <span className="inline-block w-0.5 h-4 bg-ink/50 ms-0.5 animate-pulse align-text-bottom" />
                 )}
               </div>
             </div>
@@ -164,7 +164,7 @@ export function AskAIClient({ workspace, workspaceName }: Props) {
                     <p className="text-sm font-medium text-ink group-hover:text-accent truncate">{source.title}</p>
                     <p className="text-xs text-muted">{source.collection.title}</p>
                   </div>
-                  <svg className="w-4 h-4 text-muted group-hover:text-accent shrink-0 ml-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-4 h-4 text-muted group-hover:text-accent shrink-0 ms-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </Link>
@@ -201,14 +201,14 @@ export function AskAIClient({ workspace, workspaceName }: Props) {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t('inputPlaceholder')}
               disabled={status === 'loading' || status === 'streaming'}
-              className="w-full pl-4 pr-12 py-3 border border-border rounded-xl text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-green disabled:opacity-50"
+              className="w-full ps-4 pe-12 py-3 border border-border rounded-xl text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-green disabled:opacity-50"
               autoFocus
             />
             <button
               type="submit"
               disabled={!query.trim() || status === 'loading' || status === 'streaming'}
               aria-label="Ask"
-              className="absolute right-2 top-1/2 -translate-y-1/2 bg-green text-white p-2 rounded-lg hover:bg-green/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="absolute end-2 top-1/2 -translate-y-1/2 bg-green text-white p-2 rounded-lg hover:bg-green/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />

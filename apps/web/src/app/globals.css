@@ -29,6 +29,7 @@
     font-family: var(--font-body);
   }
 
+
   h1,
   h2,
   h3 {
@@ -80,7 +81,7 @@
 
 .hn-prose ul,
 .hn-prose ol {
-  padding-left: 1.5rem;
+  padding-inline-start: 1.5rem;
   margin: 0.875rem 0;
 }
 
@@ -115,8 +116,8 @@
 }
 
 .hn-prose blockquote {
-  border-left: 4px solid rgb(var(--color-accent));
-  padding-left: 1rem;
+  border-inline-start: 4px solid rgb(var(--color-accent));
+  padding-inline-start: 1rem;
   color: rgb(var(--color-muted));
   font-style: italic;
   margin: 1.25rem 0;
@@ -212,7 +213,7 @@
 .hn-prose td {
   border: 1px solid rgb(var(--color-border));
   padding: 0.6rem 1rem;
-  text-align: left;
+  text-align: start;
   vertical-align: top;
   font-family: var(--font-body);
 }
@@ -239,7 +240,7 @@
 
 .hn-prose ul[data-type='taskList'] {
   list-style: none;
-  padding-left: 0;
+  padding-inline-start: 0;
   margin: 0.875rem 0;
 }
 
@@ -303,7 +304,7 @@
 /* Placeholder */
 .prose-editor .tiptap p.is-editor-empty:first-child::before {
   content: attr(data-placeholder);
-  float: left;
+  float: inline-start;
   color: rgb(var(--color-border));
   pointer-events: none;
   height: 0;
@@ -326,7 +327,7 @@
   width: 2px;
   cursor: col-resize;
   position: absolute;
-  right: -2px;
+  inset-inline-end: -2px;
   top: 0;
   bottom: -2px;
   pointer-events: none;
