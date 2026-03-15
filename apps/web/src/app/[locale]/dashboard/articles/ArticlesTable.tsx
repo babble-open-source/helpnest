@@ -219,7 +219,7 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                   </td>
                   <td className="px-4 py-3 text-end hidden lg:table-cell">
                     <span className="text-sm text-muted">
-                      {format.relativeTime(article.updatedAt, { unit: 'day', numeric: 'auto' })}
+                      {format.relativeTime(article.updatedAt)}
                     </span>
                   </td>
                   <td className="px-4 py-3">
