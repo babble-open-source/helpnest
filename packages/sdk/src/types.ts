@@ -176,3 +176,38 @@ export interface HelpNestConfig {
   workspace: string
   baseUrl?: string
 }
+
+// ── Export / change-feed types ───────────────────────────────────────────────
+
+export interface ExportArticle {
+  title: string
+  slug: string
+  content: string
+  updatedAt: string
+}
+
+export interface ExportCollection {
+  title: string
+  slug: string
+  articles: ExportArticle[]
+}
+
+export interface ExportResponse {
+  workspace: string
+  exportedAt: string
+  collections: ExportCollection[]
+}
+
+export interface ChangeFeedEntry {
+  id: string
+  slug: string
+  title: string
+  action: 'created' | 'updated' | 'published' | 'archived'
+  updatedAt: string
+  collectionSlug: string
+}
+
+export interface ChangeFeedResponse {
+  changes: ChangeFeedEntry[]
+  cursor: string | null
+}

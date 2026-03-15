@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
+import { htmlToMarkdown } from '@/lib/html-to-markdown'
 
 const VALID_STATUSES = ['DRAFT', 'PUBLISHED', 'ARCHIVED'] as const
 type ArticleStatus = typeof VALID_STATUSES[number]
@@ -22,6 +23,7 @@ export async function GET(request: Request) {
   const status = searchParams.get('status')?.toUpperCase()
   const collectionId = searchParams.get('collection')
   const q = searchParams.get('q')
+  const format = searchParams.get('format')
 
   if (status && !VALID_STATUSES.includes(status as ArticleStatus)) {
     return NextResponse.json(
@@ -47,13 +49,23 @@ export async function GET(request: Request) {
       publishedAt: true,
       createdAt: true,
       updatedAt: true,
+      // Include raw content only when the caller requests a format transform,
+      // to avoid bloating list responses for normal dashboard usage.
+      ...(format === 'markdown' ? { content: true } : {}),
       collection: { select: { id: true, title: true, slug: true } },
       author: { select: { id: true, name: true, email: true } },
     },
     orderBy: { updatedAt: 'desc' },
   })
 
-  return NextResponse.json({ data: articles, total: articles.length })
+  const data = format === 'markdown'
+    ? articles.map(a => ({
+        ...a,
+        content: htmlToMarkdown((a as typeof a & { content: string }).content ?? ''),
+      }))
+    : articles
+
+  return NextResponse.json({ data, total: articles.length })
 }
 
 export async function POST(request: Request) {

@@ -316,6 +316,7 @@ helpnest/
 │   ├── editor/       → @helpnest/editor — Tiptap rich text editor
 │   ├── widget/       → @helpnest/widget — embeddable JS snippet
 │   ├── sdk/          → @helpnest/sdk — JS/TS REST API SDK (npm: @helpnest/sdk)
+│   ├── mcp/          → @helpnest/mcp — MCP server for AI assistants (npm: @helpnest/mcp)
 │   ├── helpnest/     → helpnest — AI drafting CLI: draft + seed (npm: helpnest)
 │   └── cli/          → @helpnest/cli — self-hosting CLI: init, dev, deploy, export, import
 ├── scripts/
@@ -349,6 +350,82 @@ pnpm --filter @helpnest/db db:reset  # drop + re-migrate + re-seed
 
 # Tests
 pnpm --filter @helpnest/sdk test
+```
+
+---
+
+## AI-as-Customer: Agent Accessibility
+
+HelpNest knowledge bases are accessible to AI agents through three complementary protocols:
+
+### llms.txt
+
+Every help center serves an AI-readable index at `/{workspace}/help/llms.txt` and the full article content at `/{workspace}/help/llms-full.txt`. These follow the [llms.txt specification](https://llmstxt.org) — think of it as `robots.txt` for LLMs.
+
+```bash
+curl https://help.acme.com/acme/help/llms.txt       # article index
+curl https://help.acme.com/acme/help/llms-full.txt   # full content as markdown
+```
+
+### MCP Server (Model Context Protocol)
+
+The `@helpnest/mcp` package exposes your knowledge base as tools for AI assistants like Claude Desktop, Cursor, and coding agents.
+
+```bash
+npm install -g @helpnest/mcp
+```
+
+```json
+{
+  "mcpServers": {
+    "helpnest": {
+      "command": "npx",
+      "args": ["@helpnest/mcp"],
+      "env": {
+        "HELPNEST_API_KEY": "hn_live_xxx",
+        "HELPNEST_WORKSPACE": "acme",
+        "HELPNEST_BASE_URL": "https://help.acme.com"
+      }
+    }
+  }
+}
+```
+
+**Tools:** `search_articles`, `get_article`, `list_collections`, `ask_question`
+
+### A2A (Agent-to-Agent Protocol)
+
+HelpNest implements [Google's A2A protocol](https://github.com/google/A2A) for agent-to-agent collaboration. External agents discover capabilities via the Agent Card and interact through JSON-RPC:
+
+```bash
+# Discover the agent
+curl https://help.acme.com/.well-known/agent-card.json
+
+# Send a question (JSON-RPC 2.0)
+curl -X POST https://help.acme.com/api/a2a \
+  -H "Authorization: Bearer hn_live_xxx" \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"message/send","params":{"message":{"role":"user","parts":[{"type":"text","text":"How do I reset my password?"}]}}}'
+```
+
+**Methods:** `message/send`, `message/send-streaming` (SSE), `tasks/get`, `tasks/cancel`
+
+### Agent-Optimized API
+
+The REST API includes endpoints designed for AI agent consumption:
+
+```bash
+# Get articles as markdown (token-efficient)
+curl -H "Authorization: Bearer hn_live_xxx" \
+  "https://help.acme.com/api/articles?format=markdown"
+
+# Bulk export all published articles
+curl -H "Authorization: Bearer hn_live_xxx" \
+  "https://help.acme.com/api/articles/export?format=markdown"
+
+# Change feed for incremental sync
+curl -H "Authorization: Bearer hn_live_xxx" \
+  "https://help.acme.com/api/articles/changes?since=2026-03-01T00:00:00Z"
 ```
 
 ---

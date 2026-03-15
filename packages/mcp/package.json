@@ -1,23 +1,25 @@
 {
-  "name": "@helpnest/sdk",
-  "version": "0.2.0",
+  "name": "@helpnest/mcp",
+  "version": "0.1.0",
   "private": false,
-  "description": "JavaScript/TypeScript SDK for HelpNest — the open-source AI-first customer support platform",
+  "description": "MCP server for HelpNest — expose your knowledge base to AI assistants",
   "homepage": "https://github.com/babble-open-source/helpnest",
   "repository": {
     "type": "git",
     "url": "https://github.com/babble-open-source/helpnest.git",
-    "directory": "packages/sdk"
+    "directory": "packages/mcp"
   },
   "bugs": {
     "url": "https://github.com/babble-open-source/helpnest/issues"
   },
+  "license": "MIT",
+  "bin": {
+    "helpnest-mcp": "./dist/index.js"
+  },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "prepublishOnly": "pnpm test && pnpm build"
+    "typecheck": "tsc --noEmit"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -30,23 +32,17 @@
     }
   },
   "files": ["dist"],
-  "dependencies": {},
-  "devDependencies": {
-    "tsup": "^8.0.0",
-    "typescript": "^5.4.0",
-    "vitest": "^1.6.0",
-    "@vitest/coverage-v8": "^1.6.0"
+  "publishConfig": {
+    "access": "public"
   },
-  "keywords": [
-    "helpnest",
-    "sdk",
-    "customer-support",
-    "ai-first",
-    "help-center",
-    "knowledge-base",
-    "conversations",
-    "escalation",
-    "self-hosted",
-    "open-source"
-  ]
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@helpnest/sdk": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0"
+  },
+  "keywords": ["helpnest", "mcp", "model-context-protocol", "ai", "knowledge-base"]
 }

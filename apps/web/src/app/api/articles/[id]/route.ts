@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { isDemoMode } from '@/lib/demo'
+import { htmlToMarkdown } from '@/lib/html-to-markdown'
 
 function slugify(text: string) {
   return text
@@ -18,6 +19,9 @@ export async function GET(
   const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const { searchParams } = new URL(request.url)
+  const format = searchParams.get('format')
+
   const article = await prisma.article.findFirst({
     where: {
       workspaceId: authResult.workspaceId,
@@ -26,6 +30,10 @@ export async function GET(
     include: { collection: true, author: true },
   })
   if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  if (format === 'markdown') {
+    return NextResponse.json({ ...article, content: htmlToMarkdown(article.content ?? '') })
+  }
 
   return NextResponse.json(article)
 }

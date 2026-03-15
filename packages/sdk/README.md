@@ -36,6 +36,8 @@ Authentication headers (`Authorization: Bearer <apiKey>` and `X-HelpNest-Workspa
 | `search(query)` | Full-text search across articles. |
 | `listVersions(articleId)` | Fetch version history for an article. |
 | `createVersion(articleId, params)` | Snapshot the current article as a new version. |
+| `export(params?)` | Bulk export published articles grouped by collection. Supports `format: 'markdown'` and pagination. |
+| `changes(since, params?)` | Fetch articles changed since an ISO 8601 timestamp. Returns a cursor for incremental polling. |
 
 ### `client.collections`
 

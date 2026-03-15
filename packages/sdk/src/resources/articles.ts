@@ -2,7 +2,9 @@ import type { HttpClient } from '../http'
 import type {
   Article,
   ArticleVersion,
+  ChangeFeedResponse,
   CreateArticleParams,
+  ExportResponse,
   ListArticlesParams,
   PaginatedResponse,
   SearchResult,
@@ -68,5 +70,24 @@ export class ArticlesResource {
    */
   async createVersion(articleId: string, params: { title: string; content: string }): Promise<ArticleVersion> {
     return this.http.post<ArticleVersion>(`/articles/${articleId}/versions`, params)
+  }
+
+  /**
+   * Export all published articles grouped by collection.
+   * Pass `format: 'markdown'` to receive content as Markdown instead of raw HTML.
+   * Supports pagination via `page` and `limit` (default limit: 100).
+   */
+  async export(params?: { format?: 'markdown'; page?: number; limit?: number }): Promise<ExportResponse> {
+    return this.http.get<ExportResponse>('/articles/export', params as Record<string, string | number | boolean | undefined>)
+  }
+
+  /**
+   * Fetch articles that changed (created, updated, published, or archived)
+   * since the given ISO 8601 timestamp.
+   *
+   * Use the returned `cursor` as the next `since` value for incremental polling.
+   */
+  async changes(since: string, params?: { limit?: number }): Promise<ChangeFeedResponse> {
+    return this.http.get<ChangeFeedResponse>('/articles/changes', { since, ...params } as Record<string, string | number | boolean | undefined>)
   }
 }
