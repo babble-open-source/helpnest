@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { locales } from '@/i18n/config'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
@@ -15,21 +16,44 @@ function toLastmod(date: Date): string {
   return date.toISOString().split('T')[0]!
 }
 
+interface HreflangAlternate {
+  hreflang: string
+  href: string
+}
+
 interface SitemapEntry {
   loc: string
   lastmod: string
   priority: string
+  alternates: HreflangAlternate[]
 }
 
 function buildSitemapXml(entries: SitemapEntry[]): string {
   const urls = entries
-    .map(
-      ({ loc, lastmod, priority }) =>
-        `  <url>\n    <loc>${xmlEscape(loc)}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <priority>${priority}</priority>\n  </url>`,
-    )
+    .map(({ loc, lastmod, priority, alternates }) => {
+      const hreflangTags = alternates
+        .map(
+          ({ hreflang, href }) =>
+            `    <xhtml:link rel="alternate" hreflang="${xmlEscape(hreflang)}" href="${xmlEscape(href)}" />`,
+        )
+        .join('\n')
+      return (
+        `  <url>\n` +
+        `    <loc>${xmlEscape(loc)}</loc>\n` +
+        `    <lastmod>${lastmod}</lastmod>\n` +
+        `    <priority>${priority}</priority>\n` +
+        (hreflangTags ? `${hreflangTags}\n` : '') +
+        `  </url>`
+      )
+    })
     .join('\n')
 
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls}\n</urlset>`
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?>\n` +
+    `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n` +
+    `${urls}\n` +
+    `</urlset>`
+  )
 }
 
 export async function GET(
@@ -84,6 +108,10 @@ export async function GET(
     loc: baseUrl,
     lastmod: toLastmod(workspace.updatedAt),
     priority: '1.0',
+    alternates: locales.map((l) => ({
+      hreflang: l,
+      href: `${APP_URL}/${l}/${slug}/help`,
+    })),
   })
 
   // Collection index pages
@@ -92,6 +120,10 @@ export async function GET(
       loc: `${baseUrl}/${col.slug}`,
       lastmod: toLastmod(workspace.updatedAt),
       priority: '0.6',
+      alternates: locales.map((l) => ({
+        hreflang: l,
+        href: `${APP_URL}/${l}/${slug}/help/${col.slug}`,
+      })),
     })
   }
 
@@ -101,6 +133,10 @@ export async function GET(
       loc: `${baseUrl}/${article.collection.slug}/${article.slug}`,
       lastmod: toLastmod(article.updatedAt),
       priority: '0.8',
+      alternates: locales.map((l) => ({
+        hreflang: l,
+        href: `${APP_URL}/${l}/${slug}/help/${article.collection.slug}/${article.slug}`,
+      })),
     })
   }
 

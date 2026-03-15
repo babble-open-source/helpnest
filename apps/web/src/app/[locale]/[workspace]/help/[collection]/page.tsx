@@ -1,12 +1,49 @@
+import type { Metadata } from 'next'
 import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 import { DashboardButton } from '@/components/help/DashboardButton'
+import { locales } from '@/i18n/config'
 
 interface Props {
-  params: Promise<{ workspace: string; collection: string }>
+  params: Promise<{ locale: string; workspace: string; collection: string }>
+}
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params
+  const t = await getTranslations('help')
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug: params.workspace },
+    select: { id: true, name: true },
+  })
+  if (!workspace) return {}
+
+  const collection = await prisma.collection.findUnique({
+    where: { workspaceId_slug: { workspaceId: workspace.id, slug: params.collection } },
+    select: { title: true, description: true },
+  })
+  if (!collection) return {}
+
+  const title = `${collection.title} — ${workspace.name} ${t('helpCenter')}`
+  const description = collection.description ?? title
+
+  return {
+    title,
+    description,
+    alternates: {
+      languages: Object.fromEntries(
+        locales.map((l) => [l, `/${l}/${params.workspace}/help/${params.collection}`]),
+      ),
+    },
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+    },
+  }
 }
 
 function readMinutes(content: string): number {

@@ -5,7 +5,11 @@ import { usePathname, useRouter } from '@/i18n/navigation'
 import { locales, localeNames, type Locale } from '@/i18n/config'
 import { useTransition } from 'react'
 
-export function LanguageSwitcher() {
+interface LanguageSwitcherProps {
+  className?: string
+}
+
+export function LanguageSwitcher({ className }: LanguageSwitcherProps = {}) {
   const locale = useLocale() as Locale
   const pathname = usePathname()
   const router = useRouter()
@@ -23,7 +27,10 @@ export function LanguageSwitcher() {
       value={locale}
       onChange={onSelectChange}
       disabled={isPending}
-      className="bg-transparent text-sm border border-[rgb(var(--color-border))] rounded-md px-2 py-1 text-[rgb(var(--color-muted))] hover:text-[rgb(var(--color-ink))] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--color-accent))] cursor-pointer disabled:opacity-50"
+      className={
+        className ??
+        'bg-transparent text-sm border border-[rgb(var(--color-border))] rounded-md px-2 py-1 text-[rgb(var(--color-muted))] hover:text-[rgb(var(--color-ink))] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--color-accent))] cursor-pointer disabled:opacity-50'
+      }
       aria-label="Select language"
     >
       {locales.map((loc) => (

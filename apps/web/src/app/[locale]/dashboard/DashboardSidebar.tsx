@@ -6,6 +6,7 @@ import { signOut } from 'next-auth/react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import { InboxBadge } from './InboxBadge'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 interface Props {
   workspaceId: string
@@ -163,6 +164,15 @@ export function DashboardSidebar({
 
         {/* User */}
         <div className="p-2 border-t border-white/10 shrink-0">
+          {/* Language switcher — mobile: always visible; desktop: only when expanded */}
+          <div className={`px-2 py-1.5 lg:hidden`}>
+            <LanguageSwitcher className="w-full bg-transparent text-sm border border-white/20 rounded-md px-2 py-1 text-cream/70 hover:text-cream focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer disabled:opacity-50" />
+          </div>
+          {open && (
+            <div className="hidden lg:block px-2 py-1.5">
+              <LanguageSwitcher className="w-full bg-transparent text-sm border border-white/20 rounded-md px-2 py-1 text-cream/70 hover:text-cream focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer disabled:opacity-50" />
+            </div>
+          )}
           {/* Mobile: always show full user row */}
           <div className="flex items-center gap-3 px-2 py-2 lg:hidden">
             <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white text-sm font-medium shrink-0">

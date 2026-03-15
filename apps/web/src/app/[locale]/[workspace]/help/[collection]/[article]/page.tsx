@@ -1,20 +1,19 @@
+import type { Metadata } from 'next'
 import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
 import { incrementArticleViews } from '@/lib/counters'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
-import { getTranslations } from 'next-intl/server'
+import { getTranslations, getFormatter } from 'next-intl/server'
 import { ArticleContent } from '@/components/help/ArticleContent'
 import { ArticleFeedback } from '@/components/help/ArticleFeedback'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 import { DashboardButton } from '@/components/help/DashboardButton'
+import { locales } from '@/i18n/config'
 
 interface Props {
-  params: Promise<{ workspace: string; collection: string; article: string }>
+  params: Promise<{ locale: string; workspace: string; collection: string; article: string }>
 }
 
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).format(date)
-}
 
 function slugify(text: string): string {
   return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
@@ -53,9 +52,49 @@ function readTime(content: string): number {
   return Math.max(1, Math.round(text.split(/\s+/).filter(Boolean).length / 200))
 }
 
+export async function generateMetadata(props: Props): Promise<Metadata> {
+  const params = await props.params
+  const t = await getTranslations('help')
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { slug: params.workspace },
+    select: { id: true, name: true },
+  })
+  if (!workspace) return {}
+
+  const article = await prisma.article.findUnique({
+    where: { workspaceId_slug: { workspaceId: workspace.id, slug: params.article } },
+    select: { title: true, excerpt: true, updatedAt: true },
+  })
+  if (!article) return {}
+
+  const title = `${article.title} — ${workspace.name} ${t('helpCenter')}`
+  const description = article.excerpt ?? title
+
+  return {
+    title,
+    description,
+    alternates: {
+      languages: Object.fromEntries(
+        locales.map((l) => [
+          l,
+          `/${l}/${params.workspace}/help/${params.collection}/${params.article}`,
+        ]),
+      ),
+    },
+    openGraph: {
+      title,
+      description,
+      type: 'article',
+      modifiedTime: article.updatedAt.toISOString(),
+    },
+  }
+}
+
 export default async function ArticlePage(props: Props) {
   const params = await props.params
   const t = await getTranslations('help')
+  const format = await getFormatter()
   const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await prisma.workspace.findUnique({
     where: { slug: params.workspace },
@@ -152,7 +191,7 @@ export default async function ArticlePage(props: Props) {
                 {article.publishedAt && (
                   <>
                     <span>·</span>
-                    <span>{formatDate(article.publishedAt)}</span>
+                    <span>{format.dateTime(article.publishedAt, { year: 'numeric', month: 'long', day: 'numeric' })}</span>
                   </>
                 )}
               </div>

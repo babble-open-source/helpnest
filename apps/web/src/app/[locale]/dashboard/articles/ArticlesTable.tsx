@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations, useFormatter } from 'next-intl'
 import { ArticleActions } from './ArticleActions'
 
 type ArticleStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
@@ -50,7 +50,7 @@ export function ArticlesTable({ articles, demoMode }: Props) {
   const router = useRouter()
   const t = useTranslations('articlesTable')
   const tc = useTranslations('common')
-  const locale = useLocale()
+  const format = useFormatter()
 
   const BULK_ACTIONS: { action: BulkAction; label: string; danger?: boolean }[] = [
     { action: 'publish', label: tc('publish') },
@@ -191,7 +191,7 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-end hidden md:table-cell">
-                    <span className="text-sm text-muted">{article.views.toLocaleString()}</span>
+                    <span className="text-sm text-muted">{format.number(article.views)}</span>
                   </td>
                   <td className="px-4 py-3 text-end hidden lg:table-cell">
                     {(() => {
@@ -219,10 +219,7 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                   </td>
                   <td className="px-4 py-3 text-end hidden lg:table-cell">
                     <span className="text-sm text-muted">
-                      {new Intl.RelativeTimeFormat(locale, { numeric: 'auto' }).format(
-                        Math.round((article.updatedAt.getTime() - nowMs()) / (1000 * 60 * 60 * 24)),
-                        'day'
-                      )}
+                      {format.relativeTime(article.updatedAt, { unit: 'day', numeric: 'auto' })}
                     </span>
                   </td>
                   <td className="px-4 py-3">

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { Link, useRouter } from '@/i18n/navigation'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations, useFormatter } from 'next-intl'
 
 interface Message {
   id: string
@@ -62,7 +62,7 @@ export function ConversationDetail({
 }: Props) {
   const t = useTranslations('conversation')
   const tc = useTranslations('common')
-  const locale = useLocale()
+  const format = useFormatter()
   const [conversation, setConversation] = useState(initialConv)
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
@@ -176,7 +176,7 @@ export function ConversationDetail({
   }
 
   function formatTime(dateStr: string): string {
-    return new Date(dateStr).toLocaleString(locale, {
+    return format.dateTime(new Date(dateStr), {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',

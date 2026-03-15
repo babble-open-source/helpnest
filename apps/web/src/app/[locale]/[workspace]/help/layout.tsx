@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { getWorkspaceFontUrls, getWorkspaceThemeCSS } from '@/lib/branding'
+import { locales } from '@/i18n/config'
 import {
   hasWorkspaceFaviconColumn,
   hasWorkspaceCustomAccentColorColumn,
@@ -26,7 +27,7 @@ import { cache } from 'react'
 
 interface Props {
   children: React.ReactNode
-  params: Promise<{ workspace: string }>
+  params: Promise<{ locale: string; workspace: string }>
 }
 
 function toAbsoluteHttpUrl(value: string | null | undefined): string | undefined {
@@ -246,6 +247,11 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
           apple: iconUrl,
         }
       : undefined,
+    alternates: {
+      languages: Object.fromEntries(
+        locales.map((l) => [l, `/${l}/${params.workspace}/help`]),
+      ),
+    },
     openGraph: {
       title,
       description,

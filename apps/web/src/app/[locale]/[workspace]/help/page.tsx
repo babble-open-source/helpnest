@@ -6,6 +6,7 @@ import { SearchTrigger } from '@/components/help/SearchTrigger'
 import { AskAI } from '@/components/help/AskAI'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 import { DashboardButton } from '@/components/help/DashboardButton'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 interface Props {
   params: Promise<{ workspace: string }>
@@ -72,6 +73,7 @@ export default async function HelpCenterHome(props: Props) {
           />
           <div className="flex items-center gap-3">
             <span className="text-sm text-muted hidden sm:block">{t('helpCenter')}</span>
+            <LanguageSwitcher />
             <DashboardButton />
           </div>
         </div>
@@ -166,10 +168,10 @@ export default async function HelpCenterHome(props: Props) {
           <p className="text-muted text-sm mb-4">{t('stillNeedHelp')}</p>
           <div className="flex items-center justify-center gap-8 text-sm text-muted">
             <span>
-              <strong className="text-ink">{workspace.articles.length}+</strong> {t('articlesCount')}
+              {t('articlesCount', { count: workspace.articles.length })}
             </span>
             <span>
-              <strong className="text-ink">{workspace.collections.length}</strong> {t('collectionsCount')}
+              {t('collectionsCount', { count: workspace.collections.length })}
             </span>
           </div>
         </footer>

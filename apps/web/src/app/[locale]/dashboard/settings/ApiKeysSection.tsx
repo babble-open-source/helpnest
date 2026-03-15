@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations, useFormatter } from 'next-intl'
 
 interface ApiKey {
   id: string
@@ -15,15 +15,11 @@ export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
   const tc = useTranslations('common')
   const tm = useTranslations('members')
   const tca = useTranslations('collectionsActions')
-  const locale = useLocale()
+  const format = useFormatter()
 
   function formatDate(iso: string | null): string {
     if (!iso) return t('never')
-    return new Date(iso).toLocaleDateString(locale, {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    })
+    return format.dateTime(new Date(iso), { year: 'numeric', month: 'short', day: 'numeric' })
   }
   const [keys, setKeys] = useState<ApiKey[]>([])
   const [loading, setLoading] = useState(true)

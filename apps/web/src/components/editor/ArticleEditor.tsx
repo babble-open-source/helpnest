@@ -26,7 +26,7 @@ import { EditorFloatingMenu } from './EditorFloatingMenu'
 import { fixOrderedListCounters } from '@/components/help/ArticleContent'
 import { Tooltip } from '@/components/ui/Tooltip'
 import { Link as LocaleLink } from '@/i18n/navigation'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useFormatter } from 'next-intl'
 
 interface Article {
   id: string
@@ -68,6 +68,7 @@ type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
   const t = useTranslations('editor')
   const tCommon = useTranslations('common')
+  const format = useFormatter()
   const [hasDraft, setHasDraft] = useState(article.hasDraft ?? false)
   // dismissedAiBanner: user explicitly dismissed; bannerVisible: derives from current state
   const [dismissedAiBanner, setDismissedAiBanner] = useState(false)
@@ -505,7 +506,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
                     <div>
                       <p className="text-sm font-medium text-ink">{t('version')} {v.version}</p>
                       <p className="text-xs text-muted mt-0.5">
-                        {new Date(v.createdAt).toLocaleString()} &middot; {v.author.name ?? v.author.email}
+                        {format.dateTime(new Date(v.createdAt), { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} &middot; {v.author.name ?? v.author.email}
                       </p>
                     </div>
                     <button
