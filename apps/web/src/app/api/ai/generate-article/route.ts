@@ -8,6 +8,15 @@ import type { CodeContext } from '@/lib/article-drafter'
 const RATE_LIMIT_MAX = 20
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hour
 
+async function cacheIdempotent(workspaceId: string, key: string, result: object): Promise<void> {
+  if (!redis || !key) return
+  await redis.set(
+    `idempotent:generate-article:${workspaceId}:${key}`,
+    JSON.stringify(result),
+    'EX', 86400,
+  ).catch(() => {})
+}
+
 // In-memory fallback used when Redis is unavailable.
 // Tracks per-workspace request counts within the current time slot.
 const _articleMemFallback = new Map<string, number>()
@@ -82,7 +91,15 @@ export async function POST(request: Request) {
   // Validate workspace is allowed to use external API drafting
   const workspace = await prisma.workspace.findUnique({
     where: { id: authResult.workspaceId },
-    select: { autoDraftExternalEnabled: true, aiEnabled: true },
+    select: {
+      autoDraftExternalEnabled: true,
+      aiEnabled: true,
+      productContext: true,
+      aiInstructions: true,
+      aiProvider: true,
+      aiApiKey: true,
+      aiModel: true,
+    },
   })
 
   if (!workspace?.aiEnabled) {
@@ -120,8 +137,8 @@ export async function POST(request: Request) {
     if (prTitle) {
       codeContexts = [{
         prTitle,
-        prBody: typeof ctx.prBody === 'string' ? ctx.prBody.slice(0, 6000) : undefined,
-        diff: typeof ctx.diff === 'string' ? ctx.diff.slice(0, 5000) : undefined,
+        prBody: typeof ctx.prBody === 'string' ? ctx.prBody.slice(0, 60000) : undefined, // ~15K tokens — main code context from CLI
+        diff: typeof ctx.diff === 'string' ? ctx.diff.slice(0, 10000) : undefined, // ~2.5K tokens — git diff
         changedFiles: Array.isArray(ctx.changedFiles)
           ? (ctx.changedFiles as unknown[]).filter((f): f is string => typeof f === 'string').slice(0, 50)
           : undefined,
@@ -136,7 +153,7 @@ export async function POST(request: Request) {
                 return typeof o.path === 'string' && typeof o.content === 'string'
               })
               .slice(0, 5)
-              .map((f) => ({ path: f.path.slice(0, 200), content: f.content.slice(0, 1000) }))
+              .map((f) => ({ path: f.path.slice(0, 200), content: f.content.slice(0, 5000) })) // ~1.25K tokens per file
           : undefined,
         repository: typeof ctx.repository === 'string' ? ctx.repository.slice(0, 200) : undefined,
         prUrl: typeof ctx.prUrl === 'string' ? ctx.prUrl.slice(0, 500) : undefined,
@@ -167,45 +184,42 @@ export async function POST(request: Request) {
         { status: 404 },
       )
     }
+    try {
+      const result = await draftArticle({
+        workspaceId: authResult.workspaceId,
+        collectionId: normalizedCollectionId,
+        authorId: authResult.userId,
+        gap: { id: gap.id, query: gap.query },
+        workspaceSettings: workspace,
+      })
+      if (!result) {
+        return NextResponse.json({ error: 'Draft generation failed' }, { status: 500 })
+      }
+      await cacheIdempotent(authResult.workspaceId, idempotencyKey as string, result)
+      return NextResponse.json(result)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Draft generation failed'
+      return NextResponse.json({ error: message }, { status: 500 })
+    }
+  }
+
+  try {
     const result = await draftArticle({
       workspaceId: authResult.workspaceId,
       collectionId: normalizedCollectionId,
       authorId: authResult.userId,
-      gap: { id: gap.id, query: gap.query },
+      topic: normalizedTopic,
+      codeContexts,
+      bypassThreshold: true,
+      workspaceSettings: workspace,
     })
-    if (result && idempotencyKey && typeof idempotencyKey === 'string' && redis) {
-      await redis.set(
-        `idempotent:generate-article:${authResult.workspaceId}:${idempotencyKey}`,
-        JSON.stringify(result),
-        'EX', 86400,
-      ).catch(() => {})
+    if (!result) {
+      return NextResponse.json({ error: 'Draft generation failed or was deduplicated' }, { status: 500 })
     }
-    return result
-      ? NextResponse.json(result)
-      : NextResponse.json({ error: 'Draft generation failed' }, { status: 500 })
+    await cacheIdempotent(authResult.workspaceId, idempotencyKey as string, result)
+    return NextResponse.json(result)
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Draft generation failed'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
-
-  const result = await draftArticle({
-    workspaceId: authResult.workspaceId,
-    collectionId: normalizedCollectionId,
-    authorId: authResult.userId,
-    topic: normalizedTopic,
-    codeContexts,
-    bypassThreshold: true,
-  })
-
-  if (!result) {
-    return NextResponse.json({ error: 'Draft generation failed or was deduplicated' }, { status: 500 })
-  }
-
-  // Cache for idempotency
-  if (idempotencyKey && typeof idempotencyKey === 'string' && redis) {
-    await redis.set(
-      `idempotent:generate-article:${authResult.workspaceId}:${idempotencyKey}`,
-      JSON.stringify(result),
-      'EX', 86400,
-    ).catch(() => {})
-  }
-
-  return NextResponse.json(result)
 }

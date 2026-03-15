@@ -17,8 +17,11 @@ if (process.env.NODE_ENV !== 'production') globalForQdrant.qdrant = qdrant
 export const COLLECTION_NAME = 'helpnest_articles'
 export const VECTOR_SIZE = 1536 // text-embedding-3-small
 
-/** Ensure the Qdrant collection exists */
+/** Ensure the Qdrant collection exists (cached after first success) */
+let collectionEnsured = false
+
 export async function ensureCollection() {
+  if (collectionEnsured) return
   try {
     await qdrant.getCollection(COLLECTION_NAME)
   } catch {
@@ -29,6 +32,7 @@ export async function ensureCollection() {
       },
     })
   }
+  collectionEnsured = true
 }
 
 /** Split text into overlapping chunks */

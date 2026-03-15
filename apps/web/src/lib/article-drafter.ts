@@ -48,6 +48,14 @@ export interface DraftInput {
   codeContexts?: CodeContext[]
   /** Skip the occurrence-count gate (true for manual triggers) */
   bypassThreshold?: boolean
+  /** Pre-fetched workspace AI settings — skips a DB query when provided */
+  workspaceSettings?: {
+    productContext: string | null
+    aiInstructions: string | null
+    aiProvider: string | null
+    aiApiKey: string | null
+    aiModel: string | null
+  }
 }
 
 export interface DraftResult {
@@ -227,10 +235,11 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
     .slice(0, 16)
   const lockKey = `lock:draft:${workspaceId}:${topicHash}`
 
+  const lockValue = crypto.randomUUID()
   let lockAcquired = false
   if (redis) {
     try {
-      const result = await redis.set(lockKey, '1', 'EX', 120, 'NX')
+      const result = await redis.set(lockKey, lockValue, 'EX', 120, 'NX')
       if (!result) return null // another process is generating this topic
       lockAcquired = true
     } catch {
@@ -239,8 +248,8 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
   }
 
   try {
-    // Fetch workspace settings
-    const workspace = await prisma.workspace.findUnique({
+    // Fetch workspace settings (skip DB query if caller pre-fetched them)
+    const workspace = input.workspaceSettings ?? await prisma.workspace.findUnique({
       where: { id: workspaceId },
       select: {
         productContext: true,
@@ -248,8 +257,6 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
         aiProvider: true,
         aiApiKey: true,
         aiModel: true,
-        autoDraftExternalEnabled: true,
-        aiEnabled: true,
       },
     })
     if (!workspace) return null
@@ -302,10 +309,6 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
 
     // Build system prompt (5 layers: role, product identity, KB context, collection scope, format)
     const productIdentity = (workspace.productContext ?? workspace.aiInstructions ?? '').trim()
-    const kbContext = relatedArticles
-      .map((a) => `# ${a.title}\n${a.content.slice(0, 800)}`)
-      .join('\n\n---\n\n')
-      .slice(0, 4000)
     // In UPDATE mode, exclude the target article from the KB context block to avoid
     // showing the same content twice (it will appear in the dedicated UPDATE layer below).
     const kbContextArticles = mode === 'update'
@@ -356,14 +359,14 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
             ctx.repository ? `PR: ${ctx.prTitle}` : `Topic: ${ctx.prTitle}`,
             ctx.prBody
               ? ctx.repository
-                ? `Description: ${ctx.prBody.slice(0, 4000)}`
-                : `Source code:\n${ctx.prBody.slice(0, 4000)}`
+                ? `Description: ${ctx.prBody.slice(0, 40000)}` // ~10K tokens — PR description
+                : `Source code:\n${ctx.prBody.slice(0, 40000)}` // ~10K tokens — code from CLI --local
               : '',
             ctx.commitMessages?.length
               ? `Commits:\n${ctx.commitMessages.slice(0, 20).map((m) => `- ${m.slice(0, 100)}`).join('\n')}`
               : '',
             ctx.changedFiles ? `Files: ${ctx.changedFiles.slice(0, 20).join(', ')}` : '',
-            ctx.diff ? `\nDiff:\n${ctx.diff.slice(0, 2000)}` : '',
+            ctx.diff ? `\nDiff:\n${ctx.diff.slice(0, 8000)}` : '', // ~2K tokens — git diff in prompt
             ctx.currentFiles?.length
               ? `\nCurrent state of changed files:\n${ctx.currentFiles.slice(0, 5).map((f) => `// ${f.path}\n${f.content}`).join('\n\n')}`
               : '',
@@ -402,7 +405,7 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
     for await (const event of provider.streamChat({
       system,
       messages: [{ role: 'user', content: userContent }],
-      maxTokens: 2048,
+      maxTokens: 8192, // ~8K tokens — LLM output budget (JSON + HTML overhead takes ~30%, leaves ~5.5K for article content)
     })) {
       if (event.type === 'text') raw += event.text
       if (event.type === 'error') throw new Error(event.message)
@@ -497,7 +500,12 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
   } finally {
     if (redis && lockAcquired) {
       try {
-        await redis.del(lockKey)
+        // Atomic compare-and-delete: only remove the lock if we still own it.
+        // Prevents deleting another process's lock if ours expired (TTL < LLM time).
+        await redis.eval(
+          `if redis.call("get",KEYS[1]) == ARGV[1] then return redis.call("del",KEYS[1]) else return 0 end`,
+          1, lockKey, lockValue,
+        )
       } catch {
         // ignore cleanup error
       }
