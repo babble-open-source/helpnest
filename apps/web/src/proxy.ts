@@ -31,6 +31,7 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   if (pathname.startsWith('/api/')) return null
   if (pathname === '/widget.js') return null
   if (pathname.startsWith('/dashboard') || pathname.startsWith('/login') || pathname.startsWith('/invite/')) return null
+  if (pathname.startsWith('/imports/') || pathname === '/manifest.json' || pathname.match(/\.(png|ico|svg|jpg|jpeg|webp)$/)) return null
   const url = req.nextUrl.clone()
   url.pathname = `/${slug}/help${pathname === '/' ? '' : pathname}`
   url.search = search
@@ -135,5 +136,5 @@ export default auth(async (req: NextRequest & { auth: unknown }) => {
 })
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|imports/|.*\\.(?:png|ico|svg|jpg|jpeg|webp)$).*)'],
 }
