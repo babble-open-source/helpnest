@@ -3,6 +3,7 @@ import { createHash } from 'crypto'
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs'
 import { join, relative, resolve, extname, basename } from 'path'
 import { walkTree, readFileForContext, readPackageJson, fetchDomains, fetchFilesForTopics, buildCodeBody } from '../utils.js'
+import { confirm, confirmFileAccess } from '../prompts.js'
 
 interface SeedOptions {
   repo?: string
@@ -18,6 +19,7 @@ interface SeedOptions {
   dryRun?: boolean
   topics?: string
   rounds?: string
+  yes?: boolean
 }
 
 interface SeedItem {
@@ -497,10 +499,11 @@ async function collectCodeLocal(
   baseUrl: string,
   apiKey: string,
   maxRounds = 3,
+  precomputedTree?: string[],
 ): Promise<{ items: SeedItem[]; domains: Record<string, string[]> }> {
   // 1. Build the file tree (paths only — no contents sent in pass 1)
   console.log(chalk.dim('  Scanning repository structure...'))
-  const tree = walkTree(repoPath, 5000)
+  const tree = precomputedTree ?? walkTree(repoPath, 5000)
 
   // 2. Read package manifest for context
   const packageJson = readPackageJson(repoPath)
@@ -569,6 +572,17 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
   if (localPath && !existsSync(localPath)) {
     console.error(chalk.red(`Error: Local path does not exist: ${localPath}`))
     process.exit(1)
+  }
+
+  // Consent gate: walk tree once (paths only) and prompt before reading contents
+  let cachedTree: string[] | undefined
+  if (localPath) {
+    cachedTree = walkTree(localPath, 5000)
+    const consented = await confirmFileAccess(localPath, cachedTree.length, options.yes)
+    if (!consented) {
+      console.log(chalk.yellow('Aborted.'))
+      return
+    }
   }
 
   // Scope is used as the namespace for idempotency key generation
@@ -670,7 +684,7 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
   if (requestedSources.includes('code') && isLocalMode) {
     console.log(chalk.dim('Analyzing codebase for feature domains...'))
     try {
-      const { items } = await collectCodeLocal(localPath!, scope!, baseUrl, apiKey!, maxRounds)
+      const { items } = await collectCodeLocal(localPath!, scope!, baseUrl, apiKey!, maxRounds, cachedTree)
       allItems.push(...items)
       sourceCounts['code'] = items.length
       console.log(chalk.dim(`  Found ${items.length} feature domains`))
@@ -693,7 +707,7 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
     if (isLocalMode && localPath) {
       console.log(chalk.dim('  Matching topics to codebase files...'))
       try {
-        const tree = walkTree(localPath)
+        const tree = cachedTree ?? walkTree(localPath)
         const packageJson = readPackageJson(localPath)
         topicFilesMap = await fetchFilesForTopics(tree, packageJson, localPath, topicList, baseUrl, apiKey!, maxRounds)
       } catch (err) {
@@ -745,6 +759,13 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
       const typeLabel = chalk.cyan(`[${item.sourceType}]`)
       console.log(`  ${typeLabel} ${item.label}`)
     }
+    return
+  }
+
+  // Pre-submit confirmation
+  const proceed = await confirm(`Generate ${allItems.length} article(s)?`, options.yes)
+  if (!proceed) {
+    console.log(chalk.yellow('Aborted.'))
     return
   }
 

@@ -343,6 +343,9 @@ importers:
       commander:
         specifier: ^12.0.0
         version: 12.1.0
+      ora:
+        specifier: ^8.0.0
+        version: 8.2.0
     devDependencies:
       '@types/node':
         specifier: ^20.0.0

@@ -1,6 +1,7 @@
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs'
 import { execSync } from 'child_process'
 import { join, relative, basename } from 'path'
+import ora from 'ora'
 
 // ---------------------------------------------------------------------------
 // Skip patterns for test/generated files (used by buildCodeBody)
@@ -142,64 +143,75 @@ export async function fetchDomains(
   let domains: Record<string, string[]> = {}
 
   const seenContents = new Map<string, string>() // path → content, accumulates across rounds
+  const spinner = ora('Identifying feature domains...').start()
 
-  for (let round = 0; round < MAX_ROUNDS; round++) {
-    // On round 1+, read any new files not yet in seenContents
-    if (round > 0) {
-      const newFiles = Object.values(domains).flat().filter((p) => !seenContents.has(p))
-      for (const p of newFiles) {
-        const content = readFileForContext(repoPath, p)
-        if (content.length > 0) seenContents.set(p, content)
+  try {
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      // On round 1+, read any new files not yet in seenContents
+      if (round > 0) {
+        const newFiles = Object.values(domains).flat().filter((p) => !seenContents.has(p))
+        for (const p of newFiles) {
+          const content = readFileForContext(repoPath, p)
+          if (content.length > 0) seenContents.set(p, content)
+        }
       }
-    }
-    const fileContents = seenContents.size > 0
-      ? Array.from(seenContents.entries()).map(([path, content]) => ({ path, content }))
-      : []
+      const fileContents = seenContents.size > 0
+        ? Array.from(seenContents.entries()).map(([path, content]) => ({ path, content }))
+        : []
 
-    const remainingRounds = MAX_ROUNDS - round - 1
+      const remainingRounds = MAX_ROUNDS - round - 1
 
-    const res = await fetch(`${baseUrl}/api/ai/analyze-repo-structure`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        tree,
-        packageJson,
-        remainingRounds,
-        ...(fileContents.length > 0 ? { fileContents } : {}),
-      }),
-    })
+      const res = await fetch(`${baseUrl}/api/ai/analyze-repo-structure`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          tree,
+          packageJson,
+          remainingRounds,
+          ...(fileContents.length > 0 ? { fileContents } : {}),
+        }),
+      })
 
-    if (!res.ok) {
-      const contentType = res.headers.get('content-type') ?? ''
-      if (contentType.includes('text/html')) {
-        throw new Error(
-          `analyze-repo-structure returned HTML (HTTP ${res.status}). ` +
-            `Is the server running at ${baseUrl}? Try passing --base-url http://localhost:3000`,
-        )
+      if (!res.ok) {
+        const contentType = res.headers.get('content-type') ?? ''
+        if (contentType.includes('text/html')) {
+          throw new Error(
+            `analyze-repo-structure returned HTML (HTTP ${res.status}). ` +
+              `Is the server running at ${baseUrl}? Try passing --base-url http://localhost:3000`,
+          )
+        }
+        const text = await res.text().catch(() => `HTTP ${res.status}`)
+        throw new Error(`analyze-repo-structure failed (HTTP ${res.status}): ${text}`)
       }
-      const text = await res.text().catch(() => `HTTP ${res.status}`)
-      throw new Error(`analyze-repo-structure failed (HTTP ${res.status}): ${text}`)
+
+      const data = (await res.json()) as { domains?: Record<string, string[]>; needsMore?: boolean }
+
+      if (!data.domains || typeof data.domains !== 'object') {
+        throw new Error('Invalid response from analyze-repo-structure')
+      }
+
+      domains = data.domains
+
+      if (round === 0 && MAX_ROUNDS > 1 && Object.keys(domains).length > 0) {
+        spinner.text = `Round ${round + 1}: ${Object.keys(domains).length} domain(s) identified, reading contents...`
+        continue
+      }
+
+      if (!data.needsMore || Object.keys(domains).length === 0) {
+        spinner.succeed(`${Object.keys(domains).length} domain(s) identified`)
+        break
+      }
+
+      spinner.text = `Round ${round + 1}: ${Object.keys(domains).length} domain(s) identified, refining...`
     }
 
-    const data = (await res.json()) as { domains?: Record<string, string[]>; needsMore?: boolean }
-
-    if (!data.domains || typeof data.domains !== 'object') {
-      throw new Error('Invalid response from analyze-repo-structure')
+    // If loop completed without break (all rounds used), succeed with final count
+    if (spinner.isSpinning) {
+      spinner.succeed(`${Object.keys(domains).length} domain(s) identified`)
     }
-
-    domains = data.domains
-
-    if (round === 0 && MAX_ROUNDS > 1 && Object.keys(domains).length > 0) {
-      process.stderr.write(`  Round ${round + 1}: ${Object.keys(domains).length} domain(s) identified, reading contents...\n`)
-      continue
-    }
-
-    if (!data.needsMore || Object.keys(domains).length === 0) {
-      process.stderr.write(`  Round ${round + 1}: ${Object.keys(domains).length} domain(s) identified\n`)
-      break
-    }
-
-    process.stderr.write(`  Round ${round + 1}: ${Object.keys(domains).length} domain(s) identified, refining...\n`)
+  } catch (err) {
+    spinner.fail('Domain identification failed')
+    throw err
   }
 
   return domains
@@ -224,62 +236,72 @@ export async function fetchFilesForTopic(
   let files: string[] = []
 
   const seenContents = new Map<string, string>() // path → content, accumulates across rounds
+  const spinner = ora(`Matching files for "${topic}"...`).start()
 
-  for (let round = 0; round < MAX_ROUNDS; round++) {
-    // On round 1+, read any new files not yet in seenContents
-    if (round > 0) {
-      const newFiles = files.filter((p) => !seenContents.has(p))
-      for (const p of newFiles) {
-        const content = readFileForContext(repoPath, p)
-        if (content.length > 0) seenContents.set(p, content)
+  try {
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      // On round 1+, read any new files not yet in seenContents
+      if (round > 0) {
+        const newFiles = files.filter((p) => !seenContents.has(p))
+        for (const p of newFiles) {
+          const content = readFileForContext(repoPath, p)
+          if (content.length > 0) seenContents.set(p, content)
+        }
       }
-    }
-    const fileContents = seenContents.size > 0
-      ? Array.from(seenContents.entries()).map(([path, content]) => ({ path, content }))
-      : []
+      const fileContents = seenContents.size > 0
+        ? Array.from(seenContents.entries()).map(([path, content]) => ({ path, content }))
+        : []
 
-    const remainingRounds = MAX_ROUNDS - round - 1
+      const remainingRounds = MAX_ROUNDS - round - 1
 
-    const res = await fetch(`${baseUrl}/api/ai/analyze-repo-structure`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        tree,
-        packageJson,
-        topic,
-        remainingRounds,
-        ...(fileContents.length > 0 ? { fileContents } : {}),
-      }),
-    })
+      const res = await fetch(`${baseUrl}/api/ai/analyze-repo-structure`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          tree,
+          packageJson,
+          topic,
+          remainingRounds,
+          ...(fileContents.length > 0 ? { fileContents } : {}),
+        }),
+      })
 
-    if (!res.ok) {
-      const contentType = res.headers.get('content-type') ?? ''
-      if (contentType.includes('text/html')) {
-        throw new Error(
-          `analyze-repo-structure returned HTML (HTTP ${res.status}). ` +
-            `Is the server running at ${baseUrl}? Try passing --base-url http://localhost:3000`,
-        )
+      if (!res.ok) {
+        const contentType = res.headers.get('content-type') ?? ''
+        if (contentType.includes('text/html')) {
+          throw new Error(
+            `analyze-repo-structure returned HTML (HTTP ${res.status}). ` +
+              `Is the server running at ${baseUrl}? Try passing --base-url http://localhost:3000`,
+          )
+        }
+        const text = await res.text().catch(() => `HTTP ${res.status}`)
+        throw new Error(`analyze-repo-structure failed (HTTP ${res.status}): ${text}`)
       }
-      const text = await res.text().catch(() => `HTTP ${res.status}`)
-      throw new Error(`analyze-repo-structure failed (HTTP ${res.status}): ${text}`)
+
+      const data = (await res.json()) as { files?: string[]; needsMore?: boolean }
+      files = Array.isArray(data.files) ? data.files : []
+
+      // Round 0 is filename-only candidate selection — always proceed to round 1
+      // to read actual file contents, regardless of needsMore.
+      if (round === 0 && MAX_ROUNDS > 1 && files.length > 0) {
+        spinner.text = `Round ${round + 1}: ${files.length} file(s) identified, reading contents...`
+        continue
+      }
+
+      if (!data.needsMore || files.length === 0) {
+        spinner.succeed(`${files.length} file(s) matched for "${topic}"`)
+        break
+      }
+
+      spinner.text = `Round ${round + 1}: ${files.length} file(s) identified, refining...`
     }
 
-    const data = (await res.json()) as { files?: string[]; needsMore?: boolean }
-    files = Array.isArray(data.files) ? data.files : []
-
-    // Round 0 is filename-only candidate selection — always proceed to round 1
-    // to read actual file contents, regardless of needsMore.
-    if (round === 0 && MAX_ROUNDS > 1 && files.length > 0) {
-      process.stderr.write(`  Round ${round + 1}: ${files.length} file(s) identified, reading contents...\n`)
-      continue
+    if (spinner.isSpinning) {
+      spinner.succeed(`${files.length} file(s) matched for "${topic}"`)
     }
-
-    if (!data.needsMore || files.length === 0) {
-      process.stderr.write(`  Round ${round + 1}: ${files.length} file(s) identified\n`)
-      break
-    }
-
-    process.stderr.write(`  Round ${round + 1}: ${files.length} file(s) identified, refining...\n`)
+  } catch (err) {
+    spinner.fail(`File matching failed for "${topic}"`)
+    throw err
   }
 
   return files
@@ -304,61 +326,72 @@ export async function fetchFilesForTopics(
   let topicFiles: Record<string, string[]> = {}
 
   const seenContents = new Map<string, string>() // path → content, accumulates across rounds
+  const spinner = ora(`Matching files for ${topics.length} topic(s)...`).start()
 
-  for (let round = 0; round < MAX_ROUNDS; round++) {
-    // On round 1+, read any new files not yet in seenContents
-    if (round > 0) {
-      const newFiles = Object.values(topicFiles).flat().filter((p) => !seenContents.has(p))
-      for (const p of newFiles) {
-        const content = readFileForContext(repoPath, p)
-        if (content.length > 0) seenContents.set(p, content)
+  try {
+    for (let round = 0; round < MAX_ROUNDS; round++) {
+      // On round 1+, read any new files not yet in seenContents
+      if (round > 0) {
+        const newFiles = Object.values(topicFiles).flat().filter((p) => !seenContents.has(p))
+        for (const p of newFiles) {
+          const content = readFileForContext(repoPath, p)
+          if (content.length > 0) seenContents.set(p, content)
+        }
       }
-    }
-    const fileContents = seenContents.size > 0
-      ? Array.from(seenContents.entries()).map(([path, content]) => ({ path, content }))
-      : []
+      const fileContents = seenContents.size > 0
+        ? Array.from(seenContents.entries()).map(([path, content]) => ({ path, content }))
+        : []
 
-    const remainingRounds = MAX_ROUNDS - round - 1
+      const remainingRounds = MAX_ROUNDS - round - 1
 
-    const res = await fetch(`${baseUrl}/api/ai/analyze-repo-structure`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        tree,
-        packageJson,
-        topics,
-        remainingRounds,
-        ...(fileContents.length > 0 ? { fileContents } : {}),
-      }),
-    })
+      const res = await fetch(`${baseUrl}/api/ai/analyze-repo-structure`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          tree,
+          packageJson,
+          topics,
+          remainingRounds,
+          ...(fileContents.length > 0 ? { fileContents } : {}),
+        }),
+      })
 
-    if (!res.ok) {
-      const contentType = res.headers.get('content-type') ?? ''
-      if (contentType.includes('text/html')) {
-        throw new Error(
-          `analyze-repo-structure returned HTML (HTTP ${res.status}). ` +
-            `Is the server running at ${baseUrl}? Try passing --base-url http://localhost:3000`,
-        )
+      if (!res.ok) {
+        const contentType = res.headers.get('content-type') ?? ''
+        if (contentType.includes('text/html')) {
+          throw new Error(
+            `analyze-repo-structure returned HTML (HTTP ${res.status}). ` +
+              `Is the server running at ${baseUrl}? Try passing --base-url http://localhost:3000`,
+          )
+        }
+        const text = await res.text().catch(() => `HTTP ${res.status}`)
+        throw new Error(`analyze-repo-structure failed (HTTP ${res.status}): ${text}`)
       }
-      const text = await res.text().catch(() => `HTTP ${res.status}`)
-      throw new Error(`analyze-repo-structure failed (HTTP ${res.status}): ${text}`)
+
+      const data = (await res.json()) as { topicFiles?: Record<string, string[]>; needsMore?: boolean }
+      topicFiles = data.topicFiles && typeof data.topicFiles === 'object' ? data.topicFiles : {}
+      const totalFiles = new Set(Object.values(topicFiles).flat()).size
+
+      if (round === 0 && MAX_ROUNDS > 1 && totalFiles > 0) {
+        spinner.text = `Round ${round + 1}: ${totalFiles} file(s) identified, reading contents...`
+        continue
+      }
+
+      if (!data.needsMore || Object.keys(topicFiles).length === 0) {
+        spinner.succeed(`${totalFiles} file(s) matched across ${topics.length} topic(s)`)
+        break
+      }
+
+      spinner.text = `Round ${round + 1}: ${totalFiles} file(s) identified, refining...`
     }
 
-    const data = (await res.json()) as { topicFiles?: Record<string, string[]>; needsMore?: boolean }
-    topicFiles = data.topicFiles && typeof data.topicFiles === 'object' ? data.topicFiles : {}
-    const totalFiles = new Set(Object.values(topicFiles).flat()).size
-
-    if (round === 0 && MAX_ROUNDS > 1 && totalFiles > 0) {
-      process.stderr.write(`  Round ${round + 1}: ${totalFiles} file(s) identified, reading contents...\n`)
-      continue
+    if (spinner.isSpinning) {
+      const totalFiles = new Set(Object.values(topicFiles).flat()).size
+      spinner.succeed(`${totalFiles} file(s) matched across ${topics.length} topic(s)`)
     }
-
-    if (!data.needsMore || Object.keys(topicFiles).length === 0) {
-      process.stderr.write(`  Round ${round + 1}: ${totalFiles} file(s) identified\n`)
-      break
-    }
-
-    process.stderr.write(`  Round ${round + 1}: ${totalFiles} file(s) identified, refining...\n`)
+  } catch (err) {
+    spinner.fail('Topic file matching failed')
+    throw err
   }
 
   return topicFiles

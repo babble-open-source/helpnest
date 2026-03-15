@@ -2,6 +2,7 @@ import chalk from 'chalk'
 import { createHash } from 'crypto'
 import { resolve } from 'path'
 import { walkTree, readPackageJson, fetchFilesForTopic, buildCodeBody } from '../utils.js'
+import { confirmFileAccess } from '../prompts.js'
 
 interface DraftOptions {
   apiKey?: string
@@ -15,6 +16,7 @@ interface DraftOptions {
   baseUrl: string
   local?: string
   rounds?: string
+  yes?: boolean
 }
 
 export async function draftCommand(options: DraftOptions): Promise<void> {
@@ -47,16 +49,29 @@ export async function draftCommand(options: DraftOptions): Promise<void> {
     if (options.local) {
       const repoPath = resolve(options.local)
       const tree = walkTree(repoPath)
+
+      const consented = await confirmFileAccess(repoPath, tree.length, options.yes)
+      if (!consented) {
+        console.log(chalk.yellow('Aborted.'))
+        return
+      }
+
       const packageJson = readPackageJson(repoPath)
       const maxRounds = parseInt(options.rounds ?? '3', 10)
-      const files = await fetchFilesForTopic(tree, packageJson, repoPath, options.topic, baseUrl, apiKey!, maxRounds)
 
-      if (files.length > 0) {
-        const prBody = buildCodeBody(repoPath, files)
-        codeContext = { prTitle: options.topic.slice(0, 200), prBody }
-        console.log(chalk.dim(`  Using ${files.length} file(s) as context: ${files.slice(0, 3).join(', ')}${files.length > 3 ? ` +${files.length - 3} more` : ''}`))
-      } else {
-        console.warn(chalk.yellow('Warning: No relevant files found for topic. Generating without code context.'))
+      try {
+        const files = await fetchFilesForTopic(tree, packageJson, repoPath, options.topic, baseUrl, apiKey!, maxRounds)
+
+        if (files.length > 0) {
+          const prBody = buildCodeBody(repoPath, files)
+          codeContext = { prTitle: options.topic.slice(0, 200), prBody }
+          console.log(chalk.dim(`  Using ${files.length} file(s) as context: ${files.slice(0, 3).join(', ')}${files.length > 3 ? ` +${files.length - 3} more` : ''}`))
+        } else {
+          console.warn(chalk.yellow('Warning: No relevant files found for topic. Generating without code context.'))
+        }
+      } catch (err) {
+        console.warn(chalk.yellow(`Warning: Could not analyze codebase: ${err instanceof Error ? err.message : String(err)}`))
+        console.warn(chalk.yellow('Generating without code context.'))
       }
     } else {
       console.warn(chalk.yellow('Tip: Pass --local <path> to ground this article in your actual codebase.'))

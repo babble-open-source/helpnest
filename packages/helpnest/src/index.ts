@@ -6,7 +6,7 @@ import { seedCommand } from './commands/seed.js'
 program
   .name('helpnest')
   .description('HelpNest CLI — auto-draft KB articles from PRs and GitHub history')
-  .version('0.1.0')
+  .version('0.2.1')
 
 program
   .command('draft')
@@ -21,6 +21,7 @@ program
   .option('--rounds <n>', 'Max refinement rounds for code context scanning (default: 3)', '3')
   .option('--api-key <key>', 'HelpNest API key (or HELPNEST_API_KEY env)')
   .option('--base-url <url>', 'HelpNest base URL', 'https://helpnest.cloud')
+  .option('-y, --yes', 'Skip interactive prompts (for CI/automation)')
   .action(draftCommand)
 
 program
@@ -39,6 +40,7 @@ program
   .option('--dry-run', 'Preview without generating')
   .option('--api-key <key>', 'HelpNest API key (or HELPNEST_API_KEY env)')
   .option('--base-url <url>', 'HelpNest base URL', 'https://helpnest.cloud')
+  .option('-y, --yes', 'Skip interactive prompts (for CI/automation)')
   .action(seedCommand)
 
 program.parse()
