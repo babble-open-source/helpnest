@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
-import { useTranslations, useFormatter } from 'next-intl'
+import { useTranslations, useFormatter, useNow } from 'next-intl'
 import { ArticleActions } from './ArticleActions'
 
 type ArticleStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
@@ -40,10 +40,6 @@ function feedbackSummary(helpful: number, notHelpful: number) {
   return { total, helpfulRate }
 }
 
-function nowMs() {
-  return Date.now()
-}
-
 type BulkAction = 'publish' | 'archive' | 'draft' | 'delete'
 
 export function ArticlesTable({ articles, demoMode }: Props) {
@@ -51,6 +47,7 @@ export function ArticlesTable({ articles, demoMode }: Props) {
   const t = useTranslations('articlesTable')
   const tc = useTranslations('common')
   const format = useFormatter()
+  const now = useNow()
 
   const BULK_ACTIONS: { action: BulkAction; label: string; danger?: boolean }[] = [
     { action: 'publish', label: tc('publish') },
@@ -162,9 +159,12 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-ink text-sm truncate max-w-xs">
+                      <Link
+                        href={`/dashboard/articles/${article.id}/edit`}
+                        className="font-medium text-ink text-sm truncate max-w-xs hover:text-accent transition-colors"
+                      >
                         {article.title}
-                      </p>
+                      </Link>
                       {article.aiGenerated && article.status === 'DRAFT' && (
                         <span className="shrink-0 text-xs px-1.5 py-0.5 rounded bg-accent/10 text-accent font-medium">
                           {t('ai')}
@@ -219,7 +219,7 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                   </td>
                   <td className="px-4 py-3 text-end hidden lg:table-cell">
                     <span className="text-sm text-muted">
-                      {format.relativeTime(article.updatedAt)}
+                      {format.relativeTime(article.updatedAt, now)}
                     </span>
                   </td>
                   <td className="px-4 py-3">

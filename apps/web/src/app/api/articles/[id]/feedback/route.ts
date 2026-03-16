@@ -38,7 +38,7 @@ export async function POST(
     const voterToken = existingToken && existingToken.length > 0 ? existingToken : randomUUID()
     const nextType = feedbackTypeToDb(type)
     const userAgent = (await headers()).get('user-agent')?.slice(0, 500) ?? null
-    const prismaWithFeedback = prisma as typeof prisma & {
+    type PrismaWithFeedback = typeof prisma & {
       articleFeedback: {
         findUnique(args: unknown): Promise<{ id: string; type: 'HELPFUL' | 'NOT_HELPFUL' } | null>
         create(args: unknown): Promise<unknown>
@@ -47,8 +47,8 @@ export async function POST(
       }
     }
 
-    await prisma.$transaction(async (tx: any) => {
-      const previous = await (tx as typeof prismaWithFeedback).articleFeedback.findUnique({
+    await prisma.$transaction(async (tx) => {
+      const previous = await (tx as PrismaWithFeedback).articleFeedback.findUnique({
         where: {
           articleId_voterToken: {
             articleId: article.id,
@@ -59,7 +59,7 @@ export async function POST(
       })
 
       if (!previous) {
-        await (tx as typeof prismaWithFeedback).articleFeedback.create({
+        await (tx as PrismaWithFeedback).articleFeedback.create({
           data: {
             articleId: article.id,
             workspaceId: article.workspaceId,
@@ -70,12 +70,12 @@ export async function POST(
         })
 
       } else if (previous.type === nextType) {
-        await (tx as typeof prismaWithFeedback).articleFeedback.update({
+        await (tx as PrismaWithFeedback).articleFeedback.update({
           where: { id: previous.id },
           data: { userAgent },
         })
       } else {
-        await (tx as typeof prismaWithFeedback).articleFeedback.update({
+        await (tx as PrismaWithFeedback).articleFeedback.update({
           where: { id: previous.id },
           data: {
             type: nextType,
@@ -85,13 +85,13 @@ export async function POST(
       }
 
       const [helpfulCount, notHelpfulCount] = await Promise.all([
-        (tx as typeof prismaWithFeedback).articleFeedback.count({
+        (tx as PrismaWithFeedback).articleFeedback.count({
           where: {
             articleId: article.id,
             type: 'HELPFUL',
           },
         }),
-        (tx as typeof prismaWithFeedback).articleFeedback.count({
+        (tx as PrismaWithFeedback).articleFeedback.count({
           where: {
             articleId: article.id,
             type: 'NOT_HELPFUL',

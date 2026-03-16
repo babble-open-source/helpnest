@@ -170,6 +170,7 @@
     "aiDrafts": "AI Drafts ({count})",
     "aiUpdates": "AI Updates ({count})",
     "searchArticles": "Search articles...",
+    "searchCollections": "Search collections...",
     "noArticlesYet": "No articles yet",
     "createFirstArticle": "Create your first article to get started",
     "createArticle": "Create article →",

@@ -170,6 +170,7 @@
     "aiDrafts": "AI ड्राफ़्ट ({count})",
     "aiUpdates": "AI अपडेट ({count})",
     "searchArticles": "लेख खोजें...",
+    "searchCollections": "संग्रह खोजें...",
     "noArticlesYet": "अभी कोई लेख नहीं है",
     "createFirstArticle": "शुरू करने के लिए अपना पहला लेख बनाएं",
     "createArticle": "लेख बनाएं →",

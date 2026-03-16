@@ -37,7 +37,7 @@ export function InboxBadge({ workspaceId }: { workspaceId: string }) {
     fetchCount()
     const interval = setInterval(fetchCount, 10_000)
     return () => clearInterval(interval)
-  }, [workspaceId])
+  }, [workspaceId, t])
 
   if (count === 0) return null
   return (

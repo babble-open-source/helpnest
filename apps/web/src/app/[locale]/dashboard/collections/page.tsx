@@ -3,11 +3,15 @@ import { auth } from '@/lib/auth'
 import { isDemoMode } from '@/lib/demo'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
+import { Link } from '@/i18n/navigation'
 import { NewCollectionModal } from './NewCollectionModal'
 import { CollectionActions } from './CollectionActions'
+import { SearchInput } from '@/components/ui/SearchInput'
 
-export default async function CollectionsPage() {
-  const [session, t, tc] = await Promise.all([auth(), getTranslations('dashboard'), getTranslations('common')])
+export default async function CollectionsPage(props: {
+  searchParams: Promise<{ q?: string }>
+}) {
+  const [session, searchParams, t, tc] = await Promise.all([auth(), props.searchParams, getTranslations('dashboard'), getTranslations('common')])
   if (!session?.user) redirect('/login')
 
   const demoMode = isDemoMode()
@@ -35,7 +39,13 @@ export default async function CollectionsPage() {
     subCollections: SubCollection[]
   }
   const collections: CollectionWithSubs[] = await prisma.collection.findMany({
-    where: { workspaceId: member.workspaceId, parentId: null },
+    where: {
+      workspaceId: member.workspaceId,
+      parentId: null,
+      ...(searchParams.q
+        ? { title: { contains: searchParams.q, mode: 'insensitive' as const } }
+        : {}),
+    },
     orderBy: [
       { isArchived: 'asc' },
       { order: 'asc' },
@@ -66,6 +76,8 @@ export default async function CollectionsPage() {
         <NewCollectionModal />
       </div>
 
+      <SearchInput placeholder={t('searchCollections')} className="w-full sm:w-64 mb-6" />
+
       {collections.length === 0 ? (
         <div className="bg-white rounded-xl border border-border p-12 text-center">
           <p className="text-4xl mb-3">📁</p>
@@ -84,12 +96,12 @@ export default async function CollectionsPage() {
               }`}
             >
               <div className="flex items-start gap-4">
-                <span className="text-2xl">{col.emoji ?? '📄'}</span>
+                <Link href={`/dashboard/collections/${col.id}`} className="text-2xl">{col.emoji ?? '📄'}</Link>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-medium text-ink">{col.title}</h3>
+                        <Link href={`/dashboard/collections/${col.id}`} className="font-medium text-ink hover:text-accent transition-colors">{col.title}</Link>
                         {col.isArchived && (
                           <span className="rounded-full bg-border/70 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted">
                             {tc('archived')}

@@ -41,7 +41,7 @@ export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [tc])
 
   useEffect(() => {
     void fetchKeys()

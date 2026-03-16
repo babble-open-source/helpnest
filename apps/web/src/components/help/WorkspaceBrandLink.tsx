@@ -1,4 +1,5 @@
 import { Link } from '@/i18n/navigation'
+import NextImage from 'next/image'
 
 interface Props {
   href: string
@@ -32,12 +33,14 @@ export function WorkspaceBrandLink({
     <Link href={href} className={`flex min-w-0 items-center gap-3 ${className}`.trim()}>
       {logo ? (
         <span
-          className={`h-8 min-w-[2.25rem] max-w-[9rem] shrink-0 items-center justify-start overflow-hidden ${markClassName}`.trim()}
+          className={`relative h-8 min-w-[2.25rem] max-w-[9rem] shrink-0 items-center justify-start overflow-hidden ${markClassName}`.trim()}
         >
-          <img
+          <NextImage
             src={logo}
             alt={`${name} logo`}
-            className="block h-full w-auto max-w-full object-contain object-left"
+            fill
+            unoptimized
+            className="object-contain object-left"
           />
         </span>
       ) : (

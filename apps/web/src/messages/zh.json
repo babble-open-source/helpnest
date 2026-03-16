@@ -170,6 +170,7 @@
     "aiDrafts": "AI 草稿（{count}）",
     "aiUpdates": "AI 更新（{count}）",
     "searchArticles": "搜索文章...",
+    "searchCollections": "搜索集合...",
     "noArticlesYet": "暂无文章",
     "createFirstArticle": "创建您的第一篇文章以开始",
     "createArticle": "创建文章 →",

@@ -170,6 +170,7 @@
     "aiDrafts": "مسودات الذكاء الاصطناعي ({count})",
     "aiUpdates": "تحديثات الذكاء الاصطناعي ({count})",
     "searchArticles": "البحث في المقالات...",
+    "searchCollections": "البحث في المجموعات...",
     "noArticlesYet": "لا توجد مقالات بعد",
     "createFirstArticle": "أنشئ مقالتك الأولى للبدء",
     "createArticle": "إنشاء مقالة →",

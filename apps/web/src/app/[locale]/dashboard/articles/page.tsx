@@ -6,6 +6,7 @@ import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { GenerateTopicButton } from './GenerateTopicButton'
 import { ArticlesTable } from './ArticlesTable'
+import { SearchInput } from '@/components/ui/SearchInput'
 
 
 export default async function ArticlesPage(props: {
@@ -36,7 +37,12 @@ export default async function ArticlesPage(props: {
           : {}),
     ...(searchParams.collection ? { collectionId: searchParams.collection } : {}),
     ...(searchParams.q
-      ? { title: { contains: searchParams.q, mode: 'insensitive' as const } }
+      ? {
+          OR: [
+            { title: { contains: searchParams.q, mode: 'insensitive' as const } },
+            { collection: { title: { contains: searchParams.q, mode: 'insensitive' as const } } },
+          ],
+        }
       : {}),
   }
 
@@ -97,27 +103,7 @@ export default async function ArticlesPage(props: {
 
       {/* Search */}
       <div className="flex flex-wrap items-center gap-3 mb-6">
-        <form className="flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2 w-full sm:w-auto">
-          <svg
-            className="w-4 h-4 text-muted shrink-0"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <input
-            name="q"
-            defaultValue={searchParams.q}
-            placeholder={t('searchArticles')}
-            className="text-sm outline-none text-ink placeholder:text-muted bg-transparent flex-1 sm:w-48"
-          />
-        </form>
+        <SearchInput placeholder={t('searchArticles')} />
       </div>
 
       {/* Table */}

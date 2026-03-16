@@ -170,6 +170,7 @@
     "aiDrafts": "Brouillons IA ({count})",
     "aiUpdates": "Mises à jour IA ({count})",
     "searchArticles": "Rechercher des articles...",
+    "searchCollections": "Rechercher des collections...",
     "noArticlesYet": "Aucun article pour l'instant",
     "createFirstArticle": "Créez votre premier article pour commencer",
     "createArticle": "Créer un article →",

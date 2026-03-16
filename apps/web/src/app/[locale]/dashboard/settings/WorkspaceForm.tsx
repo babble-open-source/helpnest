@@ -4,6 +4,7 @@ import type { ChangeEvent } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import NextImage from 'next/image'
 
 interface Props {
   name: string
@@ -180,11 +181,13 @@ export function WorkspaceForm({
         )}
         {values.logo.trim().length > 0 && (
           <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-border bg-cream px-3 py-2">
-            <div className="flex h-12 min-w-[3rem] max-w-[12rem] items-center justify-start overflow-hidden rounded-lg border border-border bg-white px-2 py-1.5">
-              <img
+            <div className="relative flex h-12 min-w-[3rem] max-w-[12rem] items-center justify-start overflow-hidden rounded-lg border border-border bg-white px-2 py-1.5">
+              <NextImage
                 src={values.logo.trim()}
                 alt={`${values.name} logo preview`}
-                className="block h-full w-auto max-w-full object-contain object-left"
+                fill
+                unoptimized
+                className="object-contain object-left"
               />
             </div>
             <div>
@@ -272,9 +275,12 @@ export function WorkspaceForm({
         {values.favicon.trim().length > 0 && (
           <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-border bg-cream px-3 py-2">
             <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-lg border border-border bg-white p-1">
-              <img
+              <NextImage
                 src={values.favicon.trim()}
                 alt={`${values.name} favicon preview`}
+                width={32}
+                height={32}
+                unoptimized
                 className="h-full w-full object-contain"
               />
             </div>

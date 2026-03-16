@@ -84,7 +84,7 @@ export function AskAIClient({ workspace, workspaceName }: Props) {
             if (event.type === 'sources') setSources(event.sources)
             else if (event.type === 'text') setAnswer((prev) => prev + event.text)
             else if (event.type === 'done') setStatus('done')
-          } catch (_e) { /* ignore malformed SSE lines */ }
+          } catch { /* ignore malformed SSE lines */ }
         }
       }
     } catch {

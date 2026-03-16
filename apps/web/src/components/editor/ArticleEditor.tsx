@@ -200,7 +200,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
     } catch {
       setSaveStatus('error')
     }
-  }, [editor, article.id])
+  }, [editor, article.id, collectionSlug])
 
   const scheduleAutoSave = useCallback(() => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)

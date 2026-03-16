@@ -634,6 +634,7 @@ export async function PATCH(request: Request) {
     // Exclude aiApiKey from the response — the ciphertext has no client use
     // and if encryption is not configured the plaintext would be echoed back.
     const { aiApiKey: _omit, ...safeWorkspace } = updated as typeof updated & { aiApiKey?: unknown }
+    void _omit
     return NextResponse.json(safeWorkspace)
   } catch (e: unknown) {
     if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {

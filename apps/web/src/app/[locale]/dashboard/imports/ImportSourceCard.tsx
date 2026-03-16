@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import NextImage from 'next/image'
 import { useTranslations } from 'next-intl'
 import { NotionImportModal } from './NotionImportModal'
 import { IntercomImportModal } from './IntercomImportModal'
@@ -31,19 +32,19 @@ function NotionLogo() {
 }
 
 function IntercomLogo() {
-  return <img src="/imports/intercom.svg" alt="Intercom" className="w-8 h-8" />
+  return <NextImage src="/imports/intercom.svg" alt="Intercom" width={32} height={32} />
 }
 
 function ZendeskLogo() {
-  return <img src="/imports/zendesk.svg" alt="Zendesk" className="w-8 h-8" />
+  return <NextImage src="/imports/zendesk.svg" alt="Zendesk" width={32} height={32} />
 }
 
 function FreshdeskLogo() {
-  return <img src="/imports/freshdesk.svg" alt="Freshdesk" className="w-8 h-8" />
+  return <NextImage src="/imports/freshdesk.svg" alt="Freshdesk" width={32} height={32} />
 }
 
 function HelpScoutLogo() {
-  return <img src="/imports/helpscout.svg" alt="Help Scout" className="w-8 h-8" />
+  return <NextImage src="/imports/helpscout.svg" alt="Help Scout" width={32} height={32} />
 }
 
 function CsvLogo() {
@@ -59,7 +60,7 @@ function CsvLogo() {
 }
 
 function MintlifyLogo() {
-  return <img src="/imports/mintlify.svg" alt="Mintlify" className="w-8 h-8" />
+  return <NextImage src="/imports/mintlify.svg" alt="Mintlify" width={32} height={32} />
 }
 
 const LOGOS: Record<SourceId, () => React.ReactElement> = {

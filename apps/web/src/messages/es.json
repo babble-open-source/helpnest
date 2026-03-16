@@ -170,6 +170,7 @@
     "aiDrafts": "Borradores IA ({count})",
     "aiUpdates": "Actualizaciones IA ({count})",
     "searchArticles": "Buscar artículos...",
+    "searchCollections": "Buscar colecciones...",
     "noArticlesYet": "Aún no hay artículos",
     "createFirstArticle": "Crea tu primer artículo para empezar",
     "createArticle": "Crear artículo →",
