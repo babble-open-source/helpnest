@@ -136,7 +136,7 @@ export function InboxList({ escalated, active, resolved }: Props) {
                 </div>
                 <div className="text-end shrink-0">
                   <p className="text-xs text-muted">{timeAgo(conv.updatedAt)}</p>
-                  <p className="text-xs text-muted mt-1">{conv.messageCount} {t('msgs')}</p>
+                  <p className="text-xs text-muted mt-1">{t('msgs', { count: conv.messageCount })}</p>
                   {conv.assignedTo && (
                     <p className="text-xs text-green mt-1">{conv.assignedTo}</p>
                   )}
