@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
@@ -11,20 +12,40 @@ interface Props {
   params: Promise<{ locale: string; workspace: string; collection: string }>
 }
 
+const getWorkspace = cache((slug: string) =>
+  prisma.workspace.findUnique({
+    where: { slug },
+    select: { id: true, name: true, logo: true },
+  })
+)
+
+const getCollection = cache((workspaceId: string, slug: string) =>
+  prisma.collection.findUnique({
+    where: { workspaceId_slug: { workspaceId, slug } },
+    include: {
+      articles: {
+        where: { status: 'PUBLISHED' },
+        orderBy: { order: 'asc' },
+        include: { author: true },
+      },
+      subCollections: {
+        where: { isPublic: true, isArchived: false },
+        include: {
+          _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
+        },
+      },
+    },
+  })
+)
+
 export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const t = await getTranslations('help')
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug: params.workspace },
-    select: { id: true, name: true },
-  })
+  const workspace = await getWorkspace(params.workspace)
   if (!workspace) return {}
 
-  const collection = await prisma.collection.findUnique({
-    where: { workspaceId_slug: { workspaceId: workspace.id, slug: params.collection } },
-    select: { title: true, description: true },
-  })
+  const collection = await getCollection(workspace.id, params.collection)
   if (!collection) return {}
 
   const title = `${collection.title} — ${workspace.name} ${t('helpCenter')}`
@@ -58,10 +79,7 @@ export default async function CollectionPage(props: Props) {
     getTranslations('common'),
   ])
   const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug: params.workspace },
-    select: { id: true, name: true, logo: true },
-  })
+  const workspace = await getWorkspace(params.workspace)
   if (!workspace) notFound()
 
   const brandTextRecord = brandTextColumnExists
@@ -71,22 +89,7 @@ export default async function CollectionPage(props: Props) {
       })
     : null
 
-  const collection = await prisma.collection.findUnique({
-    where: { workspaceId_slug: { workspaceId: workspace.id, slug: params.collection } },
-    include: {
-      articles: {
-        where: { status: 'PUBLISHED' },
-        orderBy: { order: 'asc' },
-        include: { author: true },
-      },
-      subCollections: {
-        where: { isPublic: true, isArchived: false },
-        include: {
-          _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
-        },
-      },
-    },
-  })
+  const collection = await getCollection(workspace.id, params.collection)
   if (!collection || !collection.isPublic || collection.isArchived) notFound()
 
   return (

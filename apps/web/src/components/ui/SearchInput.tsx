@@ -2,7 +2,7 @@
 
 import { useRouter, usePathname } from '@/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import { Suspense, useEffect, useRef, useState } from 'react'
 
 interface Props {
   placeholder?: string
@@ -10,7 +10,7 @@ interface Props {
   className?: string
 }
 
-export function SearchInput({ placeholder = 'Search...', paramName = 'q', className }: Props) {
+function SearchInputInner({ placeholder = 'Search...', paramName = 'q', className }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -59,5 +59,28 @@ export function SearchInput({ placeholder = 'Search...', paramName = 'q', classN
         </button>
       )}
     </div>
+  )
+}
+
+function SearchInputFallback({ placeholder = 'Search...', className }: Pick<Props, 'placeholder' | 'className'>) {
+  return (
+    <div className={`flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2 ${className ?? 'w-full sm:w-auto'}`}>
+      <svg className="w-4 h-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+      <input
+        disabled
+        placeholder={placeholder}
+        className="text-sm outline-none text-ink placeholder:text-muted bg-transparent flex-1 sm:w-48"
+      />
+    </div>
+  )
+}
+
+export function SearchInput(props: Props) {
+  return (
+    <Suspense fallback={<SearchInputFallback placeholder={props.placeholder} className={props.className} />}>
+      <SearchInputInner {...props} />
+    </Suspense>
   )
 }

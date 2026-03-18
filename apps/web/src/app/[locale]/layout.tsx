@@ -23,7 +23,7 @@ export default async function LocaleLayout({
 
   return (
     <div lang={locale} dir={dir}>
-      <SetDocumentDir dir={dir} />
+      <SetDocumentDir dir={dir} locale={locale} />
       <NextIntlClientProvider messages={messages}>
         {children}
       </NextIntlClientProvider>

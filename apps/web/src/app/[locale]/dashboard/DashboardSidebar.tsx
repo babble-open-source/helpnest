@@ -88,7 +88,7 @@ export function DashboardSidebar({
           // Mobile: fixed drawer that slides in from left
           'fixed inset-y-0 start-0 z-40 w-64',
           'transition-transform duration-200',
-          mobileOpen ? 'translate-x-0' : '-translate-x-full rtl:translate-x-full rtl:lg:translate-x-0',
+          mobileOpen ? 'translate-x-0 rtl:-translate-x-0' : '-translate-x-full rtl:translate-x-full',
           // Desktop: static, width-based collapse
           'lg:static lg:translate-x-0 lg:transition-[width] lg:duration-200',
           open ? 'lg:w-60' : 'lg:w-12',

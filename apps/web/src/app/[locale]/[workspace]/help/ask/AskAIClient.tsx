@@ -21,6 +21,7 @@ interface Props {
 export function AskAIClient({ workspace, workspaceName }: Props) {
   const t = useTranslations('askAI')
   const th = useTranslations('help')
+  const tc = useTranslations('common')
   const [query, setQuery] = useState('')
   const [answer, setAnswer] = useState('')
   const [sources, setSources] = useState<Source[]>([])
@@ -44,7 +45,7 @@ export function AskAIClient({ workspace, workspaceName }: Props) {
 
       if (!res.ok) {
         setStatus('error')
-        setAnswer('Something went wrong. Please try again.')
+        setAnswer(tc('somethingWentWrong'))
         return
       }
 
@@ -89,7 +90,7 @@ export function AskAIClient({ workspace, workspaceName }: Props) {
       }
     } catch {
       setStatus('error')
-      setAnswer('Failed to connect. Please check your connection and try again.')
+      setAnswer(tc('networkError'))
     }
   }
 

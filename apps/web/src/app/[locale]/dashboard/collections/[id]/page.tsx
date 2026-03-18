@@ -15,12 +15,12 @@ export default async function CollectionDetailPage(props: {
     getTranslations('dashboard'),
     getTranslations('common'),
   ])
-  if (!session?.user) redirect('/login')
+  if (!session?.user?.email) redirect('/login')
 
   const demoMode = isDemoMode()
 
   const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
+    where: { user: { email: session.user.email } },
     select: { workspaceId: true },
   })
   if (!member) redirect('/dashboard')
@@ -60,7 +60,7 @@ export default async function CollectionDetailPage(props: {
           </p>
         </div>
         <Link
-          href="/dashboard/articles/new"
+          href={`/dashboard/articles/new?collection=${collection.id}`}
           className="bg-ink text-cream px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium shrink-0"
         >
           {t('newArticle')}

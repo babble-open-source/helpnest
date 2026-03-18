@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
 import { incrementArticleViews } from '@/lib/counters'
 import { notFound } from 'next/navigation'
@@ -13,6 +14,20 @@ import { locales } from '@/i18n/config'
 interface Props {
   params: Promise<{ locale: string; workspace: string; collection: string; article: string }>
 }
+
+const getWorkspace = cache((slug: string) =>
+  prisma.workspace.findUnique({
+    where: { slug },
+    select: { id: true, name: true, logo: true },
+  })
+)
+
+const getArticle = cache((workspaceId: string, slug: string) =>
+  prisma.article.findUnique({
+    where: { workspaceId_slug: { workspaceId, slug } },
+    include: { author: true, collection: true },
+  })
+)
 
 
 function slugify(text: string): string {
@@ -56,16 +71,10 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const params = await props.params
   const t = await getTranslations('help')
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug: params.workspace },
-    select: { id: true, name: true },
-  })
+  const workspace = await getWorkspace(params.workspace)
   if (!workspace) return {}
 
-  const article = await prisma.article.findUnique({
-    where: { workspaceId_slug: { workspaceId: workspace.id, slug: params.article } },
-    select: { title: true, excerpt: true, updatedAt: true },
-  })
+  const article = await getArticle(workspace.id, params.article)
   if (!article) return {}
 
   const title = `${article.title} — ${workspace.name} ${t('helpCenter')}`
@@ -96,10 +105,7 @@ export default async function ArticlePage(props: Props) {
   const t = await getTranslations('help')
   const format = await getFormatter()
   const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
-  const workspace = await prisma.workspace.findUnique({
-    where: { slug: params.workspace },
-    select: { id: true, name: true, logo: true },
-  })
+  const workspace = await getWorkspace(params.workspace)
   if (!workspace) notFound()
 
   const brandTextRecord = brandTextColumnExists
@@ -109,13 +115,7 @@ export default async function ArticlePage(props: Props) {
       })
     : null
 
-  const article = await prisma.article.findUnique({
-    where: { workspaceId_slug: { workspaceId: workspace.id, slug: params.article } },
-    include: {
-      author: true,
-      collection: true,
-    },
-  })
+  const article = await getArticle(workspace.id, params.article)
   if (!article || article.status !== 'PUBLISHED' || !article.collection.isPublic || article.collection.isArchived) notFound()
 
   // Increment view count — buffered in Redis, flushed to DB at threshold (fire and forget)

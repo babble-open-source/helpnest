@@ -2,11 +2,11 @@
 
 import { useEffect } from 'react'
 
-export function SetDocumentDir({ dir }: { dir: 'ltr' | 'rtl' }) {
+export function SetDocumentDir({ dir, locale }: { dir: 'ltr' | 'rtl'; locale: string }) {
   useEffect(() => {
     document.documentElement.dir = dir
-    document.documentElement.lang = document.querySelector('[lang]')?.getAttribute('lang') || 'en'
-  }, [dir])
+    document.documentElement.lang = locale
+  }, [dir, locale])
 
   return null
 }
