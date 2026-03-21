@@ -8,6 +8,14 @@ import { useLocale, useTranslations } from 'next-intl'
 import { InboxBadge } from './InboxBadge'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
+interface WorkspaceItem {
+  id: string
+  name: string
+  slug: string
+  logo: string | null
+  role: string
+}
+
 interface Props {
   workspaceId: string
   workspaceName: string
@@ -16,6 +24,7 @@ interface Props {
   userName: string
   userEmail: string
   userInitial: string
+  workspaces?: WorkspaceItem[]
 }
 
 export function DashboardSidebar({
@@ -26,15 +35,61 @@ export function DashboardSidebar({
   userName,
   userEmail,
   userInitial,
+  workspaces,
 }: Props) {
   const [open, setOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [wsMenuOpen, setWsMenuOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [newName, setNewName] = useState('')
+  const [createError, setCreateError] = useState<string | null>(null)
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations('dashboard')
   const tc = useTranslations('common')
 
   const cloudUrl = process.env.NEXT_PUBLIC_CLOUD_URL
+  const hasMultiWorkspace = !!workspaces && workspaces.length > 0
+  const router = typeof window !== 'undefined' ? null : null // for reload
+
+  async function switchWorkspace(targetId: string) {
+    if (targetId === workspaceId) {
+      setWsMenuOpen(false)
+      return
+    }
+    await fetch('/api/workspaces/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: targetId }),
+    })
+    setWsMenuOpen(false)
+    window.location.href = `/${locale}/dashboard`
+  }
+
+  async function createWorkspace() {
+    if (!newName.trim()) return
+    setCreateError(null)
+    setCreating(true)
+    try {
+      const res = await fetch('/api/workspaces/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setCreateError(data.error ?? 'Failed to create workspace')
+        setCreating(false)
+        return
+      }
+      setNewName('')
+      setWsMenuOpen(false)
+      window.location.href = `/${locale}/dashboard`
+    } catch {
+      setCreateError('Network error')
+      setCreating(false)
+    }
+  }
 
   const navItems = [
     { href: '/dashboard', label: t('overview') },
@@ -136,6 +191,65 @@ export function DashboardSidebar({
             </svg>
           </button>
         </div>
+
+        {/* Workspace switcher — cloud mode only */}
+        {hasMultiWorkspace && open && (
+          <div className="px-2 py-2 border-b border-white/10 shrink-0 relative">
+            <button
+              onClick={() => setWsMenuOpen(!wsMenuOpen)}
+              className="w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm text-cream/80 hover:text-cream hover:bg-white/10 transition-colors"
+            >
+              <span className="truncate">{workspaceName}</span>
+              <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${wsMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {wsMenuOpen && (
+              <div className="absolute start-2 end-2 top-full mt-1 bg-ink border border-white/20 rounded-lg shadow-xl z-50 overflow-hidden">
+                <div className="max-h-48 overflow-y-auto">
+                  {workspaces!.map((ws) => (
+                    <button
+                      key={ws.id}
+                      onClick={() => switchWorkspace(ws.id)}
+                      className={`w-full text-start px-3 py-2 text-sm transition-colors ${
+                        ws.id === workspaceId
+                          ? 'bg-white/15 text-cream font-medium'
+                          : 'text-cream/70 hover:bg-white/10 hover:text-cream'
+                      }`}
+                    >
+                      <span className="block truncate">{ws.name}</span>
+                      <span className="block text-xs text-cream/40 truncate">{ws.slug}.helpnest.cloud</span>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="border-t border-white/10 p-2">
+                  {createError && (
+                    <p className="text-xs text-red-400 px-1 pb-1">{createError}</p>
+                  )}
+                  <div className="flex gap-1">
+                    <input
+                      type="text"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && createWorkspace()}
+                      placeholder="New workspace..."
+                      className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded px-2 py-1 text-xs text-cream placeholder:text-cream/40 focus:outline-none focus:ring-1 focus:ring-white/40"
+                    />
+                    <button
+                      onClick={createWorkspace}
+                      disabled={creating || !newName.trim()}
+                      className="px-2 py-1 bg-accent text-white text-xs rounded hover:bg-accent/90 disabled:opacity-50 shrink-0"
+                    >
+                      {creating ? '...' : '+'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Nav */}
         <nav className="flex-1 p-2 space-y-1">

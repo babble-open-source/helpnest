@@ -1,4 +1,6 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId, getUserWorkspaces } from '@/lib/workspace'
+import { isCloudMode } from '@/lib/cloud'
 import { getWorkspaceFontUrls, getWorkspaceThemeCSS } from '@/lib/branding'
 import {
   hasWorkspaceBrandTextColumn,
@@ -30,17 +32,16 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const userId = await resolveSessionUserId(session)
   if (!userId || !session?.user) redirect('/login')
 
-  const [member, currentUser] = await Promise.all([
-    prisma.member.findFirst({
-      where: { userId, deactivatedAt: null },
-      select: { workspaceId: true },
-    }),
+  const [workspaceId, currentUser] = await Promise.all([
+    resolveWorkspaceId(userId),
     prisma.user.findUnique({
       where: { id: userId },
       select: { passwordChangedAt: true, passwordHash: true },
     }),
   ])
-  if (!member) redirect('/login')
+  if (!workspaceId) redirect('/login')
+
+  const member = { workspaceId }
 
   const demoMode = isDemoMode()
   // Only show banner for seeded credentials users who never changed their password.
@@ -242,6 +243,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
           userName={session.user.name ?? 'User'}
           userEmail={session.user.email ?? ''}
           userInitial={userInitial}
+          workspaces={isCloudMode() ? await getUserWorkspaces(userId) : undefined}
         />
         <main className="flex-1 overflow-auto pt-14 lg:pt-0">
           {children}
