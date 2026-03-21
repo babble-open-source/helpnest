@@ -16,21 +16,18 @@ export default async function OnboardingPage() {
 
   const t = await getTranslations('onboarding')
 
-  // Build the URL prefix for the slug preview
-  const helpCenterDomain = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN
+  const helpCenterDomain = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-
-  let urlPrefix: string
-  if (helpCenterDomain) {
-    urlPrefix = helpCenterDomain + '/'
-  } else {
-    urlPrefix = appUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') + '/'
-  }
+  // Path mode (self-hosted): prefix like "localhost:3000/"
+  // Subdomain mode (cloud): suffix like ".helpnest.cloud"
+  const slugPrefix = helpCenterDomain ? '' : `${appUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}/`
+  const slugSuffix = helpCenterDomain ? `.${helpCenterDomain}` : ''
 
   return (
     <OnboardingForm
       userName={session.user.name ?? ''}
-      urlPrefix={urlPrefix}
+      slugPrefix={slugPrefix}
+      slugSuffix={slugSuffix}
       translations={{
         title: t('title'),
         subtitle: t('subtitle'),

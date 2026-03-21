@@ -30,11 +30,13 @@ interface Translations {
 
 export function OnboardingForm({
   userName,
-  urlPrefix,
+  slugPrefix,
+  slugSuffix,
   translations: t,
 }: {
   userName: string
-  urlPrefix: string
+  slugPrefix: string
+  slugSuffix: string
   translations: Translations
 }) {
   const router = useRouter()
@@ -123,9 +125,11 @@ export function OnboardingForm({
               {t.urlSlug}
             </label>
             <div className="flex items-center">
-              <span className="text-sm text-muted bg-cream border border-border border-r-0 rounded-l-lg px-3 py-2.5 whitespace-nowrap">
-                {urlPrefix}
-              </span>
+              {slugPrefix && (
+                <span className="text-sm text-muted bg-cream border border-border border-r-0 rounded-l-lg px-3 py-2.5 whitespace-nowrap">
+                  {slugPrefix}
+                </span>
+              )}
               <input
                 id="slug"
                 type="text"
@@ -136,9 +140,16 @@ export function OnboardingForm({
                   setSlugEdited(true)
                 }}
                 onBlur={() => setSlug(cleanSlug(slug))}
-                className="flex-1 min-w-0 px-3 py-2.5 border border-border rounded-r-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                className={`flex-1 min-w-0 px-3 py-2.5 border border-border bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm ${
+                  slugPrefix ? '' : 'rounded-l-lg'
+                } ${slugSuffix ? '' : 'rounded-r-lg'}`}
                 placeholder={t.slugPlaceholder}
               />
+              {slugSuffix && (
+                <span className="text-sm text-muted bg-cream border border-border border-l-0 rounded-r-lg px-3 py-2.5 whitespace-nowrap">
+                  {slugSuffix}
+                </span>
+              )}
             </div>
             <p className="text-xs text-muted mt-1.5">
               {t.slugHint}
