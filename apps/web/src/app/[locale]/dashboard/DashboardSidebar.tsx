@@ -97,9 +97,9 @@ export function DashboardSidebar({
         ].join(' ')}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-3 py-4 border-b border-white/10 shrink-0">
+        <div className="flex items-center gap-2 px-3 py-4 border-b border-white/10 shrink-0">
           {/* Brand — always visible on mobile; on desktop only when expanded */}
-          <div className={open ? '' : 'lg:hidden'}>
+          <div className={`min-w-0 flex-1 ${open ? '' : 'lg:hidden'}`.trim()}>
             <WorkspaceBrandLink
               href="/dashboard"
               name={workspaceName}
