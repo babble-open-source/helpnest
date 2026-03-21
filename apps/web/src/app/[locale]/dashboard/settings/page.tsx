@@ -15,7 +15,7 @@ import { ThemePicker } from './ThemePicker'
 import { WorkspaceForm } from './WorkspaceForm'
 
 export default async function SettingsPage() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://helpnest.cloud'
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   const demoMode = isDemoMode()
   const [session, t] = await Promise.all([auth(), getTranslations('settingsPage')])
   if (!session?.user) redirect('/login')

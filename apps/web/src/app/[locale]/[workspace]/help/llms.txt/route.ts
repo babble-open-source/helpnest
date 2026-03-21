@@ -11,6 +11,14 @@
 import { prisma } from '@/lib/db'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+const HELP_CENTER_DOMAIN = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN
+
+function getBaseUrl(slug: string): string {
+  if (HELP_CENTER_DOMAIN) {
+    return `https://${slug}.${HELP_CENTER_DOMAIN}`
+  }
+  return `${APP_URL}/${slug}/help`
+}
 
 export async function GET(
   _request: Request,
@@ -48,7 +56,7 @@ export async function GET(
     return new Response('Not Found', { status: 404 })
   }
 
-  const baseUrl = `${APP_URL}/${slug}/help`
+  const baseUrl = getBaseUrl(slug)
 
   // Collections that have at least one published article
   const collectionsWithArticles = workspace.collections.filter(
@@ -94,7 +102,7 @@ export async function GET(
   lines.push('## Full Content')
   lines.push('')
   lines.push('For complete knowledge base content, see:')
-  lines.push(`[llms-full.txt](/${slug}/help/llms-full.txt)`)
+  lines.push(`[llms-full.txt](${baseUrl}/llms-full.txt)`)
 
   const body = lines.join('\n')
 

@@ -167,7 +167,7 @@ export function WorkspaceForm({
         {values.customDomain.trim().length > 0 && (
           <div className="mt-2 rounded-lg border border-border bg-cream px-3 py-2 text-xs text-muted space-y-0.5">
             <p className="font-medium text-ink">{t('dnsSetup')}</p>
-            <p>{t('dnsInstruction', { domain: values.customDomain.trim(), target: helpCenterDomain ? `${values.slug}.${helpCenterDomain}` : appUrl.replace(/^https?:\/\//, '') })}</p>
+            <p>{t('dnsInstruction', { domain: values.customDomain.trim(), target: appUrl.replace(/^https?:\/\//, '') })}</p>
           </div>
         )}
       </div>

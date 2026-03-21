@@ -2,6 +2,14 @@ import { prisma } from '@/lib/db'
 import { locales } from '@/i18n/config'
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+const HELP_CENTER_DOMAIN = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN
+
+function getBaseUrl(slug: string): string {
+  if (HELP_CENTER_DOMAIN) {
+    return `https://${slug}.${HELP_CENTER_DOMAIN}`
+  }
+  return `${APP_URL}/${slug}/help`
+}
 
 function xmlEscape(value: string): string {
   return value
@@ -72,7 +80,7 @@ export async function GET(
     return new Response('Not Found', { status: 404 })
   }
 
-  const baseUrl = `${APP_URL}/${slug}/help`
+  const baseUrl = getBaseUrl(slug)
 
   // Fetch published articles joined with their collection slug so we can
   // build the full /{workspace}/help/{collection}/{article} URL in one pass.
@@ -110,7 +118,9 @@ export async function GET(
     priority: '1.0',
     alternates: locales.map((l) => ({
       hreflang: l,
-      href: `${APP_URL}/${l}/${slug}/help`,
+      href: HELP_CENTER_DOMAIN
+        ? `${baseUrl}/${l}`
+        : `${APP_URL}/${l}/${slug}/help`,
     })),
   })
 
@@ -122,7 +132,9 @@ export async function GET(
       priority: '0.6',
       alternates: locales.map((l) => ({
         hreflang: l,
-        href: `${APP_URL}/${l}/${slug}/help/${col.slug}`,
+        href: HELP_CENTER_DOMAIN
+          ? `${baseUrl}/${l}/${col.slug}`
+          : `${APP_URL}/${l}/${slug}/help/${col.slug}`,
       })),
     })
   }
@@ -135,7 +147,9 @@ export async function GET(
       priority: '0.8',
       alternates: locales.map((l) => ({
         hreflang: l,
-        href: `${APP_URL}/${l}/${slug}/help/${article.collection.slug}/${article.slug}`,
+        href: HELP_CENTER_DOMAIN
+          ? `${baseUrl}/${l}/${article.collection.slug}/${article.slug}`
+          : `${APP_URL}/${l}/${slug}/help/${article.collection.slug}/${article.slug}`,
       })),
     })
   }
