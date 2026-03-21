@@ -38,6 +38,7 @@ export default async function LoginPage() {
       defaultEmail={demoMode ? seedEmail : ''}
       workspaceSlug={workspaceSlug}
       showSignupLink
+      googleEnabled={!!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)}
       translations={{
         signInTitle: t('signInTitle'),
         signInSubtitle: t('signInSubtitle'),

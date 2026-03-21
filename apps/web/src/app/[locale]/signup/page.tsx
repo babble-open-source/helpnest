@@ -14,6 +14,7 @@ export default async function SignupPage() {
 
   return (
     <SignupForm
+      googleEnabled={!!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET)}
       translations={{
         signUpTitle: t('signUpTitle'),
         signUpSubtitle: t('signUpSubtitle'),

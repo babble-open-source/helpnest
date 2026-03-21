@@ -1,6 +1,7 @@
 import NextAuth, { type NextAuthResult } from 'next-auth'
 import Credentials from 'next-auth/providers/credentials'
 import GitHub from 'next-auth/providers/github'
+import Google from 'next-auth/providers/google'
 import bcrypt from 'bcryptjs'
 import { prisma } from './db'
 import { redis } from './redis'
@@ -35,6 +36,13 @@ function getAuthBundle(): NextAuthResult {
         ? [GitHub({
             clientId: process.env.GITHUB_CLIENT_ID,
             clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          })]
+        : []),
+      ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+        ? [Google({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            authorization: { params: { prompt: 'select_account' } },
           })]
         : []),
       Credentials({
