@@ -41,7 +41,9 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   if (pathWithoutLocale.startsWith(`/${slug}/help`)) return null
   if (pathWithoutLocale.startsWith('/api/')) return null
   if (pathWithoutLocale === '/widget.js') return null
-  if (pathWithoutLocale.startsWith('/dashboard') || pathWithoutLocale.startsWith('/login') || pathWithoutLocale.startsWith('/signup') || pathWithoutLocale.startsWith('/onboarding') || pathWithoutLocale.startsWith('/invite/')) return null
+  // App routes that should never be rewritten by subdomain routing
+  const APP_PATHS = ['/dashboard', '/login', '/signup', '/onboarding', '/invite/']
+  if (APP_PATHS.some((p) => pathWithoutLocale.startsWith(p))) return null
   if (pathWithoutLocale.startsWith('/imports/') || pathWithoutLocale === '/manifest.json' || pathWithoutLocale.match(/\.(png|ico|svg|jpg|jpeg|webp)$/)) return null
 
   const url = req.nextUrl.clone()

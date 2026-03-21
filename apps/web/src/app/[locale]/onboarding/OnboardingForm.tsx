@@ -8,11 +8,16 @@ function slugify(str: string): string {
     .toLowerCase()
     .trim()
     .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_-]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+    .replace(/[\s_]+/g, '-')
+    .replace(/^-+/g, '')
 }
 
-export function OnboardingForm({ userName }: { userName: string }) {
+// Only strip trailing hyphens on final validation, not while typing
+function cleanSlug(str: string): string {
+  return slugify(str).replace(/-+$/g, '')
+}
+
+export function OnboardingForm({ userName, urlPrefix }: { userName: string; urlPrefix: string }) {
   const router = useRouter()
   const [name, setName] = useState(userName ? `${userName}'s Help Center` : '')
   const [slug, setSlug] = useState('')
@@ -23,13 +28,20 @@ export function OnboardingForm({ userName }: { userName: string }) {
   // Auto-generate slug from name (unless user edited slug manually)
   useEffect(() => {
     if (!slugEdited) {
-      setSlug(slugify(name))
+      setSlug(cleanSlug(name))
     }
   }, [name, slugEdited])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!name.trim()) return
+    if (!name.trim() || slug.trim().length < 3) return
+
+    const finalSlug = cleanSlug(slug)
+    if (finalSlug.length < 3) {
+      setError('Slug must be at least 3 characters.')
+      return
+    }
+
     setLoading(true)
     setError(null)
 
@@ -37,7 +49,7 @@ export function OnboardingForm({ userName }: { userName: string }) {
       const res = await fetch('/api/workspaces/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), slug: slug.trim() || undefined }),
+        body: JSON.stringify({ name: name.trim(), slug: finalSlug }),
       })
 
       const data = await res.json()
@@ -84,8 +96,8 @@ export function OnboardingForm({ userName }: { userName: string }) {
           URL slug
         </label>
         <div className="flex items-center">
-          <span className="text-sm text-muted bg-cream border border-border border-r-0 rounded-l-lg px-3 py-2.5">
-            helpnest.cloud/
+          <span className="text-sm text-muted bg-cream border border-border border-r-0 rounded-l-lg px-3 py-2.5 whitespace-nowrap">
+            {urlPrefix}
           </span>
           <input
             id="slug"
@@ -93,9 +105,11 @@ export function OnboardingForm({ userName }: { userName: string }) {
             required
             value={slug}
             onChange={(e) => {
+              // Allow hyphens while typing — only clean on submit
               setSlug(slugify(e.target.value))
               setSlugEdited(true)
             }}
+            onBlur={() => setSlug(cleanSlug(slug))}
             className="flex-1 min-w-0 px-3 py-2.5 border border-border rounded-r-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
             placeholder="acme-support"
           />
@@ -107,7 +121,7 @@ export function OnboardingForm({ userName }: { userName: string }) {
 
       <button
         type="submit"
-        disabled={loading || !name.trim() || !slug.trim()}
+        disabled={loading || !name.trim() || slug.trim().length < 3}
         className="w-full bg-ink text-cream py-2.5 px-4 rounded-lg hover:bg-ink/90 transition-colors font-medium disabled:opacity-60"
       >
         {loading ? 'Creating\u2026' : 'Create help center'}

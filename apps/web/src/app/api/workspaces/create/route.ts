@@ -54,22 +54,46 @@ export async function POST(request: Request) {
       orderBy: { id: 'asc' },
     })
 
+    let cloudReachable = true
     if (ownedWorkspaces.length > 0 && ownedWorkspaces[0]) {
       const plan = await getWorkspacePlan(ownedWorkspaces[0].workspaceId)
-      planTier = plan?.plan ?? 'FREE'
+      if (plan) {
+        planTier = plan.plan ?? 'FREE'
+      } else {
+        // Cloud unreachable — fail open (consistent with checkLimit behavior)
+        cloudReachable = false
+      }
     }
 
-    const limit = WORKSPACE_LIMITS[planTier] ?? 1
-    if (ownedWorkspaces.length >= limit) {
-      return NextResponse.json(
-        { error: `Your ${planTier} plan allows up to ${limit} workspace${limit === 1 ? '' : 's'}. Upgrade to create more.` },
-        { status: 403 },
-      )
+    // Only enforce limits when cloud is reachable
+    if (cloudReachable) {
+      const limit = WORKSPACE_LIMITS[planTier] ?? 1
+      if (ownedWorkspaces.length >= limit) {
+        return NextResponse.json(
+          { error: `Your ${planTier} plan allows up to ${limit} workspace${limit === 1 ? '' : 's'}. Upgrade to create more.` },
+          { status: 403 },
+        )
+      }
     }
   }
 
+  const RESERVED_SLUGS = new Set([
+    'api', 'admin', 'dashboard', 'login', 'logout', 'signup', 'onboarding',
+    'invite', 'settings', 'billing', 'help', 'www', 'mail', 'support',
+    'status', 'health', 'static', 'assets', '_next', 'imports', 'widget',
+  ])
+
   const trimmedName = name.trim()
   const baseSlug = requestedSlug?.trim() ? slugify(requestedSlug.trim()) : (slugify(trimmedName) || 'workspace')
+
+  if (!baseSlug || baseSlug.length < 3) {
+    return NextResponse.json({ error: 'Slug must be at least 3 characters.' }, { status: 400 })
+  }
+
+  if (RESERVED_SLUGS.has(baseSlug)) {
+    return NextResponse.json({ error: 'That URL is reserved. Please choose a different one.' }, { status: 400 })
+  }
+
   let slug = baseSlug
 
   for (let attempt = 0; attempt < 5; attempt++) {
