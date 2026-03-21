@@ -18,6 +18,7 @@ interface Props {
   metaTitle: string
   metaDescription: string
   appUrl: string
+  helpCenterDomain: string
   demoMode?: boolean
 }
 
@@ -47,6 +48,7 @@ export function WorkspaceForm({
   metaTitle,
   metaDescription,
   appUrl,
+  helpCenterDomain,
   demoMode = false,
 }: Props) {
   const router = useRouter()
@@ -132,15 +134,22 @@ export function WorkspaceForm({
       <div>
         <label className="block text-sm font-medium text-ink mb-1">{t('slug')}</label>
         <div className={`flex items-center border border-border rounded-lg overflow-hidden${demoMode ? ' opacity-60' : ''}`}>
-          <span className="px-3 py-2 bg-cream text-muted text-sm border-e border-border shrink-0">
-            {appUrl.replace(/^https?:\/\//, '')}/
-          </span>
+          {!helpCenterDomain && (
+            <span className="px-3 py-2 bg-cream text-muted text-sm border-e border-border shrink-0">
+              {appUrl.replace(/^https?:\/\//, '')}/
+            </span>
+          )}
           <input
             value={values.slug}
             onChange={set('slug')}
             readOnly={demoMode}
             className={`flex-1 px-3 py-2 text-sm bg-white text-ink focus:outline-none${demoMode ? ' cursor-not-allowed select-none' : ''}`}
           />
+          {helpCenterDomain && (
+            <span className="px-3 py-2 bg-cream text-muted text-sm border-s border-border shrink-0">
+              .{helpCenterDomain}
+            </span>
+          )}
         </div>
       </div>
       <div>
@@ -158,7 +167,7 @@ export function WorkspaceForm({
         {values.customDomain.trim().length > 0 && (
           <div className="mt-2 rounded-lg border border-border bg-cream px-3 py-2 text-xs text-muted space-y-0.5">
             <p className="font-medium text-ink">{t('dnsSetup')}</p>
-            <p>{t('dnsInstruction', { domain: values.customDomain.trim(), target: appUrl.replace(/^https?:\/\//, '') })}</p>
+            <p>{t('dnsInstruction', { domain: values.customDomain.trim(), target: helpCenterDomain ? `${values.slug}.${helpCenterDomain}` : appUrl.replace(/^https?:\/\//, '') })}</p>
           </div>
         )}
       </div>
@@ -334,12 +343,12 @@ export function WorkspaceForm({
       <div className="pt-3 border-t border-border">
         <p className="text-xs text-muted mb-0.5">{t('helpCenterUrl')}</p>
         <a
-          href={`${appUrl}/${values.slug}/help`}
+          href={helpCenterDomain ? `https://${values.slug}.${helpCenterDomain}` : `${appUrl}/${values.slug}/help`}
           target="_blank"
           rel="noopener noreferrer"
           className="text-sm font-mono text-accent hover:underline break-all"
         >
-          {appUrl}/{values.slug}/help
+          {helpCenterDomain ? `${values.slug}.${helpCenterDomain}` : `${appUrl}/${values.slug}/help`}
         </a>
       </div>
     </div>

@@ -125,6 +125,7 @@ export default async function SettingsPage() {
             metaTitle={workspace?.metaTitle ?? ''}
             metaDescription={workspace?.metaDescription ?? ''}
             appUrl={appUrl}
+            helpCenterDomain={process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''}
             demoMode={demoMode}
           />
         </div>
