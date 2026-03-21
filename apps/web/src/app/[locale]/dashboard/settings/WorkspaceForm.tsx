@@ -165,9 +165,28 @@ export function WorkspaceForm({
           {t('customDomainHelp')}
         </p>
         {values.customDomain.trim().length > 0 && (
-          <div className="mt-2 rounded-lg border border-border bg-cream px-3 py-2 text-xs text-muted space-y-0.5">
+          <div className="mt-3 rounded-lg border border-border bg-cream p-4 text-sm space-y-3">
             <p className="font-medium text-ink">{t('dnsSetup')}</p>
-            <p>{t('dnsInstruction', { domain: values.customDomain.trim(), target: appUrl.replace(/^https?:\/\//, '') })}</p>
+            <p className="text-xs text-muted">{t('dnsSteps')}</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-left text-muted">
+                    <th className="pb-2 pe-4 font-medium">{t('dnsType')}</th>
+                    <th className="pb-2 pe-4 font-medium">{t('dnsName')}</th>
+                    <th className="pb-2 pe-4 font-medium">{t('dnsValue')}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="py-1.5 pe-4 font-mono text-ink">CNAME</td>
+                    <td className="py-1.5 pe-4 font-mono text-ink">{values.customDomain.trim()}</td>
+                    <td className="py-1.5 pe-4 font-mono text-accent select-all">{appUrl.replace(/^https?:\/\//, '')}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <p className="text-xs text-muted">{t('dnsNote')}</p>
           </div>
         )}
       </div>
