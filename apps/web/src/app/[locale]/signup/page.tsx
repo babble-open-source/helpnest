@@ -1,5 +1,6 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { SignupForm } from './SignupForm'
 
 export const dynamic = 'force-dynamic'
@@ -9,17 +10,27 @@ export default async function SignupPage() {
   const userId = await resolveSessionUserId(session)
   if (session?.user && userId) redirect('/dashboard')
 
+  const t = await getTranslations('auth')
+
   return (
-    <main className="min-h-screen bg-cream flex items-center justify-center">
-      <div className="w-full max-w-sm px-6 py-10">
-        <h1 className="font-serif text-3xl text-ink mb-2 text-center">
-          HelpNest
-        </h1>
-        <p className="text-muted text-sm text-center mb-8">
-          Create your account
-        </p>
-        <SignupForm />
-      </div>
-    </main>
+    <SignupForm
+      translations={{
+        signUpTitle: t('signUpTitle'),
+        signUpSubtitle: t('signUpSubtitle'),
+        name: t('name'),
+        namePlaceholder: t('namePlaceholder'),
+        email: t('email'),
+        emailPlaceholder: t('emailPlaceholder'),
+        password: t('password'),
+        passwordMinLength: t('passwordMinLength'),
+        signUpButton: t('signUpButton'),
+        creatingAccount: t('creatingAccount'),
+        alreadyHaveAccount: t('alreadyHaveAccount'),
+        signIn: t('signIn'),
+        signupFailed: t('signupFailed'),
+        signInFailed: t('signInFailed'),
+        networkError: t('networkError'),
+      }}
+    />
   )
 }

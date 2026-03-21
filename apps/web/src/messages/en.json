@@ -111,7 +111,32 @@
     "password": "Password",
     "passwordPlaceholder": "Leave blank if not yet set",
     "invalidCredentials": "Invalid email or password.",
-    "signInButton": "Sign in"
+    "signInButton": "Sign in",
+    "signUpTitle": "Create your account",
+    "signUpSubtitle": "Get started with HelpNest",
+    "name": "Name",
+    "namePlaceholder": "Jane Smith",
+    "signUpButton": "Create account",
+    "creatingAccount": "Creating account…",
+    "alreadyHaveAccount": "Already have an account?",
+    "signIn": "Sign in",
+    "dontHaveAccount": "Don't have an account?",
+    "signUpFree": "Sign up free",
+    "signupFailed": "Signup failed. Please try again.",
+    "signInFailed": "Account created but sign-in failed. Please try signing in.",
+    "networkError": "Network error. Please try again.",
+    "passwordMinLength": "Min. 8 characters"
+  },
+  "onboarding": {
+    "title": "Create your help center",
+    "subtitle": "Choose a name and URL for your knowledge base.",
+    "helpCenterName": "Help center name",
+    "helpCenterNamePlaceholder": "Acme Support",
+    "urlSlug": "URL slug",
+    "slugPlaceholder": "acme-support",
+    "slugHint": "This will be your help center's URL. You can change it later in settings.",
+    "createButton": "Create help center",
+    "creating": "Creating…"
   },
   "invite": {
     "notFound": "Invite not found",

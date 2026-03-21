@@ -1,6 +1,7 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
 import { redirect } from 'next/navigation'
+import { getTranslations } from 'next-intl/server'
 import { OnboardingForm } from './OnboardingForm'
 
 export const dynamic = 'force-dynamic'
@@ -10,9 +11,10 @@ export default async function OnboardingPage() {
   const userId = await resolveSessionUserId(session)
   if (!userId || !session?.user) redirect('/login')
 
-  // If user already has a workspace, skip onboarding
   const workspaceId = await resolveWorkspaceId(userId)
   if (workspaceId) redirect('/dashboard')
+
+  const t = await getTranslations('onboarding')
 
   // Build the URL prefix for the slug preview
   const helpCenterDomain = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN
@@ -20,24 +22,26 @@ export default async function OnboardingPage() {
 
   let urlPrefix: string
   if (helpCenterDomain) {
-    // Cloud or subdomain mode: slug.helpnest.cloud
     urlPrefix = helpCenterDomain + '/'
   } else {
-    // Self-hosted: localhost:3000/slug/help
     urlPrefix = appUrl.replace(/^https?:\/\//, '').replace(/\/$/, '') + '/'
   }
 
   return (
-    <main className="min-h-screen bg-cream flex items-center justify-center">
-      <div className="w-full max-w-md px-6 py-10">
-        <h1 className="font-serif text-3xl text-ink mb-2 text-center">
-          Create your help center
-        </h1>
-        <p className="text-muted text-sm text-center mb-8">
-          Choose a name and URL for your knowledge base.
-        </p>
-        <OnboardingForm userName={session.user.name ?? ''} urlPrefix={urlPrefix} />
-      </div>
-    </main>
+    <OnboardingForm
+      userName={session.user.name ?? ''}
+      urlPrefix={urlPrefix}
+      translations={{
+        title: t('title'),
+        subtitle: t('subtitle'),
+        helpCenterName: t('helpCenterName'),
+        helpCenterNamePlaceholder: t('helpCenterNamePlaceholder'),
+        urlSlug: t('urlSlug'),
+        slugPlaceholder: t('slugPlaceholder'),
+        slugHint: t('slugHint'),
+        createButton: t('createButton'),
+        creating: t('creating'),
+      }}
+    />
   )
 }

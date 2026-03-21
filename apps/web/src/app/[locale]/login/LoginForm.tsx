@@ -22,6 +22,8 @@ interface Translations {
   invalidCredentials: string
   signInButton: string
   signingIn: string
+  dontHaveAccount: string
+  signUpFree: string
 }
 
 interface Props {
@@ -138,9 +140,9 @@ export function LoginForm({ defaultEmail, showDefaultCreds, workspaceSlug, showS
 
         {showSignupLink && (
           <p className="text-center text-sm text-muted mt-6">
-            Don&apos;t have an account?{' '}
+            {t.dontHaveAccount}{' '}
             <Link href="/signup" className="text-accent hover:underline">
-              Sign up free
+              {t.signUpFree}
             </Link>
           </p>
         )}

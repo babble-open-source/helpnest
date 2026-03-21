@@ -111,7 +111,32 @@
     "password": "पासवर्ड",
     "passwordPlaceholder": "अभी तक सेट नहीं है तो खाली छोड़ें",
     "invalidCredentials": "ईमेल या पासवर्ड गलत है।",
-    "signInButton": "साइन इन करें"
+    "signInButton": "साइन इन करें",
+    "signUpTitle": "अपना खाता बनाएं",
+    "signUpSubtitle": "HelpNest के साथ शुरू करें",
+    "name": "नाम",
+    "namePlaceholder": "Jane Smith",
+    "signUpButton": "खाता बनाएं",
+    "creatingAccount": "खाता बनाया जा रहा है…",
+    "alreadyHaveAccount": "पहले से खाता है?",
+    "signIn": "साइन इन करें",
+    "dontHaveAccount": "खाता नहीं है?",
+    "signUpFree": "मुफ़्त में साइन अप करें",
+    "signupFailed": "साइन अप विफल रहा। कृपया पुनः प्रयास करें।",
+    "signInFailed": "खाता बनाया गया लेकिन साइन इन विफल रहा। कृपया साइन इन करने का प्रयास करें।",
+    "networkError": "नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।",
+    "passwordMinLength": "न्यूनतम ८ अक्षर"
+  },
+  "onboarding": {
+    "title": "अपना सहायता केंद्र बनाएं",
+    "subtitle": "अपने ज्ञान आधार के लिए एक नाम और URL चुनें।",
+    "helpCenterName": "सहायता केंद्र का नाम",
+    "helpCenterNamePlaceholder": "Acme Support",
+    "urlSlug": "URL स्लग",
+    "slugPlaceholder": "acme-support",
+    "slugHint": "यह आपके सहायता केंद्र का URL होगा। आप इसे बाद में सेटिंग्स में बदल सकते हैं।",
+    "createButton": "सहायता केंद्र बनाएं",
+    "creating": "बनाया जा रहा है…"
   },
   "invite": {
     "notFound": "आमंत्रण नहीं मिला",

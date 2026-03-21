@@ -5,7 +5,25 @@ import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 
-export function SignupForm() {
+interface Translations {
+  signUpTitle: string
+  signUpSubtitle: string
+  name: string
+  namePlaceholder: string
+  email: string
+  emailPlaceholder: string
+  password: string
+  passwordMinLength: string
+  signUpButton: string
+  creatingAccount: string
+  alreadyHaveAccount: string
+  signIn: string
+  signupFailed: string
+  signInFailed: string
+  networkError: string
+}
+
+export function SignupForm({ translations: t }: { translations: Translations }) {
   const router = useRouter()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
@@ -28,12 +46,11 @@ export function SignupForm() {
       const data = await res.json()
 
       if (!res.ok) {
-        setError(data.error ?? 'Signup failed. Please try again.')
+        setError(data.error ?? t.signupFailed)
         setLoading(false)
         return
       }
 
-      // Auto sign-in after successful signup
       const result = await signIn('credentials', {
         email,
         password,
@@ -41,91 +58,102 @@ export function SignupForm() {
       })
 
       if (result?.error) {
-        setError('Account created but sign-in failed. Please try signing in.')
+        setError(t.signInFailed)
         setLoading(false)
       } else {
         router.push('/onboarding')
         router.refresh()
       }
     } catch {
-      setError('Network error. Please try again.')
+      setError(t.networkError)
       setLoading(false)
     }
   }
 
   return (
-    <div className="space-y-4">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {error && (
-          <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-            {error}
+    <main className="min-h-screen bg-cream flex items-center justify-center">
+      <div className="w-full max-w-sm px-6 py-10">
+        <h1 className="font-serif text-3xl text-ink mb-2 text-center">
+          {t.signUpTitle}
+        </h1>
+        <p className="text-muted text-sm text-center mb-8">
+          {t.signUpSubtitle}
+        </p>
+
+        <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {error}
+              </p>
+            )}
+
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-ink mb-1">
+                {t.name}
+              </label>
+              <input
+                id="name"
+                type="text"
+                autoComplete="name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                placeholder={t.namePlaceholder}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-ink mb-1">
+                {t.email}
+              </label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                placeholder={t.emailPlaceholder}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-ink mb-1">
+                {t.password}
+              </label>
+              <input
+                id="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-3 py-2 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                placeholder={t.passwordMinLength}
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-ink text-cream py-2 px-4 rounded-lg hover:bg-ink/90 transition-colors font-medium disabled:opacity-60"
+            >
+              {loading ? t.creatingAccount : t.signUpButton}
+            </button>
+          </form>
+
+          <p className="text-center text-sm text-muted">
+            {t.alreadyHaveAccount}{' '}
+            <Link href="/login" className="text-accent hover:underline">
+              {t.signIn}
+            </Link>
           </p>
-        )}
-
-        <div>
-          <label htmlFor="name" className="block text-sm font-medium text-ink mb-1">
-            Name
-          </label>
-          <input
-            id="name"
-            type="text"
-            autoComplete="name"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
-            placeholder="Jane Smith"
-          />
         </div>
-
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-ink mb-1">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
-            placeholder="you@example.com"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-ink mb-1">
-            Password
-          </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-3 py-2 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
-            placeholder="Min. 8 characters"
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-ink text-cream py-2 px-4 rounded-lg hover:bg-ink/90 transition-colors font-medium disabled:opacity-60"
-        >
-          {loading ? 'Creating account\u2026' : 'Create account'}
-        </button>
-      </form>
-
-      <p className="text-center text-sm text-muted">
-        Already have an account?{' '}
-        <Link href="/login" className="text-accent hover:underline">
-          Sign in
-        </Link>
-      </p>
-    </div>
+      </div>
+    </main>
   )
 }

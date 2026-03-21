@@ -111,7 +111,32 @@
     "password": "كلمة المرور",
     "passwordPlaceholder": "اتركه فارغاً إذا لم تحدده بعد",
     "invalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة.",
-    "signInButton": "تسجيل الدخول"
+    "signInButton": "تسجيل الدخول",
+    "signUpTitle": "أنشئ حسابك",
+    "signUpSubtitle": "ابدأ مع HelpNest",
+    "name": "الاسم",
+    "namePlaceholder": "Jane Smith",
+    "signUpButton": "إنشاء حساب",
+    "creatingAccount": "جارٍ إنشاء الحساب…",
+    "alreadyHaveAccount": "لديك حساب بالفعل؟",
+    "signIn": "تسجيل الدخول",
+    "dontHaveAccount": "ليس لديك حساب؟",
+    "signUpFree": "سجّل مجاناً",
+    "signupFailed": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
+    "signInFailed": "تم إنشاء الحساب لكن فشل تسجيل الدخول. يرجى محاولة تسجيل الدخول.",
+    "networkError": "خطأ في الشبكة. يرجى المحاولة مرة أخرى.",
+    "passwordMinLength": "٨ أحرف كحد أدنى"
+  },
+  "onboarding": {
+    "title": "أنشئ مركز المساعدة الخاص بك",
+    "subtitle": "اختر اسماً وعنوان URL لقاعدة المعرفة الخاصة بك.",
+    "helpCenterName": "اسم مركز المساعدة",
+    "helpCenterNamePlaceholder": "Acme Support",
+    "urlSlug": "معرّف URL",
+    "slugPlaceholder": "acme-support",
+    "slugHint": "سيكون هذا عنوان URL لمركز المساعدة الخاص بك. يمكنك تغييره لاحقاً في الإعدادات.",
+    "createButton": "إنشاء مركز المساعدة",
+    "creating": "جارٍ الإنشاء…"
   },
   "invite": {
     "notFound": "الدعوة غير موجودة",

@@ -111,7 +111,32 @@
     "password": "Mot de passe",
     "passwordPlaceholder": "Laissez vide si non encore défini",
     "invalidCredentials": "Adresse e-mail ou mot de passe incorrect.",
-    "signInButton": "Se connecter"
+    "signInButton": "Se connecter",
+    "signUpTitle": "Créez votre compte",
+    "signUpSubtitle": "Commencez avec HelpNest",
+    "name": "Nom",
+    "namePlaceholder": "Jane Smith",
+    "signUpButton": "Créer un compte",
+    "creatingAccount": "Création du compte…",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "signIn": "Se connecter",
+    "dontHaveAccount": "Vous n'avez pas de compte ?",
+    "signUpFree": "Inscrivez-vous gratuitement",
+    "signupFailed": "L'inscription a échoué. Veuillez réessayer.",
+    "signInFailed": "Compte créé mais la connexion a échoué. Veuillez essayer de vous connecter.",
+    "networkError": "Erreur réseau. Veuillez réessayer.",
+    "passwordMinLength": "Min. 8 caractères"
+  },
+  "onboarding": {
+    "title": "Créez votre centre d'aide",
+    "subtitle": "Choisissez un nom et une URL pour votre base de connaissances.",
+    "helpCenterName": "Nom du centre d'aide",
+    "helpCenterNamePlaceholder": "Acme Support",
+    "urlSlug": "Slug d'URL",
+    "slugPlaceholder": "acme-support",
+    "slugHint": "Ce sera l'URL de votre centre d'aide. Vous pourrez la modifier plus tard dans les paramètres.",
+    "createButton": "Créer le centre d'aide",
+    "creating": "Création en cours…"
   },
   "invite": {
     "notFound": "Invitation introuvable",

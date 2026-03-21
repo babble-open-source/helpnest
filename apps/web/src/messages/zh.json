@@ -111,7 +111,32 @@
     "password": "密码",
     "passwordPlaceholder": "如未设置密码请留空",
     "invalidCredentials": "邮箱或密码不正确。",
-    "signInButton": "登录"
+    "signInButton": "登录",
+    "signUpTitle": "创建您的账户",
+    "signUpSubtitle": "开始使用 HelpNest",
+    "name": "姓名",
+    "namePlaceholder": "Jane Smith",
+    "signUpButton": "创建账户",
+    "creatingAccount": "正在创建账户…",
+    "alreadyHaveAccount": "已有账户？",
+    "signIn": "登录",
+    "dontHaveAccount": "没有账户？",
+    "signUpFree": "免费注册",
+    "signupFailed": "注册失败，请重试。",
+    "signInFailed": "账户已创建但登录失败，请尝试登录。",
+    "networkError": "网络错误，请重试。",
+    "passwordMinLength": "至少 8 个字符"
+  },
+  "onboarding": {
+    "title": "创建您的帮助中心",
+    "subtitle": "为您的知识库选择名称和 URL。",
+    "helpCenterName": "帮助中心名称",
+    "helpCenterNamePlaceholder": "Acme Support",
+    "urlSlug": "URL 标识",
+    "slugPlaceholder": "acme-support",
+    "slugHint": "这将成为您帮助中心的 URL。您可以稍后在设置中更改。",
+    "createButton": "创建帮助中心",
+    "creating": "创建中…"
   },
   "invite": {
     "notFound": "邀请不存在",

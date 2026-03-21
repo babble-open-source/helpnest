@@ -55,6 +55,8 @@ export default async function LoginPage() {
         invalidCredentials: t('invalidCredentials'),
         signInButton: t('signInButton'),
         signingIn: tCommon('signingIn'),
+        dontHaveAccount: t('dontHaveAccount'),
+        signUpFree: t('signUpFree'),
       }}
     />
   )
