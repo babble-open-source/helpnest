@@ -22,22 +22,36 @@ export function LanguageSwitcher({ className }: LanguageSwitcherProps = {}) {
     })
   }
 
+  const defaultClass =
+    'bg-transparent text-sm border border-[rgb(var(--color-border))] rounded-md px-2 py-1 pr-7 text-[rgb(var(--color-muted))] hover:text-[rgb(var(--color-ink))] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--color-accent))] cursor-pointer disabled:opacity-50'
+
   return (
-    <select
-      value={locale}
-      onChange={onSelectChange}
-      disabled={isPending}
-      className={
-        className ??
-        'bg-transparent text-sm border border-[rgb(var(--color-border))] rounded-md px-2 py-1 text-[rgb(var(--color-muted))] hover:text-[rgb(var(--color-ink))] focus:outline-none focus:ring-1 focus:ring-[rgb(var(--color-accent))] cursor-pointer disabled:opacity-50'
-      }
-      aria-label="Select language"
-    >
-      {locales.map((loc) => (
-        <option key={loc} value={loc}>
-          {localeNames[loc]}
-        </option>
-      ))}
-    </select>
+    <div className="relative inline-flex">
+      <select
+        value={locale}
+        onChange={onSelectChange}
+        disabled={isPending}
+        className={`appearance-none ${className ?? defaultClass}`}
+        aria-label="Select language"
+      >
+        {locales.map((loc) => (
+          <option key={loc} value={loc}>
+            {localeNames[loc]}
+          </option>
+        ))}
+      </select>
+      <svg
+        className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 opacity-60"
+        viewBox="0 0 20 20"
+        fill="currentColor"
+        aria-hidden="true"
+      >
+        <path
+          fillRule="evenodd"
+          d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+          clipRule="evenodd"
+        />
+      </svg>
+    </div>
   )
 }

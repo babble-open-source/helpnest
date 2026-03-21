@@ -191,11 +191,11 @@ export function DashboardSidebar({
         <div className="p-2 border-t border-white/10 shrink-0">
           {/* Language switcher — mobile: always visible; desktop: only when expanded */}
           <div className={`px-2 py-1.5 lg:hidden`}>
-            <LanguageSwitcher className="w-full bg-transparent text-sm border border-white/20 rounded-md px-2 py-1 text-cream/70 hover:text-cream focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer disabled:opacity-50" />
+            <LanguageSwitcher className="w-full bg-transparent text-sm border border-white/20 rounded-md px-2 py-1 pr-7 text-cream/70 hover:text-cream focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer disabled:opacity-50" />
           </div>
           {open && (
             <div className="hidden lg:block px-2 py-1.5">
-              <LanguageSwitcher className="w-full bg-transparent text-sm border border-white/20 rounded-md px-2 py-1 text-cream/70 hover:text-cream focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer disabled:opacity-50" />
+              <LanguageSwitcher className="w-full bg-transparent text-sm border border-white/20 rounded-md px-2 py-1 pr-7 text-cream/70 hover:text-cream focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer disabled:opacity-50" />
             </div>
           )}
           {/* Mobile: always show full user row */}
