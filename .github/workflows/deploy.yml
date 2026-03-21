@@ -1,11 +1,11 @@
-name: Deploy to Railway
+name: Migrate and Deploy
 
 on:
   push:
     branches: [main]
 
 jobs:
-  migrate-and-deploy:
+  migrate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -23,16 +23,10 @@ jobs:
 
       - name: Generate Prisma client
         run: cd packages/db && pnpm exec prisma generate
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run database migrations
         run: cd packages/db && pnpm exec prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        run: railway up --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
