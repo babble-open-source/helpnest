@@ -19,14 +19,7 @@ export default async function DashboardPage() {
   if (!userId) redirect('/login')
 
   const workspaceId = await resolveWorkspaceId(userId)
-  if (!workspaceId) {
-    return (
-      <div className="p-4 sm:p-8">
-        <h1 className="font-serif text-3xl text-ink mb-2">{t('welcome')}</h1>
-        <p className="text-muted">{t('noWorkspace')}</p>
-      </div>
-    )
-  }
+  if (!workspaceId) redirect('/onboarding')
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },

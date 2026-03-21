@@ -39,7 +39,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
       select: { passwordChangedAt: true, passwordHash: true },
     }),
   ])
-  if (!workspaceId) redirect('/login')
+  if (!workspaceId) redirect('/onboarding')
 
   const member = { workspaceId }
 

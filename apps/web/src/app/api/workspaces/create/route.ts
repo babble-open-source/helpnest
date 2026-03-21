@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const { name } = (await request.json()) as { name?: string }
+  const { name, slug: requestedSlug } = (await request.json()) as { name?: string; slug?: string }
   if (!name?.trim()) {
     return NextResponse.json({ error: 'Workspace name is required' }, { status: 400 })
   }
@@ -69,7 +69,7 @@ export async function POST(request: Request) {
   }
 
   const trimmedName = name.trim()
-  const baseSlug = slugify(trimmedName) || 'workspace'
+  const baseSlug = requestedSlug?.trim() ? slugify(requestedSlug.trim()) : (slugify(trimmedName) || 'workspace')
   let slug = baseSlug
 
   for (let attempt = 0; attempt < 5; attempt++) {

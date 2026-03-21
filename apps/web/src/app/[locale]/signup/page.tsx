@@ -1,14 +1,10 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { isCloudMode } from '@/lib/cloud'
 import { SignupForm } from './SignupForm'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SignupPage() {
-  // Signup only available in cloud mode
-  if (!isCloudMode()) redirect('/login')
-
   const session = await auth()
   const userId = await resolveSessionUserId(session)
   if (session?.user && userId) redirect('/dashboard')
@@ -20,7 +16,7 @@ export default async function SignupPage() {
           HelpNest
         </h1>
         <p className="text-muted text-sm text-center mb-8">
-          Create your help center
+          Create your account
         </p>
         <SignupForm />
       </div>

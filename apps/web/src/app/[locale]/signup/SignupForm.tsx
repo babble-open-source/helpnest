@@ -44,7 +44,7 @@ export function SignupForm() {
         setError('Account created but sign-in failed. Please try signing in.')
         setLoading(false)
       } else {
-        router.push('/dashboard')
+        router.push('/onboarding')
         router.refresh()
       }
     } catch {
