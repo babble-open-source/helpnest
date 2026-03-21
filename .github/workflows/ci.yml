@@ -28,6 +28,9 @@ jobs:
       - name: Generate Prisma client
         run: pnpm --filter @helpnest/db db:generate
 
+      - name: Build SDK (needed by MCP typecheck)
+        run: pnpm --filter @helpnest/sdk build
+
       - name: Lint
         run: pnpm lint
 
