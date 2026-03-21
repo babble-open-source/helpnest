@@ -59,6 +59,10 @@ export function BillingContent({ workspaceId, userEmail, role, plan }: Props) {
   const usage = plan?.usage
   const limits = plan?.limits
 
+  function navigateTo(url: string) {
+    window.location.assign(url)
+  }
+
   async function handleUpgrade(targetPlan: 'PRO' | 'BUSINESS') {
     setLoading(targetPlan)
     try {
@@ -69,7 +73,7 @@ export function BillingContent({ workspaceId, userEmail, role, plan }: Props) {
       })
       const data = await res.json()
       if (data.url) {
-        window.location.href = data.url
+        navigateTo(data.url)
       }
     } catch {
       setLoading(null)
@@ -86,7 +90,7 @@ export function BillingContent({ workspaceId, userEmail, role, plan }: Props) {
       })
       const data = await res.json()
       if (data.url) {
-        window.location.href = data.url
+        navigateTo(data.url)
       }
     } catch {
       setLoading(null)

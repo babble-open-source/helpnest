@@ -77,7 +77,7 @@ export function DashboardSidebar({
       })
       if (!res.ok) return
       setWsMenuOpen(false)
-      window.location.href = `/${locale}/dashboard`
+      window.location.assign(`/${locale}/dashboard`)
     } catch {
       // Network error — do nothing
     }
@@ -101,7 +101,7 @@ export function DashboardSidebar({
       }
       setNewName('')
       setWsMenuOpen(false)
-      window.location.href = `/${locale}/dashboard`
+      window.location.assign(`/${locale}/dashboard`)
     } catch {
       setCreateError('Network error')
       setCreating(false)

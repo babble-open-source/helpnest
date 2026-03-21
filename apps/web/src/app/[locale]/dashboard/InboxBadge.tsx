@@ -22,7 +22,7 @@ export function InboxBadge({ workspaceId }: { workspaceId: string }) {
             description: t('customerWaiting'),
             action: {
               label: t('title'),
-              onClick: () => { window.location.href = '/dashboard/inbox' },
+              onClick: () => { window.location.assign('/dashboard/inbox') },
             },
             duration: 8000,
           })
