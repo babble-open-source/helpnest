@@ -26,24 +26,6 @@ async function isLoginRateLimited(email: string): Promise<boolean> {
 
 let authBundle: NextAuthResult | undefined
 
-function slugify(name: string): string {
-  return name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 48) || 'workspace'
-}
-
-async function uniqueSlug(base: string): Promise<string> {
-  let slug = base
-  let attempt = 0
-  while (await prisma.workspace.findUnique({ where: { slug } })) {
-    attempt++
-    slug = `${base}-${attempt}`
-  }
-  return slug
-}
-
 function getAuthBundle(): NextAuthResult {
   authBundle ??= NextAuth({
     ...authConfig,
@@ -69,19 +51,7 @@ function getAuthBundle(): NextAuthResult {
               avatar: user.image ?? null,
             },
           })
-
-          // Create a default workspace for new OAuth users
-          const slug = await uniqueSlug(slugify(displayName))
-          const workspace = await prisma.workspace.create({
-            data: { name: `${displayName}'s Help Center`, slug },
-          })
-          await prisma.member.create({
-            data: {
-              userId: dbUser.id,
-              workspaceId: workspace.id,
-              role: 'OWNER',
-            },
-          })
+          // No workspace created here — the /onboarding page handles that
         }
 
         // Attach the DB id so the jwt callback picks it up
