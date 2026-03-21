@@ -56,6 +56,8 @@ function handleSubdomain(req: NextRequest): NextResponse | null {
   const host = (req.headers.get('host') ?? '').split(':')[0] ?? ''
   if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) && !host.startsWith('www.')) {
     const slug = host.slice(0, host.length - HELP_CENTER_DOMAIN.length - 1)
+    // Skip the dashboard subdomain — that's the admin app, not a help center
+    if (slug === 'dashboard') return null
     return rewriteToHelp(req, slug)
   }
   return null
