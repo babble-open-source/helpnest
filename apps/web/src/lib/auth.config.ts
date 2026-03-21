@@ -13,8 +13,13 @@ export const authConfig: NextAuthConfig = {
     signIn: '/login',
   },
   callbacks: {
-    jwt({ token, user }) {
+    jwt({ token, user, account }) {
       if (user?.id) token.id = user.id
+      // Flag OAuth sign-ins so the full auth.ts signIn callback can
+      // distinguish them from credentials logins.
+      if (account?.provider && account.provider !== 'credentials') {
+        token.oauthProvider = account.provider
+      }
       return token
     },
     session({ session, token }) {

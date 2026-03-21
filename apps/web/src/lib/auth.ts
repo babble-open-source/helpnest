@@ -26,9 +26,69 @@ async function isLoginRateLimited(email: string): Promise<boolean> {
 
 let authBundle: NextAuthResult | undefined
 
+function slugify(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+    .slice(0, 48) || 'workspace'
+}
+
+async function uniqueSlug(base: string): Promise<string> {
+  let slug = base
+  let attempt = 0
+  while (await prisma.workspace.findUnique({ where: { slug } })) {
+    attempt++
+    slug = `${base}-${attempt}`
+  }
+  return slug
+}
+
 function getAuthBundle(): NextAuthResult {
   authBundle ??= NextAuth({
     ...authConfig,
+    callbacks: {
+      ...authConfig.callbacks,
+      async signIn({ user, account }) {
+        // Only handle OAuth providers — credentials are validated in authorize()
+        if (!account || account.provider === 'credentials') return true
+        if (!user.email) return false
+
+        // Find or create user record for this OAuth account
+        let dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          select: { id: true },
+        })
+
+        if (!dbUser) {
+          const displayName: string = user.name || user.email!.split('@')[0] || 'User'
+          dbUser = await prisma.user.create({
+            data: {
+              email: user.email,
+              name: displayName,
+              avatar: user.image ?? null,
+            },
+          })
+
+          // Create a default workspace for new OAuth users
+          const slug = await uniqueSlug(slugify(displayName))
+          const workspace = await prisma.workspace.create({
+            data: { name: `${displayName}'s Help Center`, slug },
+          })
+          await prisma.member.create({
+            data: {
+              userId: dbUser.id,
+              workspaceId: workspace.id,
+              role: 'OWNER',
+            },
+          })
+        }
+
+        // Attach the DB id so the jwt callback picks it up
+        user.id = dbUser.id
+        return true
+      },
+    },
     providers: [
       // Only register GitHub provider when credentials are present.
       // Passing empty strings would silently break OAuth without a clear error.
