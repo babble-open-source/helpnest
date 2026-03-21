@@ -92,7 +92,7 @@ export async function POST(request: Request) {
   const limit = await checkLimit(callerMember.workspaceId, 'members')
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: limit.reason ?? 'Member limit reached. Upgrade your plan.' },
+      { error: 'Member limit reached. Upgrade your plan.' },
       { status: 403 },
     )
   }

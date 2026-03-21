@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
-import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 
 /**
@@ -62,8 +61,8 @@ export async function POST(request: Request) {
       email: body.ownerEmail,
       name: body.ownerName ?? null,
       // Cloud users authenticate via JWT bridge — no password needed in OSS DB.
-      // Set a random hash so the account can't be logged into directly.
-      passwordHash: await bcrypt.hash(crypto.randomUUID(), 10),
+      // null passwordHash means credentials login is disabled for this user.
+      passwordHash: null,
     },
   })
 

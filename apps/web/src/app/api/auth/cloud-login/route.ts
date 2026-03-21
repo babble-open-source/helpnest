@@ -57,13 +57,14 @@ export async function GET(request: Request) {
 
   if (!user) {
     // User doesn't exist yet — the provision-workspace endpoint should have
-    // created them, but handle the race gracefully
-    const bcrypt = await import('bcryptjs')
+    // created them, but handle the race gracefully.
+    // passwordHash is null — these users authenticate via JWT bridge only,
+    // not via credentials login.
     user = await prisma.user.create({
       data: {
         email: payload.email,
         name: payload.name ?? null,
-        passwordHash: await bcrypt.hash(crypto.randomUUID(), 10),
+        passwordHash: null,
       },
     })
   }

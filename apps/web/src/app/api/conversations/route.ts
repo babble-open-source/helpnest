@@ -119,7 +119,7 @@ export async function POST(request: Request) {
   const limit = await checkLimit(workspace.id, 'conversations')
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: limit.reason ?? 'Conversation limit reached for this month.' },
+      { error: 'Conversation limit reached for this month.' },
       { status: 429, headers: CORS_HEADERS },
     )
   }

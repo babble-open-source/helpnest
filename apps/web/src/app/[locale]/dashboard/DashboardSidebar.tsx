@@ -236,7 +236,9 @@ export function DashboardSidebar({
                       }`}
                     >
                       <span className="block truncate">{ws.name}</span>
-                      <span className="block text-xs text-cream/40 truncate">{ws.slug}.helpnest.cloud</span>
+                      <span className="block text-xs text-cream/40 truncate">
+                        {cloudUrl ? `${ws.slug}.${cloudUrl.replace(/^https?:\/\//, '')}` : ws.slug}
+                      </span>
                     </button>
                   ))}
                 </div>

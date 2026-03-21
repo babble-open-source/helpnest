@@ -118,7 +118,7 @@ export async function POST(request: Request) {
   const limit = await checkLimit(workspaceId, 'articles')
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: limit.reason ?? 'Article limit reached. Upgrade your plan.' },
+      { error: 'Article limit reached. Upgrade your plan.' },
       { status: 403 },
     )
   }

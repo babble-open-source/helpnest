@@ -156,7 +156,7 @@ export async function POST(request: Request) {
   const limit = await checkLimit(workspace.id, 'aiQueries')
   if (!limit.allowed) {
     return NextResponse.json(
-      { error: limit.reason ?? 'AI query limit reached for this month.' },
+      { error: 'AI query limit reached for this month.' },
       { status: 429, headers: CORS_HEADERS },
     )
   }
