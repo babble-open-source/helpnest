@@ -140,4 +140,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:${PORT:-3000}/api/health || exit 1
 
-CMD ["node", "apps/web/server.js"]
+# Run migrations then start the app.
+# migrate deploy is idempotent — skips already-applied migrations.
+# If migration fails, the container exits and Railway/orchestrator retries.
+CMD ["sh", "-c", "node packages/db/node_modules/prisma/build/index.js migrate deploy --schema=packages/db/prisma/schema.prisma && node apps/web/server.js"]
