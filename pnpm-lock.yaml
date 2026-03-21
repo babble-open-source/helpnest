@@ -184,6 +184,9 @@ importers:
       ioredis:
         specifier: ^5.10.0
         version: 5.10.0
+      jose:
+        specifier: ^6.2.2
+        version: 6.2.2
       lowlight:
         specifier: ^3.1.0
         version: 3.3.0
@@ -3418,6 +3421,9 @@ packages:
   jose@6.2.0:
     resolution: {integrity: sha512-xsfE1TcSCbUdo6U07tR0mvhg0flGxU8tPLbF03mirl2ukGQENhUg4ubGYQnhVH0b5stLlPM+WOqDkEl1R1y5sQ==}
 
+  jose@6.2.2:
+    resolution: {integrity: sha512-d7kPDd34KO/YnzaDOlikGpOurfF0ByC2sEV4cANCtdqLlTfBlw2p14O/5d/zv40gJPbIQxfES3nSx1/oYNyuZQ==}
+
   joycon@3.1.1:
     resolution: {integrity: sha512-34wB/Y7MW7bzjKRjUKTa46I2Z7eV62Rkhva+KkopW7Qvv/OSWBqvkSY7vusOPrNuZcUG3tApvdVgNB8POj3SPw==}
     engines: {node: '>=10'}
@@ -5209,7 +5215,7 @@ snapshots:
   '@auth/core@0.41.0':
     dependencies:
       '@panva/hkdf': 1.2.1
-      jose: 6.2.0
+      jose: 6.2.2
       oauth4webapi: 3.8.5
       preact: 10.24.3
       preact-render-to-string: 6.5.11(preact@10.24.3)
@@ -8324,6 +8330,8 @@ snapshots:
   jiti@2.6.1: {}
 
   jose@6.2.0: {}
+
+  jose@6.2.2: {}
 
   joycon@3.1.1: {}
 
