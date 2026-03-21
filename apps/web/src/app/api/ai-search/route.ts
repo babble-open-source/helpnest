@@ -4,6 +4,7 @@ import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import { embedText } from '@/lib/embeddings'
 import { redis } from '@/lib/redis'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
+import { checkLimit, incrementUsage } from '@/lib/cloud'
 
 type SearchResultLike = { payload?: Record<string, unknown> | null }
 type ArticleRow = {
@@ -150,6 +151,16 @@ export async function POST(request: Request) {
       { status: 503, headers: CORS_HEADERS },
     )
   }
+
+  // Check AI query quota
+  const limit = await checkLimit(workspace.id, 'aiQueries')
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: limit.reason ?? 'AI query limit reached for this month.' },
+      { status: 429, headers: CORS_HEADERS },
+    )
+  }
+  incrementUsage(workspace.id, 'aiQueries')
 
   let aiProvider: ReturnType<typeof resolveProvider>
   try {

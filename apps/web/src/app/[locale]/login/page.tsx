@@ -4,6 +4,7 @@ import { auth, resolveSessionUserId } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { LoginForm } from './LoginForm'
+import { isCloudMode } from '@/lib/cloud'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,11 +33,14 @@ export default async function LoginPage() {
     workspaceSlug = seedUser?.members[0]?.workspace.slug ?? null
   }
 
+  const cloudMode = isCloudMode()
+
   return (
     <LoginForm
       showDefaultCreds={demoMode}
       defaultEmail={demoMode ? seedEmail : ''}
       workspaceSlug={workspaceSlug}
+      showSignupLink={cloudMode}
       translations={{
         signInTitle: t('signInTitle'),
         signInSubtitle: t('signInSubtitle'),

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { redis } from '@/lib/redis'
+import { checkLimit, incrementUsage } from '@/lib/cloud'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -114,6 +115,15 @@ export async function POST(request: Request) {
     )
   }
 
+  // Check conversation quota
+  const limit = await checkLimit(workspace.id, 'conversations')
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: limit.reason ?? 'Conversation limit reached for this month.' },
+      { status: 429, headers: CORS_HEADERS },
+    )
+  }
+
   const conversation = await prisma.conversation.create({
     data: {
       workspaceId: workspace.id,
@@ -127,6 +137,8 @@ export async function POST(request: Request) {
       createdAt: true,
     },
   })
+
+  incrementUsage(workspace.id, 'conversations')
 
   return NextResponse.json(
     {

@@ -38,6 +38,7 @@ const nextConfig = {
     '@google/generative-ai',
     '@notionhq/client',
     'notion-to-md',
+    'jose',
   ],
   async headers() {
     return [

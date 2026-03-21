@@ -28,10 +28,11 @@ interface Props {
   defaultEmail: string
   showDefaultCreds: boolean
   workspaceSlug: string | null
+  showSignupLink?: boolean
   translations: Translations
 }
 
-export function LoginForm({ defaultEmail, showDefaultCreds, workspaceSlug, translations: t }: Props) {
+export function LoginForm({ defaultEmail, showDefaultCreds, workspaceSlug, showSignupLink, translations: t }: Props) {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -134,6 +135,15 @@ export function LoginForm({ defaultEmail, showDefaultCreds, workspaceSlug, trans
             {loading ? t.signingIn : t.signInButton}
           </button>
         </form>
+
+        {showSignupLink && (
+          <p className="text-center text-sm text-muted mt-6">
+            Don&apos;t have an account?{' '}
+            <Link href="/signup" className="text-accent hover:underline">
+              Sign up free
+            </Link>
+          </p>
+        )}
       </div>
     </main>
   )

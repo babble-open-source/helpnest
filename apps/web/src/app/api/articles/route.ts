@@ -3,6 +3,7 @@ import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { htmlToMarkdown } from '@/lib/html-to-markdown'
+import { checkLimit, incrementUsage } from '@/lib/cloud'
 
 const VALID_STATUSES = ['DRAFT', 'PUBLISHED', 'ARCHIVED'] as const
 type ArticleStatus = typeof VALID_STATUSES[number]
@@ -113,6 +114,15 @@ export async function POST(request: Request) {
     if (!col) return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
   }
 
+  // Check plan limit before creating
+  const limit = await checkLimit(workspaceId, 'articles')
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: limit.reason ?? 'Article limit reached. Upgrade your plan.' },
+      { status: 403 },
+    )
+  }
+
   const status = body.status ?? 'DRAFT'
   const baseSlug = slugify(title)
 
@@ -133,6 +143,7 @@ export async function POST(request: Request) {
           ...(status === 'PUBLISHED' ? { publishedAt: new Date() } : {}),
         },
       })
+      incrementUsage(workspaceId, 'articles')
       return NextResponse.json(article, { status: 201 })
     } catch (e: unknown) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { isDemoMode } from '@/lib/demo'
+import { checkLimit, incrementUsage } from '@/lib/cloud'
 type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
 
 const VALID_ROLES: MemberRole[] = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']
@@ -87,6 +88,15 @@ export async function POST(request: Request) {
       { status: 409 },
     )
   }
+  // Check plan limit before inviting
+  const limit = await checkLimit(callerMember.workspaceId, 'members')
+  if (!limit.allowed) {
+    return NextResponse.json(
+      { error: limit.reason ?? 'Member limit reached. Upgrade your plan.' },
+      { status: 403 },
+    )
+  }
+
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
 
   const invite = await prisma.invite.create({
@@ -102,5 +112,6 @@ export async function POST(request: Request) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
   const inviteUrl = `${appUrl}/invite/${invite.token}`
 
+  incrementUsage(callerMember.workspaceId, 'members')
   return NextResponse.json({ invite: { id: invite.id, email: invite.email, role: invite.role, expiresAt: invite.expiresAt }, inviteUrl }, { status: 201 })
 }
