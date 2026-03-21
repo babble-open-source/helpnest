@@ -1,4 +1,5 @@
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -8,11 +9,11 @@ export default async function InboxPage() {
   const [session, t] = await Promise.all([auth(), getTranslations('inboxPage')])
   if (!session?.user) redirect('/login')
 
-  const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
-    select: { workspaceId: true },
-  })
-  if (!member) redirect('/dashboard')
+  const userId = await resolveSessionUserId(session)
+  if (!userId) redirect('/login')
+
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) redirect('/dashboard')
 
   type InboxConv = {
     id: string
@@ -31,7 +32,7 @@ export default async function InboxPage() {
 
   const [escalated, active, resolved]: [InboxConv[], InboxConv[], InboxConv[]] = await Promise.all([
     prisma.conversation.findMany({
-      where: { workspaceId: member.workspaceId, status: 'ESCALATED' },
+      where: { workspaceId: workspaceId, status: 'ESCALATED' },
       orderBy: { updatedAt: 'desc' },
       take: 50,
       include: {
@@ -41,7 +42,7 @@ export default async function InboxPage() {
       },
     }),
     prisma.conversation.findMany({
-      where: { workspaceId: member.workspaceId, status: { in: ['ACTIVE', 'HUMAN_ACTIVE'] } },
+      where: { workspaceId: workspaceId, status: { in: ['ACTIVE', 'HUMAN_ACTIVE'] } },
       orderBy: { updatedAt: 'desc' },
       take: 50,
       include: {
@@ -52,7 +53,7 @@ export default async function InboxPage() {
     }),
     prisma.conversation.findMany({
       where: {
-        workspaceId: member.workspaceId,
+        workspaceId: workspaceId,
         status: { in: ['RESOLVED_AI', 'RESOLVED_HUMAN', 'CLOSED'] },
       },
       orderBy: { updatedAt: 'desc' },

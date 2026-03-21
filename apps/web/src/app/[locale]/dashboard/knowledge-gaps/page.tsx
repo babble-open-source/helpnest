@@ -1,4 +1,5 @@
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -8,11 +9,16 @@ export default async function KnowledgeGapsPage() {
   const [session, t] = await Promise.all([auth(), getTranslations('knowledgeGapsPage')])
   if (!session?.user) redirect('/login')
 
-  const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
-    select: { workspaceId: true, workspace: { select: { slug: true } } },
+  const userId = await resolveSessionUserId(session)
+  if (!userId) redirect('/login')
+
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) redirect('/dashboard')
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { slug: true },
   })
-  if (!member) redirect('/dashboard')
 
   type KnowledgeGapRow = {
     id: string
@@ -27,7 +33,7 @@ export default async function KnowledgeGapsPage() {
 
   const [unresolved, resolved]: [KnowledgeGapRow[], KnowledgeGapRow[]] = await Promise.all([
     prisma.knowledgeGap.findMany({
-      where: { workspaceId: member.workspaceId, resolvedAt: null },
+      where: { workspaceId: workspaceId, resolvedAt: null },
       orderBy: { occurrences: 'desc' },
       take: 50,
       include: {
@@ -36,7 +42,7 @@ export default async function KnowledgeGapsPage() {
       },
     }),
     prisma.knowledgeGap.findMany({
-      where: { workspaceId: member.workspaceId, resolvedAt: { not: null } },
+      where: { workspaceId: workspaceId, resolvedAt: { not: null } },
       orderBy: { resolvedAt: 'desc' },
       take: 50,
       include: {
@@ -69,7 +75,7 @@ export default async function KnowledgeGapsPage() {
       <KnowledgeGapsList
         unresolved={serialize(unresolved)}
         resolved={serialize(resolved)}
-        workspaceSlug={member.workspace.slug}
+        workspaceSlug={workspace?.slug ?? ''}
       />
     </div>
   )

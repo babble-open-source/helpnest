@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { isDemoMode } from '@/lib/demo'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -14,13 +15,13 @@ export default async function CollectionsPage(props: {
   const [session, searchParams, t, tc] = await Promise.all([auth(), props.searchParams, getTranslations('dashboard'), getTranslations('common')])
   if (!session?.user) redirect('/login')
 
-  const demoMode = isDemoMode()
+  const userId = await resolveSessionUserId(session)
+  if (!userId) redirect('/login')
 
-  const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
-    select: { workspaceId: true },
-  })
-  if (!member) redirect('/dashboard')
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) redirect('/dashboard')
+
+  const demoMode = isDemoMode()
 
   type SubCollection = {
     id: string
@@ -40,7 +41,7 @@ export default async function CollectionsPage(props: {
   }
   const collections: CollectionWithSubs[] = await prisma.collection.findMany({
     where: {
-      workspaceId: member.workspaceId,
+      workspaceId: workspaceId,
       parentId: null,
       ...(searchParams.q
         ? { title: { contains: searchParams.q, mode: 'insensitive' as const } }

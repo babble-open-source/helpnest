@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { isDemoMode } from '@/lib/demo'
 import { redirect, notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
@@ -15,23 +16,23 @@ export default async function CollectionDetailPage(props: {
     getTranslations('dashboard'),
     getTranslations('common'),
   ])
-  if (!session?.user?.email) redirect('/login')
+  if (!session?.user) redirect('/login')
+
+  const userId = await resolveSessionUserId(session)
+  if (!userId) redirect('/login')
+
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) redirect('/dashboard')
 
   const demoMode = isDemoMode()
 
-  const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email } },
-    select: { workspaceId: true },
-  })
-  if (!member) redirect('/dashboard')
-
   const collection = await prisma.collection.findFirst({
-    where: { id: params.id, workspaceId: member.workspaceId },
+    where: { id: params.id, workspaceId },
   })
   if (!collection) notFound()
 
   const articles = await prisma.article.findMany({
-    where: { collectionId: collection.id, workspaceId: member.workspaceId },
+    where: { collectionId: collection.id, workspaceId },
     orderBy: { updatedAt: 'desc' },
     include: { collection: true, author: true },
   })

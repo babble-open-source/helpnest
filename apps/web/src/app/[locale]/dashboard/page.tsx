@@ -1,6 +1,7 @@
 import { Link } from '@/i18n/navigation'
 import { prisma } from '@/lib/db'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 
@@ -14,17 +15,11 @@ export default async function DashboardPage() {
   const [session, t, tc] = await Promise.all([auth(), getTranslations('dashboard'), getTranslations('common')])
   if (!session?.user) redirect('/login')
 
-  const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
-    select: {
-      workspaceId: true,
-      workspace: {
-        select: { name: true },
-      },
-    },
-  })
+  const userId = await resolveSessionUserId(session)
+  if (!userId) redirect('/login')
 
-  if (!member) {
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) {
     return (
       <div className="p-4 sm:p-8">
         <h1 className="font-serif text-3xl text-ink mb-2">{t('welcome')}</h1>
@@ -33,10 +28,15 @@ export default async function DashboardPage() {
     )
   }
 
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { name: true },
+  })
+
   const [articleCount, publishedCount, collections] = await Promise.all([
-    prisma.article.count({ where: { workspaceId: member.workspaceId } }),
-    prisma.article.count({ where: { workspaceId: member.workspaceId, status: 'PUBLISHED' } }),
-    prisma.collection.count({ where: { workspaceId: member.workspaceId } }),
+    prisma.article.count({ where: { workspaceId } }),
+    prisma.article.count({ where: { workspaceId, status: 'PUBLISHED' } }),
+    prisma.collection.count({ where: { workspaceId } }),
   ])
 
   const last30Days = new Date()
@@ -54,22 +54,22 @@ export default async function DashboardPage() {
     collection: { id: string; title: string; slug: string }
   }
   const recentArticlesPromise: Promise<RecentArticle[]> = prisma.article.findMany({
-    where: { workspaceId: member.workspaceId },
+    where: { workspaceId },
     orderBy: { updatedAt: 'desc' },
     take: 5,
     include: { collection: true },
   })
   const feedbackCount30DaysPromise: Promise<number> = feedbackPrisma.articleFeedback.count({
     where: {
-      workspaceId: member.workspaceId,
+      workspaceId,
       createdAt: { gte: last30Days },
     },
   })
   const totalFeedbackCountPromise: Promise<number> = feedbackPrisma.articleFeedback.count({
-    where: { workspaceId: member.workspaceId },
+    where: { workspaceId },
   })
   const feedbackTotalsPromise = prisma.article.aggregate({
-    where: { workspaceId: member.workspaceId },
+    where: { workspaceId },
     _sum: {
       helpful: true,
       notHelpful: true,
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
   }
   const feedbackArticlesPromise: Promise<FeedbackArticle[]> = prisma.article.findMany({
     where: {
-      workspaceId: member.workspaceId,
+      workspaceId,
       status: 'PUBLISHED',
       OR: [
         { helpful: { gt: 0 } },
@@ -124,13 +124,13 @@ export default async function DashboardPage() {
   const sevenDaysAgo = new Date()
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
   const [totalConversations, resolvedByAI, escalatedCount, weekConversations, unresolvedGaps, aiNewDraftCount, aiUpdateCount] = await Promise.all([
-    prisma.conversation.count({ where: { workspaceId: member.workspaceId } }),
-    prisma.conversation.count({ where: { workspaceId: member.workspaceId, status: 'RESOLVED_AI' } }),
-    prisma.conversation.count({ where: { workspaceId: member.workspaceId, status: 'ESCALATED' } }),
-    prisma.conversation.count({ where: { workspaceId: member.workspaceId, createdAt: { gte: sevenDaysAgo } } }),
-    prisma.knowledgeGap.count({ where: { workspaceId: member.workspaceId, resolvedAt: null } }),
-    prisma.article.count({ where: { workspaceId: member.workspaceId, aiGenerated: true, status: 'DRAFT' } }),
-    prisma.article.count({ where: { workspaceId: member.workspaceId, aiGenerated: true, status: 'PUBLISHED', NOT: { draftContent: null } } }),
+    prisma.conversation.count({ where: { workspaceId } }),
+    prisma.conversation.count({ where: { workspaceId, status: 'RESOLVED_AI' } }),
+    prisma.conversation.count({ where: { workspaceId, status: 'ESCALATED' } }),
+    prisma.conversation.count({ where: { workspaceId, createdAt: { gte: sevenDaysAgo } } }),
+    prisma.knowledgeGap.count({ where: { workspaceId, resolvedAt: null } }),
+    prisma.article.count({ where: { workspaceId, aiGenerated: true, status: 'DRAFT' } }),
+    prisma.article.count({ where: { workspaceId, aiGenerated: true, status: 'PUBLISHED', NOT: { draftContent: null } } }),
   ])
   const aiResolutionRate = totalConversations > 0 ? Math.round((resolvedByAI / totalConversations) * 100) : null
   const escalationRate = totalConversations > 0 ? Math.round((escalatedCount / totalConversations) * 100) : null
@@ -171,7 +171,7 @@ export default async function DashboardPage() {
     <div className="p-4 sm:p-8">
       <div className="mb-8">
         <h1 className="font-serif text-2xl sm:text-3xl text-ink">{t('overview')}</h1>
-        <p className="text-muted mt-1">{member.workspace.name}</p>
+        <p className="text-muted mt-1">{workspace?.name}</p>
       </div>
 
       {/* AI Support Stats */}

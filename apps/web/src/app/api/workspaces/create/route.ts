@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { isCloudMode, provisionWorkspace } from '@/lib/cloud'
+import { isCloudMode, provisionWorkspace, getWorkspacePlan } from '@/lib/cloud'
 
 function slugify(str: string): string {
   return str
@@ -45,41 +45,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Workspace name is required' }, { status: 400 })
   }
 
-  // In cloud mode, check workspace limit based on plan
+  // In cloud mode, check workspace limit based on plan of primary OWNED workspace
+  let planTier = 'FREE'
   if (isCloudMode()) {
-    const existingWorkspaces = await prisma.member.findMany({
+    const ownedWorkspaces = await prisma.member.findMany({
       where: { userId, role: 'OWNER', deactivatedAt: null },
-      select: { workspaceId: true },
-    })
-
-    // Get the plan of the user's first (primary) workspace to determine limit
-    const primaryMember = await prisma.member.findFirst({
-      where: { userId, deactivatedAt: null },
       select: { workspaceId: true },
       orderBy: { id: 'asc' },
     })
 
-    let planTier = 'FREE'
-    if (primaryMember) {
-      try {
-        const cloudUrl = process.env.CLOUD_API_URL
-        const secret = process.env.INTERNAL_SECRET
-        if (cloudUrl && secret) {
-          const res = await fetch(`${cloudUrl}/api/workspaces/${primaryMember.workspaceId}/plan`, {
-            headers: { 'x-internal-secret': secret },
-          })
-          if (res.ok) {
-            const data = await res.json()
-            planTier = data.plan ?? 'FREE'
-          }
-        }
-      } catch {
-        // If cloud is unreachable, use FREE limit
-      }
+    if (ownedWorkspaces.length > 0 && ownedWorkspaces[0]) {
+      const plan = await getWorkspacePlan(ownedWorkspaces[0].workspaceId)
+      planTier = plan?.plan ?? 'FREE'
     }
 
     const limit = WORKSPACE_LIMITS[planTier] ?? 1
-    if (existingWorkspaces.length >= limit) {
+    if (ownedWorkspaces.length >= limit) {
       return NextResponse.json(
         { error: `Your ${planTier} plan allows up to ${limit} workspace${limit === 1 ? '' : 's'}. Upgrade to create more.` },
         { status: 403 },
@@ -94,6 +75,18 @@ export async function POST(request: Request) {
   for (let attempt = 0; attempt < 5; attempt++) {
     try {
       const workspace = await prisma.$transaction(async (tx) => {
+        // Re-check ownership count inside transaction to prevent race conditions
+        if (isCloudMode()) {
+          const ownedCount = await tx.member.count({
+            where: { userId, role: 'OWNER', deactivatedAt: null },
+          })
+          // Use the limit from the outer check (already validated against plan)
+          const limit = WORKSPACE_LIMITS[planTier] ?? 1
+          if (ownedCount >= limit) {
+            throw Object.assign(new Error('LIMIT_EXCEEDED'), { code: 'LIMIT_EXCEEDED' })
+          }
+        }
+
         const slugTaken = await tx.workspace.findUnique({ where: { slug } })
         if (slugTaken) {
           throw Object.assign(new Error('SLUG_TAKEN'), { code: 'SLUG_TAKEN' })
@@ -130,6 +123,13 @@ export async function POST(request: Request) {
         slug: workspace.slug,
       }, { status: 201 })
     } catch (err) {
+      if ((err as { code?: string }).code === 'LIMIT_EXCEEDED') {
+        return NextResponse.json(
+          { error: `Workspace limit reached. Upgrade your plan to create more.` },
+          { status: 403 },
+        )
+      }
+
       const isSlugConflict =
         (err as { code?: string }).code === 'SLUG_TAKEN' ||
         (err as { code?: string }).code === 'P2002'

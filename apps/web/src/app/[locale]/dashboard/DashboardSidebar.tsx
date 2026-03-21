@@ -1,7 +1,7 @@
 'use client'
 
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { signOut } from 'next-auth/react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
@@ -50,20 +50,37 @@ export function DashboardSidebar({
 
   const cloudUrl = process.env.NEXT_PUBLIC_CLOUD_URL
   const hasMultiWorkspace = !!workspaces && workspaces.length > 0
-  const router = typeof window !== 'undefined' ? null : null // for reload
+  const wsMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close workspace dropdown on outside click
+  useEffect(() => {
+    if (!wsMenuOpen) return
+    function handleClick(e: MouseEvent) {
+      if (wsMenuRef.current && !wsMenuRef.current.contains(e.target as Node)) {
+        setWsMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [wsMenuOpen])
 
   async function switchWorkspace(targetId: string) {
     if (targetId === workspaceId) {
       setWsMenuOpen(false)
       return
     }
-    await fetch('/api/workspaces/switch', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workspaceId: targetId }),
-    })
-    setWsMenuOpen(false)
-    window.location.href = `/${locale}/dashboard`
+    try {
+      const res = await fetch('/api/workspaces/switch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId: targetId }),
+      })
+      if (!res.ok) return
+      setWsMenuOpen(false)
+      window.location.href = `/${locale}/dashboard`
+    } catch {
+      // Network error — do nothing
+    }
   }
 
   async function createWorkspace() {
@@ -194,7 +211,7 @@ export function DashboardSidebar({
 
         {/* Workspace switcher — cloud mode only */}
         {hasMultiWorkspace && open && (
-          <div className="px-2 py-2 border-b border-white/10 shrink-0 relative">
+          <div ref={wsMenuRef} className="px-2 py-2 border-b border-white/10 shrink-0 relative">
             <button
               onClick={() => setWsMenuOpen(!wsMenuOpen)}
               className="w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm text-cream/80 hover:text-cream hover:bg-white/10 transition-colors"

@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
 import { BillingContent } from './BillingContent'
@@ -11,13 +12,16 @@ export default async function BillingPage() {
   const userId = await resolveSessionUserId(session)
   if (!userId || !session?.user) redirect('/login')
 
-  const member = await prisma.member.findFirst({
-    where: { userId, deactivatedAt: null },
-    select: { workspaceId: true, role: true },
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) redirect('/dashboard')
+
+  const member = await prisma.member.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId } },
+    select: { role: true },
   })
   if (!member) redirect('/dashboard')
 
-  const plan = await getWorkspacePlan(member.workspaceId)
+  const plan = await getWorkspacePlan(workspaceId)
 
   return (
     <div className="p-6 md:p-8 max-w-4xl">
@@ -27,7 +31,7 @@ export default async function BillingPage() {
       </div>
 
       <BillingContent
-        workspaceId={member.workspaceId}
+        workspaceId={workspaceId}
         userEmail={session.user.email ?? ''}
         role={member.role}
         plan={plan}

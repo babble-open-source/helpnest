@@ -1,4 +1,5 @@
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { isDemoMode } from '@/lib/demo'
 import { fontPresets, radiusOptions } from '@/lib/branding'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
@@ -19,26 +20,31 @@ export default async function SettingsPage() {
   const [session, t] = await Promise.all([auth(), getTranslations('settingsPage')])
   if (!session?.user) redirect('/login')
 
-  // Parallel: member lookup + column set (single schema query, cached for process lifetime)
-  const [member, columns] = await Promise.all([
-    prisma.member.findFirst({
-      where: { user: { email: session.user.email! } },
-      select: {
-        workspaceId: true,
-        userId: true,
-        role: true,
-        user: { select: { id: true, name: true, email: true } },
-      },
-    }),
+  const userId = await resolveSessionUserId(session)
+  if (!userId) redirect('/login')
+
+  // Parallel: workspace resolution + column set (single schema query, cached for process lifetime)
+  const [workspaceId, columns] = await Promise.all([
+    resolveWorkspaceId(userId),
     getWorkspaceColumnSet(),
   ])
+
+  if (!workspaceId) redirect('/dashboard')
+
+  const member = await prisma.member.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId } },
+    select: {
+      role: true,
+      user: { select: { id: true, name: true, email: true } },
+    },
+  })
 
   if (!member) redirect('/dashboard')
 
   // Parallel: single workspace query (all fields in one trip) + team list
   const [workspace, members] = await Promise.all([
     prisma.workspace.findUnique({
-      where: { id: member.workspaceId },
+      where: { id: workspaceId },
       select: {
         // Base fields
         name: true,
@@ -82,7 +88,7 @@ export default async function SettingsPage() {
       },
     }),
     prisma.member.findMany({
-      where: { workspaceId: member.workspaceId },
+      where: { workspaceId },
       include: { user: { select: { id: true, email: true, name: true } } },
       orderBy: [{ role: 'asc' }, { user: { name: 'asc' } }],
     }),
@@ -126,7 +132,7 @@ export default async function SettingsPage() {
         {/* Members */}
         <MembersSection
           members={serializedMembers}
-          currentUserId={member.userId}
+          currentUserId={userId}
           callerRole={member.role}
           demoMode={demoMode}
         />
@@ -183,7 +189,7 @@ export default async function SettingsPage() {
           <p className="text-sm text-muted mb-4">
             {t('aiSearchDescription')}
           </p>
-          <SyncEmbeddingsButton workspaceId={member.workspaceId} />
+          <SyncEmbeddingsButton workspaceId={workspaceId} />
         </div>
 
         {/* API Keys */}

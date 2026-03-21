@@ -1,3 +1,4 @@
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { prisma } from './db'
 
@@ -11,8 +12,11 @@ const WORKSPACE_COOKIE = 'helpnest-workspace'
  * 2. First active member record (fallback)
  *
  * Returns null if the user has no workspaces.
+ *
+ * Wrapped with React `cache()` so multiple Server Components in the same
+ * render pass (layout + page) share one result — no extra DB round-trip.
  */
-export async function resolveWorkspaceId(userId: string): Promise<string | null> {
+export const resolveWorkspaceId = cache(async function resolveWorkspaceId(userId: string): Promise<string | null> {
   const cookieStore = await cookies()
   const preferred = cookieStore.get(WORKSPACE_COOKIE)?.value
 
@@ -25,13 +29,14 @@ export async function resolveWorkspaceId(userId: string): Promise<string | null>
     if (member) return member.workspaceId
   }
 
-  // Fallback: first active workspace
+  // Fallback: first active workspace (deterministic order)
   const member = await prisma.member.findFirst({
     where: { userId, deactivatedAt: null },
     select: { workspaceId: true },
+    orderBy: { id: 'asc' },
   })
   return member?.workspaceId ?? null
-}
+})
 
 /**
  * Get all workspaces the user belongs to.

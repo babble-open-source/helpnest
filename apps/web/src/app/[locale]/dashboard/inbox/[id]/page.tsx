@@ -1,4 +1,5 @@
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { redirect } from 'next/navigation'
@@ -14,14 +15,20 @@ export default async function ConversationPage({
   const session = await auth()
   if (!session?.user) redirect('/login')
 
-  const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
-    select: { workspaceId: true, id: true, userId: true },
+  const userId = await resolveSessionUserId(session)
+  if (!userId) redirect('/login')
+
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) redirect('/dashboard')
+
+  const member = await prisma.member.findUnique({
+    where: { workspaceId_userId: { workspaceId, userId } },
+    select: { id: true },
   })
   if (!member) redirect('/dashboard')
 
   const conversation = await prisma.conversation.findFirst({
-    where: { id, workspaceId: member.workspaceId },
+    where: { id, workspaceId },
     include: {
       messages: { orderBy: { createdAt: 'asc' } },
       assignedTo: {
@@ -48,7 +55,7 @@ export default async function ConversationPage({
   if (!conversation) notFound()
 
   const members: Array<{ id: string; user: { name: string | null; email: string } }> = await prisma.member.findMany({
-    where: { workspaceId: member.workspaceId, deactivatedAt: null },
+    where: { workspaceId: workspaceId, deactivatedAt: null },
     select: { id: true, user: { select: { name: true, email: true } } },
     orderBy: { user: { name: 'asc' } },
   })
