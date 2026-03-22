@@ -6,7 +6,12 @@ import dns from 'node:dns/promises'
 
 /**
  * POST /api/domains/verify
- * Checks if a custom domain's CNAME is correctly configured.
+ * Checks if a custom domain is correctly configured.
+ *
+ * Supports both:
+ * - Direct CNAME (DNS only / gray cloud in Cloudflare)
+ * - Proxied CNAME (orange cloud in Cloudflare) — verified via HTTP probe
+ *
  * Body: { domain }
  */
 export async function POST(request: Request) {
@@ -21,7 +26,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No workspace' }, { status: 404 })
   }
 
-  // Verify user is OWNER or ADMIN
   const member = await prisma.member.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
     select: { role: true },
@@ -36,55 +40,99 @@ export async function POST(request: Request) {
   }
 
   const cleanDomain = domain.trim().toLowerCase()
+  const appHost = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000')
+    .replace(/^https?:\/\//, '')
+    .split(':')[0]
 
-  try {
-    // Look up CNAME records for the domain
-    const records = await dns.resolveCname(cleanDomain)
-    const appHost = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000')
-      .replace(/^https?:\/\//, '')
-      .split(':')[0]
-
-    // Check if any CNAME record points to our app host
-    const isValid = records.some((record) => {
-      const normalizedRecord = record.replace(/\.$/, '').toLowerCase()
-      return normalizedRecord === appHost || normalizedRecord.endsWith(`.${appHost}`)
+  // Strategy 1: Check CNAME records (works for non-proxied DNS)
+  const cnameResult = await checkCname(cleanDomain, appHost!)
+  if (cnameResult === 'valid') {
+    await activateDomain(workspaceId, cleanDomain)
+    return NextResponse.json({
+      status: 'active',
+      message: 'Domain verified successfully. Your custom domain is now active.',
     })
+  }
 
-    if (isValid) {
-      // Update workspace custom domain in DB
-      await prisma.workspace.update({
-        where: { id: workspaceId },
-        data: { customDomain: cleanDomain },
-      })
+  // Strategy 2: HTTP probe — works even with Cloudflare proxy
+  // Fetch the domain and check if our app responds
+  const httpResult = await checkHttp(cleanDomain)
+  if (httpResult === 'valid') {
+    await activateDomain(workspaceId, cleanDomain)
+    return NextResponse.json({
+      status: 'active',
+      message: 'Domain verified successfully. Your custom domain is now active.',
+    })
+  }
 
-      return NextResponse.json({
-        status: 'active',
-        records,
-        message: 'Domain verified successfully. Your custom domain is now active.',
-      })
-    }
+  // Strategy 3: Check if domain resolves at all (A/AAAA records)
+  const resolves = await checkResolves(cleanDomain)
 
+  if (resolves) {
     return NextResponse.json({
       status: 'pending',
-      records,
-      expected: appHost,
-      message: `CNAME found but points to ${records.join(', ')} instead of ${appHost}.`,
+      message: 'Domain resolves but could not verify it points to your help center. DNS may still be propagating — try again in a few minutes.',
     })
-  } catch (err) {
-    const code = (err as { code?: string }).code
+  }
 
-    if (code === 'ENODATA' || code === 'ENOTFOUND') {
-      return NextResponse.json({
-        status: 'pending',
-        records: [],
-        message: 'No CNAME record found. Please add the DNS record and try again.',
-      })
+  return NextResponse.json({
+    status: 'pending',
+    message: 'No DNS records found for this domain. Please add the CNAME record and try again.',
+  })
+}
+
+async function activateDomain(workspaceId: string, domain: string) {
+  await prisma.workspace.update({
+    where: { id: workspaceId },
+    data: { customDomain: domain },
+  })
+}
+
+async function checkCname(domain: string, expectedHost: string): Promise<'valid' | 'invalid' | 'none'> {
+  try {
+    const records = await dns.resolveCname(domain)
+    const isValid = records.some((r) => {
+      const normalized = r.replace(/\.$/, '').toLowerCase()
+      return normalized === expectedHost || normalized.endsWith(`.${expectedHost}`)
+    })
+    return isValid ? 'valid' : 'invalid'
+  } catch {
+    return 'none'
+  }
+}
+
+async function checkHttp(domain: string): Promise<'valid' | 'invalid'> {
+  try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 5000)
+    const res = await fetch(`https://${domain}/api/health`, {
+      signal: controller.signal,
+      redirect: 'manual',
+    })
+    clearTimeout(timeout)
+    // Our health endpoint returns 200 with a known response
+    if (res.ok) {
+      const data = await res.json().catch(() => null)
+      if (data && (data.status === 'ok' || data.ok === true)) {
+        return 'valid'
+      }
     }
+    return 'invalid'
+  } catch {
+    return 'invalid'
+  }
+}
 
-    return NextResponse.json({
-      status: 'error',
-      records: [],
-      message: 'DNS lookup failed. Please try again later.',
-    })
+async function checkResolves(domain: string): Promise<boolean> {
+  try {
+    const addresses = await dns.resolve4(domain)
+    return addresses.length > 0
+  } catch {
+    try {
+      const addresses = await dns.resolve6(domain)
+      return addresses.length > 0
+    } catch {
+      return false
+    }
   }
 }
