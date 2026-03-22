@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { redis } from '@/lib/redis'
 import { checkLimit, incrementUsage } from '@/lib/cloud'
+import { isByok } from '@/lib/ai/resolve-provider'
 
 // Widget-facing CORS (public, any origin)
 const WIDGET_CORS_HEADERS = {
@@ -110,7 +111,7 @@ export async function POST(request: Request) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { slug: workspaceSlug },
-    select: { id: true, aiEnabled: true, aiGreeting: true },
+    select: { id: true, aiEnabled: true, aiGreeting: true, aiProvider: true, aiApiKey: true },
   })
   if (!workspace) {
     return NextResponse.json(
@@ -119,13 +120,16 @@ export async function POST(request: Request) {
     )
   }
 
-  // Check conversation quota
-  const limit = await checkLimit(workspace.id, 'conversations')
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: 'Conversation limit reached for this month.' },
-      { status: 429, headers: WIDGET_CORS_HEADERS },
-    )
+  // Check AI credit quota (skipped when workspace uses BYOK)
+  const byok = isByok({ aiApiKey: workspace.aiApiKey })
+  if (!byok) {
+    const limit = await checkLimit(workspace.id, 'aiCredits')
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },
+        { status: 429, headers: WIDGET_CORS_HEADERS },
+      )
+    }
   }
 
   const conversation = await prisma.conversation.create({
@@ -142,7 +146,9 @@ export async function POST(request: Request) {
     },
   })
 
-  incrementUsage(workspace.id, 'conversations')
+  if (!isByok({ aiApiKey: workspace.aiApiKey })) {
+    incrementUsage(workspace.id, 'aiCredits')
+  }
 
   return NextResponse.json(
     {

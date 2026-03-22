@@ -20,10 +20,7 @@ export type Resource =
   | 'articles'
   | 'members'
   | 'apiCalls'
-  | 'aiQueries'
-  | 'conversations'
-  | 'messages'
-  | 'aiGenerations'
+  | 'aiCredits'
 
 export interface LimitCheckResult {
   allowed: boolean
@@ -85,10 +82,7 @@ export interface WorkspacePlan {
     articles: number
     members: number
     apiCalls: number
-    aiQueries: number
-    conversations: number
-    messages: number
-    aiGenerations: number
+    aiCredits: number
   } | null
   limits: Record<string, number | boolean>
   stripeCustomerId?: string | null

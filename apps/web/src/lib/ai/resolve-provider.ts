@@ -10,6 +10,14 @@ interface WorkspaceAiSettings {
 }
 
 /**
+ * Returns true if the workspace has its own API key configured (BYOK).
+ * When BYOK is active, AI actions are not metered by credits.
+ */
+export function isByok(workspace: Pick<WorkspaceAiSettings, 'aiApiKey'>): boolean {
+  return !!workspace.aiApiKey
+}
+
+/**
  * Decrypts an AES-256-GCM encrypted API key stored in the database.
  *
  * Supported formats:

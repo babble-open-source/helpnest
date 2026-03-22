@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db'
 import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import { embedText } from '@/lib/embeddings'
 import { redis } from '@/lib/redis'
-import { resolveProvider } from '@/lib/ai/resolve-provider'
+import { resolveProvider, isByok } from '@/lib/ai/resolve-provider'
 import { checkLimit, incrementUsage } from '@/lib/cloud'
 
 type SearchResultLike = { payload?: Record<string, unknown> | null }
@@ -152,15 +152,18 @@ export async function POST(request: Request) {
     )
   }
 
-  // Check AI query quota
-  const limit = await checkLimit(workspace.id, 'aiQueries')
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: 'AI query limit reached for this month.' },
-      { status: 429, headers: CORS_HEADERS },
-    )
+  // Check AI credit quota (skipped when workspace uses BYOK)
+  const byok = isByok({ aiApiKey: workspace.aiApiKey })
+  if (!byok) {
+    const limit = await checkLimit(workspace.id, 'aiCredits')
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },
+        { status: 429, headers: CORS_HEADERS },
+      )
+    }
+    incrementUsage(workspace.id, 'aiCredits')
   }
-  incrementUsage(workspace.id, 'aiQueries')
 
   let aiProvider: ReturnType<typeof resolveProvider>
   try {
