@@ -187,24 +187,26 @@ export function WorkspaceForm({
         </p>
         {values.customDomain.trim().length > 0 && (
           <div className="mt-3 rounded-lg border border-border bg-cream p-4 text-sm space-y-3">
-            {/* Status badge */}
+            {/* Status badge — always present to prevent layout shift */}
             <div className="flex items-center justify-between">
               <p className="font-medium text-ink">{t('dnsSetup')}</p>
-              {dnsStatus === 'active' && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green/10 text-green border border-green/20">
-                  {t('dnsActive')}
-                </span>
-              )}
-              {dnsStatus === 'pending' && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
-                  {t('dnsPending')}
-                </span>
-              )}
-              {dnsStatus === 'error' && (
-                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-200">
-                  {t('dnsError')}
-                </span>
-              )}
+              <span className={`text-xs font-medium px-2 py-0.5 rounded-full transition-colors ${
+                dnsStatus === 'active'
+                  ? 'bg-green/10 text-green border border-green/20'
+                  : dnsStatus === 'pending'
+                    ? 'bg-amber-50 text-amber-600 border border-amber-200'
+                    : dnsStatus === 'error'
+                      ? 'bg-red-50 text-red-500 border border-red-200'
+                      : dnsStatus === 'checking'
+                        ? 'bg-border text-muted border border-border'
+                        : 'invisible'
+              }`}>
+                {dnsStatus === 'active' ? t('dnsActive')
+                  : dnsStatus === 'pending' ? t('dnsPending')
+                  : dnsStatus === 'error' ? t('dnsError')
+                  : dnsStatus === 'checking' ? t('dnsChecking')
+                  : '\u00A0'}
+              </span>
             </div>
 
             <p className="text-xs text-muted">{t('dnsSteps')}</p>
@@ -228,25 +230,25 @@ export function WorkspaceForm({
             </div>
 
             {/* Verify button + status message */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-start gap-3">
               <button
                 type="button"
                 onClick={verifyDns}
                 disabled={dnsStatus === 'checking'}
-                className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50"
+                className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50 shrink-0"
               >
                 {dnsStatus === 'checking' ? t('dnsChecking') : t('dnsVerify')}
               </button>
-              {dnsMessage && (
-                <p className={`text-xs ${dnsStatus === 'active' ? 'text-green' : dnsStatus === 'error' ? 'text-red-500' : 'text-muted'}`}>
-                  {dnsMessage}
-                </p>
-              )}
+              <p className={`text-xs min-h-[1.25rem] transition-colors ${
+                dnsStatus === 'active' ? 'text-green'
+                : dnsStatus === 'error' ? 'text-red-500'
+                : 'text-muted'
+              }`}>
+                {dnsMessage || '\u00A0'}
+              </p>
             </div>
 
-            {dnsStatus !== 'active' && (
-              <p className="text-xs text-muted">{t('dnsNote')}</p>
-            )}
+            <p className="text-xs text-muted">{t('dnsNote')}</p>
           </div>
         )}
       </div>
