@@ -196,14 +196,16 @@ export default async function SettingsPage() {
           batchWindowMinutes={workspace?.batchWindowMinutes ?? 60}
         />
 
-        {/* AI Search */}
-        <div className="bg-white rounded-xl border border-border p-6">
-          <h2 className="font-medium text-ink mb-1">{t('aiSearch')}</h2>
-          <p className="text-sm text-muted mb-4">
-            {t('aiSearchDescription')}
-          </p>
-          <SyncEmbeddingsButton workspaceId={workspaceId} />
-        </div>
+        {/* AI Search — in cloud mode, embeddings are managed by HelpNest */}
+        {!isCloudMode() && (
+          <div className="bg-white rounded-xl border border-border p-6">
+            <h2 className="font-medium text-ink mb-1">{t('aiSearch')}</h2>
+            <p className="text-sm text-muted mb-4">
+              {t('aiSearchDescription')}
+            </p>
+            <SyncEmbeddingsButton workspaceId={workspaceId} />
+          </div>
+        )}
 
         {/* API Keys */}
         <ApiKeysSection demoMode={demoMode} />
