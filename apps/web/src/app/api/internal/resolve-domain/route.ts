@@ -21,10 +21,12 @@ export async function GET(request: Request) {
   const configuredSecret = process.env.INTERNAL_SECRET
   if (configuredSecret) {
     const provided = request.headers.get('x-internal-secret')
-    const valid = provided !== null && timingSafeEqual(
-      Buffer.from(provided),
-      Buffer.from(configuredSecret),
-    )
+    if (!provided) {
+      return NextResponse.json({ slug: null }, { status: 401 })
+    }
+    const a = Buffer.from(provided)
+    const b = Buffer.from(configuredSecret)
+    const valid = a.length === b.length && timingSafeEqual(a, b)
     if (!valid) {
       return NextResponse.json({ slug: null }, { status: 401 })
     }

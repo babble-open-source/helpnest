@@ -37,6 +37,15 @@ export async function POST(request: Request) {
 
   const cleanDomain = domain.trim().toLowerCase()
 
+  // Verify the domain belongs to this workspace
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { customDomain: true },
+  })
+  if (workspace?.customDomain !== cleanDomain) {
+    return NextResponse.json({ error: 'Domain not registered for this workspace.' }, { status: 404 })
+  }
+
   // If Cloudflare for SaaS is enabled, check via Cloudflare API
   if (isCloudflareEnabled()) {
     const hostname = await findCustomHostname(cleanDomain)

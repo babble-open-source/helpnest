@@ -52,7 +52,7 @@ export async function PATCH(request: Request) {
   const {
     name,
     slug,
-    customDomain,
+    // customDomain removed — must go through /api/domains/register for validation
     themeId,
     logo,
     brandText,
@@ -89,7 +89,6 @@ export async function PATCH(request: Request) {
   } = body as {
     name?: unknown
     slug?: unknown
-    customDomain?: unknown
     themeId?: unknown
     logo?: unknown
     brandText?: unknown
@@ -153,12 +152,6 @@ export async function PATCH(request: Request) {
         { error: 'Slug must be lowercase alphanumeric with hyphens, max 63 characters' },
         { status: 400 },
       )
-    }
-  }
-
-  if (customDomain !== undefined && customDomain !== null) {
-    if (typeof customDomain !== 'string') {
-      return NextResponse.json({ error: 'Custom domain must be a string' }, { status: 400 })
     }
   }
 
@@ -579,10 +572,6 @@ export async function PATCH(request: Request) {
   }
 
   try {
-    const trimmedCustomDomain =
-      typeof customDomain === 'string' && customDomain.trim().length > 0
-        ? customDomain.trim()
-        : null
     const trimmedLogo =
       typeof logo === 'string' && logo.trim().length > 0
         ? logo.trim()
@@ -593,7 +582,6 @@ export async function PATCH(request: Request) {
       data: {
         ...(name ? { name: (name as string).trim() } : {}),
         ...(slug ? { slug: slug as string } : {}),
-        ...(customDomain !== undefined ? { customDomain: trimmedCustomDomain } : {}),
         ...(logo !== undefined ? { logo: trimmedLogo } : {}),
         ...(canPersistBrandText ? { brandText: trimmedBrandText } : {}),
         ...(canPersistFavicon ? { favicon: trimmedFavicon } : {}),

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { resolveWorkspaceId } from '@/lib/workspace'
+import { isCloudMode, getWorkspacePlan } from '@/lib/cloud'
 import { createCustomHostname, findCustomHostname, isCloudflareEnabled } from '@/lib/cloudflare-saas'
 
 /**
@@ -29,12 +30,25 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 })
   }
 
+  // Plan gate — custom domains require PRO or BUSINESS in cloud mode
+  if (isCloudMode()) {
+    const plan = await getWorkspacePlan(workspaceId)
+    if (!plan || plan.plan === 'FREE') {
+      return NextResponse.json({ error: 'Custom domains require a Pro or Business plan.' }, { status: 403 })
+    }
+  }
+
   const { domain } = (await request.json()) as { domain?: string }
   if (!domain?.trim()) {
     return NextResponse.json({ error: 'Domain is required' }, { status: 400 })
   }
 
   const cleanDomain = domain.trim().toLowerCase()
+
+  // Basic hostname format validation
+  if (!/^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$/.test(cleanDomain)) {
+    return NextResponse.json({ error: 'Invalid domain format.' }, { status: 400 })
+  }
 
   // Check if this domain is already registered by another workspace
   const existingWorkspace = await prisma.workspace.findFirst({
