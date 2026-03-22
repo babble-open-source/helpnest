@@ -22,7 +22,7 @@ export default async function NewArticlePage() {
   })
   if (!collection) redirect('/dashboard/collections')
 
-  const title = t('untitledArticle')
+  const title = t('untitled')
   let slug = slugify(title)
   let i = 1
   while (await prisma.article.findUnique({

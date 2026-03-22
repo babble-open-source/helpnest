@@ -254,24 +254,36 @@ export default async function DashboardPage() {
       {/* Recent articles */}
       <div>
         <h2 className="font-serif text-xl text-ink mb-4">{t('recentArticles')}</h2>
-        <div className="bg-white rounded-xl border border-border divide-y divide-border">
-          {recentArticles.map((article) => (
-            <div key={article.id} className="flex items-center gap-4 p-4">
-              <div className="flex-1 min-w-0">
-                <p className="font-medium text-ink truncate">{article.title}</p>
-                <p className="text-sm text-muted mt-0.5">{article.collection.title}</p>
-              </div>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${
-                article.status === 'PUBLISHED'
-                  ? 'bg-green/10 text-green'
-                  : article.status === 'DRAFT'
-                  ? 'bg-cream text-muted border border-border'
-                  : 'bg-border text-muted'
-              }`}>
-                {{ PUBLISHED: tc('published'), DRAFT: tc('draft'), ARCHIVED: tc('archived') }[article.status] ?? article.status}
-              </span>
+        <div className="bg-white rounded-xl border border-border overflow-hidden">
+          {recentArticles.length === 0 ? (
+            <div className="p-6 text-center">
+              <p className="text-sm font-medium text-ink">{t('noArticlesYet')}</p>
+              <p className="text-sm text-muted mt-1">{t('createFirstArticle')}</p>
+              <Link href="/dashboard/articles/new" className="inline-block mt-3 text-sm text-accent hover:underline">
+                {t('createArticle')}
+              </Link>
             </div>
-          ))}
+          ) : (
+            <div className="divide-y divide-border">
+              {recentArticles.map((article) => (
+                <div key={article.id} className="flex items-center gap-4 p-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-ink truncate">{article.title}</p>
+                    <p className="text-sm text-muted mt-0.5">{article.collection.title}</p>
+                  </div>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    article.status === 'PUBLISHED'
+                      ? 'bg-green/10 text-green'
+                      : article.status === 'DRAFT'
+                      ? 'bg-cream text-muted border border-border'
+                      : 'bg-border text-muted'
+                  }`}>
+                    {{ PUBLISHED: tc('published'), DRAFT: tc('draft'), ARCHIVED: tc('archived') }[article.status] ?? article.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
