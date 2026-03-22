@@ -61,7 +61,7 @@ export async function createCustomHostname(
       body: JSON.stringify({
         hostname: domain,
         ssl: {
-          method: 'txt',
+          method: 'http',
           type: 'dv',
           settings: {
             min_tls_version: '1.2',
@@ -160,7 +160,7 @@ function parseHostnameResult(r: Record<string, unknown>): CustomHostnameResult {
     verificationErrors: r.verification_errors as string[] | undefined,
     ssl: {
       status: (ssl?.status as string) ?? 'unknown',
-      method: (ssl?.method as string) ?? 'txt',
+      method: (ssl?.method as string) ?? 'http',
       txtName: validationRecords?.[0]?.txt_name,
       txtValue: validationRecords?.[0]?.txt_value,
     },
