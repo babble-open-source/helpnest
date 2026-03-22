@@ -80,6 +80,27 @@ export function WorkspaceForm({
       ? t('logoMatchesFavicon')
       : null
   const previewBrandText = values.brandText.trim() || values.name.trim() || 'Brand'
+  const [dnsStatus, setDnsStatus] = useState<'idle' | 'checking' | 'active' | 'pending' | 'error'>('idle')
+  const [dnsMessage, setDnsMessage] = useState('')
+
+  async function verifyDns() {
+    if (!values.customDomain.trim()) return
+    setDnsStatus('checking')
+    setDnsMessage('')
+    try {
+      const res = await fetch('/api/domains/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: values.customDomain.trim() }),
+      })
+      const data = await res.json()
+      setDnsStatus(data.status ?? 'error')
+      setDnsMessage(data.message ?? '')
+    } catch {
+      setDnsStatus('error')
+      setDnsMessage(t('dnsCheckFailed'))
+    }
+  }
 
   useEffect(() => {
     const trimmedBrandFontUrl = values.customBrandFontUrl.trim()
@@ -166,7 +187,26 @@ export function WorkspaceForm({
         </p>
         {values.customDomain.trim().length > 0 && (
           <div className="mt-3 rounded-lg border border-border bg-cream p-4 text-sm space-y-3">
-            <p className="font-medium text-ink">{t('dnsSetup')}</p>
+            {/* Status badge */}
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-ink">{t('dnsSetup')}</p>
+              {dnsStatus === 'active' && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green/10 text-green border border-green/20">
+                  {t('dnsActive')}
+                </span>
+              )}
+              {dnsStatus === 'pending' && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                  {t('dnsPending')}
+                </span>
+              )}
+              {dnsStatus === 'error' && (
+                <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-200">
+                  {t('dnsError')}
+                </span>
+              )}
+            </div>
+
             <p className="text-xs text-muted">{t('dnsSteps')}</p>
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
@@ -186,7 +226,27 @@ export function WorkspaceForm({
                 </tbody>
               </table>
             </div>
-            <p className="text-xs text-muted">{t('dnsNote')}</p>
+
+            {/* Verify button + status message */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={verifyDns}
+                disabled={dnsStatus === 'checking'}
+                className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50"
+              >
+                {dnsStatus === 'checking' ? t('dnsChecking') : t('dnsVerify')}
+              </button>
+              {dnsMessage && (
+                <p className={`text-xs ${dnsStatus === 'active' ? 'text-green' : dnsStatus === 'error' ? 'text-red-500' : 'text-muted'}`}>
+                  {dnsMessage}
+                </p>
+              )}
+            </div>
+
+            {dnsStatus !== 'active' && (
+              <p className="text-xs text-muted">{t('dnsNote')}</p>
+            )}
           </div>
         )}
       </div>
