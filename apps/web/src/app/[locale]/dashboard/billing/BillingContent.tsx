@@ -128,9 +128,12 @@ export function BillingContent({ workspaceId, userEmail, role, plan }: Props) {
       <section>
         <h2 className="font-serif text-xl text-ink mb-6">Choose a plan</h2>
         <div className="grid gap-5 grid-cols-1 md:grid-cols-3">
-          {PLANS.map((p) => {
+          {PLANS.map((p, idx) => {
             const isCurrent = p.key === tier
-            const canUpgrade = isOwner && !isCurrent && p.key !== 'FREE'
+            const currentIdx = PLANS.findIndex((x) => x.key === tier)
+            const isUpgrade = idx > currentIdx
+            const isDowngrade = idx < currentIdx
+            const canChange = isOwner && !isCurrent && p.key !== 'FREE'
 
             return (
               <div
@@ -177,7 +180,14 @@ export function BillingContent({ workspaceId, userEmail, role, plan }: Props) {
                   ))}
                 </ul>
 
-                {canUpgrade ? (
+                {isCurrent ? (
+                  <button
+                    disabled
+                    className="w-full text-center py-2.5 px-4 rounded-lg text-sm font-medium bg-cream text-muted border border-border cursor-not-allowed"
+                  >
+                    Current plan
+                  </button>
+                ) : canChange && isUpgrade ? (
                   <button
                     onClick={() => handleUpgrade(p.key as 'PRO' | 'BUSINESS')}
                     disabled={loading !== null}
@@ -189,14 +199,11 @@ export function BillingContent({ workspaceId, userEmail, role, plan }: Props) {
                   >
                     {loading === p.key ? 'Redirecting\u2026' : `Upgrade to ${p.name}`}
                   </button>
-                ) : (
-                  <button
-                    disabled
-                    className="w-full text-center py-2.5 px-4 rounded-lg text-sm font-medium bg-cream text-muted border border-border cursor-not-allowed"
-                  >
-                    {isCurrent ? 'Current plan' : `Upgrade to ${p.name}`}
-                  </button>
-                )}
+                ) : isDowngrade ? (
+                  <p className="w-full text-center text-xs text-muted py-2.5">
+                    Manage via billing portal below
+                  </p>
+                ) : null}
               </div>
             )
           })}
