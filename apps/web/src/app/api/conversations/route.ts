@@ -13,7 +13,7 @@ const WIDGET_CORS_HEADERS = {
 }
 
 // Dashboard-facing responses omit permissive CORS — same-origin only
-const DASHBOARD_CORS_HEADERS: Record<string, string> = {}
+
 
 // Rate limiting for conversation creation: 10/min per IP
 const CONV_RATE_LIMIT_WINDOW_MS = 60_000

@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Link } from '@/i18n/navigation'
 
 interface Props {
   aiEnabled: boolean
@@ -188,7 +189,7 @@ export function AiSettingsSection({
               <div className="rounded-lg border border-border bg-cream/50 p-4 text-center">
                 <p className="text-sm text-ink mb-1">Bring your own API key is a Pro feature</p>
                 <p className="text-xs text-muted mb-2">Upgrade to use your own API key for unlimited AI — search, agent, and drafts.</p>
-                <a href="/dashboard/billing" className="text-xs font-medium text-accent hover:underline">Upgrade to Pro →</a>
+                <Link href="/dashboard/billing" className="text-xs font-medium text-accent hover:underline">Upgrade to Pro →</Link>
               </div>
             ) : (
               <>
