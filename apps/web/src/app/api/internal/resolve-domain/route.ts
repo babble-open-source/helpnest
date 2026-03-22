@@ -36,7 +36,7 @@ export async function GET(request: Request) {
   if (!host) return NextResponse.json({ slug: null })
 
   const workspace = await prisma.workspace.findFirst({
-    where: { customDomain: host },
+    where: { customDomain: host, deletedAt: null },
     select: { slug: true },
   })
 

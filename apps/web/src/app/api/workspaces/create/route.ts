@@ -49,7 +49,7 @@ export async function POST(request: Request) {
   let planTier = 'FREE'
   if (isCloudMode()) {
     const ownedWorkspaces = await prisma.member.findMany({
-      where: { userId, role: 'OWNER', deactivatedAt: null },
+      where: { userId, role: 'OWNER', deactivatedAt: null, workspace: { deletedAt: null } },
       select: { workspaceId: true },
       orderBy: { id: 'asc' },
     })
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
         // Re-check ownership count inside transaction to prevent race conditions
         if (isCloudMode()) {
           const ownedCount = await tx.member.count({
-            where: { userId, role: 'OWNER', deactivatedAt: null },
+            where: { userId, role: 'OWNER', deactivatedAt: null, workspace: { deletedAt: null } },
           })
           // Use the limit from the outer check (already validated against plan)
           const limit = WORKSPACE_LIMITS[planTier] ?? 1

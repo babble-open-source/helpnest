@@ -23,7 +23,7 @@ export const resolveWorkspaceId = cache(async function resolveWorkspaceId(userId
   if (preferred) {
     // Verify the user is still an active member of this workspace
     const member = await prisma.member.findFirst({
-      where: { userId, workspaceId: preferred, deactivatedAt: null },
+      where: { userId, workspaceId: preferred, deactivatedAt: null, workspace: { deletedAt: null } },
       select: { workspaceId: true },
     })
     if (member) return member.workspaceId
@@ -31,7 +31,7 @@ export const resolveWorkspaceId = cache(async function resolveWorkspaceId(userId
 
   // Fallback: first active workspace (deterministic order)
   const member = await prisma.member.findFirst({
-    where: { userId, deactivatedAt: null },
+    where: { userId, deactivatedAt: null, workspace: { deletedAt: null } },
     select: { workspaceId: true },
     orderBy: { id: 'asc' },
   })
@@ -43,7 +43,7 @@ export const resolveWorkspaceId = cache(async function resolveWorkspaceId(userId
  */
 export async function getUserWorkspaces(userId: string) {
   const members = await prisma.member.findMany({
-    where: { userId, deactivatedAt: null },
+    where: { userId, deactivatedAt: null, workspace: { deletedAt: null } },
     select: {
       workspaceId: true,
       role: true,

@@ -30,10 +30,10 @@ export async function validateApiKey(rawKey: string): Promise<{ workspaceId: str
 
   const apiKey = await prisma.apiKey.findUnique({
     where: { keyHash },
-    select: { id: true, workspaceId: true },
+    select: { id: true, workspaceId: true, workspace: { select: { deletedAt: true } } },
   })
 
-  if (!apiKey) return null
+  if (!apiKey || apiKey.workspace.deletedAt !== null) return null
 
   // Non-blocking update — a failure here must not deny the request.
   prisma.apiKey.update({
