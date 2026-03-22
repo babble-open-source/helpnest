@@ -6,6 +6,7 @@ import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
 type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
 
 const VALID_ROLES: MemberRole[] = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']
+const ROLE_RANK: Record<MemberRole, number> = { OWNER: 0, ADMIN: 1, EDITOR: 2, VIEWER: 3 }
 
 export async function POST(request: Request) {
   const session = await auth()
@@ -21,7 +22,7 @@ export async function POST(request: Request) {
       role: { in: ['OWNER', 'ADMIN'] },
       deactivatedAt: null,
     },
-    select: { workspaceId: true },
+    select: { workspaceId: true, role: true },
   })
 
   if (!callerMember) {
@@ -55,6 +56,14 @@ export async function POST(request: Request) {
     typeof role === 'string' && VALID_ROLES.includes(role as MemberRole)
       ? (role as MemberRole)
       : 'EDITOR'
+
+  // Callers cannot invite at their own privilege level or above
+  if (ROLE_RANK[inviteRole] <= ROLE_RANK[callerMember.role as MemberRole]) {
+    return NextResponse.json(
+      { error: 'Cannot invite someone to a role equal to or above your own' },
+      { status: 403 },
+    )
+  }
 
   // Prevent inviting someone who is already an active member
   const existingMember = await prisma.member.findFirst({

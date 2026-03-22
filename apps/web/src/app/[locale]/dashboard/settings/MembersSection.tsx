@@ -24,6 +24,7 @@ interface Props {
 }
 
 const ROLE_ORDER: MemberRole[] = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']
+const ROLE_RANK: Record<MemberRole, number> = { OWNER: 0, ADMIN: 1, EDITOR: 2, VIEWER: 3 }
 
 function RoleBadge({ role, tRoles }: { role: MemberRole; tRoles: (key: string) => string }) {
   const colors: Record<MemberRole, string> = {
@@ -234,7 +235,7 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
                     onChange={(e) => setInviteRole(e.target.value as MemberRole)}
                     className="appearance-none ps-3 pe-8 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
                   >
-                    {ROLE_ORDER.map((r) => (
+                    {ROLE_ORDER.filter((r) => ROLE_RANK[r] > ROLE_RANK[callerRole]).map((r) => (
                       <option key={r} value={r}>{tRoles(r)}</option>
                     ))}
                   </select>
@@ -287,7 +288,7 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
                 <p className="text-xs text-muted mt-0.5 truncate">{member.user.email}</p>
               </div>
 
-              {canManage && !isSelf && (
+              {canManage && !isSelf && ROLE_RANK[callerRole] < ROLE_RANK[member.role] && (
                 <div className="flex items-center gap-2 ms-4 shrink-0">
                   {!isDeactivated && (
                     <div className="relative">
@@ -296,7 +297,7 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
                         onChange={(e) => void handleRoleChange(member.id, e.target.value as MemberRole)}
                         className="appearance-none ps-2 pe-6 py-1 border border-border rounded text-xs bg-white text-ink focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
                       >
-                        {ROLE_ORDER.map((r) => (
+                        {ROLE_ORDER.filter((r) => ROLE_RANK[r] > ROLE_RANK[callerRole]).map((r) => (
                           <option key={r} value={r}>{tRoles(r)}</option>
                         ))}
                       </select>

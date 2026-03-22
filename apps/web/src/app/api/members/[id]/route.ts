@@ -6,6 +6,13 @@ type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
 
 const VALID_ROLES: MemberRole[] = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']
 
+/** Lower number = higher privilege. */
+const ROLE_RANK: Record<MemberRole, number> = { OWNER: 0, ADMIN: 1, EDITOR: 2, VIEWER: 3 }
+
+function outranks(callerRole: MemberRole, targetRole: MemberRole): boolean {
+  return ROLE_RANK[callerRole] < ROLE_RANK[targetRole]
+}
+
 async function resolveCallerMember(userId: string) {
   return prisma.member.findFirst({
     where: {
@@ -49,6 +56,11 @@ export async function PATCH(
     return NextResponse.json({ error: 'Member not found' }, { status: 404 })
   }
 
+  // Callers can only manage members with strictly lower privilege
+  if (!outranks(callerMember.role as MemberRole, target.role as MemberRole)) {
+    return NextResponse.json({ error: 'Cannot modify a member with equal or higher privilege' }, { status: 403 })
+  }
+
   let body: unknown
   try {
     body = await request.json()
@@ -67,6 +79,10 @@ export async function PATCH(
   if (role !== undefined) {
     if (typeof role !== 'string' || !VALID_ROLES.includes(role as MemberRole)) {
       return NextResponse.json({ error: 'Invalid role' }, { status: 400 })
+    }
+    // Callers cannot promote to their own level or above
+    if (ROLE_RANK[role as MemberRole] <= ROLE_RANK[callerMember.role as MemberRole]) {
+      return NextResponse.json({ error: 'Cannot assign a role equal to or above your own' }, { status: 403 })
     }
     // Prevent demoting the last OWNER
     if (target.role === 'OWNER' && role !== 'OWNER') {
@@ -143,6 +159,11 @@ export async function DELETE(
 
   if (!target || target.workspaceId !== callerMember.workspaceId) {
     return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+  }
+
+  // Callers can only remove members with strictly lower privilege
+  if (!outranks(callerMember.role as MemberRole, target.role as MemberRole)) {
+    return NextResponse.json({ error: 'Cannot remove a member with equal or higher privilege' }, { status: 403 })
   }
 
   // Prevent deleting the last OWNER
