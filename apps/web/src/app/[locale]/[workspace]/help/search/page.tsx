@@ -68,7 +68,7 @@ export default async function SearchPage(props: Props) {
     <div className="min-h-screen bg-cream">
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center gap-4">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center gap-4">
           <WorkspaceBrandLink
             href={`/${params.workspace}/help`}
             name={workspace.name}
@@ -90,7 +90,7 @@ export default async function SearchPage(props: Props) {
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-4 py-10">
+      <main className="max-w-4xl mx-auto px-4 py-6 sm:py-10">
         {q.length < 2 ? (
           <p className="text-muted text-sm">{t('minChars')}</p>
         ) : results.length === 0 ? (

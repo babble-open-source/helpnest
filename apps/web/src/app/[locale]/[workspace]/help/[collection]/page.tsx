@@ -96,7 +96,7 @@ export default async function CollectionPage(props: Props) {
     <div className="min-h-screen bg-cream">
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
-        <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between gap-2 text-sm">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-2 text-sm">
           <div className="flex items-center gap-2 min-w-0">
             <WorkspaceBrandLink
               href={`/${params.workspace}/help`}
@@ -114,7 +114,7 @@ export default async function CollectionPage(props: Props) {
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 sm:py-12">
+      <main className="max-w-4xl mx-auto px-4 py-6 sm:py-12">
         {/* Collection header */}
         <div className="mb-10">
           <div className="text-4xl mb-4">{collection.emoji ?? '📄'}</div>
@@ -128,7 +128,7 @@ export default async function CollectionPage(props: Props) {
         {collection.subCollections.length > 0 && (
           <section className="mb-8">
             <h2 className="text-sm font-medium text-muted uppercase tracking-wide mb-3">{t('subcategories')}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {collection.subCollections.map((sub: { id: string; slug: string; emoji: string | null; title: string; _count: { articles: number } }) => (
                 <Link
                   key={sub.id}

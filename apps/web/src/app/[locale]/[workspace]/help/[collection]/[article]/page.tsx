@@ -139,7 +139,7 @@ export default async function ArticlePage(props: Props) {
     <div className="min-h-screen bg-cream">
       {/* Nav */}
       <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
-        <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between gap-2 text-sm">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-2 text-sm">
           <div className="flex items-center gap-2 min-w-0">
             <WorkspaceBrandLink
               href={`/${params.workspace}/help`}
@@ -164,7 +164,7 @@ export default async function ArticlePage(props: Props) {
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-12">
+      <div className="max-w-4xl mx-auto px-4 py-6 sm:py-12">
         <div className="flex gap-8 lg:gap-12">
           {/* Main content */}
           <article className="flex-1 min-w-0 max-w-2xl">
