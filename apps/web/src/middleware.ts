@@ -39,7 +39,15 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   const locale = detectLocaleFromPath(pathname)
   const pathWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), '') || '/'
 
-  if (pathWithoutLocale.startsWith(`/${slug}/help`)) return null
+  // If the URL already contains the internal /<slug>/help path (e.g. custom domain
+  // visited with the full path), redirect to the clean URL without the slug prefix
+  // so the browser shows help.example.com/article instead of help.example.com/en/slug/help/article
+  if (pathWithoutLocale.startsWith(`/${slug}/help`)) {
+    const cleanPath = pathWithoutLocale.replace(`/${slug}/help`, '') || '/'
+    const url = req.nextUrl.clone()
+    url.pathname = cleanPath
+    return NextResponse.redirect(url, 308)
+  }
   if (pathWithoutLocale.startsWith('/api/')) return null
   if (pathWithoutLocale === '/widget.js') return null
   // App routes that should never be rewritten by subdomain routing
