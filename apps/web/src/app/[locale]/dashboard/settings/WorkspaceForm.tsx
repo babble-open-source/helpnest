@@ -22,6 +22,7 @@ interface Props {
   helpCenterDomain: string
   cloudMode?: boolean
   planTier?: string
+  cnameTarget?: string
   demoMode?: boolean
 }
 
@@ -40,6 +41,7 @@ export function WorkspaceForm({
   helpCenterDomain,
   cloudMode = false,
   planTier = 'FREE',
+  cnameTarget = '',
   demoMode = false,
 }: Props) {
   const router = useRouter()
@@ -266,7 +268,7 @@ export function WorkspaceForm({
                         <tr>
                           <td className="py-1.5 pe-4 font-mono text-ink">CNAME</td>
                           <td className="py-1.5 pe-4 font-mono text-ink">{values.customDomain.trim()}</td>
-                          <td className="py-1.5 pe-4 font-mono text-accent select-all">{appUrl.replace(/^https?:\/\//, '')}</td>
+                          <td className="py-1.5 pe-4 font-mono text-accent select-all">{cnameTarget || appUrl.replace(/^https?:\/\//, '')}</td>
                         </tr>
                       </tbody>
                     </table>
