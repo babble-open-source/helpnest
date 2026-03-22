@@ -123,12 +123,10 @@ function handleAuthRedirect(
 
 export default auth(async (req) => {
   const host = req.headers.get('host') ?? ''
-  console.log(`[middleware] host=${host} path=${req.nextUrl.pathname} CUSTOM_DOMAIN=${CUSTOM_DOMAIN} CUSTOM_DOMAIN_SLUG=${CUSTOM_DOMAIN_SLUG}`)
 
   // 1. Env var custom domain — fast path
   const customDomainResponse = handleCustomDomain(req)
   if (customDomainResponse) {
-    console.log(`[middleware] custom domain rewrite → ${customDomainResponse.headers.get('x-middleware-rewrite')}`)
     return customDomainResponse
   }
 
@@ -146,7 +144,6 @@ export default auth(async (req) => {
   const authResponse = handleAuthRedirect(req)
   if (authResponse) return authResponse
 
-  console.log(`[middleware] falling through to intlMiddleware for path=${req.nextUrl.pathname}`)
   // 5. next-intl locale detection, redirect, and negotiation
   return intlMiddleware(req)
 })
