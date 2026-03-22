@@ -55,10 +55,16 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   if (APP_PATHS.some((p) => pathWithoutLocale.startsWith(p))) return null
   if (pathWithoutLocale.startsWith('/imports/') || pathWithoutLocale === '/manifest.json' || pathWithoutLocale.match(/\.(png|ico|svg|jpg|jpeg|webp)$/)) return null
 
+  const host = getRequestHostname(req.headers)
+  const externalBaseUrl = `https://${host}`
+
   const url = req.nextUrl.clone()
   url.pathname = `/${locale}/${slug}/help${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`
   url.search = search
-  return NextResponse.rewrite(url)
+  const response = NextResponse.rewrite(url)
+  // Pass the external base URL to pages so they can generate clean links and metadata
+  response.headers.set('x-helpnest-base-url', externalBaseUrl)
+  return response
 }
 
 function handleSubdomain(req: NextRequest): NextResponse | null {
@@ -91,7 +97,7 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
     return null
   }
   const appHost = APP_ORIGIN.replace(/^https?:\/\//, '').split(':')[0] ?? ''
-  if (host === appHost || host === 'localhost' || host === '127.0.0.1') {
+  if (host === appHost || host === 'localhost' || host === '127.0.0.1' || host === '::1') {
     return null
   }
 
@@ -187,5 +193,5 @@ export default auth(async (req) => {
 })
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|imports/|api/|.*\\.(?:png|ico|svg|jpg|jpeg|webp|json|xml|txt|webmanifest)$).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|imports/|api/|.*\\.(?:png|ico|svg|jpg|jpeg|webp|json|webmanifest)$).*)'],
 }

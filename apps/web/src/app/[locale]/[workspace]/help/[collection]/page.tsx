@@ -1,23 +1,30 @@
 import type { Metadata } from 'next'
 import { cache } from 'react'
-import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
+import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 import { DashboardButton } from '@/components/help/DashboardButton'
 import { locales } from '@/i18n/config'
+import { getHelpBaseUrl } from '@/lib/help-url'
 
 interface Props {
   params: Promise<{ locale: string; workspace: string; collection: string }>
 }
 
-const getWorkspace = cache((slug: string) =>
-  prisma.workspace.findFirst({
+const getWorkspace = cache(async (slug: string) => {
+  const columns = await getWorkspaceColumnSet()
+  return prisma.workspace.findFirst({
     where: { slug, deletedAt: null },
-    select: { id: true, name: true, logo: true },
+    select: {
+      id: true,
+      name: true,
+      logo: true,
+      ...(columns.has('brandText') ? { brandText: true } : {}),
+    },
   })
-)
+})
 
 const getCollection = cache((workspaceId: string, slug: string) =>
   prisma.collection.findUnique({
@@ -54,11 +61,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: {
-      languages: Object.fromEntries(
-        locales.map((l) => [l, `/${l}/${params.workspace}/help/${params.collection}`]),
-      ),
-    },
+    alternates: await (async () => {
+      const baseUrl = await getHelpBaseUrl()
+      return {
+        languages: Object.fromEntries(
+          locales.map((l) => [
+            l,
+            baseUrl
+              ? `${baseUrl}/${l}/${params.collection}`
+              : `/${l}/${params.workspace}/help/${params.collection}`,
+          ]),
+        ),
+      }
+    })(),
     openGraph: {
       title,
       description,
@@ -78,16 +93,8 @@ export default async function CollectionPage(props: Props) {
     getTranslations('help'),
     getTranslations('common'),
   ])
-  const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await getWorkspace(params.workspace)
   if (!workspace) notFound()
-
-  const brandTextRecord = brandTextColumnExists
-    ? await prisma.workspace.findUnique({
-        where: { id: workspace.id },
-        select: { brandText: true },
-      })
-    : null
 
   const collection = await getCollection(workspace.id, params.collection)
   if (!collection || !collection.isPublic || collection.isArchived) notFound()
@@ -102,7 +109,7 @@ export default async function CollectionPage(props: Props) {
               href={`/${params.workspace}/help`}
               name={workspace.name}
               logo={workspace.logo}
-              brandText={brandTextRecord?.brandText ?? null}
+              brandText={workspace.brandText ?? null}
               hideNameWhenLogo
               className="shrink-0"
               textClassName="text-muted hover:text-ink transition-colors"

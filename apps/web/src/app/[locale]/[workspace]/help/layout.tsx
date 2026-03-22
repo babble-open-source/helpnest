@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { getWorkspaceFontUrls, getWorkspaceThemeCSS } from '@/lib/branding'
 import { locales } from '@/i18n/config'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
+import { getHelpBaseUrl } from '@/lib/help-url'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
 
@@ -110,11 +111,17 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
           apple: iconUrl,
         }
       : undefined,
-    alternates: {
-      languages: Object.fromEntries(
-        locales.map((l) => [l, `/${l}/${params.workspace}/help`]),
-      ),
-    },
+    alternates: await (async () => {
+      const baseUrl = await getHelpBaseUrl()
+      return {
+        languages: Object.fromEntries(
+          locales.map((l) => [
+            l,
+            baseUrl ? `${baseUrl}/${l}` : `/${l}/${params.workspace}/help`,
+          ]),
+        ),
+      }
+    })(),
     openGraph: {
       title,
       description,

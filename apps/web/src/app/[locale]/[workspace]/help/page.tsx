@@ -1,4 +1,4 @@
-import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
+import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -23,13 +23,14 @@ export default async function HelpCenterHome(props: Props) {
     getTranslations('help'),
     getTranslations('common'),
   ])
-  const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
+  const columns = await getWorkspaceColumnSet()
   const workspace = await prisma.workspace.findFirst({
     where: { slug: params.workspace, deletedAt: null },
     select: {
       id: true,
       name: true,
       logo: true,
+      ...(columns.has('brandText') ? { brandText: true } : {}),
       collections: {
         where: { isPublic: true, isArchived: false, parentId: null },
         orderBy: { order: 'asc' },
@@ -51,13 +52,6 @@ export default async function HelpCenterHome(props: Props) {
 
   if (!workspace) notFound()
 
-  const brandTextRecord = brandTextColumnExists
-    ? await prisma.workspace.findUnique({
-        where: { id: workspace.id },
-        select: { brandText: true },
-      })
-    : null
-
   return (
     <div className="min-h-screen bg-cream">
       {/* Nav */}
@@ -67,7 +61,7 @@ export default async function HelpCenterHome(props: Props) {
             href={`/${params.workspace}/help`}
             name={workspace.name}
             logo={workspace.logo}
-            brandText={brandTextRecord?.brandText ?? null}
+            brandText={workspace.brandText ?? null}
             hideNameWhenLogo
             textClassName="font-serif text-xl text-ink"
           />

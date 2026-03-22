@@ -24,9 +24,13 @@ export async function GET(request: Request) {
     if (!provided) {
       return NextResponse.json({ slug: null }, { status: 401 })
     }
-    const a = Buffer.from(provided)
-    const b = Buffer.from(configuredSecret)
-    const valid = a.length === b.length && timingSafeEqual(a, b)
+    // Pad to equal length before timingSafeEqual to avoid leaking secret length via timing
+    const maxLen = Math.max(provided.length, configuredSecret.length) || 1
+    const a = Buffer.alloc(maxLen)
+    const b = Buffer.alloc(maxLen)
+    Buffer.from(provided).copy(a)
+    Buffer.from(configuredSecret).copy(b)
+    const valid = provided.length === configuredSecret.length && timingSafeEqual(a, b)
     if (!valid) {
       return NextResponse.json({ slug: null }, { status: 401 })
     }
@@ -40,5 +44,12 @@ export async function GET(request: Request) {
     select: { slug: true },
   })
 
-  return NextResponse.json({ slug: workspace?.slug ?? null })
+  return NextResponse.json(
+    { slug: workspace?.slug ?? null },
+    {
+      headers: {
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=60',
+      },
+    },
+  )
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import { cache } from 'react'
-import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
+import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { incrementArticleViews } from '@/lib/counters'
 import { slugify } from '@/lib/slugify'
 import { notFound } from 'next/navigation'
@@ -11,17 +11,24 @@ import { ArticleFeedback } from '@/components/help/ArticleFeedback'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 import { DashboardButton } from '@/components/help/DashboardButton'
 import { locales } from '@/i18n/config'
+import { getHelpBaseUrl } from '@/lib/help-url'
 
 interface Props {
   params: Promise<{ locale: string; workspace: string; collection: string; article: string }>
 }
 
-const getWorkspace = cache((slug: string) =>
-  prisma.workspace.findFirst({
+const getWorkspace = cache(async (slug: string) => {
+  const columns = await getWorkspaceColumnSet()
+  return prisma.workspace.findFirst({
     where: { slug, deletedAt: null },
-    select: { id: true, name: true, logo: true },
+    select: {
+      id: true,
+      name: true,
+      logo: true,
+      ...(columns.has('brandText') ? { brandText: true } : {}),
+    },
   })
-)
+})
 
 const getArticle = cache((workspaceId: string, slug: string) =>
   prisma.article.findUnique({
@@ -81,14 +88,19 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   return {
     title,
     description,
-    alternates: {
-      languages: Object.fromEntries(
-        locales.map((l) => [
-          l,
-          `/${l}/${params.workspace}/help/${params.collection}/${params.article}`,
-        ]),
-      ),
-    },
+    alternates: await (async () => {
+      const baseUrl = await getHelpBaseUrl()
+      return {
+        languages: Object.fromEntries(
+          locales.map((l) => [
+            l,
+            baseUrl
+              ? `${baseUrl}/${l}/${params.collection}/${params.article}`
+              : `/${l}/${params.workspace}/help/${params.collection}/${params.article}`,
+          ]),
+        ),
+      }
+    })(),
     openGraph: {
       title,
       description,
@@ -102,16 +114,8 @@ export default async function ArticlePage(props: Props) {
   const params = await props.params
   const t = await getTranslations('help')
   const format = await getFormatter()
-  const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
   const workspace = await getWorkspace(params.workspace)
   if (!workspace) notFound()
-
-  const brandTextRecord = brandTextColumnExists
-    ? await prisma.workspace.findUnique({
-        where: { id: workspace.id },
-        select: { brandText: true },
-      })
-    : null
 
   const article = await getArticle(workspace.id, params.article)
   if (!article || article.status !== 'PUBLISHED' || !article.collection.isPublic || article.collection.isArchived) notFound()
@@ -145,7 +149,7 @@ export default async function ArticlePage(props: Props) {
               href={`/${params.workspace}/help`}
               name={workspace.name}
               logo={workspace.logo}
-              brandText={brandTextRecord?.brandText ?? null}
+              brandText={workspace.brandText ?? null}
               hideNameWhenLogo
               className="shrink-0"
               textClassName="text-muted hover:text-ink transition-colors"

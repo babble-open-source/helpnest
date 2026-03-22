@@ -1,4 +1,4 @@
-import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
+import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
@@ -13,19 +13,17 @@ interface Props {
 export default async function AskAIPage(props: Props) {
   const params = await props.params
   const t = await getTranslations('askAI')
-  const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
+  const columns = await getWorkspaceColumnSet()
   const workspace = await prisma.workspace.findFirst({
     where: { slug: params.workspace, deletedAt: null },
-    select: { id: true, name: true, logo: true },
+    select: {
+      id: true,
+      name: true,
+      logo: true,
+      ...(columns.has('brandText') ? { brandText: true } : {}),
+    },
   })
   if (!workspace) notFound()
-
-  const brandTextRecord = brandTextColumnExists
-    ? await prisma.workspace.findUnique({
-        where: { id: workspace.id },
-        select: { brandText: true },
-      })
-    : null
 
   return (
     <div className="h-[100dvh] bg-cream flex flex-col">
@@ -58,7 +56,7 @@ export default async function AskAIPage(props: Props) {
               href={`/${params.workspace}/help`}
               name={workspace.name}
               logo={workspace.logo}
-              brandText={brandTextRecord?.brandText ?? null}
+              brandText={workspace.brandText ?? null}
               hideNameWhenLogo
               className="shrink-0"
               textClassName="text-muted hover:text-ink transition-colors"
