@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
 import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
+import { resolveWorkspaceId } from '@/lib/workspace'
 
 export async function GET(
   _req: Request,
@@ -10,9 +11,15 @@ export async function GET(
   const [session, params] = await Promise.all([auth(), paramsPromise])
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Verify article belongs to a workspace the caller is a member of
+  const userId = await resolveSessionUserId(session)
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  // Verify caller is an active member of the resolved workspace
   const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
+    where: { userId, workspaceId, deactivatedAt: null },
     select: { workspaceId: true },
   })
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -39,8 +46,14 @@ export async function POST(
   const [session, params] = await Promise.all([auth(), paramsPromise])
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const postUserId = await resolveSessionUserId(session)
+  if (!postUserId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const postWorkspaceId = await resolveWorkspaceId(postUserId)
+  if (!postWorkspaceId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email! } },
+    where: { userId: postUserId, workspaceId: postWorkspaceId, deactivatedAt: null },
     select: { workspaceId: true, userId: true },
   })
   if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })

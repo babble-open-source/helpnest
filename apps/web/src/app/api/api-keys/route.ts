@@ -1,19 +1,9 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { generateKey, hashKey } from '@/lib/api-key'
 import { isDemoMode } from '@/lib/demo'
-
-/** Returns the session member only if they are OWNER or ADMIN. */
-async function requireAdminMember(email: string) {
-  return prisma.member.findFirst({
-    where: {
-      user: { email },
-      role: { in: ['OWNER', 'ADMIN'] },
-    },
-    select: { workspaceId: true },
-  })
-}
+import { resolveWorkspaceId } from '@/lib/workspace'
 
 /**
  * GET /api/api-keys
@@ -26,8 +16,14 @@ export async function GET() {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const userId = await resolveSessionUserId(session)
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) return NextResponse.json({ error: 'No workspace' }, { status: 403 })
+
   const member = await prisma.member.findFirst({
-    where: { user: { email: session.user.email } },
+    where: { userId, workspaceId, deactivatedAt: null },
     select: { workspaceId: true },
   })
   if (!member) {
@@ -55,10 +51,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const member = await requireAdminMember(session.user.email)
-  if (!member) {
+  const postUserId = await resolveSessionUserId(session)
+  if (!postUserId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const postWorkspaceId = await resolveWorkspaceId(postUserId)
+  if (!postWorkspaceId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  const adminMember = await prisma.member.findFirst({
+    where: { userId: postUserId, workspaceId: postWorkspaceId, deactivatedAt: null, role: { in: ['OWNER', 'ADMIN'] } },
+    select: { workspaceId: true },
+  })
+  if (!adminMember) {
     return NextResponse.json({ error: 'Forbidden — OWNER or ADMIN required' }, { status: 403 })
   }
+  const member = adminMember
 
   if (isDemoMode()) {
     return NextResponse.json({ error: 'API key management is disabled in demo mode.' }, { status: 403 })

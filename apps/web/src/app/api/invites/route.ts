@@ -3,6 +3,7 @@ import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { isDemoMode } from '@/lib/demo'
 import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
+import { resolveWorkspaceId } from '@/lib/workspace'
 type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
 
 const VALID_ROLES: MemberRole[] = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']
@@ -15,10 +16,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Verify caller is OWNER or ADMIN in some workspace
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
+  // Verify caller is OWNER or ADMIN of the active workspace
   const callerMember = await prisma.member.findFirst({
     where: {
       userId,
+      workspaceId,
       role: { in: ['OWNER', 'ADMIN'] },
       deactivatedAt: null,
     },

@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@/lib/auth'
+import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { isDemoMode } from '@/lib/demo'
+import { resolveWorkspaceId } from '@/lib/workspace'
 
 /**
  * DELETE /api/api-keys/:id
@@ -17,9 +18,17 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const userId = await resolveSessionUserId(session)
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+
   const member = await prisma.member.findFirst({
     where: {
-      user: { email: session.user.email },
+      userId,
+      workspaceId,
+      deactivatedAt: null,
       role: { in: ['OWNER', 'ADMIN'] },
     },
     select: { workspaceId: true },

@@ -5,6 +5,7 @@ import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { Prisma } from '@helpnest/db'
 import { themes } from '@/lib/themes'
 import { isDemoMode } from '@/lib/demo'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { NextResponse } from 'next/server'
 
 const SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -128,9 +129,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: 'Workspace settings cannot be changed in demo mode.' }, { status: 403 })
   }
 
+  // Resolve the active workspace (respects the helpnest-workspace cookie, same
+  // as the settings page) so we always update the workspace the user is viewing.
+  const workspaceId = await resolveWorkspaceId(userId)
+  if (!workspaceId) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   // Authorise early — must be OWNER or ADMIN before any validation or DB reads
   const member = await prisma.member.findFirst({
-    where: { userId, role: { in: ['OWNER', 'ADMIN'] } },
+    where: { userId, workspaceId, deactivatedAt: null, role: { in: ['OWNER', 'ADMIN'] } },
     select: { workspaceId: true },
   })
   if (!member) {
