@@ -29,7 +29,7 @@ const getWorkspaceHelpBranding = cache(async (slug: string) => {
   const columns = await getWorkspaceColumnSet()
 
   const workspace = await prisma.workspace.findUnique({
-    where: { slug },
+    where: { slug, deletedAt: null },
     select: {
       id: true,
       name: true,

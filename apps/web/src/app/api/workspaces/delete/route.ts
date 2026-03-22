@@ -29,16 +29,16 @@ export async function POST(request: Request) {
   // Verify OWNER role
   const member = await prisma.member.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
-    select: { role: true },
+    select: { role: true, deactivatedAt: true },
   })
-  if (!member || member.role !== 'OWNER') {
+  if (!member || member.deactivatedAt !== null || member.role !== 'OWNER') {
     return NextResponse.json({ error: 'Only the workspace owner can delete it' }, { status: 403 })
   }
 
   // Fetch workspace and verify name confirmation
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    select: { name: true, customDomain: true, deletedAt: true },
+    select: { name: true, slug: true, customDomain: true, deletedAt: true },
   })
   if (!workspace) {
     return NextResponse.json({ error: 'Workspace not found' }, { status: 404 })
@@ -50,11 +50,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Workspace name does not match' }, { status: 400 })
   }
 
-  // Soft delete
-  const restoreDeadline = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+  // Soft delete — mangle slug to free the unique constraint for re-use.
+  // Original slug is recoverable from the workspace name on restore.
+  const deletedAt = new Date()
   await prisma.workspace.update({
     where: { id: workspaceId },
-    data: { deletedAt: new Date() },
+    data: {
+      deletedAt,
+      slug: `${workspace.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 30)}--deleted-${workspaceId.slice(0, 8)}`,
+    },
   })
 
   // Clean up external resources (fire-and-forget, don't block response)
@@ -99,6 +103,6 @@ export async function POST(request: Request) {
 
   return NextResponse.json({
     deleted: true,
-    restoreDeadline: restoreDeadline.toISOString(),
+    deletedAt: deletedAt.toISOString(),
   })
 }

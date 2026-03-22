@@ -30,7 +30,7 @@ export async function GET(
   // query, including a published-article count and list of article titles/slugs
   // for the index section.
   const workspace = await prisma.workspace.findUnique({
-    where: { slug },
+    where: { slug, deletedAt: null },
     select: {
       id: true,
       name: true,

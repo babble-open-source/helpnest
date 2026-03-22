@@ -24,9 +24,9 @@ export async function POST(request: Request) {
   // Verify OWNER role (query without deletedAt filter since workspace is deleted)
   const member = await prisma.member.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
-    select: { role: true },
+    select: { role: true, deactivatedAt: true },
   })
-  if (!member || member.role !== 'OWNER') {
+  if (!member || member.deactivatedAt !== null || member.role !== 'OWNER') {
     return NextResponse.json({ error: 'Only the workspace owner can restore it' }, { status: 403 })
   }
 

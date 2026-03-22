@@ -158,7 +158,7 @@ export function WorkspaceForm({
         body: JSON.stringify({ workspaceId, confirmName: deleteConfirmName }),
       })
       if (res.ok) {
-        window.location.href = '/onboarding'
+        router.push('/onboarding')
       } else {
         const data = await res.json()
         alert(data.error || 'Failed to delete workspace')

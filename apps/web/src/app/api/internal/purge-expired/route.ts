@@ -29,22 +29,28 @@ export async function POST(request: Request) {
   const expired = await prisma.workspace.findMany({
     where: { deletedAt: { not: null, lt: cutoff } },
     select: { id: true },
+    take: 100, // batch limit — cron runs daily, will catch the rest next time
   })
 
   const purged: string[] = []
   for (const ws of expired) {
-    // Delete Qdrant vectors (best-effort)
-    if (qdrant) {
-      await qdrant.delete(COLLECTION_NAME, {
-        filter: {
-          must: [{ key: 'workspaceId', match: { value: ws.id } }],
-        },
-      }).catch((err) => console.error(`[purge-expired] Qdrant error for ${ws.id}:`, err))
-    }
+    try {
+      // Delete Qdrant vectors (best-effort)
+      if (qdrant) {
+        await qdrant.delete(COLLECTION_NAME, {
+          filter: {
+            must: [{ key: 'workspaceId', match: { value: ws.id } }],
+          },
+        }).catch((err) => console.error(`[purge-expired] Qdrant error for ${ws.id}:`, err))
+      }
 
-    // Hard delete — Postgres cascades all child records
-    await prisma.workspace.delete({ where: { id: ws.id } })
-    purged.push(ws.id)
+      // Hard delete — Postgres cascades all child records
+      await prisma.workspace.delete({ where: { id: ws.id } })
+      purged.push(ws.id)
+    } catch (err) {
+      console.error(`[purge-expired] Failed to purge workspace ${ws.id}:`, err)
+      // continue to next workspace
+    }
   }
 
   if (purged.length > 0) {
