@@ -26,6 +26,8 @@ function normalizeHostValue(value: string | null | undefined): string {
 
 export function getRequestHostname(headers: HeaderSource): string {
   return (
+    // X-HelpNest-Host is set by the BYOD Cloudflare Worker — Railway won't override it
+    normalizeHostValue(headers.get('x-helpnest-host')) ||
     normalizeHostValue(headers.get('x-forwarded-host')) ||
     normalizeHostValue(headers.get('host'))
   )
