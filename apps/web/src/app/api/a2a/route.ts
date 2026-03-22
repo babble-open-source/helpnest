@@ -22,6 +22,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { runAgent } from '@/lib/ai-agent'
+import { isByok } from '@/lib/ai/resolve-provider'
+import { checkLimit, incrementUsage } from '@/lib/cloud'
 import type { ChatMessage } from '@/lib/ai/types'
 
 // ── A2A Types ─────────────────────────────────────────────────────────────────
@@ -269,6 +271,15 @@ export async function POST(request: Request) {
         return jsonRpcError(rpc.id, INTERNAL_ERROR, 'Workspace not found')
       }
 
+      // Check AI credit quota (skipped when workspace uses BYOK)
+      if (!isByok({ aiApiKey: workspace.aiApiKey })) {
+        const limit = await checkLimit(workspace.id, 'aiCredits')
+        if (!limit.allowed) {
+          return jsonRpcError(rpc.id, INTERNAL_ERROR, 'AI credit limit reached for this month')
+        }
+        incrementUsage(workspace.id, 'aiCredits')
+      }
+
       let conversationId: string
 
       if (taskId) {
@@ -471,6 +482,15 @@ export async function POST(request: Request) {
       })
       if (!workspace) {
         return jsonRpcError(rpc.id, INTERNAL_ERROR, 'Workspace not found')
+      }
+
+      // Check AI credit quota (skipped when workspace uses BYOK)
+      if (!isByok({ aiApiKey: workspace.aiApiKey })) {
+        const limit = await checkLimit(workspace.id, 'aiCredits')
+        if (!limit.allowed) {
+          return jsonRpcError(rpc.id, INTERNAL_ERROR, 'AI credit limit reached for this month')
+        }
+        incrementUsage(workspace.id, 'aiCredits')
       }
 
       let conversationId: string
