@@ -14,7 +14,7 @@ export default async function AskAIPage(props: Props) {
   const params = await props.params
   const t = await getTranslations('askAI')
   const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { slug: params.workspace, deletedAt: null },
     select: { id: true, name: true, logo: true },
   })

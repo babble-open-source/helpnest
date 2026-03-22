@@ -20,7 +20,7 @@ export async function GET(
 ) {
   const { workspace: slug } = await paramsPromise
 
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { slug, deletedAt: null },
     select: {
       id: true,

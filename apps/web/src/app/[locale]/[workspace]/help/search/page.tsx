@@ -17,7 +17,7 @@ export default async function SearchPage(props: Props) {
     getTranslations('common'),
   ])
   const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { slug: params.workspace, deletedAt: null },
     select: { id: true, name: true, logo: true },
   })

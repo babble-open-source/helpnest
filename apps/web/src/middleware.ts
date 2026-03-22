@@ -184,11 +184,32 @@ export default auth(async (req) => {
     if (dbDomainResponse) return dbDomainResponse
   }
 
-  // 4. Auth check — redirect unauthenticated dashboard requests to login
+  // 4. When subdomain routing is configured (cloud), redirect direct path
+  //    access like helpnest.cloud/en/<slug>/help → <slug>.helpnest.cloud
+  //    Self-hosted users without NEXT_PUBLIC_HELP_CENTER_DOMAIN still use path routing.
+  if (process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN) {
+    const host = getRequestHostname(req.headers)
+    const appHost = APP_ORIGIN.replace(/^https?:\/\//, '').split(':')[0] ?? ''
+    // Only redirect when accessed via the main app domain, not via a subdomain/custom domain rewrite
+    if (host === appHost || host === HELP_CENTER_DOMAIN) {
+      const { pathname } = req.nextUrl
+      const locale = detectLocaleFromPath(pathname)
+      const pathWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), '') || '/'
+      const helpMatch = pathWithoutLocale.match(/^\/([^/]+)\/help(?:\/|$)/)
+      if (helpMatch) {
+        const slug = helpMatch[1]
+        const restPath = pathWithoutLocale.replace(`/${slug}/help`, '') || ''
+        const subdomain = `https://${slug}.${HELP_CENTER_DOMAIN}${restPath}${req.nextUrl.search}`
+        return NextResponse.redirect(subdomain, 308)
+      }
+    }
+  }
+
+  // 5. Auth check — redirect unauthenticated dashboard requests to login
   const authResponse = handleAuthRedirect(req)
   if (authResponse) return authResponse
 
-  // 5. next-intl locale detection, redirect, and negotiation
+  // 6. next-intl locale detection, redirect, and negotiation
   return intlMiddleware(req)
 })
 

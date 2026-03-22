@@ -29,7 +29,7 @@ export async function GET(
   // Resolve workspace and fetch all public, non-archived collections in one
   // query, including a published-article count and list of article titles/slugs
   // for the index section.
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { slug, deletedAt: null },
     select: {
       id: true,

@@ -28,7 +28,7 @@ function toAbsoluteHttpUrl(value: string | null | undefined): string | undefined
 const getWorkspaceHelpBranding = cache(async (slug: string) => {
   const columns = await getWorkspaceColumnSet()
 
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { slug, deletedAt: null },
     select: {
       id: true,

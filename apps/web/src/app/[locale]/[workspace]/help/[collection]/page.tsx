@@ -13,7 +13,7 @@ interface Props {
 }
 
 const getWorkspace = cache((slug: string) =>
-  prisma.workspace.findUnique({
+  prisma.workspace.findFirst({
     where: { slug, deletedAt: null },
     select: { id: true, name: true, logo: true },
   })

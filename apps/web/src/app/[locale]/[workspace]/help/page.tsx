@@ -24,7 +24,7 @@ export default async function HelpCenterHome(props: Props) {
     getTranslations('common'),
   ])
   const brandTextColumnExists = await hasWorkspaceBrandTextColumn()
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { slug: params.workspace, deletedAt: null },
     select: {
       id: true,

@@ -71,7 +71,7 @@ export async function GET(
   const params = await paramsPromise
   const { workspace: slug } = params
 
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { slug, deletedAt: null },
     select: { id: true, updatedAt: true },
   })

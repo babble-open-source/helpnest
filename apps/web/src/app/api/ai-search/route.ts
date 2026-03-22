@@ -137,7 +137,7 @@ export async function POST(request: Request) {
     )
   }
 
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { slug: workspaceSlug, deletedAt: null },
     select: { id: true, name: true, aiEnabled: true, aiProvider: true, aiApiKey: true, aiModel: true },
   })

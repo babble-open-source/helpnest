@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] }, { headers: CORS_HEADERS })
   }
 
-  const workspace = await prisma.workspace.findUnique({
+  const workspace = await prisma.workspace.findFirst({
     where: { slug: workspaceSlug, deletedAt: null },
     select: { id: true },
   })
