@@ -186,6 +186,8 @@ export default async function SettingsPage() {
           aiInstructions={workspace?.aiInstructions ?? null}
           aiEscalationThreshold={workspace?.aiEscalationThreshold ?? 0.3}
           hasApiKey={!!workspace?.aiApiKey}
+          cloudMode={isCloudMode()}
+          planTier={planTier}
           demoMode={demoMode}
           productContext={workspace?.productContext ?? null}
           autoDraftGapsEnabled={workspace?.autoDraftGapsEnabled ?? true}

@@ -11,6 +11,8 @@ interface Props {
   aiInstructions: string | null
   aiEscalationThreshold: number
   hasApiKey: boolean
+  cloudMode?: boolean
+  planTier?: string
   demoMode: boolean
   productContext: string | null
   autoDraftGapsEnabled: boolean
@@ -27,6 +29,8 @@ export function AiSettingsSection({
   aiInstructions: initInstructions,
   aiEscalationThreshold: initThreshold,
   hasApiKey,
+  cloudMode = false,
+  planTier = 'FREE',
   demoMode,
   productContext: initProductContext,
   autoDraftGapsEnabled: initAutoDraftGapsEnabled,
@@ -174,41 +178,56 @@ export function AiSettingsSection({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink mb-1">{t('apiKey')}</label>
-            {removeApiKey ? (
-              <div className="flex items-center gap-2 px-3 py-2 border border-red-200 rounded-lg bg-red-50 text-sm text-red-600">
-                <span className="flex-1">{t('keyRemoved')}</span>
-                <button type="button" onClick={() => setRemoveApiKey(false)} className="underline hover:no-underline shrink-0">{t('undo')}</button>
+            <label className="block text-sm font-medium text-ink mb-1">
+              {t('apiKey')}
+              {cloudMode && planTier === 'FREE' && (
+                <span className="ms-2 text-xs font-normal text-muted bg-border px-1.5 py-0.5 rounded">PRO</span>
+              )}
+            </label>
+            {cloudMode && planTier === 'FREE' ? (
+              <div className="rounded-lg border border-border bg-cream/50 p-4 text-center">
+                <p className="text-sm text-ink mb-1">Bring your own API key is a Pro feature</p>
+                <p className="text-xs text-muted mb-2">Upgrade to use your own API key for unlimited AI — search, agent, and drafts.</p>
+                <a href="/dashboard/billing" className="text-xs font-medium text-accent hover:underline">Upgrade to Pro →</a>
               </div>
             ) : (
-              <input
-                type="password"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                disabled={demoMode}
-                placeholder={hasApiKey ? t('apiKeyConfigured') : t('apiKeyEnter')}
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
-              />
+              <>
+                {removeApiKey ? (
+                  <div className="flex items-center gap-2 px-3 py-2 border border-red-200 rounded-lg bg-red-50 text-sm text-red-600">
+                    <span className="flex-1">{t('keyRemoved')}</span>
+                    <button type="button" onClick={() => setRemoveApiKey(false)} className="underline hover:no-underline shrink-0">{t('undo')}</button>
+                  </div>
+                ) : (
+                  <input
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    disabled={demoMode}
+                    placeholder={hasApiKey ? t('apiKeyConfigured') : t('apiKeyEnter')}
+                    className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
+                  />
+                )}
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-muted">
+                    {hasApiKey && !removeApiKey
+                      ? 'Powers all AI features (search, agent, drafts). Unlimited usage with your own key.'
+                      : !hasApiKey
+                        ? 'Add your API key for unlimited AI. Leave empty to use included AI credits.'
+                        : ''}
+                  </p>
+                  {hasApiKey && !removeApiKey && (
+                    <button
+                      type="button"
+                      onClick={() => { setRemoveApiKey(true); setApiKey('') }}
+                      disabled={demoMode}
+                      className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                    >
+                      {t('removeKey')}
+                    </button>
+                  )}
+                </div>
+              </>
             )}
-            <div className="flex items-center justify-between mt-1">
-              <p className="text-xs text-muted">
-                {hasApiKey && !removeApiKey
-                  ? t('encryptedAtRest')
-                  : !hasApiKey
-                    ? t('encryptedAtRestEnv')
-                    : ''}
-              </p>
-              {hasApiKey && !removeApiKey && (
-                <button
-                  type="button"
-                  onClick={() => { setRemoveApiKey(true); setApiKey('') }}
-                  disabled={demoMode}
-                  className="text-xs text-red-500 hover:underline disabled:opacity-50"
-                >
-                  {t('removeKey')}
-                </button>
-              )}
-            </div>
           </div>
 
           <div>
