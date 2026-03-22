@@ -135,6 +135,8 @@ export default async function SettingsPage() {
             planTier={planTier}
             cnameTarget={process.env.CLOUDFLARE_FALLBACK_ORIGIN ?? 'proxy.helpnest.cloud'}
             demoMode={demoMode}
+            isOwner={member.role === 'OWNER'}
+            workspaceId={workspaceId}
           />
         </div>
 

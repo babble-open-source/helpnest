@@ -24,6 +24,8 @@ interface Props {
   planTier?: string
   cnameTarget?: string
   demoMode?: boolean
+  isOwner?: boolean
+  workspaceId?: string
 }
 
 export function WorkspaceForm({
@@ -43,6 +45,8 @@ export function WorkspaceForm({
   planTier = 'FREE',
   cnameTarget = '',
   demoMode = false,
+  isOwner = false,
+  workspaceId = '',
 }: Props) {
   const router = useRouter()
   const t = useTranslations('workspace')
@@ -75,6 +79,9 @@ export function WorkspaceForm({
   const previewBrandText = values.brandText.trim() || values.name.trim() || 'Brand'
   const [dnsStatus, setDnsStatus] = useState<'idle' | 'checking' | 'registering' | 'active' | 'pending' | 'not_registered' | 'error'>('idle')
   const [dnsMessage, setDnsMessage] = useState('')
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteConfirmName, setDeleteConfirmName] = useState('')
+  const [deleting, setDeleting] = useState(false)
 
   async function registerDomain() {
     if (!values.customDomain.trim()) return
@@ -138,6 +145,28 @@ export function WorkspaceForm({
       // ignore
     } finally {
       setStatus('idle')
+    }
+  }
+
+  async function handleDeleteWorkspace() {
+    if (!workspaceId) return
+    setDeleting(true)
+    try {
+      const res = await fetch('/api/workspaces/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workspaceId, confirmName: deleteConfirmName }),
+      })
+      if (res.ok) {
+        window.location.href = '/onboarding'
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete workspace')
+      }
+    } catch {
+      alert('Failed to delete workspace')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -526,6 +555,62 @@ export function WorkspaceForm({
           {helpCenterDomain ? `${values.slug}.${helpCenterDomain}` : `${appUrl}/${values.slug}/help`}
         </a>
       </div>
+
+      {isOwner && !demoMode && (
+        <div className="mt-10 pt-6 border-t border-red-200">
+          <h3 className="text-sm font-medium text-red-600 mb-1">Danger zone</h3>
+          <p className="text-xs text-muted mb-3">
+            Deleting a workspace removes all articles, collections, conversations, and members.
+            You have 30 days to restore it before data is permanently deleted.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowDeleteModal(true)}
+            className="text-xs font-medium px-3 py-1.5 rounded-md border border-red-200 text-red-500 hover:bg-red-50 transition-colors"
+          >
+            Delete workspace
+          </button>
+        </div>
+      )}
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40">
+          <div className="bg-white rounded-xl border border-border shadow-lg p-6 max-w-md mx-4">
+            <h3 className="font-serif text-lg text-ink mb-2">Delete workspace</h3>
+            <p className="text-sm text-muted mb-4">
+              This will soft-delete <span className="font-medium text-ink">{values.name}</span>.
+              All content will be inaccessible. You have 30 days to restore it.
+            </p>
+            <p className="text-sm text-muted mb-2">
+              Type <span className="font-medium text-ink">{values.name}</span> to confirm:
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmName}
+              onChange={(e) => setDeleteConfirmName(e.target.value)}
+              placeholder={values.name}
+              className="w-full px-3 py-2 text-sm border border-border rounded-lg mb-4 focus:outline-none focus:ring-1 focus:ring-red-300"
+            />
+            <div className="flex gap-3 justify-end">
+              <button
+                type="button"
+                onClick={() => { setShowDeleteModal(false); setDeleteConfirmName('') }}
+                className="text-sm font-medium px-4 py-2 rounded-lg border border-border text-ink hover:bg-cream transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteWorkspace}
+                disabled={deleting || deleteConfirmName.toLowerCase() !== values.name.toLowerCase()}
+                className="text-sm font-medium px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Deleting\u2026' : 'Delete workspace'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
