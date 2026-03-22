@@ -5,6 +5,7 @@ import { useRouter, Link } from '@/i18n/navigation'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import NextImage from 'next/image'
+import { normalizeAssetUrl, looksLikeFaviconAsset } from '@/lib/workspace-utils'
 
 interface Props {
   name: string
@@ -22,20 +23,6 @@ interface Props {
   cloudMode?: boolean
   planTier?: string
   demoMode?: boolean
-}
-
-function normalizeAssetUrl(value: string): string {
-  return value.trim().replace(/\/+$/, '')
-}
-
-function looksLikeFaviconAsset(value: string): boolean {
-  const lower = value.toLowerCase()
-  return (
-    lower.includes('.ico') ||
-    lower.includes('favicon') ||
-    lower.includes('apple-touch-icon') ||
-    lower.includes('mask-icon')
-  )
 }
 
 export function WorkspaceForm({

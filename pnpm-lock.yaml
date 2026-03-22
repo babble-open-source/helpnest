@@ -236,6 +236,9 @@ importers:
       '@types/react-dom':
         specifier: ^19.2.3
         version: 19.2.3(@types/react@19.2.14)
+      '@vitest/coverage-v8':
+        specifier: ^1.6.0
+        version: 1.6.1(vitest@1.6.1(@types/node@20.19.37))
       autoprefixer:
         specifier: ^10.4.0
         version: 10.4.27(postcss@8.5.8)
@@ -254,6 +257,9 @@ importers:
       typescript:
         specifier: ^5.4.0
         version: 5.9.3
+      vitest:
+        specifier: ^1.6.0
+        version: 1.6.1(@types/node@20.19.37)
 
   packages/cli:
     dependencies:
