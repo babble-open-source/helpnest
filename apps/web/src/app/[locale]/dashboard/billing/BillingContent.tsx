@@ -9,6 +9,8 @@ interface Props {
   role: string
   plan: WorkspacePlan | null
   customDomain: string | null
+  liveArticleCount: number
+  liveMemberCount: number
 }
 
 const PLAN_DISPLAY = {
@@ -54,7 +56,7 @@ function UsageMeter({ label, current, limit }: { label: string; current: number;
   )
 }
 
-export function BillingContent({ workspaceId, userEmail, role, plan, customDomain }: Props) {
+export function BillingContent({ workspaceId, userEmail, role, plan, customDomain, liveArticleCount, liveMemberCount }: Props) {
   const [loading, setLoading] = useState<string | null>(null)
   const [showDomainWarning, setShowDomainWarning] = useState(false)
   const tier = plan?.plan ?? 'FREE'
@@ -124,8 +126,8 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <UsageMeter label="Articles"   current={usage?.articles ?? 0}  limit={(limits?.articles as number) ?? 25} />
-            <UsageMeter label="Members"    current={usage?.members ?? 0}   limit={(limits?.members as number) ?? 3} />
+            <UsageMeter label="Articles"   current={liveArticleCount}  limit={(limits?.articles as number) ?? 25} />
+            <UsageMeter label="Members"    current={liveMemberCount}   limit={(limits?.members as number) ?? 3} />
             <UsageMeter label="AI credits" current={usage?.aiCredits ?? 0} limit={(limits?.aiCredits as number) ?? 100} />
             <UsageMeter label="API calls"  current={usage?.apiCalls ?? 0}  limit={(limits?.apiCalls as number) ?? 1000} />
           </div>

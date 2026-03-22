@@ -21,12 +21,14 @@ export default async function BillingPage() {
   })
   if (!member) redirect('/dashboard')
 
-  const [plan, workspace] = await Promise.all([
+  const [plan, workspace, articleCount, memberCount] = await Promise.all([
     getWorkspacePlan(workspaceId),
     prisma.workspace.findUnique({
       where: { id: workspaceId },
       select: { customDomain: true },
     }),
+    prisma.article.count({ where: { workspaceId } }),
+    prisma.member.count({ where: { workspaceId, deactivatedAt: null } }),
   ])
 
   return (
@@ -42,6 +44,8 @@ export default async function BillingPage() {
         role={member.role}
         plan={plan}
         customDomain={workspace?.customDomain ?? null}
+        liveArticleCount={articleCount}
+        liveMemberCount={memberCount}
       />
     </div>
   )
