@@ -3,7 +3,7 @@ import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { htmlToMarkdown } from '@/lib/html-to-markdown'
-import { checkLimit, incrementUsage } from '@/lib/cloud'
+import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
 import { slugify } from '@/lib/slugify'
 
 const VALID_STATUSES = ['DRAFT', 'PUBLISHED', 'ARCHIVED'] as const
@@ -117,13 +117,19 @@ export async function POST(request: Request) {
     if (!col) return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
   }
 
-  // Check plan limit before creating
-  const limit = await checkLimit(workspaceId, 'articles')
-  if (!limit.allowed) {
-    return NextResponse.json(
-      { error: 'Article limit reached. Upgrade your plan.' },
-      { status: 403 },
-    )
+  // Check article limit using live DB count (not monthly counter)
+  if (isCloudMode()) {
+    const [plan, articleCount] = await Promise.all([
+      getWorkspacePlan(workspaceId),
+      prisma.article.count({ where: { workspaceId } }),
+    ])
+    const articleLimit = (plan?.limits?.articles as number) ?? 25
+    if (articleLimit !== -1 && articleCount >= articleLimit) {
+      return NextResponse.json(
+        { error: `Article limit reached (${articleCount}/${articleLimit}). Upgrade your plan.` },
+        { status: 403 },
+      )
+    }
   }
 
   const status = body.status ?? 'DRAFT'
@@ -146,7 +152,6 @@ export async function POST(request: Request) {
           ...(status === 'PUBLISHED' ? { publishedAt: new Date() } : {}),
         },
       })
-      incrementUsage(workspaceId, 'articles')
       return NextResponse.json(article, { status: 201 })
     } catch (e: unknown) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
