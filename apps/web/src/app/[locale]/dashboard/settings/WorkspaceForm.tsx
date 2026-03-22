@@ -119,6 +119,28 @@ export function WorkspaceForm({
     }
   }
 
+  async function handleRemove() {
+    if (!confirm('Are you sure you want to remove your custom domain? It will stop working immediately.')) return
+    setStatus('saving')
+    try {
+      const res = await fetch('/api/domains/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: values.customDomain.trim() }),
+      })
+      if (res.ok) {
+        setDnsStatus('idle')
+        setDnsMessage('')
+        setValues((prev) => ({ ...prev, customDomain: '' }))
+        router.refresh()
+      }
+    } catch {
+      // ignore
+    } finally {
+      setStatus('idle')
+    }
+  }
+
   useEffect(() => {
     const trimmedBrandFontUrl = values.customBrandFontUrl.trim()
     if (trimmedBrandFontUrl.length === 0) return
@@ -268,7 +290,7 @@ export function WorkspaceForm({
                         <tr>
                           <td className="py-1.5 pe-4 font-mono text-ink">CNAME</td>
                           <td className="py-1.5 pe-4 font-mono text-ink">{values.customDomain.trim()}</td>
-                          <td className="py-1.5 pe-4 font-mono text-accent select-all">{cnameTarget || appUrl.replace(/^https?:\/\//, '')}</td>
+                          <td className="py-1.5 pe-4 font-mono text-accent select-all">{cnameTarget || 'proxy.helpnest.cloud'}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -291,6 +313,16 @@ export function WorkspaceForm({
                         className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50 shrink-0"
                       >
                         {dnsStatus === 'checking' ? t('dnsChecking') : t('dnsVerify')}
+                      </button>
+                    )}
+                    {dnsStatus !== 'idle' && dnsStatus !== 'not_registered' && (
+                      <button
+                        type="button"
+                        onClick={handleRemove}
+                        disabled={status === 'saving'}
+                        className="text-xs font-medium px-3 py-1.5 rounded-md border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                      >
+                        Remove domain
                       </button>
                     )}
                     {dnsMessage && (

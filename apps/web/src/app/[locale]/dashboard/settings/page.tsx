@@ -133,7 +133,7 @@ export default async function SettingsPage() {
             helpCenterDomain={process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''}
             cloudMode={isCloudMode()}
             planTier={planTier}
-            cnameTarget={process.env.CLOUDFLARE_FALLBACK_ORIGIN ?? ''}
+            cnameTarget={process.env.CLOUDFLARE_FALLBACK_ORIGIN ?? 'proxy.helpnest.cloud'}
             demoMode={demoMode}
           />
         </div>

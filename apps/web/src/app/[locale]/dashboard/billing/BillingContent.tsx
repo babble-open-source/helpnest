@@ -8,6 +8,7 @@ interface Props {
   userEmail: string
   role: string
   plan: WorkspacePlan | null
+  customDomain: string | null
 }
 
 const PLAN_DISPLAY = {
@@ -53,8 +54,9 @@ function UsageMeter({ label, current, limit }: { label: string; current: number;
   )
 }
 
-export function BillingContent({ workspaceId, userEmail, role, plan }: Props) {
+export function BillingContent({ workspaceId, userEmail, role, plan, customDomain }: Props) {
   const [loading, setLoading] = useState<string | null>(null)
+  const [showDomainWarning, setShowDomainWarning] = useState(false)
   const tier = plan?.plan ?? 'FREE'
   const usage = plan?.usage
   const limits = plan?.limits
@@ -81,6 +83,12 @@ export function BillingContent({ workspaceId, userEmail, role, plan }: Props) {
   }
 
   async function handlePortal() {
+    // Warn if workspace has a custom domain that will be lost on downgrade
+    if (customDomain && !showDomainWarning) {
+      setShowDomainWarning(true)
+      return
+    }
+    setShowDomainWarning(false)
     setLoading('portal')
     try {
       const res = await fetch('/api/billing/portal', {
@@ -225,6 +233,33 @@ export function BillingContent({ workspaceId, userEmail, role, plan }: Props) {
             {loading === 'portal' ? 'Opening\u2026' : 'Open billing portal'}
           </button>
         </section>
+      )}
+
+      {/* Custom domain downgrade warning modal */}
+      {showDomainWarning && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40">
+          <div className="bg-white rounded-xl border border-border shadow-lg p-6 max-w-md mx-4">
+            <h3 className="font-serif text-lg text-ink mb-2">Custom domain warning</h3>
+            <p className="text-sm text-muted mb-4">
+              Your custom domain <span className="font-medium text-ink">{customDomain}</span> will
+              stop working immediately if you downgrade to the Free plan.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setShowDomainWarning(false)}
+                className="text-sm font-medium px-4 py-2 rounded-lg border border-border text-ink hover:bg-cream transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePortal}
+                className="text-sm font-medium px-4 py-2 rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors"
+              >
+                Continue to billing portal
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

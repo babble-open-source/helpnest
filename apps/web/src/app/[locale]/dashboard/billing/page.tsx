@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
-import { prisma } from '@/lib/db'
+import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
 import { BillingContent } from './BillingContent'
 
@@ -21,7 +21,13 @@ export default async function BillingPage() {
   })
   if (!member) redirect('/dashboard')
 
-  const plan = await getWorkspacePlan(workspaceId)
+  const [plan, workspace] = await Promise.all([
+    getWorkspacePlan(workspaceId),
+    prisma.workspace.findUnique({
+      where: { id: workspaceId },
+      select: { customDomain: true },
+    }),
+  ])
 
   return (
     <div className="p-6 md:p-8 max-w-4xl">
@@ -35,6 +41,7 @@ export default async function BillingPage() {
         userEmail={session.user.email ?? ''}
         role={member.role}
         plan={plan}
+        customDomain={workspace?.customDomain ?? null}
       />
     </div>
   )
