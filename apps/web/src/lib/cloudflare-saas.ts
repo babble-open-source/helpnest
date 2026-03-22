@@ -12,7 +12,6 @@
 
 const ZONE_ID = process.env.CLOUDFLARE_ZONE_ID
 const API_TOKEN = process.env.CLOUDFLARE_API_TOKEN
-const FALLBACK_ORIGIN = process.env.CLOUDFLARE_FALLBACK_ORIGIN // e.g. dashboard.helpnest.cloud
 
 const CF_API = 'https://api.cloudflare.com/client/v4'
 
@@ -70,9 +69,16 @@ export async function createCustomHostname(
       }),
     })
 
-    const data = await res.json() as { success: boolean; result?: Record<string, unknown>; errors?: Array<{ message: string }> }
+    const data = await res.json() as { success: boolean; result?: Record<string, unknown>; errors?: Array<{ message: string; code?: number }> }
 
     if (!data.success) {
+      // Error 1414 = "Custom Hostname already exists" — Cloudflare eventual consistency.
+      // Retrieve the existing record instead of failing.
+      const alreadyExists = data.errors?.some((e) => e.code === 1414)
+      if (alreadyExists) {
+        console.info('[cloudflare] hostname already exists, retrieving:', domain)
+        return findCustomHostname(domain)
+      }
       console.error('[cloudflare] createCustomHostname failed:', data.errors)
       return null
     }

@@ -1,0 +1,9 @@
+name = "helpnest-byod"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# Only fires for custom hostname traffic routed via Cloudflare for SaaS
+# to the fallback origin. Does not intercept other zone traffic.
+routes = [
+  { pattern = "proxy.helpnest.cloud/*", zone_name = "helpnest.cloud" }
+]
