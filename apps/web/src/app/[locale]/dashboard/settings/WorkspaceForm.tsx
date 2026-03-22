@@ -1,7 +1,7 @@
 'use client'
 
 import type { ChangeEvent } from 'react'
-import { useRouter } from '@/i18n/navigation'
+import { useRouter, Link } from '@/i18n/navigation'
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import NextImage from 'next/image'
@@ -19,6 +19,8 @@ interface Props {
   metaDescription: string
   appUrl: string
   helpCenterDomain: string
+  cloudMode?: boolean
+  planTier?: string
   demoMode?: boolean
 }
 
@@ -49,6 +51,8 @@ export function WorkspaceForm({
   metaDescription,
   appUrl,
   helpCenterDomain,
+  cloudMode = false,
+  planTier = 'FREE',
   demoMode = false,
 }: Props) {
   const router = useRouter()
@@ -197,99 +201,129 @@ export function WorkspaceForm({
           )}
         </div>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-ink mb-1">{t('customDomain')}</label>
-        <input
-          value={values.customDomain}
-          onChange={set('customDomain')}
-          placeholder={t('customDomainPlaceholder')}
-          disabled={demoMode}
-          className={inputClass + ' placeholder:text-muted'}
-        />
-        <p className="mt-1 text-xs text-muted">
-          {t('customDomainHelp')}
-        </p>
-        {values.customDomain.trim().length > 0 && (
-          <div className="mt-3 rounded-lg border border-border bg-cream p-4 text-sm space-y-3">
-            {/* Status badge — always present to prevent layout shift */}
-            <div className="flex items-center justify-between">
-              <p className="font-medium text-ink">{t('dnsSetup')}</p>
-              <span className={`text-xs font-medium px-2 py-0.5 rounded-full transition-colors ${
-                dnsStatus === 'active'
-                  ? 'bg-green/10 text-green border border-green/20'
-                  : dnsStatus === 'pending'
-                    ? 'bg-amber-50 text-amber-600 border border-amber-200'
-                    : dnsStatus === 'error'
-                      ? 'bg-red-50 text-red-500 border border-red-200'
-                      : dnsStatus === 'checking'
-                        ? 'bg-border text-muted border border-border'
-                        : 'invisible'
-              }`}>
-                {dnsStatus === 'active' ? t('dnsActive')
-                  : dnsStatus === 'pending' ? t('dnsPending')
-                  : dnsStatus === 'error' ? t('dnsError')
-                  : dnsStatus === 'checking' ? t('dnsChecking')
-                  : '\u00A0'}
-              </span>
-            </div>
-
-            <p className="text-xs text-muted">{t('dnsSteps')}</p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="text-left text-muted">
-                    <th className="pb-2 pe-4 font-medium">{t('dnsType')}</th>
-                    <th className="pb-2 pe-4 font-medium">{t('dnsName')}</th>
-                    <th className="pb-2 pe-4 font-medium">{t('dnsValue')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td className="py-1.5 pe-4 font-mono text-ink">CNAME</td>
-                    <td className="py-1.5 pe-4 font-mono text-ink">{values.customDomain.trim()}</td>
-                    <td className="py-1.5 pe-4 font-mono text-accent select-all">{appUrl.replace(/^https?:\/\//, '')}</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            {/* Action buttons + status message */}
-            <div className="flex flex-wrap items-center gap-2">
-              {dnsStatus === 'idle' || dnsStatus === 'not_registered' ? (
-                <button
-                  type="button"
-                  onClick={registerDomain}
-                  className="text-xs font-medium bg-ink text-cream px-3 py-1.5 rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-50 shrink-0"
-                >
-                  {t('dnsRegister')}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={verifyDns}
-                  disabled={dnsStatus === 'checking' || dnsStatus === 'registering'}
-                  className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50 shrink-0"
-                >
-                  {dnsStatus === 'checking' ? t('dnsChecking') : t('dnsVerify')}
-                </button>
-              )}
-              {dnsMessage && (
-                <p className={`text-xs ${
-                  dnsStatus === 'active' ? 'text-green'
-                  : dnsStatus === 'error' ? 'text-red-500'
-                  : 'text-muted'
-                }`}>
-                  {dnsMessage}
-                </p>
-              )}
-            </div>
-
-            {dnsStatus !== 'active' && (
-              <p className="text-xs text-muted">{t('dnsNote')}</p>
+      {/* Custom Domain — cloud: paid feature, self-hosted: hidden (use env vars) */}
+      {cloudMode && (
+        <div>
+          <label className="block text-sm font-medium text-ink mb-1">
+            {t('customDomain')}
+            {planTier === 'FREE' && (
+              <span className="ms-2 text-xs font-normal text-muted bg-border px-1.5 py-0.5 rounded">PRO</span>
             )}
-          </div>
-        )}
-      </div>
+          </label>
+
+          {planTier === 'FREE' ? (
+            /* Locked state for FREE users */
+            <div className="rounded-lg border border-border bg-cream/50 p-5 text-center">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-border mb-3">
+                <svg className="w-5 h-5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+              </div>
+              <p className="text-sm font-medium text-ink mb-1">{t('customDomainLocked')}</p>
+              <p className="text-xs text-muted mb-3">{t('customDomainLockedDesc')}</p>
+              <Link
+                href="/dashboard/billing"
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline"
+              >
+                {t('upgradeToPro')}
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                </svg>
+              </Link>
+            </div>
+          ) : (
+            /* Full domain UI for PRO/BUSINESS */
+            <>
+              <input
+                value={values.customDomain}
+                onChange={set('customDomain')}
+                placeholder={t('customDomainPlaceholder')}
+                disabled={demoMode}
+                className={inputClass + ' placeholder:text-muted'}
+              />
+              <p className="mt-1 text-xs text-muted">
+                {t('customDomainHelp')}
+              </p>
+              {values.customDomain.trim().length > 0 && (
+                <div className="mt-3 rounded-lg border border-border bg-cream p-4 text-sm space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-ink">{t('dnsSetup')}</p>
+                    {dnsStatus === 'active' && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green/10 text-green border border-green/20">
+                        {t('dnsActive')}
+                      </span>
+                    )}
+                    {dnsStatus === 'pending' && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                        {t('dnsPending')}
+                      </span>
+                    )}
+                    {dnsStatus === 'error' && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-200">
+                        {t('dnsError')}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-muted">{t('dnsSteps')}</p>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-left text-muted">
+                          <th className="pb-2 pe-4 font-medium">{t('dnsType')}</th>
+                          <th className="pb-2 pe-4 font-medium">{t('dnsName')}</th>
+                          <th className="pb-2 pe-4 font-medium">{t('dnsValue')}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td className="py-1.5 pe-4 font-mono text-ink">CNAME</td>
+                          <td className="py-1.5 pe-4 font-mono text-ink">{values.customDomain.trim()}</td>
+                          <td className="py-1.5 pe-4 font-mono text-accent select-all">{appUrl.replace(/^https?:\/\//, '')}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    {dnsStatus === 'idle' || dnsStatus === 'not_registered' ? (
+                      <button
+                        type="button"
+                        onClick={registerDomain}
+                        className="text-xs font-medium bg-ink text-cream px-3 py-1.5 rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-50 shrink-0"
+                      >
+                        {t('dnsRegister')}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={verifyDns}
+                        disabled={dnsStatus === 'checking' || dnsStatus === 'registering'}
+                        className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50 shrink-0"
+                      >
+                        {dnsStatus === 'checking' ? t('dnsChecking') : t('dnsVerify')}
+                      </button>
+                    )}
+                    {dnsMessage && (
+                      <p className={`text-xs ${
+                        dnsStatus === 'active' ? 'text-green'
+                        : dnsStatus === 'error' ? 'text-red-500'
+                        : 'text-muted'
+                      }`}>
+                        {dnsMessage}
+                      </p>
+                    )}
+                  </div>
+
+                  {dnsStatus !== 'active' && (
+                    <p className="text-xs text-muted">{t('dnsNote')}</p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
       <div>
         <label className="block text-sm font-medium text-ink mb-1">{t('companyLogo')}</label>
         <input

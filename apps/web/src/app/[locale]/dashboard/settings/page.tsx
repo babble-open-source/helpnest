@@ -1,5 +1,6 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
+import { isCloudMode, getWorkspacePlan } from '@/lib/cloud'
 import { isDemoMode } from '@/lib/demo'
 import { fontPresets, radiusOptions } from '@/lib/branding'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
@@ -30,6 +31,10 @@ export default async function SettingsPage() {
   ])
 
   if (!workspaceId) redirect('/dashboard')
+
+  // Get plan tier for custom domain gating (cloud mode only)
+  const cloudPlan = isCloudMode() ? await getWorkspacePlan(workspaceId) : null
+  const planTier = cloudPlan?.plan ?? 'FREE'
 
   const member = await prisma.member.findUnique({
     where: { workspaceId_userId: { workspaceId, userId } },
@@ -126,6 +131,8 @@ export default async function SettingsPage() {
             metaDescription={workspace?.metaDescription ?? ''}
             appUrl={appUrl}
             helpCenterDomain={process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''}
+            cloudMode={isCloudMode()}
+            planTier={planTier}
             demoMode={demoMode}
           />
         </div>
