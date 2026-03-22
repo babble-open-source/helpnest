@@ -122,6 +122,7 @@ export async function getWorkspacePlan(workspaceId: string): Promise<WorkspacePl
 export async function createCheckoutSession(
   workspaceId: string,
   plan: 'PRO' | 'BUSINESS',
+  email: string,
   successUrl: string,
   cancelUrl: string,
 ): Promise<string | null> {
@@ -131,7 +132,7 @@ export async function createCheckoutSession(
     const res = await fetch(`${CLOUD_API_URL}/api/billing/checkout`, {
       method: 'POST',
       headers: headers(),
-      body: JSON.stringify({ workspaceId, planTier: plan, successUrl, cancelUrl }),
+      body: JSON.stringify({ workspaceId, planTier: plan, email, successUrl, cancelUrl }),
     })
     if (!res.ok) return null
     const data = (await res.json()) as { url?: string }
