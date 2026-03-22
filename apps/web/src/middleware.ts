@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { routing } from '@/i18n/routing'
 import { defaultLocale, locales, type Locale } from '@/i18n/config'
+import { getRequestHostname } from '@/lib/request-host'
 
 const { auth } = NextAuth(authConfig)
 
@@ -15,6 +16,7 @@ const intlMiddleware = createIntlMiddleware(routing)
 // ---------------------------------------------------------------------------
 
 const HELP_CENTER_DOMAIN = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? 'helpnest.cloud'
+const DEBUG_DOMAIN_ROUTING = process.env.DEBUG_DOMAIN_ROUTING === 'true'
 
 const CUSTOM_DOMAIN = process.env.HELPNEST_CUSTOM_DOMAIN
 const CUSTOM_DOMAIN_SLUG = process.env.HELPNEST_CUSTOM_DOMAIN_SLUG
@@ -31,6 +33,29 @@ function detectLocaleFromPath(pathname: string): Locale {
     return firstSegment as Locale
   }
   return defaultLocale
+}
+
+function logDomainRouting(
+  req: NextRequest,
+  details: {
+    branch: string
+    hostname: string
+    slug?: string | null
+    matched?: boolean
+  },
+) {
+  if (!DEBUG_DOMAIN_ROUTING) return
+
+  console.info('[domain-routing]', {
+    branch: details.branch,
+    pathname: req.nextUrl.pathname,
+    search: req.nextUrl.search,
+    hostname: details.hostname,
+    host: req.headers.get('host'),
+    xForwardedHost: req.headers.get('x-forwarded-host'),
+    slug: details.slug ?? null,
+    matched: details.matched ?? false,
+  })
 }
 
 function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
@@ -53,32 +78,45 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
 }
 
 function handleSubdomain(req: NextRequest): NextResponse | null {
-  const host = (req.headers.get('host') ?? '').split(':')[0] ?? ''
+  const host = getRequestHostname(req.headers)
   if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) && !host.startsWith('www.')) {
     const slug = host.slice(0, host.length - HELP_CENTER_DOMAIN.length - 1)
     // Skip the dashboard subdomain — that's the admin app, not a help center
-    if (slug === 'dashboard') return null
+    if (slug === 'dashboard') {
+      logDomainRouting(req, { branch: 'subdomain-dashboard-skip', hostname: host, slug, matched: false })
+      return null
+    }
+    logDomainRouting(req, { branch: 'subdomain', hostname: host, slug, matched: true })
     return rewriteToHelp(req, slug)
   }
+  logDomainRouting(req, { branch: 'subdomain', hostname: host, matched: false })
   return null
 }
 
 function handleCustomDomain(req: NextRequest): NextResponse | null {
   if (!CUSTOM_DOMAIN || !CUSTOM_DOMAIN_SLUG) return null
-  const host = (req.headers.get('host') ?? '').split(':')[0] ?? ''
-  if (host === CUSTOM_DOMAIN) {
+  const host = getRequestHostname(req.headers)
+  if (host === CUSTOM_DOMAIN.toLowerCase()) {
+    logDomainRouting(req, { branch: 'env-custom-domain', hostname: host, slug: CUSTOM_DOMAIN_SLUG, matched: true })
     return rewriteToHelp(req, CUSTOM_DOMAIN_SLUG)
   }
+  logDomainRouting(req, { branch: 'env-custom-domain', hostname: host, slug: CUSTOM_DOMAIN_SLUG, matched: false })
   return null
 }
 
 async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | null> {
   if (!APP_ORIGIN) return null
-  const host = (req.headers.get('host') ?? '').split(':')[0]?.toLowerCase() ?? ''
+  const host = getRequestHostname(req.headers)
   if (!host) return null
-  if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) || host === CUSTOM_DOMAIN) return null
+  if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) || host === CUSTOM_DOMAIN?.toLowerCase()) {
+    logDomainRouting(req, { branch: 'db-custom-domain-skip-owned-host', hostname: host, matched: false })
+    return null
+  }
   const appHost = APP_ORIGIN.replace(/^https?:\/\//, '').split(':')[0] ?? ''
-  if (host === appHost || host === 'localhost' || host === '127.0.0.1') return null
+  if (host === appHost || host === 'localhost' || host === '127.0.0.1') {
+    logDomainRouting(req, { branch: 'db-custom-domain-skip-app-host', hostname: host, matched: false })
+    return null
+  }
 
   try {
     const controller = new AbortController()
@@ -93,11 +131,19 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
       },
     )
     clearTimeout(timeout)
-    if (!res.ok) return null
+    if (!res.ok) {
+      logDomainRouting(req, { branch: 'db-custom-domain-resolve-failed', hostname: host, matched: false })
+      return null
+    }
     const { slug } = await res.json() as { slug: string | null }
-    if (!slug) return null
+    if (!slug) {
+      logDomainRouting(req, { branch: 'db-custom-domain', hostname: host, matched: false })
+      return null
+    }
+    logDomainRouting(req, { branch: 'db-custom-domain', hostname: host, slug, matched: true })
     return rewriteToHelp(req, slug)
   } catch {
+    logDomainRouting(req, { branch: 'db-custom-domain-exception', hostname: host, matched: false })
     return null
   }
 }
@@ -122,8 +168,6 @@ function handleAuthRedirect(
 // ---------------------------------------------------------------------------
 
 export default auth(async (req) => {
-  const host = req.headers.get('host') ?? ''
-
   // 1. Env var custom domain — fast path
   const customDomainResponse = handleCustomDomain(req)
   if (customDomainResponse) {
