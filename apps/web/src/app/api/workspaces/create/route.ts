@@ -138,7 +138,7 @@ export async function POST(request: Request) {
 
       // Provision in cloud billing (fire-and-forget)
       if (isCloudMode() && session?.user?.email) {
-        provisionWorkspace(workspace.id, session.user.email, trimmedName, slug)
+        provisionWorkspace(workspace.id)
       }
 
       return NextResponse.json({

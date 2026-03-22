@@ -166,24 +166,14 @@ export async function getPortalUrl(workspaceId: string, returnUrl?: string): Pro
  * Provision a workspace in the cloud billing system.
  * Called during OSS signup when cloud mode is active.
  */
-export async function provisionWorkspace(
-  workspaceId: string,
-  ownerEmail: string,
-  workspaceName?: string,
-  workspaceSlug?: string,
-): Promise<void> {
+export async function provisionWorkspace(workspaceId: string): Promise<void> {
   if (!CLOUD_API_URL) return
 
   try {
     await fetch(`${CLOUD_API_URL}/api/workspaces/provision`, {
       method: 'POST',
       headers: headers(),
-      body: JSON.stringify({
-        workspaceId,
-        email: ownerEmail,
-        workspaceName,
-        workspaceSlug,
-      }),
+      body: JSON.stringify({ workspaceId }),
     })
   } catch (err) {
     console.error('[cloud] provisionWorkspace failed:', (err as Error).message)
