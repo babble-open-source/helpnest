@@ -6,7 +6,8 @@ import { redis } from '@/lib/redis'
 import { draftArticle } from '@/lib/article-drafter'
 import type { ChatMessage } from '@/lib/ai/types'
 
-const CORS_HEADERS = {
+// Widget-facing CORS (public, any origin)
+const WIDGET_CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Session-Token',
@@ -44,7 +45,7 @@ async function checkMsgRateLimit(key: string): Promise<{ limited: boolean }> {
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
+  return new NextResponse(null, { status: 204, headers: WIDGET_CORS_HEADERS })
 }
 
 // GET — Load message history (widget via sessionToken or dashboard via auth)
@@ -64,7 +65,7 @@ export async function GET(
   } else {
     const authResult = await requireAuth(request)
     if (!authResult) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: CORS_HEADERS })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
     conversationWhere = { id, workspaceId: authResult.workspaceId }
   }
@@ -77,7 +78,7 @@ export async function GET(
   if (!conversation) {
     return NextResponse.json(
       { error: 'Conversation not found' },
-      { status: 404, headers: CORS_HEADERS },
+      { status: 404, headers: WIDGET_CORS_HEADERS },
     )
   }
 
@@ -95,7 +96,7 @@ export async function GET(
     orderBy: { createdAt: 'asc' },
   })
 
-  return NextResponse.json({ messages }, { headers: CORS_HEADERS })
+  return NextResponse.json({ messages }, { headers: WIDGET_CORS_HEADERS })
 }
 
 // POST — Send a message.
@@ -128,7 +129,7 @@ export async function POST(
   } catch {
     return NextResponse.json(
       { error: 'Invalid JSON body' },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers: WIDGET_CORS_HEADERS },
     )
   }
 
@@ -138,7 +139,7 @@ export async function POST(
   if (!content) {
     return NextResponse.json(
       { error: 'content is required' },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers: WIDGET_CORS_HEADERS },
     )
   }
 
@@ -150,7 +151,7 @@ export async function POST(
     if (rate.limited) {
       return NextResponse.json(
         { error: 'Too many messages' },
-        { status: 429, headers: CORS_HEADERS },
+        { status: 429, headers: WIDGET_CORS_HEADERS },
       )
     }
 
@@ -179,7 +180,7 @@ export async function POST(
     if (!conversation) {
       return NextResponse.json(
         { error: 'Conversation not found' },
-        { status: 404, headers: CORS_HEADERS },
+        { status: 404, headers: WIDGET_CORS_HEADERS },
       )
     }
 
@@ -214,7 +215,7 @@ export async function POST(
       conversation.status === 'RESOLVED_AI' ||
       conversation.status === 'CLOSED'
     ) {
-      return NextResponse.json({ message: customerMessage }, { headers: CORS_HEADERS })
+      return NextResponse.json({ message: customerMessage }, { headers: WIDGET_CORS_HEADERS })
     }
 
     // Load full conversation history for multi-turn context.
@@ -356,7 +357,7 @@ export async function POST(
 
     return new Response(readable, {
       headers: {
-        ...CORS_HEADERS,
+        ...WIDGET_CORS_HEADERS,
         'Content-Type': 'text/event-stream',
         'Cache-Control': 'no-cache',
         Connection: 'keep-alive',

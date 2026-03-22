@@ -3,9 +3,7 @@ import { resolveWorkspaceId } from '@/lib/workspace'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { getTranslations } from 'next-intl/server'
-function slugify(text: string) {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 200)
-}
+import { slugify } from '@/lib/slugify'
 
 export default async function NewArticlePage() {
   const [session, t] = await Promise.all([auth(), getTranslations('editor')])

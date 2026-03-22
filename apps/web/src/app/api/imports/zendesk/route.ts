@@ -1,36 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
 import { prisma } from '@/lib/db'
-
-function slugify(str: string): string {
-  return str
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 200)
-}
-
-async function uniqueCollectionSlug(base: string, workspaceId: string): Promise<string> {
-  let slug = slugify(base) || 'untitled'
-  let attempt = 0
-  for (;;) {
-    const candidate = attempt === 0 ? slug : `${slug}-${attempt}`
-    const existing = await prisma.collection.findFirst({ where: { workspaceId, slug: candidate } })
-    if (!existing) return candidate
-    attempt++
-  }
-}
-
-async function uniqueArticleSlug(base: string, workspaceId: string): Promise<string> {
-  let slug = slugify(base) || 'untitled'
-  let attempt = 0
-  for (;;) {
-    const candidate = attempt === 0 ? slug : `${slug}-${attempt}`
-    const existing = await prisma.article.findFirst({ where: { workspaceId, slug: candidate } })
-    if (!existing) return candidate
-    attempt++
-  }
-}
+import { uniqueCollectionSlug, uniqueArticleSlug } from '@/lib/unique-slug'
 
 interface ZendeskSection {
   id: number

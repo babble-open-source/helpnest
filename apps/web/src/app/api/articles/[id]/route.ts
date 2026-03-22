@@ -1,16 +1,10 @@
 import { NextResponse } from 'next/server'
+import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { isDemoMode } from '@/lib/demo'
 import { htmlToMarkdown } from '@/lib/html-to-markdown'
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 200)
-}
+import { slugify } from '@/lib/slugify'
 
 export async function GET(
   request: Request,
@@ -69,13 +63,6 @@ export async function PATCH(
   }
   if (body.title && !body.slug) {
     slug = slugify(body.title)
-    let i = 1
-    const base = slug
-    while (await prisma.article.findFirst({
-      where: { workspaceId, slug, id: { not: params.id } }
-    })) {
-      slug = `${base}-${i++}`
-    }
   }
 
   // Verify article belongs to the authenticated workspace
@@ -123,12 +110,28 @@ export async function PATCH(
     if (body.status === 'PUBLISHED') data.publishedAt = new Date()
   }
 
-  const article = await prisma.article.update({
-    where: { id: params.id },
-    data,
-  })
-
-  return NextResponse.json(article)
+  // Optimistic update with P2002 retry for slug uniqueness (avoids TOCTOU race)
+  const baseSlug = slug
+  let suffix = 1
+  for (;;) {
+    try {
+      const article = await prisma.article.update({
+        where: { id: params.id },
+        data,
+      })
+      return NextResponse.json(article)
+    } catch (e: unknown) {
+      if (
+        baseSlug !== undefined &&
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === 'P2002'
+      ) {
+        data.slug = `${baseSlug}-${suffix++}`
+      } else {
+        throw e
+      }
+    }
+  }
 }
 
 export async function DELETE(
@@ -170,7 +173,8 @@ export async function DELETE(
   })
   if (!article) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
-  await prisma.articleVersion.deleteMany({ where: { articleId: params.id } })
+  // ArticleVersion has onDelete: Cascade in the schema, so only the article
+  // delete is needed — versions are automatically removed by the database.
   await prisma.article.delete({ where: { id: params.id } })
 
   return new NextResponse(null, { status: 204 })

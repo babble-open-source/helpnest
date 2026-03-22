@@ -4,11 +4,15 @@ import { requireAuth } from '@/lib/auth-api'
 import { redis } from '@/lib/redis'
 import { checkLimit, incrementUsage } from '@/lib/cloud'
 
-const CORS_HEADERS = {
+// Widget-facing CORS (public, any origin)
+const WIDGET_CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
+
+// Dashboard-facing responses omit permissive CORS — same-origin only
+const DASHBOARD_CORS_HEADERS: Record<string, string> = {}
 
 // Rate limiting for conversation creation: 10/min per IP
 const CONV_RATE_LIMIT_WINDOW_MS = 60_000
@@ -68,7 +72,7 @@ async function checkConvRateLimit(
 }
 
 export async function OPTIONS() {
-  return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
+  return new NextResponse(null, { status: 204, headers: WIDGET_CORS_HEADERS })
 }
 
 // POST — Create conversation (widget, no auth required)
@@ -80,7 +84,7 @@ export async function POST(request: Request) {
       { error: 'Too many requests. Please try again shortly.' },
       {
         status: 429,
-        headers: { ...CORS_HEADERS, 'Retry-After': String(rate.retryAfterSeconds) },
+        headers: { ...WIDGET_CORS_HEADERS, 'Retry-After': String(rate.retryAfterSeconds) },
       },
     )
   }
@@ -93,14 +97,14 @@ export async function POST(request: Request) {
       customerEmail?: string
     }
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: CORS_HEADERS })
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: WIDGET_CORS_HEADERS })
   }
 
   const { workspaceSlug, customerName, customerEmail } = body
   if (!workspaceSlug) {
     return NextResponse.json(
       { error: 'workspaceSlug is required' },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers: WIDGET_CORS_HEADERS },
     )
   }
 
@@ -111,7 +115,7 @@ export async function POST(request: Request) {
   if (!workspace) {
     return NextResponse.json(
       { error: 'Workspace not found' },
-      { status: 404, headers: CORS_HEADERS },
+      { status: 404, headers: WIDGET_CORS_HEADERS },
     )
   }
 
@@ -120,7 +124,7 @@ export async function POST(request: Request) {
   if (!limit.allowed) {
     return NextResponse.json(
       { error: 'Conversation limit reached for this month.' },
-      { status: 429, headers: CORS_HEADERS },
+      { status: 429, headers: WIDGET_CORS_HEADERS },
     )
   }
 
@@ -149,7 +153,7 @@ export async function POST(request: Request) {
       greeting: workspace.aiGreeting || 'Hi! How can I help you today?',
       createdAt: conversation.createdAt,
     },
-    { status: 201, headers: CORS_HEADERS },
+    { status: 201, headers: WIDGET_CORS_HEADERS },
   )
 }
 

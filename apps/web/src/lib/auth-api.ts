@@ -37,35 +37,32 @@ export async function requireAuth(request: Request): Promise<ApiAuthResult | nul
   const session = await auth()
   if (!session?.user) return null
 
+  // Parse the preferred workspace from the helpnest-workspace cookie.
+  // This ensures multi-workspace users target the intended workspace.
+  const preferredWorkspaceId = parseCookie(request.headers.get('cookie') ?? '', 'helpnest-workspace')
+
   // 2a) Try membership lookup with session user id first.
   // After DB resets, stale JWTs can carry an old user id that no longer exists.
   const sessionUserId = session.user.id
-  if (sessionUserId) {
+  const resolvedUserId = sessionUserId ?? await resolveUserIdByEmail(session.user.email)
+  if (!resolvedUserId) return null
+
+  // If a preferred workspace is set, verify the user is a member of it.
+  if (preferredWorkspaceId) {
     const member = await prisma.member.findFirst({
-      where: { userId: sessionUserId, deactivatedAt: null },
+      where: { userId: resolvedUserId, workspaceId: preferredWorkspaceId, deactivatedAt: null },
       select: { workspaceId: true, userId: true },
     })
     if (member) {
-      return {
-        workspaceId: member.workspaceId,
-        userId: member.userId,
-        via: 'session',
-      }
+      return { workspaceId: member.workspaceId, userId: member.userId, via: 'session' }
     }
   }
 
-  // 2b) Fallback: resolve by email and retry membership lookup.
-  // This keeps valid credentials working even when a stale JWT id is present.
-  if (!session.user.email) return null
-  const user = await prisma.user.findUnique({
-    where: { email: session.user.email },
-    select: { id: true },
-  })
-  if (!user) return null
-
+  // Fallback: first active workspace (deterministic order).
   const member = await prisma.member.findFirst({
-    where: { userId: user.id, deactivatedAt: null },
+    where: { userId: resolvedUserId, deactivatedAt: null },
     select: { workspaceId: true, userId: true },
+    orderBy: { id: 'asc' },
   })
   if (!member) return null
 
@@ -74,4 +71,18 @@ export async function requireAuth(request: Request): Promise<ApiAuthResult | nul
     userId: member.userId,
     via: 'session',
   }
+}
+
+function parseCookie(cookieHeader: string, name: string): string | undefined {
+  const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
+  return match?.[1] ? decodeURIComponent(match[1]) : undefined
+}
+
+async function resolveUserIdByEmail(email: string | null | undefined): Promise<string | null> {
+  if (!email) return null
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true },
+  })
+  return user?.id ?? null
 }

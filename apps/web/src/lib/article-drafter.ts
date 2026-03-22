@@ -17,6 +17,7 @@
 import crypto from 'crypto'
 import { prisma } from '@/lib/db'
 import { redis } from '@/lib/redis'
+import { slugify } from '@/lib/slugify'
 import { embedText } from '@/lib/embeddings'
 import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
@@ -117,13 +118,6 @@ export function sanitizeHtml(html: string): string {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 200)
-}
 
 function isPrismaUniqueError(e: unknown): boolean {
   // Avoid instanceof — in monorepos, Prisma may be loaded from multiple paths,

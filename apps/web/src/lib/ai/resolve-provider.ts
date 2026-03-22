@@ -22,9 +22,9 @@ interface WorkspaceAiSettings {
 function decryptApiKey(encrypted: string): string {
   const secret = process.env.AI_KEY_ENCRYPTION_SECRET
   if (!secret) {
-    throw new Error(
-      'AI_KEY_ENCRYPTION_SECRET environment variable is required for AI features',
-    )
+    // No encryption secret configured — return as-is, consistent with encryptApiKey
+    // which stores plaintext when the secret is absent.
+    return encrypted
   }
 
   try {

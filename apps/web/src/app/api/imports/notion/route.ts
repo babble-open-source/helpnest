@@ -2,30 +2,7 @@ import { NextResponse } from 'next/server'
 import { Client } from '@notionhq/client'
 import { requireAuth } from '@/lib/auth-api'
 import { prisma } from '@/lib/db'
-
-// ── Slug helpers ─────────────────────────────────────────────────────────────
-
-function slugify(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 200)
-}
-
-async function uniqueCollectionSlug(base: string, workspaceId: string): Promise<string> {
-  let slug = slugify(base) || 'untitled'
-  for (let attempt = 0; ; attempt++) {
-    const candidate = attempt === 0 ? slug : `${slug}-${attempt}`
-    const existing = await prisma.collection.findFirst({ where: { workspaceId, slug: candidate } })
-    if (!existing) return candidate
-  }
-}
-
-async function uniqueArticleSlug(base: string, workspaceId: string): Promise<string> {
-  let slug = slugify(base) || 'untitled'
-  for (let attempt = 0; ; attempt++) {
-    const candidate = attempt === 0 ? slug : `${slug}-${attempt}`
-    const existing = await prisma.article.findFirst({ where: { workspaceId, slug: candidate } })
-    if (!existing) return candidate
-  }
-}
+import { uniqueCollectionSlug, uniqueArticleSlug } from '@/lib/unique-slug'
 
 // ── Notion rich-text → Tiptap HTML ───────────────────────────────────────────
 

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { cache } from 'react'
 import { hasWorkspaceBrandTextColumn, prisma } from '@/lib/db'
 import { incrementArticleViews } from '@/lib/counters'
+import { slugify } from '@/lib/slugify'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations, getFormatter } from 'next-intl/server'
@@ -30,9 +31,6 @@ const getArticle = cache((workspaceId: string, slug: string) =>
 )
 
 
-function slugify(text: string): string {
-  return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-}
 
 function extractHeadings(content: string): { id: string; text: string; level: number }[] {
   const headings: { id: string; text: string; level: number }[] = []

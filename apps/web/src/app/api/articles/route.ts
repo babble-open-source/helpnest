@@ -4,17 +4,10 @@ import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { htmlToMarkdown } from '@/lib/html-to-markdown'
 import { checkLimit, incrementUsage } from '@/lib/cloud'
+import { slugify } from '@/lib/slugify'
 
 const VALID_STATUSES = ['DRAFT', 'PUBLISHED', 'ARCHIVED'] as const
 type ArticleStatus = typeof VALID_STATUSES[number]
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '')
-    .slice(0, 200)
-}
 
 export async function GET(request: Request) {
   const authResult = await requireAuth(request)
@@ -25,6 +18,9 @@ export async function GET(request: Request) {
   const collectionId = searchParams.get('collection')
   const q = searchParams.get('q')
   const format = searchParams.get('format')
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50', 10)))
+  const skip = (page - 1) * limit
 
   if (status && !VALID_STATUSES.includes(status as ArticleStatus)) {
     return NextResponse.json(
@@ -33,31 +29,38 @@ export async function GET(request: Request) {
     )
   }
 
-  const articles = await prisma.article.findMany({
-    where: {
-      workspaceId: authResult.workspaceId,
-      ...(status ? { status: status as ArticleStatus } : {}),
-      ...(collectionId ? { collectionId } : {}),
-      ...(q ? { title: { contains: q, mode: 'insensitive' } } : {}),
-    },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      excerpt: true,
-      status: true,
-      views: true,
-      publishedAt: true,
-      createdAt: true,
-      updatedAt: true,
-      // Include raw content only when the caller requests a format transform,
-      // to avoid bloating list responses for normal dashboard usage.
-      ...(format === 'markdown' ? { content: true } : {}),
-      collection: { select: { id: true, title: true, slug: true } },
-      author: { select: { id: true, name: true, email: true } },
-    },
-    orderBy: { updatedAt: 'desc' },
-  })
+  const where = {
+    workspaceId: authResult.workspaceId,
+    ...(status ? { status: status as ArticleStatus } : {}),
+    ...(collectionId ? { collectionId } : {}),
+    ...(q ? { title: { contains: q, mode: 'insensitive' as const } } : {}),
+  }
+
+  const [articles, total] = await Promise.all([
+    prisma.article.findMany({
+      where,
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        excerpt: true,
+        status: true,
+        views: true,
+        publishedAt: true,
+        createdAt: true,
+        updatedAt: true,
+        // Include raw content only when the caller requests a format transform,
+        // to avoid bloating list responses for normal dashboard usage.
+        ...(format === 'markdown' ? { content: true } : {}),
+        collection: { select: { id: true, title: true, slug: true } },
+        author: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: { updatedAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.article.count({ where }),
+  ])
 
   const data = format === 'markdown'
     ? articles.map(a => ({
@@ -66,7 +69,7 @@ export async function GET(request: Request) {
       }))
     : articles
 
-  return NextResponse.json({ data, total: articles.length })
+  return NextResponse.json({ data, total, page, limit })
 }
 
 export async function POST(request: Request) {
