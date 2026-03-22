@@ -99,7 +99,10 @@ model Workspace {
   conversations Conversation[]
   knowledgeGaps KnowledgeGap[]
 
+  deletedAt DateTime?
+
   @@index([slug])
+  @@index([deletedAt])
 }
 
 model User {
