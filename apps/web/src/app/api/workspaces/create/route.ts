@@ -48,11 +48,13 @@ export async function POST(request: Request) {
   // In cloud mode, check workspace limit based on plan of primary OWNED workspace
   let planTier = 'FREE'
   if (isCloudMode()) {
-    const ownedWorkspaces = await prisma.member.findMany({
-      where: { userId, role: 'OWNER', deactivatedAt: null, workspace: { deletedAt: null } },
-      select: { workspaceId: true },
+    const allOwned = await prisma.member.findMany({
+      where: { userId, role: 'OWNER', deactivatedAt: null },
+      select: { workspaceId: true, workspace: { select: { deletedAt: true } } },
       orderBy: { id: 'asc' },
     })
+    // Exclude soft-deleted workspaces from the count
+    const ownedWorkspaces = allOwned.filter((m) => m.workspace.deletedAt === null)
 
     let cloudReachable = true
     if (ownedWorkspaces.length > 0 && ownedWorkspaces[0]) {
@@ -101,9 +103,11 @@ export async function POST(request: Request) {
       const workspace = await prisma.$transaction(async (tx) => {
         // Re-check ownership count inside transaction to prevent race conditions
         if (isCloudMode()) {
-          const ownedCount = await tx.member.count({
-            where: { userId, role: 'OWNER', deactivatedAt: null, workspace: { deletedAt: null } },
+          const ownedMembers = await tx.member.findMany({
+            where: { userId, role: 'OWNER', deactivatedAt: null },
+            select: { workspace: { select: { deletedAt: true } } },
           })
+          const ownedCount = ownedMembers.filter((m) => m.workspace.deletedAt === null).length
           // Use the limit from the outer check (already validated against plan)
           const limit = WORKSPACE_LIMITS[planTier] ?? 1
           if (ownedCount >= limit) {
