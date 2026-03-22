@@ -25,6 +25,7 @@ interface Props {
   userEmail: string
   userInitial: string
   workspaces?: WorkspaceItem[]
+  cloudMode?: boolean
 }
 
 export function DashboardSidebar({
@@ -36,6 +37,7 @@ export function DashboardSidebar({
   userEmail,
   userInitial,
   workspaces,
+  cloudMode,
 }: Props) {
   const [open, setOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -48,7 +50,6 @@ export function DashboardSidebar({
   const t = useTranslations('dashboard')
   const tc = useTranslations('common')
 
-  const cloudUrl = process.env.NEXT_PUBLIC_CLOUD_URL
   const hasMultiWorkspace = !!workspaces && workspaces.length > 0
   const wsMenuRef = useRef<HTMLDivElement>(null)
 
@@ -237,7 +238,7 @@ export function DashboardSidebar({
                     >
                       <span className="block truncate">{ws.name}</span>
                       <span className="block text-xs text-cream/40 truncate">
-                        {cloudUrl ? `${ws.slug}.${cloudUrl.replace(/^https?:\/\//, '')}` : ws.slug}
+                        {ws.slug}
                       </span>
                     </button>
                   ))}
@@ -298,7 +299,7 @@ export function DashboardSidebar({
         </nav>
 
         {/* Billing — only in cloud mode */}
-        {cloudUrl && (
+        {cloudMode && (
           <div className="px-2 pb-2">
             <Link
               href="/dashboard/billing"
