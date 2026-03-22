@@ -23,8 +23,8 @@ function randomSuffix(): string {
  */
 const WORKSPACE_LIMITS: Record<string, number> = {
   FREE: 1,
-  PRO: 3,
-  BUSINESS: 10,
+  PRO: 1,
+  BUSINESS: 3,
 }
 
 /**
