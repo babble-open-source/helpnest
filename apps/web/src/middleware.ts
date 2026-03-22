@@ -191,7 +191,8 @@ export default auth(async (req) => {
     const host = getRequestHostname(req.headers)
     const appHost = APP_ORIGIN.replace(/^https?:\/\//, '').split(':')[0] ?? ''
     // Only redirect when accessed via the main app domain, not via a subdomain/custom domain rewrite
-    if (host === appHost || host === HELP_CENTER_DOMAIN) {
+    // Only redirect when accessed via the main app host, not subdomains or custom domains
+    if (host === appHost) {
       const { pathname } = req.nextUrl
       const locale = detectLocaleFromPath(pathname)
       const pathWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), '') || '/'

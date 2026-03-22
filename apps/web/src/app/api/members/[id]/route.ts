@@ -13,10 +13,11 @@ function outranks(callerRole: MemberRole, targetRole: MemberRole): boolean {
   return ROLE_RANK[callerRole] < ROLE_RANK[targetRole]
 }
 
-async function resolveCallerMember(userId: string) {
+async function resolveCallerMember(userId: string, workspaceId: string) {
   return prisma.member.findFirst({
     where: {
       userId,
+      workspaceId,
       role: { in: ['OWNER', 'ADMIN'] },
       deactivatedAt: null,
     },
@@ -39,11 +40,6 @@ export async function PATCH(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const callerMember = await resolveCallerMember(userId)
-  if (!callerMember) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
   if (isDemoMode()) {
     return NextResponse.json({ error: 'Member management is disabled in demo mode.' }, { status: 403 })
   }
@@ -52,8 +48,14 @@ export async function PATCH(
     where: { id: params.id },
   })
 
-  if (!target || target.workspaceId !== callerMember.workspaceId) {
+  if (!target) {
     return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+  }
+
+  // Resolve caller in the same workspace as the target
+  const callerMember = await resolveCallerMember(userId, target.workspaceId)
+  if (!callerMember) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Callers can only manage members with strictly lower privilege
@@ -144,11 +146,6 @@ export async function DELETE(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const callerMember = await resolveCallerMember(userId)
-  if (!callerMember) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
-  }
-
   if (isDemoMode()) {
     return NextResponse.json({ error: 'Member management is disabled in demo mode.' }, { status: 403 })
   }
@@ -157,8 +154,14 @@ export async function DELETE(
     where: { id: params.id },
   })
 
-  if (!target || target.workspaceId !== callerMember.workspaceId) {
+  if (!target) {
     return NextResponse.json({ error: 'Member not found' }, { status: 404 })
+  }
+
+  // Resolve caller in the same workspace as the target
+  const callerMember = await resolveCallerMember(userId, target.workspaceId)
+  if (!callerMember) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
   // Callers can only remove members with strictly lower privilege
