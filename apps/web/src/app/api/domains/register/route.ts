@@ -3,7 +3,14 @@ import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { resolveWorkspaceId } from '@/lib/workspace'
 import { isCloudMode, getWorkspacePlan } from '@/lib/cloud'
-import { createCustomHostname, findCustomHostname, isCloudflareEnabled } from '@/lib/cloudflare-saas'
+import {
+  createCustomHostname,
+  findCustomHostname,
+  deleteCustomHostname,
+  isCloudflareEnabled,
+} from '@/lib/cloudflare-saas'
+
+const CNAME_TARGET = process.env.CLOUDFLARE_FALLBACK_ORIGIN || 'proxy.helpnest.cloud'
 
 /**
  * POST /api/domains/register
@@ -38,6 +45,11 @@ export async function POST(request: Request) {
     }
   }
 
+  // In cloud mode, Cloudflare must be configured
+  if (isCloudMode() && !isCloudflareEnabled()) {
+    return NextResponse.json({ error: 'Custom domains are not available. Cloudflare is not configured.' }, { status: 503 })
+  }
+
   const { domain } = (await request.json()) as { domain?: string }
   if (!domain?.trim()) {
     return NextResponse.json({ error: 'Domain is required' }, { status: 400 })
@@ -59,6 +71,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'This domain is already in use by another workspace.' }, { status: 409 })
   }
 
+  // If workspace already has a different custom domain, clean up the old one first
+  const currentWorkspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { customDomain: true },
+  })
+  if (currentWorkspace?.customDomain && currentWorkspace.customDomain !== cleanDomain) {
+    if (isCloudflareEnabled()) {
+      const oldHostname = await findCustomHostname(currentWorkspace.customDomain)
+      if (oldHostname) {
+        await deleteCustomHostname(oldHostname.id)
+      }
+    }
+  }
+
   // If Cloudflare for SaaS is enabled, register the custom hostname
   if (isCloudflareEnabled()) {
     // Check if already registered in Cloudflare
@@ -76,6 +102,7 @@ export async function POST(request: Request) {
         status: existing.status,
         ssl: existing.ssl,
         ownershipVerification: existing.ownershipVerification,
+        cnameTarget: CNAME_TARGET,
       })
     }
 
@@ -97,6 +124,7 @@ export async function POST(request: Request) {
       status: result.status,
       ssl: result.ssl,
       ownershipVerification: result.ownershipVerification,
+      cnameTarget: CNAME_TARGET,
     })
   }
 
@@ -106,5 +134,5 @@ export async function POST(request: Request) {
     data: { customDomain: cleanDomain },
   })
 
-  return NextResponse.json({ domain: cleanDomain, status: 'saved' })
+  return NextResponse.json({ domain: cleanDomain, status: 'saved', cnameTarget: CNAME_TARGET })
 }
