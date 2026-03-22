@@ -257,23 +257,21 @@ export function WorkspaceForm({
               </p>
               {values.customDomain.trim().length > 0 && (
                 <div className="mt-3 rounded-lg border border-border bg-cream p-4 text-sm space-y-3">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between min-h-[24px]">
                     <p className="font-medium text-ink">{t('dnsSetup')}</p>
-                    {dnsStatus === 'active' && (
+                    {dnsStatus === 'active' ? (
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green/10 text-green border border-green/20">
                         {t('dnsActive')}
                       </span>
-                    )}
-                    {dnsStatus === 'pending' && (
+                    ) : dnsStatus === 'pending' ? (
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-amber-50 text-amber-600 border border-amber-200">
                         {t('dnsPending')}
                       </span>
-                    )}
-                    {dnsStatus === 'error' && (
+                    ) : dnsStatus === 'error' ? (
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-50 text-red-500 border border-red-200">
                         {t('dnsError')}
                       </span>
-                    )}
+                    ) : null}
                   </div>
 
                   <p className="text-xs text-muted">{t('dnsSteps')}</p>
@@ -296,7 +294,7 @@ export function WorkspaceForm({
                     </table>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2 min-h-[30px]">
                     {dnsStatus === 'idle' || dnsStatus === 'not_registered' ? (
                       <button
                         type="button"
@@ -306,25 +304,28 @@ export function WorkspaceForm({
                         {t('dnsRegister')}
                       </button>
                     ) : (
-                      <button
-                        type="button"
-                        onClick={verifyDns}
-                        disabled={dnsStatus === 'checking' || dnsStatus === 'registering'}
-                        className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50 shrink-0"
-                      >
-                        {dnsStatus === 'checking' ? t('dnsChecking') : t('dnsVerify')}
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={verifyDns}
+                          disabled={dnsStatus === 'checking' || dnsStatus === 'registering'}
+                          className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50 shrink-0"
+                        >
+                          {dnsStatus === 'checking' ? t('dnsChecking') : t('dnsVerify')}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleRemove}
+                          disabled={status === 'saving'}
+                          className="text-xs font-medium px-3 py-1.5 rounded-md border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        >
+                          Remove domain
+                        </button>
+                      </>
                     )}
-                    {dnsStatus !== 'idle' && dnsStatus !== 'not_registered' && (
-                      <button
-                        type="button"
-                        onClick={handleRemove}
-                        disabled={status === 'saving'}
-                        className="text-xs font-medium px-3 py-1.5 rounded-md border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
-                      >
-                        Remove domain
-                      </button>
-                    )}
+                  </div>
+
+                  <div className="min-h-[16px]">
                     {dnsMessage && (
                       <p className={`text-xs ${
                         dnsStatus === 'active' ? 'text-green'
@@ -336,9 +337,9 @@ export function WorkspaceForm({
                     )}
                   </div>
 
-                  {dnsStatus !== 'active' && (
-                    <p className="text-xs text-muted">{t('dnsNote')}</p>
-                  )}
+                  <p className={`text-xs text-muted ${dnsStatus === 'active' ? 'invisible' : ''}`}>
+                    {t('dnsNote')}
+                  </p>
                 </div>
               )}
             </>
