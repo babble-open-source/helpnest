@@ -235,7 +235,7 @@ export async function POST(
 
     // Check AI credit quota per message — BYOK allowed for self-hosted, PRO, BUSINESS
     const creditLimit = await checkLimit(conversation.workspaceId, 'aiCredits')
-    const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || (creditLimit.plan !== 'FREE')
+    const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || creditLimit.plan === 'PRO' || creditLimit.plan === 'BUSINESS'
     if (!isByok({ aiApiKey: conversation.workspace.aiApiKey }, { byok: byokAllowed })) {
       if (!creditLimit.allowed) {
         return NextResponse.json(

@@ -156,7 +156,7 @@ export async function POST(request: Request) {
   // BYOK (skip metering) is allowed for: self-hosted (always), PRO, BUSINESS.
   // Cloud FREE users with a key set are still metered.
   const limit = await checkLimit(workspace.id, 'aiCredits')
-  const byokAllowed = limit.plan === 'SELF_HOSTED' || (limit.plan !== 'FREE')
+  const byokAllowed = limit.plan === 'SELF_HOSTED' || limit.plan === 'PRO' || limit.plan === 'BUSINESS'
   const byok = isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })
   if (!byok) {
     if (!limit.allowed) {

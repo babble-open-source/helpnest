@@ -124,7 +124,7 @@ export async function POST(request: Request) {
   // Actual credit consumption happens per-message in /conversations/[id]/messages
   // when the AI agent runs — not here (conversation creation is just a container).
   const limit = await checkLimit(workspace.id, 'aiCredits')
-  const byokAllowed = limit.plan === 'SELF_HOSTED' || (limit.plan !== 'FREE')
+  const byokAllowed = limit.plan === 'SELF_HOSTED' || limit.plan === 'PRO' || limit.plan === 'BUSINESS'
   if (!isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })) {
     if (!limit.allowed) {
       return NextResponse.json(

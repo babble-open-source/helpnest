@@ -273,7 +273,7 @@ export async function POST(request: Request) {
 
       // Check AI credit quota — BYOK allowed for self-hosted, PRO, BUSINESS
       const creditLimit = await checkLimit(workspace.id, 'aiCredits')
-      const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || (creditLimit.plan !== 'FREE')
+      const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || creditLimit.plan === 'PRO' || creditLimit.plan === 'BUSINESS'
       if (!isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })) {
         if (!creditLimit.allowed) {
           return jsonRpcError(rpc.id, INTERNAL_ERROR, 'AI credit limit reached for this month')
@@ -487,7 +487,7 @@ export async function POST(request: Request) {
 
       // Check AI credit quota — BYOK allowed for self-hosted, PRO, BUSINESS
       const creditLimit = await checkLimit(workspace.id, 'aiCredits')
-      const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || (creditLimit.plan !== 'FREE')
+      const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || creditLimit.plan === 'PRO' || creditLimit.plan === 'BUSINESS'
       if (!isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })) {
         if (!creditLimit.allowed) {
           return jsonRpcError(rpc.id, INTERNAL_ERROR, 'AI credit limit reached for this month')

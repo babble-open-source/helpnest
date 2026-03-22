@@ -92,7 +92,7 @@ export async function POST(request: Request) {
 
   // Check AI credit quota — BYOK allowed for self-hosted, PRO, BUSINESS
   const creditLimit = await checkLimit(authResult.workspaceId, 'aiCredits')
-  const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || (creditLimit.plan !== 'FREE')
+  const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || creditLimit.plan === 'PRO' || creditLimit.plan === 'BUSINESS'
   const ws = await prisma.workspace.findUnique({
     where: { id: authResult.workspaceId },
     select: { aiApiKey: true },
