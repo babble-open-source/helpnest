@@ -80,8 +80,32 @@ export function WorkspaceForm({
       ? t('logoMatchesFavicon')
       : null
   const previewBrandText = values.brandText.trim() || values.name.trim() || 'Brand'
-  const [dnsStatus, setDnsStatus] = useState<'idle' | 'checking' | 'active' | 'pending' | 'error'>('idle')
+  const [dnsStatus, setDnsStatus] = useState<'idle' | 'checking' | 'registering' | 'active' | 'pending' | 'not_registered' | 'error'>('idle')
   const [dnsMessage, setDnsMessage] = useState('')
+
+  async function registerDomain() {
+    if (!values.customDomain.trim()) return
+    setDnsStatus('registering')
+    setDnsMessage('')
+    try {
+      const res = await fetch('/api/domains/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ domain: values.customDomain.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setDnsStatus('error')
+        setDnsMessage(data.error ?? t('dnsCheckFailed'))
+        return
+      }
+      setDnsStatus(data.status === 'active' ? 'active' : 'pending')
+      setDnsMessage(data.status === 'active' ? t('dnsActiveMessage') : t('dnsPendingMessage'))
+    } catch {
+      setDnsStatus('error')
+      setDnsMessage(t('dnsCheckFailed'))
+    }
+  }
 
   async function verifyDns() {
     if (!values.customDomain.trim()) return
@@ -229,26 +253,40 @@ export function WorkspaceForm({
               </table>
             </div>
 
-            {/* Verify button + status message */}
-            <div className="flex items-start gap-3">
-              <button
-                type="button"
-                onClick={verifyDns}
-                disabled={dnsStatus === 'checking'}
-                className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50 shrink-0"
-              >
-                {dnsStatus === 'checking' ? t('dnsChecking') : t('dnsVerify')}
-              </button>
-              <p className={`text-xs min-h-[1.25rem] transition-colors ${
-                dnsStatus === 'active' ? 'text-green'
-                : dnsStatus === 'error' ? 'text-red-500'
-                : 'text-muted'
-              }`}>
-                {dnsMessage || '\u00A0'}
-              </p>
+            {/* Action buttons + status message */}
+            <div className="flex flex-wrap items-center gap-2">
+              {dnsStatus === 'idle' || dnsStatus === 'not_registered' ? (
+                <button
+                  type="button"
+                  onClick={registerDomain}
+                  className="text-xs font-medium bg-ink text-cream px-3 py-1.5 rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-50 shrink-0"
+                >
+                  {t('dnsRegister')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={verifyDns}
+                  disabled={dnsStatus === 'checking' || dnsStatus === 'registering'}
+                  className="text-xs font-medium border border-border text-ink px-3 py-1.5 rounded-lg hover:bg-white transition-colors disabled:opacity-50 shrink-0"
+                >
+                  {dnsStatus === 'checking' ? t('dnsChecking') : t('dnsVerify')}
+                </button>
+              )}
+              {dnsMessage && (
+                <p className={`text-xs ${
+                  dnsStatus === 'active' ? 'text-green'
+                  : dnsStatus === 'error' ? 'text-red-500'
+                  : 'text-muted'
+                }`}>
+                  {dnsMessage}
+                </p>
+              )}
             </div>
 
-            <p className="text-xs text-muted">{t('dnsNote')}</p>
+            {dnsStatus !== 'active' && (
+              <p className="text-xs text-muted">{t('dnsNote')}</p>
+            )}
           </div>
         )}
       </div>

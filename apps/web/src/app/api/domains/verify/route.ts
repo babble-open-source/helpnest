@@ -2,16 +2,12 @@ import { NextResponse } from 'next/server'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { resolveWorkspaceId } from '@/lib/workspace'
+import { findCustomHostname, isCloudflareEnabled } from '@/lib/cloudflare-saas'
 import dns from 'node:dns/promises'
 
 /**
  * POST /api/domains/verify
- * Checks if a custom domain is correctly configured.
- *
- * Supports both:
- * - Direct CNAME (DNS only / gray cloud in Cloudflare)
- * - Proxied CNAME (orange cloud in Cloudflare) — verified via HTTP probe
- *
+ * Checks custom domain status — via Cloudflare API if enabled, or DNS lookup fallback.
  * Body: { domain }
  */
 export async function POST(request: Request) {
@@ -40,99 +36,90 @@ export async function POST(request: Request) {
   }
 
   const cleanDomain = domain.trim().toLowerCase()
-  const appHost = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000')
-    .replace(/^https?:\/\//, '')
-    .split(':')[0]
 
-  // Strategy 1: Check CNAME records (works for non-proxied DNS)
-  const cnameResult = await checkCname(cleanDomain, appHost!)
-  if (cnameResult === 'valid') {
-    await activateDomain(workspaceId, cleanDomain)
-    return NextResponse.json({
-      status: 'active',
-      message: 'Domain verified successfully. Your custom domain is now active.',
-    })
-  }
+  // If Cloudflare for SaaS is enabled, check via Cloudflare API
+  if (isCloudflareEnabled()) {
+    const hostname = await findCustomHostname(cleanDomain)
 
-  // Strategy 2: HTTP probe — works even with Cloudflare proxy
-  // Fetch the domain and check if our app responds
-  const httpResult = await checkHttp(cleanDomain)
-  if (httpResult === 'valid') {
-    await activateDomain(workspaceId, cleanDomain)
-    return NextResponse.json({
-      status: 'active',
-      message: 'Domain verified successfully. Your custom domain is now active.',
-    })
-  }
+    if (!hostname) {
+      return NextResponse.json({
+        status: 'not_registered',
+        message: 'This domain is not registered. Please register it first.',
+      })
+    }
 
-  // Strategy 3: Check if domain resolves at all (A/AAAA records)
-  const resolves = await checkResolves(cleanDomain)
+    if (hostname.status === 'active' && hostname.ssl.status === 'active') {
+      return NextResponse.json({
+        status: 'active',
+        message: 'Domain verified. SSL is active. Your custom domain is live.',
+        ssl: hostname.ssl,
+      })
+    }
 
-  if (resolves) {
+    if (hostname.status === 'pending' || hostname.ssl.status === 'pending_validation') {
+      return NextResponse.json({
+        status: 'pending',
+        message: 'Waiting for DNS propagation and SSL verification.',
+        ssl: hostname.ssl,
+        ownershipVerification: hostname.ownershipVerification,
+      })
+    }
+
     return NextResponse.json({
       status: 'pending',
-      message: 'Domain resolves but could not verify it points to your help center. DNS may still be propagating — try again in a few minutes.',
+      message: `Domain status: ${hostname.status}, SSL: ${hostname.ssl.status}`,
+      ssl: hostname.ssl,
+      ownershipVerification: hostname.ownershipVerification,
+      verificationErrors: hostname.verificationErrors,
     })
   }
 
-  return NextResponse.json({
-    status: 'pending',
-    message: 'No DNS records found for this domain. Please add the CNAME record and try again.',
-  })
-}
-
-async function activateDomain(workspaceId: string, domain: string) {
-  await prisma.workspace.update({
-    where: { id: workspaceId },
-    data: { customDomain: domain },
-  })
-}
-
-async function checkCname(domain: string, expectedHost: string): Promise<'valid' | 'invalid' | 'none'> {
+  // Fallback: DNS lookup for self-hosted mode
   try {
-    const records = await dns.resolveCname(domain)
-    const isValid = records.some((r) => {
-      const normalized = r.replace(/\.$/, '').toLowerCase()
-      return normalized === expectedHost || normalized.endsWith(`.${expectedHost}`)
-    })
-    return isValid ? 'valid' : 'invalid'
-  } catch {
-    return 'none'
-  }
-}
+    const records = await dns.resolveCname(cleanDomain)
+    const appHost = (process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000')
+      .replace(/^https?:\/\//, '')
+      .split(':')[0]
 
-async function checkHttp(domain: string): Promise<'valid' | 'invalid'> {
-  try {
-    const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 5000)
-    const res = await fetch(`https://${domain}/api/health`, {
-      signal: controller.signal,
-      redirect: 'manual',
+    const isValid = records.some((record) => {
+      const normalized = record.replace(/\.$/, '').toLowerCase()
+      return normalized === appHost || normalized.endsWith(`.${appHost}`)
     })
-    clearTimeout(timeout)
-    // Our health endpoint returns 200 with a known response
-    if (res.ok) {
-      const data = await res.json().catch(() => null)
-      if (data && (data.status === 'ok' || data.ok === true)) {
-        return 'valid'
-      }
+
+    if (isValid) {
+      await prisma.workspace.update({
+        where: { id: workspaceId },
+        data: { customDomain: cleanDomain },
+      })
+
+      return NextResponse.json({
+        status: 'active',
+        records,
+        message: 'Domain verified successfully. Your custom domain is now active.',
+      })
     }
-    return 'invalid'
-  } catch {
-    return 'invalid'
-  }
-}
 
-async function checkResolves(domain: string): Promise<boolean> {
-  try {
-    const addresses = await dns.resolve4(domain)
-    return addresses.length > 0
-  } catch {
-    try {
-      const addresses = await dns.resolve6(domain)
-      return addresses.length > 0
-    } catch {
-      return false
+    return NextResponse.json({
+      status: 'pending',
+      records,
+      expected: appHost,
+      message: `CNAME found but points to ${records.join(', ')} instead of ${appHost}.`,
+    })
+  } catch (err) {
+    const code = (err as { code?: string }).code
+
+    if (code === 'ENODATA' || code === 'ENOTFOUND') {
+      return NextResponse.json({
+        status: 'pending',
+        records: [],
+        message: 'No CNAME record found. Please add the DNS record and try again.',
+      })
     }
+
+    return NextResponse.json({
+      status: 'error',
+      records: [],
+      message: 'DNS lookup failed. Please try again later.',
+    })
   }
 }
