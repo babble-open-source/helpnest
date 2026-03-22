@@ -11,19 +11,22 @@ import { findCustomHostname, deleteCustomHostname, isCloudflareEnabled } from '@
  * Body: { workspaceId }
  */
 export async function POST(request: Request) {
-  // Require x-internal-secret when configured (same pattern as resolve-domain)
+  // Require x-internal-secret — this is a destructive write endpoint,
+  // so we refuse requests when the secret is not configured (unlike resolve-domain
+  // which is read-only and can operate without auth).
   const configuredSecret = process.env.INTERNAL_SECRET
-  if (configuredSecret) {
-    const provided = request.headers.get('x-internal-secret')
-    if (!provided) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-    const a = Buffer.from(provided)
-    const b = Buffer.from(configuredSecret)
-    const valid = a.length === b.length && timingSafeEqual(a, b)
-    if (!valid) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+  if (!configuredSecret) {
+    return NextResponse.json({ error: 'Internal secret not configured' }, { status: 503 })
+  }
+  const provided = request.headers.get('x-internal-secret')
+  if (!provided) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+  const a = Buffer.from(provided)
+  const b = Buffer.from(configuredSecret)
+  const valid = a.length === b.length && timingSafeEqual(a, b)
+  if (!valid) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
   const { workspaceId } = (await request.json()) as { workspaceId?: string }

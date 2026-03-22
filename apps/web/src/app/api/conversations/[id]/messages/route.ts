@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { runAgent, recordKnowledgeGap } from '@/lib/ai-agent'
+import { isByok } from '@/lib/ai/resolve-provider'
+import { checkLimit, incrementUsage } from '@/lib/cloud'
 import { redis } from '@/lib/redis'
 import { draftArticle } from '@/lib/article-drafter'
 import type { ChatMessage } from '@/lib/ai/types'
@@ -230,6 +232,19 @@ export async function POST(
       role: m.role === 'CUSTOMER' ? ('user' as const) : ('assistant' as const),
       content: m.content,
     }))
+
+    // Check AI credit quota per message — BYOK allowed for self-hosted, PRO, BUSINESS
+    const creditLimit = await checkLimit(conversation.workspaceId, 'aiCredits')
+    const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || (creditLimit.plan !== 'FREE')
+    if (!isByok({ aiApiKey: conversation.workspace.aiApiKey }, { byok: byokAllowed })) {
+      if (!creditLimit.allowed) {
+        return NextResponse.json(
+          { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },
+          { status: 429, headers: WIDGET_CORS_HEADERS },
+        )
+      }
+      incrementUsage(conversation.workspaceId, 'aiCredits')
+    }
 
     const agentCtx = {
       workspaceId: conversation.workspaceId,

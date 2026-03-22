@@ -271,10 +271,11 @@ export async function POST(request: Request) {
         return jsonRpcError(rpc.id, INTERNAL_ERROR, 'Workspace not found')
       }
 
-      // Check AI credit quota (skipped when workspace uses BYOK)
-      if (!isByok({ aiApiKey: workspace.aiApiKey })) {
-        const limit = await checkLimit(workspace.id, 'aiCredits')
-        if (!limit.allowed) {
+      // Check AI credit quota — BYOK allowed for self-hosted, PRO, BUSINESS
+      const creditLimit = await checkLimit(workspace.id, 'aiCredits')
+      const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || (creditLimit.plan !== 'FREE')
+      if (!isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })) {
+        if (!creditLimit.allowed) {
           return jsonRpcError(rpc.id, INTERNAL_ERROR, 'AI credit limit reached for this month')
         }
         incrementUsage(workspace.id, 'aiCredits')
@@ -484,10 +485,11 @@ export async function POST(request: Request) {
         return jsonRpcError(rpc.id, INTERNAL_ERROR, 'Workspace not found')
       }
 
-      // Check AI credit quota (skipped when workspace uses BYOK)
-      if (!isByok({ aiApiKey: workspace.aiApiKey })) {
-        const limit = await checkLimit(workspace.id, 'aiCredits')
-        if (!limit.allowed) {
+      // Check AI credit quota — BYOK allowed for self-hosted, PRO, BUSINESS
+      const creditLimit = await checkLimit(workspace.id, 'aiCredits')
+      const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || (creditLimit.plan !== 'FREE')
+      if (!isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })) {
+        if (!creditLimit.allowed) {
           return jsonRpcError(rpc.id, INTERNAL_ERROR, 'AI credit limit reached for this month')
         }
         incrementUsage(workspace.id, 'aiCredits')

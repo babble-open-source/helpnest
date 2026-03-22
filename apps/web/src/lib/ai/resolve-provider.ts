@@ -10,11 +10,20 @@ interface WorkspaceAiSettings {
 }
 
 /**
- * Returns true if the workspace has its own API key configured (BYOK).
- * When BYOK is active, AI actions are not metered by credits.
+ * Returns true if the workspace has its own API key configured (BYOK)
+ * AND is allowed to use BYOK (plan check).
+ *
+ * In cloud mode, pass the plan limits to enforce the byok flag.
+ * In self-hosted mode (no plan data), BYOK is always allowed if a key is set.
  */
-export function isByok(workspace: Pick<WorkspaceAiSettings, 'aiApiKey'>): boolean {
-  return !!workspace.aiApiKey
+export function isByok(
+  workspace: Pick<WorkspaceAiSettings, 'aiApiKey'>,
+  planLimits?: { byok?: boolean } | null,
+): boolean {
+  if (!workspace.aiApiKey) return false
+  // If plan data is available, enforce the byok flag (FREE plan: byok=false)
+  if (planLimits && !planLimits.byok) return false
+  return true
 }
 
 /**

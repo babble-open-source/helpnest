@@ -3,6 +3,8 @@ import { requireAuth } from '@/lib/auth-api'
 import { prisma } from '@/lib/db'
 import { redis } from '@/lib/redis'
 import { draftArticle } from '@/lib/article-drafter'
+import { isByok } from '@/lib/ai/resolve-provider'
+import { checkLimit, incrementUsage } from '@/lib/cloud'
 import type { CodeContext } from '@/lib/article-drafter'
 
 const RATE_LIMIT_MAX = 20
@@ -86,6 +88,23 @@ export async function POST(request: Request) {
       { error: 'Rate limit exceeded. Maximum 20 drafts per hour per workspace.' },
       { status: 429 },
     )
+  }
+
+  // Check AI credit quota — BYOK allowed for self-hosted, PRO, BUSINESS
+  const creditLimit = await checkLimit(authResult.workspaceId, 'aiCredits')
+  const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || (creditLimit.plan !== 'FREE')
+  const ws = await prisma.workspace.findUnique({
+    where: { id: authResult.workspaceId },
+    select: { aiApiKey: true },
+  })
+  if (!isByok({ aiApiKey: ws?.aiApiKey ?? null }, { byok: byokAllowed })) {
+    if (!creditLimit.allowed) {
+      return NextResponse.json(
+        { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },
+        { status: 429 },
+      )
+    }
+    incrementUsage(authResult.workspaceId, 'aiCredits')
   }
 
   // Validate workspace is allowed to use external API drafting

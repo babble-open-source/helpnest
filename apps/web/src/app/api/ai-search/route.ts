@@ -152,10 +152,13 @@ export async function POST(request: Request) {
     )
   }
 
-  // Check AI credit quota (skipped when workspace uses BYOK)
-  const byok = isByok({ aiApiKey: workspace.aiApiKey })
+  // Check AI credit quota — get the plan tier to determine BYOK eligibility.
+  // BYOK (skip metering) is allowed for: self-hosted (always), PRO, BUSINESS.
+  // Cloud FREE users with a key set are still metered.
+  const limit = await checkLimit(workspace.id, 'aiCredits')
+  const byokAllowed = limit.plan === 'SELF_HOSTED' || (limit.plan !== 'FREE')
+  const byok = isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })
   if (!byok) {
-    const limit = await checkLimit(workspace.id, 'aiCredits')
     if (!limit.allowed) {
       return NextResponse.json(
         { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },

@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
-import { getWorkspaceColumnSet, prisma } from '@/lib/db'
+import { prisma } from '@/lib/db'
 import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
 import { BillingContent } from './BillingContent'
 
