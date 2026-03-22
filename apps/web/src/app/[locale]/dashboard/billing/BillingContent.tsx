@@ -12,21 +12,21 @@ interface Props {
 }
 
 const PLAN_DISPLAY = {
-  FREE:     { articles: '25',        members: '3',  aiQueries: '50',   apiCalls: '1K' },
-  PRO:      { articles: '500',       members: '10', aiQueries: '1K',   apiCalls: '50K' },
-  BUSINESS: { articles: 'Unlimited', members: '50', aiQueries: '10K',  apiCalls: '500K' },
+  FREE:     { articles: '25',        members: '3',  aiCredits: '100',  apiCalls: '1K' },
+  PRO:      { articles: '500',       members: '10', aiCredits: '2K',   apiCalls: '50K' },
+  BUSINESS: { articles: 'Unlimited', members: '50', aiCredits: '10K',  apiCalls: '500K' },
 }
 
 const PLANS = [
   { key: 'FREE' as const, name: 'Free', price: '$0', period: 'forever', description: 'Perfect for small teams getting started', featured: false },
   { key: 'PRO' as const, name: 'Pro', price: '$19', period: 'per month', description: 'For growing teams that need more power', featured: true },
-  { key: 'BUSINESS' as const, name: 'Business', price: '$49', period: 'per month', description: 'Unlimited scale for large support operations', featured: false },
+  { key: 'BUSINESS' as const, name: 'Business', price: '$79', period: 'per month', description: 'Unlimited scale for large support operations', featured: false },
 ]
 
 const FEATURES = [
   { label: 'Articles', key: 'articles' as const },
   { label: 'Team members', key: 'members' as const },
-  { label: 'AI queries / mo', key: 'aiQueries' as const },
+  { label: 'AI credits / mo', key: 'aiCredits' as const },
   { label: 'API calls / mo', key: 'apiCalls' as const },
 ]
 
@@ -126,7 +126,7 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <UsageMeter label="Articles"   current={usage?.articles ?? 0}  limit={(limits?.articles as number) ?? 25} />
             <UsageMeter label="Members"    current={usage?.members ?? 0}   limit={(limits?.members as number) ?? 3} />
-            <UsageMeter label="AI queries" current={usage?.aiQueries ?? 0} limit={(limits?.aiQueries as number) ?? 50} />
+            <UsageMeter label="AI credits" current={usage?.aiCredits ?? 0} limit={(limits?.aiCredits as number) ?? 100} />
             <UsageMeter label="API calls"  current={usage?.apiCalls ?? 0}  limit={(limits?.apiCalls as number) ?? 1000} />
           </div>
         </section>
