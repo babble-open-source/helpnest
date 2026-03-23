@@ -1,4 +1,5 @@
 import { getTheme, themeToCSS, themes, type HelpNestTheme } from '@/lib/themes'
+import { isAllowedFontUrl } from '@/lib/font-url'
 
 export interface FontPreset {
   id: string
@@ -146,7 +147,7 @@ export function getWorkspaceFontUrls(themeId: string, overrides: WorkspaceFontOv
   return Array.from(
     new Set(
       [theme.fonts.headingUrl, theme.fonts.bodyUrl, customBrandFontUrl].filter(
-        (url): url is string => Boolean(url),
+        (url): url is string => Boolean(url) && isAllowedFontUrl(url),
       ),
     ),
   )

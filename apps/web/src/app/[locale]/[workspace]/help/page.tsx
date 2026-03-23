@@ -27,6 +27,7 @@ export default async function HelpCenterHome(props: Props) {
       id: true,
       name: true,
       logo: true,
+      deletedAt: true,
       ...(columns.has('brandText') ? { brandText: true } : {}),
       collections: {
         where: { isPublic: true, isArchived: false, parentId: null },
@@ -47,7 +48,7 @@ export default async function HelpCenterHome(props: Props) {
     },
   })
 
-  if (!workspace) notFound()
+  if (!workspace || workspace.deletedAt) notFound()
 
   return (
     <div className="min-h-screen bg-cream">

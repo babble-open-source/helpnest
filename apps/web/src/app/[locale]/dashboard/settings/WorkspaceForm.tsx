@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl'
 import NextImage from 'next/image'
 import { normalizeAssetUrl, looksLikeFaviconAsset } from '@/lib/workspace-utils'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { isAllowedFontUrl } from '@/lib/font-url'
 
 interface Props {
   name: string
@@ -143,9 +144,14 @@ export function WorkspaceForm({
         setDnsMessage('')
         setValues((prev) => ({ ...prev, customDomain: '' }))
         router.refresh()
+      } else {
+        const data = await res.json().catch(() => ({})) as { error?: string }
+        setDnsStatus('error')
+        setDnsMessage(data.error ?? t('dnsCheckFailed'))
       }
     } catch {
-      // ignore
+      setDnsStatus('error')
+      setDnsMessage(t('dnsCheckFailed'))
     } finally {
       setStatus('idle')
     }
@@ -174,9 +180,12 @@ export function WorkspaceForm({
     }
   }
 
+  const brandFontUrlInvalid = values.customBrandFontUrl.trim().length > 0 && !isAllowedFontUrl(values.customBrandFontUrl)
+
   useEffect(() => {
     const trimmedBrandFontUrl = values.customBrandFontUrl.trim()
     if (trimmedBrandFontUrl.length === 0) return
+    if (!isAllowedFontUrl(trimmedBrandFontUrl)) return
 
     const existing = Array.from(document.querySelectorAll('link[rel="stylesheet"]')).find(
       (link) => (link as HTMLLinkElement).href === trimmedBrandFontUrl
@@ -454,6 +463,11 @@ export function WorkspaceForm({
         <p className="mt-1 text-xs text-muted">
           {t('brandFontUrlHelp')}
         </p>
+        {brandFontUrlInvalid && (
+          <p className="mt-1 text-xs text-red-500">
+            Only HTTPS URLs from Google Fonts, Bunny Fonts, Typekit, or cdnfonts are supported.
+          </p>
+        )}
         {(values.brandText.trim().length > 0 || values.customBrandFontFamily.trim().length > 0) && (
           <div className="mt-3 inline-flex items-center gap-3 rounded-xl border border-border bg-cream px-3 py-2">
             <div className="rounded-lg border border-border bg-white px-4 py-2">

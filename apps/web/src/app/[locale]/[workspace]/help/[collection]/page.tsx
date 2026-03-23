@@ -13,15 +13,18 @@ interface Props {
 
 const getWorkspace = cache(async (slug: string) => {
   const columns = await getWorkspaceColumnSet()
-  return prisma.workspace.findFirst({
+  const ws = await prisma.workspace.findFirst({
     where: { slug },
     select: {
       id: true,
       name: true,
       logo: true,
+      deletedAt: true,
       ...(columns.has('brandText') ? { brandText: true } : {}),
     },
   })
+  if (ws?.deletedAt) return null
+  return ws
 })
 
 const getCollection = cache((workspaceId: string, slug: string) =>

@@ -17,10 +17,11 @@ export default async function AskAIPage(props: Props) {
       id: true,
       name: true,
       logo: true,
+      deletedAt: true,
       ...(columns.has('brandText') ? { brandText: true } : {}),
     },
   })
-  if (!workspace) notFound()
+  if (!workspace || workspace.deletedAt) notFound()
 
   return (
     <div className="min-h-[calc(100dvh-3.5rem)] bg-cream flex flex-col">

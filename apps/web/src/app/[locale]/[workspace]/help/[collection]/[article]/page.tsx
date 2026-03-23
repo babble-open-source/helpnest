@@ -17,15 +17,18 @@ interface Props {
 
 const getWorkspace = cache(async (slug: string) => {
   const columns = await getWorkspaceColumnSet()
-  return prisma.workspace.findFirst({
+  const ws = await prisma.workspace.findFirst({
     where: { slug },
     select: {
       id: true,
       name: true,
       logo: true,
+      deletedAt: true,
       ...(columns.has('brandText') ? { brandText: true } : {}),
     },
   })
+  if (ws?.deletedAt) return null
+  return ws
 })
 
 const getArticle = cache((workspaceId: string, slug: string) =>
@@ -58,6 +61,15 @@ function extractHeadings(content: string): { id: string; text: string; level: nu
       const text = match[2]!.trim()
       headings.push({ id: slugify(text), text, level })
     }
+  }
+
+  // Deduplicate IDs for headings with identical text
+  const seen = new Map<string, number>()
+  for (const h of headings) {
+    const originalId = h.id
+    const count = seen.get(originalId) ?? 0
+    if (count > 0) h.id = `${originalId}-${count}`
+    seen.set(originalId, count + 1)
   }
 
   return headings

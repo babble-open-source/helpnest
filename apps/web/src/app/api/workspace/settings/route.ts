@@ -24,13 +24,10 @@ function isValidLogoUrl(value: string): boolean {
   }
 }
 
+import { isAllowedFontUrl } from '@/lib/font-url'
+
 function isValidFontUrl(value: string): boolean {
-  try {
-    const url = new URL(value)
-    return url.protocol === 'http:' || url.protocol === 'https:'
-  } catch {
-    return false
-  }
+  return isAllowedFontUrl(value)
 }
 
 export async function PATCH(request: Request) {
@@ -302,7 +299,7 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: `${label} must be 2048 characters or fewer` }, { status: 400 })
       }
       if (trimmedUrl.length > 0 && !isValidFontUrl(trimmedUrl)) {
-        return NextResponse.json({ error: `${label} must be a valid http or https URL` }, { status: 400 })
+        return NextResponse.json({ error: `${label} must be an HTTPS URL from a supported font provider (Google Fonts, Bunny Fonts, Typekit, cdnfonts)` }, { status: 400 })
       }
     }
   }

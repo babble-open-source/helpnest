@@ -21,10 +21,11 @@ export default async function SearchPage(props: Props) {
       id: true,
       name: true,
       logo: true,
+      deletedAt: true,
       ...(columns.has('brandText') ? { brandText: true } : {}),
     },
   })
-  if (!workspace) notFound()
+  if (!workspace || workspace.deletedAt) notFound()
 
   const q = searchParams.q?.trim() ?? ''
 
@@ -49,12 +50,12 @@ export default async function SearchPage(props: Props) {
           AND c."isPublic" = true
           AND c."isArchived" = false
           AND (
-            to_tsvector('english', a.title || ' ' || a.content)
+            to_tsvector('english', COALESCE(a.title, '') || ' ' || COALESCE(a.content, ''))
             @@ plainto_tsquery('english', ${q})
           )
         ORDER BY
           ts_rank(
-            to_tsvector('english', a.title || ' ' || a.content),
+            to_tsvector('english', COALESCE(a.title, '') || ' ' || COALESCE(a.content, '')),
             plainto_tsquery('english', ${q})
           ) DESC
         LIMIT 20
