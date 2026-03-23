@@ -9,6 +9,7 @@ import {
   deleteCustomHostname,
   isCloudflareEnabled,
 } from '@/lib/cloudflare-saas'
+import { kvPutDomain } from '@/lib/cloudflare-kv'
 
 const CNAME_TARGET = process.env.CLOUDFLARE_FALLBACK_ORIGIN || 'proxy.helpnest.cloud'
 
@@ -85,6 +86,13 @@ export async function POST(request: Request) {
     }
   }
 
+  // Fetch the workspace slug once — needed for KV writes on the Cloudflare paths.
+  // Self-hosted path skips KV entirely (no Worker to serve the mapping).
+  const workspaceForKV = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { slug: true },
+  })
+
   // If Cloudflare for SaaS is enabled, register the custom hostname
   if (isCloudflareEnabled()) {
     // Check if already registered in Cloudflare
@@ -95,6 +103,7 @@ export async function POST(request: Request) {
         where: { id: workspaceId },
         data: { customDomain: cleanDomain },
       })
+      if (workspaceForKV) kvPutDomain(cleanDomain, workspaceForKV.slug).catch(() => {})
 
       return NextResponse.json({
         domain: cleanDomain,
@@ -117,6 +126,7 @@ export async function POST(request: Request) {
       where: { id: workspaceId },
       data: { customDomain: cleanDomain },
     })
+    if (workspaceForKV) kvPutDomain(cleanDomain, workspaceForKV.slug).catch(() => {})
 
     return NextResponse.json({
       domain: cleanDomain,
