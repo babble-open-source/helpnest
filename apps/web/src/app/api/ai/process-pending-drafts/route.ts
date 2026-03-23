@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
 import { prisma } from '@/lib/db'
 import { redis } from '@/lib/redis'
-import { draftArticle } from '@/lib/article-drafter'
+import { draftArticle, DraftError } from '@/lib/article-drafter'
 
 interface PendingDraftEntry {
   workspaceId: string
@@ -72,6 +72,9 @@ export async function GET(request: Request) {
     } while (cursor !== '0')
 
     for (const key of keysToProcess) {
+      // Extract featureId from key: pending-draft:{workspaceId}:{featureId}
+      const featureId = key.split(':').slice(2).join(':')
+
       try {
         // Atomic: get and check, then delete if ready
         const raw = await redis.get(key)
@@ -96,10 +99,6 @@ export async function GET(request: Request) {
         const deleted = await redis.del(key)
         if (!deleted) continue // another process beat us to it
 
-        // Extract featureId from key: pending-draft:{workspaceId}:{featureId}
-        const parts = key.split(':')
-        const featureId = parts.slice(2).join(':')
-
         const result = await draftArticle({
           workspaceId: entry.workspaceId,
           collectionId: entry.collectionId,
@@ -107,13 +106,12 @@ export async function GET(request: Request) {
           codeContexts: entry.contexts,
         })
 
-        if (result) {
-          generated.push({ featureId, articleId: result.articleId, mode: result.mode })
-        }
+        generated.push({ featureId, articleId: result.articleId, mode: result.mode })
       } catch (err) {
         errors.push({
-          featureId: key,
+          featureId,
           error: err instanceof Error ? err.message : 'Unknown error',
+          ...(err instanceof DraftError ? { statusCode: err.statusCode } : {}),
         })
       }
     }

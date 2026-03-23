@@ -23,6 +23,19 @@ import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
 
 // ---------------------------------------------------------------------------
+// Error class — thrown instead of returning null so callers get actionable messages
+// ---------------------------------------------------------------------------
+
+export class DraftError extends Error {
+  public readonly statusCode: number
+  constructor(message: string, statusCode: number) {
+    super(message)
+    this.name = 'DraftError'
+    this.statusCode = statusCode
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
 
@@ -208,7 +221,7 @@ async function searchRelatedArticles(
 // Main drafter
 // ---------------------------------------------------------------------------
 
-export async function draftArticle(input: DraftInput): Promise<DraftResult | null> {
+export async function draftArticle(input: DraftInput): Promise<DraftResult> {
   const { workspaceId, collectionId, authorId, topic, gap, codeContexts } = input
 
   // Determine search term from the highest-priority source
@@ -219,7 +232,7 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
     ''
   ).slice(0, 500).trim()
 
-  if (!searchTerm) return null
+  if (!searchTerm) throw new DraftError('No topic, code context, or gap provided', 400)
 
   // Distributed lock — one generation per topic per workspace at a time
   const topicHash = crypto
@@ -234,9 +247,10 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
   if (redis) {
     try {
       const result = await redis.set(lockKey, lockValue, 'EX', 120, 'NX')
-      if (!result) return null // another process is generating this topic
+      if (!result) throw new DraftError('Another draft is already being generated for this topic — try again shortly', 409)
       lockAcquired = true
-    } catch {
+    } catch (e) {
+      if (e instanceof DraftError) throw e
       // Redis unavailable — proceed without lock (best-effort)
     }
   }
@@ -253,7 +267,7 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
         aiModel: true,
       },
     })
-    if (!workspace) return null
+    if (!workspace) throw new DraftError('Workspace not found', 404)
 
     // Fetch collection(s) — if caller provided one, use it directly.
     // If not, fetch all so the LLM can assign each article to the best fit.
@@ -274,7 +288,12 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
       })
       collection = allCollections[0] ?? null
     }
-    if (!collection) return null
+    if (!collection) throw new DraftError(
+      collectionId
+        ? `Collection "${collectionId}" not found`
+        : 'No collections found — create at least one collection first',
+      400,
+    )
 
     // LLM will choose a collection when multiple exist and caller didn't specify one
     const needsCollectionChoice = !collectionId && allCollections.length > 1
@@ -289,7 +308,7 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
       })
       resolvedAuthorId = firstMember?.userId ?? null
     }
-    if (!resolvedAuthorId) return null
+    if (!resolvedAuthorId) throw new DraftError('No workspace members found — cannot assign article author', 400)
 
     // RAG: find related published articles for context + mode decision
     let relatedArticles: RelatedArticle[] = []
@@ -402,7 +421,7 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
       maxTokens: 8192, // ~8K tokens — LLM output budget (JSON + HTML overhead takes ~30%, leaves ~5.5K for article content)
     })) {
       if (event.type === 'text') raw += event.text
-      if (event.type === 'error') throw new Error(event.message)
+      if (event.type === 'error') throw new DraftError(`AI provider error: ${event.message}`, 502)
     }
 
     // Parse JSON response
@@ -425,10 +444,10 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
         if (chosen) collection = chosen
       }
     } catch {
-      return null
+      throw new DraftError('AI returned an invalid response — check your AI provider configuration', 502)
     }
 
-    if (!title || !content) return null
+    if (!title || !content) throw new DraftError('AI returned an empty title or content — try again or check your AI provider', 502)
 
     // Sanitize HTML before storing
     const safeContent = sanitizeHtml(content)
@@ -478,7 +497,7 @@ export async function draftArticle(input: DraftInput): Promise<DraftResult | nul
     } else {
       // Update mode: store proposed changes as draftContent on existing article
       const target = relatedArticles[0]
-      if (!target) return null
+      if (!target) throw new DraftError('No matching article found to update', 404)
       const targetId = target.articleId
       await prisma.article.update({
         where: { id: targetId },
