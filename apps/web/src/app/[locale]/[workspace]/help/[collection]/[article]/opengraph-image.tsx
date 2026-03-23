@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
-import { OG_SIZE, resolveOgColors, loadFonts, truncateText } from '@/lib/og-utils'
+import { OG_SIZE, resolveOgColors, loadFonts, buildFontList, truncateText } from '@/lib/og-utils'
 
 export const revalidate = 3600
 export const size = OG_SIZE
@@ -34,6 +34,8 @@ export default async function OgImage(props: Props) {
       ...(columns.has('customBrandFontUrl') ? { customBrandFontUrl: true } : {}),
     },
   })
+
+  if (!workspace) return new Response(null, { status: 404 })
 
   const article = workspace
     ? await prisma.article.findFirst({
@@ -76,14 +78,7 @@ export default async function OgImage(props: Props) {
     ? `"${fonts.brand.name}"`
     : `"${fonts.heading.name}"`
 
-  // Build font list for Satori
-  const fontList: { name: string; data: ArrayBuffer; style: 'normal' }[] = [
-    { name: fonts.heading.name, data: fonts.heading.data, style: 'normal' },
-    { name: fonts.body.name, data: fonts.body.data, style: 'normal' },
-  ]
-  if (fonts.brand) {
-    fontList.push({ name: fonts.brand.name, data: fonts.brand.data, style: 'normal' })
-  }
+  const fontList = buildFontList(fonts)
 
   return new ImageResponse(
     (

@@ -47,12 +47,17 @@ export function loadDefaultFonts() {
   return defaultFontsPromise
 }
 
+// Matches any HTTPS .ttf URL in a CSS src — covers Google Fonts (fonts.gstatic.com),
+// Bunny Fonts (fonts.bunny.net), cdnfonts, and other allowed CDNs.
+const TTF_URL_RE = /url\((https:\/\/[^)]+\.ttf)\)/
+
 /**
- * Extract a normal-weight .ttf URL from a Google Fonts CSS stylesheet URL.
- * Prefers font-style:normal blocks — Google Fonts CSS for fonts requested with
- * italic variants (e.g. Lora:ital,wght@0,400;1,400) may list italic first,
- * which would cause OG image text to render italic unintentionally.
- * Falls back to the first TTF URL found if no normal block is present.
+ * Extract a non-italic .ttf URL from a font CSS stylesheet URL.
+ * Splits the CSS into @font-face blocks and skips any block that explicitly
+ * declares font-style: italic. Treats absence of font-style (common for
+ * regular-only fonts) as normal. Falls back to the first TTF URL found if
+ * no non-italic block contains one.
+ * Works with Google Fonts, Bunny Fonts, cdnfonts, and other HTTPS font CDNs.
  */
 async function extractTtfFromCssUrl(cssUrl: string): Promise<ArrayBuffer | null> {
   try {
@@ -62,17 +67,17 @@ async function extractTtfFromCssUrl(cssUrl: string): Promise<ArrayBuffer | null>
     if (!res.ok) return null
     const css = await res.text()
 
-    // Split into @font-face blocks and prefer font-style: normal
+    // Prefer a non-italic @font-face block
     const blocks = css.split('@font-face')
     let ttfUrl: string | null = null
     for (const block of blocks) {
-      if (!/font-style:\s*normal/.test(block)) continue
-      const m = block.match(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+\.ttf)\)/)
+      if (/font-style:\s*italic/.test(block)) continue
+      const m = block.match(TTF_URL_RE)
       if (m?.[1]) { ttfUrl = m[1]; break }
     }
     // Fallback: any TTF in the stylesheet
     if (!ttfUrl) {
-      const m = css.match(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+\.ttf)\)/)
+      const m = css.match(TTF_URL_RE)
       ttfUrl = m?.[1] ?? null
     }
 
@@ -138,6 +143,23 @@ export async function loadFonts(
     body: { name: bodyName, data: bodyData },
     brand,
   }
+}
+
+/**
+ * Build the deduplicated font list to pass to Satori/ImageResponse.
+ * Satori uses the first entry for any given name, so duplicates are dropped.
+ */
+export function buildFontList(
+  fonts: OgFonts,
+): { name: string; data: ArrayBuffer; style: 'normal' }[] {
+  const seen = new Set<string>()
+  const list: { name: string; data: ArrayBuffer; style: 'normal' }[] = []
+  for (const font of [fonts.heading, fonts.body, fonts.brand]) {
+    if (!font || seen.has(font.name)) continue
+    seen.add(font.name)
+    list.push({ name: font.name, data: font.data, style: 'normal' })
+  }
+  return list
 }
 
 /** Truncate text with ellipsis. */
