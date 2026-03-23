@@ -12,7 +12,7 @@ const { auth } = NextAuth(authConfig)
 const intlMiddleware = createIntlMiddleware(routing)
 
 // ---------------------------------------------------------------------------
-// Domain routing helpers (previously in proxy.ts)
+// Constants
 // ---------------------------------------------------------------------------
 
 const HELP_CENTER_DOMAIN = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? 'helpnest.cloud'
@@ -24,6 +24,36 @@ const APP_ORIGIN =
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, '') ??
   process.env.NEXTAUTH_URL?.replace(/\/$/, '') ??
   ''
+
+const APP_HOST = APP_ORIGIN.replace(/^https?:\/\//, '').split(':')[0] ?? ''
+
+// ---------------------------------------------------------------------------
+// Error pages — static HTML returned directly from middleware (no Next.js)
+// ---------------------------------------------------------------------------
+
+const NOT_FOUND_HTML = `<!DOCTYPE html>
+<html>
+<head><title>Help Center Not Found</title></head>
+<body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#F7F4EE;color:#1A1814">
+<div style="text-align:center;max-width:400px">
+<p style="font-size:48px;margin-bottom:16px">&#x1FAB9;</p>
+<h1 style="font-size:24px;margin-bottom:8px">Help center not found</h1>
+<p style="color:#7A756C;font-size:14px">This help center could not be found. If you just set up this domain, it may take a few minutes to activate.</p>
+</div></body></html>`
+
+const UNAVAILABLE_HTML = `<!DOCTYPE html>
+<html>
+<head><title>Temporarily Unavailable</title><meta http-equiv="refresh" content="5"></head>
+<body style="font-family:system-ui;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#F7F4EE;color:#1A1814">
+<div style="text-align:center;max-width:400px">
+<p style="font-size:48px;margin-bottom:16px">&#x23F3;</p>
+<h1 style="font-size:24px;margin-bottom:8px">Temporarily unavailable</h1>
+<p style="color:#7A756C;font-size:14px">This help center is temporarily unavailable. Retrying automatically...</p>
+</div></body></html>`
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function detectLocaleFromPath(pathname: string): Locale {
   const segments = pathname.split('/').filter(Boolean)
@@ -40,7 +70,6 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   const pathWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), '') || '/'
 
   // Path already contains the internal /<slug>/help prefix — let it through
-  // to the filesystem route without double-rewriting
   if (pathWithoutLocale.startsWith(`/${slug}/help`)) return null
   if (pathWithoutLocale.startsWith('/api/')) return null
   if (pathWithoutLocale === '/widget.js') return null
@@ -56,23 +85,24 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   url.pathname = `/${locale}/${slug}/help${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`
   url.search = search
   const response = NextResponse.rewrite(url)
-  // Pass the external base URL to pages so they can generate clean links and metadata
   response.headers.set('x-helpnest-base-url', externalBaseUrl)
   return response
 }
 
-function handleSubdomain(req: NextRequest): NextResponse | null {
-  const host = getRequestHostname(req.headers)
-  if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) && !host.startsWith('www.')) {
-    const slug = host.slice(0, host.length - HELP_CENTER_DOMAIN.length - 1)
-    // Skip the dashboard subdomain — that's the admin app, not a help center
-    if (slug === 'dashboard') {
-      return null
-    }
-    return rewriteToHelp(req, slug)
-  }
-  return null
+function isKnownHost(host: string): boolean {
+  return (
+    host === APP_HOST ||
+    host === 'localhost' ||
+    host === '127.0.0.1' ||
+    host === '::1' ||
+    host.endsWith(`.${HELP_CENTER_DOMAIN}`) ||
+    host === HELP_CENTER_DOMAIN
+  )
 }
+
+// ---------------------------------------------------------------------------
+// Step 1: Env var custom domain (self-hosted fast path)
+// ---------------------------------------------------------------------------
 
 function handleCustomDomain(req: NextRequest): NextResponse | null {
   if (!CUSTOM_DOMAIN || !CUSTOM_DOMAIN_SLUG) return null
@@ -83,17 +113,34 @@ function handleCustomDomain(req: NextRequest): NextResponse | null {
   return null
 }
 
+// ---------------------------------------------------------------------------
+// Step 2: Subdomain routing (*.helpnest.cloud)
+// ---------------------------------------------------------------------------
+
+function handleSubdomain(req: NextRequest): NextResponse | null {
+  const host = getRequestHostname(req.headers)
+  if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) && !host.startsWith('www.')) {
+    const slug = host.slice(0, host.length - HELP_CENTER_DOMAIN.length - 1)
+    if (slug === 'dashboard') return null
+    return rewriteToHelp(req, slug)
+  }
+  return null
+}
+
+// ---------------------------------------------------------------------------
+// Step 4: BYOD fallback — API fetch when KV missed (terminal for BYOD)
+// ---------------------------------------------------------------------------
+
 async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | null> {
   if (!APP_ORIGIN) return null
+
+  // Only run for BYOD requests that came through the Worker without a slug
+  const hasHelpNestHost = !!req.headers.get('x-helpnest-host')
+
   const host = getRequestHostname(req.headers)
-  if (!host) return null
-  if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) || host === CUSTOM_DOMAIN?.toLowerCase()) {
-    return null
-  }
-  const appHost = APP_ORIGIN.replace(/^https?:\/\//, '').split(':')[0] ?? ''
-  if (host === appHost || host === 'localhost' || host === '127.0.0.1' || host === '::1') {
-    return null
-  }
+  if (!host) return hasHelpNestHost ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } }) : null
+  if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) || host === CUSTOM_DOMAIN?.toLowerCase()) return null
+  if (isKnownHost(host) && !hasHelpNestHost) return null
 
   try {
     const controller = new AbortController()
@@ -108,18 +155,40 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
       },
     )
     clearTimeout(timeout)
+
     if (!res.ok) {
-      return null
+      // API error — if BYOD, show error page; otherwise fall through
+      return hasHelpNestHost
+        ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5' } })
+        : null
     }
+
     const { slug } = await res.json() as { slug: string | null }
     if (!slug) {
-      return null
+      // Domain not found in DB
+      return hasHelpNestHost
+        ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+        : null
     }
-    return rewriteToHelp(req, slug)
+
+    const rewrite = rewriteToHelp(req, slug)
+    if (rewrite) return rewrite
+
+    // BYOD domain hitting a non-help path — return 404
+    return hasHelpNestHost
+      ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+      : null
   } catch {
-    return null
+    // Timeout or network error
+    return hasHelpNestHost
+      ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5' } })
+      : null
   }
 }
+
+// ---------------------------------------------------------------------------
+// Step 6: Auth redirect
+// ---------------------------------------------------------------------------
 
 function handleAuthRedirect(
   req: NextRequest & { auth?: unknown },
@@ -137,34 +206,48 @@ function handleAuthRedirect(
 }
 
 // ---------------------------------------------------------------------------
-// Middleware
+// Middleware — 7-step routing pipeline
 // ---------------------------------------------------------------------------
 
 export default auth(async (req) => {
-  // 1. Env var custom domain — fast path
+  // 1. Env var custom domain — fast path (self-hosted)
   const customDomainResponse = handleCustomDomain(req)
-  if (customDomainResponse) {
-    return customDomainResponse
-  }
+  if (customDomainResponse) return customDomainResponse
 
-  // 2. Subdomain routing for helpnest.cloud
+  // 2. Subdomain routing (*.helpnest.cloud)
   const subdomainResponse = handleSubdomain(req)
   if (subdomainResponse) return subdomainResponse
 
-  // 3. DB-backed custom domain
+  // 3. BYOD fast path — slug resolved at edge by Cloudflare Worker KV
+  const byodSlug = req.headers.get('x-helpnest-slug')
+  if (byodSlug) {
+    const rewrite = rewriteToHelp(req, byodSlug)
+    if (rewrite) return rewrite
+    // BYOD domain hitting a non-help path (e.g. /dashboard) — block it
+    return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+  }
+
+  // 4. BYOD fallback — KV missed, try API fetch (terminal for BYOD requests)
   if (!req.nextUrl.pathname.startsWith('/api/internal/')) {
     const dbDomainResponse = await handleDBCustomDomain(req)
     if (dbDomainResponse) return dbDomainResponse
   }
 
-  // 4. When subdomain routing is configured (cloud), redirect direct path
-  //    access like helpnest.cloud/en/<slug>/help → <slug>.helpnest.cloud
-  //    Self-hosted users without NEXT_PUBLIC_HELP_CENTER_DOMAIN still use path routing.
+  // 5. Unknown host guard — block unrecognized external hosts that bypassed
+  //    the Worker (no X-HelpNest-Host header) and aren't known app hosts.
+  //    Uses raw header check, NOT getRequestHostname() which normalizes away
+  //    the distinction between Worker-proxied and direct-access requests.
+  if (!req.headers.get('x-helpnest-host')) {
+    const host = getRequestHostname(req.headers)
+    if (!isKnownHost(host)) {
+      return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+    }
+  }
+
+  // 6. Cloud path redirect — helpnest.cloud/en/<slug>/help → <slug>.helpnest.cloud
   if (process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN) {
     const host = getRequestHostname(req.headers)
-    const appHost = APP_ORIGIN.replace(/^https?:\/\//, '').split(':')[0] ?? ''
-    // Only redirect when accessed via the main app host, not subdomains or custom domains
-    if (host === appHost) {
+    if (host === APP_HOST) {
       const { pathname } = req.nextUrl
       const locale = detectLocaleFromPath(pathname)
       const pathWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), '') || '/'
@@ -172,17 +255,18 @@ export default auth(async (req) => {
       if (helpMatch) {
         const slug = helpMatch[1]
         const restPath = pathWithoutLocale.replace(`/${slug}/help`, '') || ''
-        const subdomain = `https://${slug}.${HELP_CENTER_DOMAIN}${restPath}${req.nextUrl.search}`
-        return NextResponse.redirect(subdomain, 308)
+        return NextResponse.redirect(
+          `https://${slug}.${HELP_CENTER_DOMAIN}${restPath}${req.nextUrl.search}`,
+          308,
+        )
       }
     }
   }
 
-  // 5. Auth check — redirect unauthenticated dashboard requests to login
+  // 7. Auth check + next-intl locale handling
   const authResponse = handleAuthRedirect(req)
   if (authResponse) return authResponse
 
-  // 6. next-intl locale detection, redirect, and negotiation
   return intlMiddleware(req)
 })
 
