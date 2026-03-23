@@ -19,6 +19,7 @@ export default async function OgImage(props: Props) {
     select: {
       name: true,
       themeId: true,
+      ...(columns.has('brandText') ? { brandText: true } : {}),
       ...(columns.has('customCreamColor') ? { customCreamColor: true } : {}),
       ...(columns.has('customInkColor') ? { customInkColor: true } : {}),
       ...(columns.has('customMutedColor') ? { customMutedColor: true } : {}),
@@ -68,7 +69,7 @@ export default async function OgImage(props: Props) {
     ? `${article.collection.emoji ?? '📄'} ${article.collection.title}`
     : ''
   const authorName = article?.author?.name ? `By ${article.author.name}` : ''
-  const workspaceName = workspace?.name ?? ''
+  const workspaceName = workspace?.brandText?.trim() || (workspace?.name ?? '')
 
   // Workspace name uses brand font if set, otherwise heading font
   const brandFontFamily = fonts.brand

@@ -20,6 +20,7 @@ export default async function OgImage(props: Props) {
       id: true,
       name: true,
       themeId: true,
+      ...(columns.has('brandText') ? { brandText: true } : {}),
       ...(columns.has('customCreamColor') ? { customCreamColor: true } : {}),
       ...(columns.has('customInkColor') ? { customInkColor: true } : {}),
       ...(columns.has('customMutedColor') ? { customMutedColor: true } : {}),
@@ -71,7 +72,7 @@ export default async function OgImage(props: Props) {
     ? truncateText(collection.description, 140)
     : ''
   const articleCount = collection?._count?.articles ?? 0
-  const workspaceName = workspace?.name ?? ''
+  const workspaceName = workspace?.brandText?.trim() || (workspace?.name ?? '')
 
   const brandFontFamily = fonts.brand
     ? `"${fonts.brand.name}"`
