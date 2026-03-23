@@ -87,6 +87,7 @@ export async function PATCH(request: Request) {
     autoDraftGapThreshold,
     autoDraftExternalEnabled,
     batchWindowMinutes,
+    aiDraftRateLimit,
   } = body as {
     name?: unknown
     slug?: unknown
@@ -123,6 +124,7 @@ export async function PATCH(request: Request) {
     autoDraftGapThreshold?: unknown
     autoDraftExternalEnabled?: unknown
     batchWindowMinutes?: unknown
+    aiDraftRateLimit?: unknown
   }
 
   if (isDemoMode()) {
@@ -474,6 +476,12 @@ export async function PATCH(request: Request) {
     }
   }
 
+  if (aiDraftRateLimit !== undefined) {
+    if (typeof aiDraftRateLimit !== 'number' || !Number.isInteger(aiDraftRateLimit) || aiDraftRateLimit < 1 || aiDraftRateLimit > 500) {
+      return NextResponse.json({ error: 'aiDraftRateLimit must be an integer between 1 and 500' }, { status: 400 })
+    }
+  }
+
   const clampedThreshold =
     aiEscalationThreshold !== undefined ? (aiEscalationThreshold as number) : undefined
 
@@ -529,6 +537,7 @@ export async function PATCH(request: Request) {
   const canPersistAutoDraftGapThreshold = autoDraftGapThreshold !== undefined && cols.has('autoDraftGapThreshold')
   const canPersistAutoDraftExternalEnabled = autoDraftExternalEnabled !== undefined && cols.has('autoDraftExternalEnabled')
   const canPersistBatchWindowMinutes = batchWindowMinutes !== undefined && cols.has('batchWindowMinutes')
+  const canPersistAiDraftRateLimit = aiDraftRateLimit !== undefined && cols.has('aiDraftRateLimit')
 
   // 409 only when the client is trying to SET a non-empty value for a column that
   // doesn't exist yet (migration pending). Sending null/empty to clear a missing
@@ -579,6 +588,13 @@ export async function PATCH(request: Request) {
     )
   }
 
+  if (typeof aiDraftRateLimit === 'number' && !canPersistAiDraftRateLimit) {
+    return NextResponse.json(
+      { error: 'AI draft rate limit requires the latest database migration.' },
+      { status: 409 },
+    )
+  }
+
   try {
     const trimmedLogo =
       typeof logo === 'string' && logo.trim().length > 0
@@ -625,6 +641,7 @@ export async function PATCH(request: Request) {
         ...(canPersistAutoDraftGapThreshold ? { autoDraftGapThreshold: autoDraftGapThreshold as number } : {}),
         ...(canPersistAutoDraftExternalEnabled ? { autoDraftExternalEnabled: autoDraftExternalEnabled as boolean } : {}),
         ...(canPersistBatchWindowMinutes ? { batchWindowMinutes: batchWindowMinutes as number } : {}),
+        ...(canPersistAiDraftRateLimit ? { aiDraftRateLimit: aiDraftRateLimit as number } : {}),
       },
     })
     // Exclude aiApiKey from the response — the ciphertext has no client use

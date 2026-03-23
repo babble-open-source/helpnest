@@ -485,6 +485,9 @@
     "batchWindow": "Ventana de agrupación multi-repositorio:",
     "minutes": "minutos",
     "batchWindowHelp": "Al usar un ID de función compartido entre repositorios, espera este tiempo después del último PR antes de generar.",
+    "draftRateLimit": "Límite de velocidad:",
+    "perHour": "borradores por hora",
+    "draftRateLimitHelp": "Número máximo de borradores de artículos generados por IA por hora para este espacio de trabajo.",
     "saved": "¡Guardado!"
   },
   "sync": {

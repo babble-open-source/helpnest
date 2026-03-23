@@ -485,6 +485,9 @@
     "batchWindow": "Multi-repo batch window:",
     "minutes": "minutes",
     "batchWindowHelp": "When using a shared feature ID across repos, wait this long after the last PR before generating.",
+    "draftRateLimit": "AI rate limit",
+    "perHour": "drafts per hour",
+    "draftRateLimitHelp": "Maximum number of AI-generated article drafts and repo analyses per hour for this workspace.",
     "saved": "Saved!"
   },
   "sync": {

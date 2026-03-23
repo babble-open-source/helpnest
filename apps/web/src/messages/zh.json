@@ -485,6 +485,9 @@
     "batchWindow": "多仓库批处理窗口：",
     "minutes": "分钟",
     "batchWindowHelp": "在多个仓库使用共享功能 ID 时，在最后一个 PR 合并后等待此时长再生成。",
+    "draftRateLimit": "速率限制：",
+    "perHour": "篇草稿/小时",
+    "draftRateLimitHelp": "此工作区每小时 AI 生成文章草稿的最大数量。",
     "saved": "已保存！"
   },
   "sync": {

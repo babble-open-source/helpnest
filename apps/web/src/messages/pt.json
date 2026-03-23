@@ -485,6 +485,9 @@
     "batchWindow": "Janela de lote multi-repositório:",
     "minutes": "minutos",
     "batchWindowHelp": "Ao usar um ID de funcionalidade compartilhado entre repositórios, aguarde este tempo após o último PR antes de gerar.",
+    "draftRateLimit": "Limite de taxa:",
+    "perHour": "rascunhos por hora",
+    "draftRateLimitHelp": "Número máximo de rascunhos de artigos gerados por IA por hora para este espaço de trabalho.",
     "saved": "Salvo!"
   },
   "sync": {

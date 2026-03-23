@@ -485,6 +485,9 @@
     "batchWindow": "Fenêtre de traitement groupé multi-dépôts :",
     "minutes": "minutes",
     "batchWindowHelp": "Lors de l'utilisation d'un ID de fonctionnalité partagé entre plusieurs dépôts, attendez ce délai après la dernière PR avant de générer.",
+    "draftRateLimit": "Limite de débit :",
+    "perHour": "brouillons par heure",
+    "draftRateLimitHelp": "Nombre maximum de brouillons d'articles générés par IA par heure pour cet espace de travail.",
     "saved": "Enregistré !"
   },
   "sync": {

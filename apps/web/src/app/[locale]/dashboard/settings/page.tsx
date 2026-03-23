@@ -70,6 +70,7 @@ export default async function SettingsPage() {
         autoDraftGapThreshold: true,
         autoDraftExternalEnabled: true,
         batchWindowMinutes: true,
+        ...(columns.has('aiDraftRateLimit') ? { aiDraftRateLimit: true } : {}),
         // Migration-guarded branding fields — only selected when the column exists
         ...(columns.has('fontPresetId') ? { fontPresetId: true } : {}),
         ...(columns.has('brandText') ? { brandText: true } : {}),
@@ -104,111 +105,118 @@ export default async function SettingsPage() {
     deactivatedAt: m.deactivatedAt ? m.deactivatedAt.toISOString() : null,
   }))
 
+  const isAdmin = member.role === 'OWNER' || member.role === 'ADMIN'
+
   return (
     <div className="p-4 sm:p-8 max-w-2xl mx-auto">
       <h1 className="font-serif text-3xl text-ink mb-8">{t('title')}</h1>
 
       <div className="space-y-6">
-        {/* Profile */}
+        {/* Profile — visible to all roles */}
         <div className="bg-white rounded-xl border border-border p-6">
           <h2 className="font-medium text-ink mb-4">{t('yourProfile')}</h2>
           <ProfileForm name={member.user.name ?? ''} demoMode={demoMode} />
         </div>
 
-        {/* Workspace */}
-        <div className="bg-white rounded-xl border border-border p-6">
-          <h2 className="font-medium text-ink mb-4">{t('workspace')}</h2>
-          <WorkspaceForm
-            name={workspace?.name ?? ''}
-            slug={workspace?.slug ?? ''}
-            customDomain={workspace?.customDomain ?? ''}
-            logo={workspace?.logo ?? ''}
-            brandText={workspace?.brandText ?? ''}
-            customBrandFontFamily={workspace?.customBrandFontFamily ?? ''}
-            customBrandFontUrl={workspace?.customBrandFontUrl ?? ''}
-            favicon={workspace?.favicon ?? ''}
-            metaTitle={workspace?.metaTitle ?? ''}
-            metaDescription={workspace?.metaDescription ?? ''}
-            appUrl={appUrl}
-            helpCenterDomain={process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''}
-            cloudMode={isCloudMode()}
-            planTier={planTier}
-            cnameTarget={process.env.CLOUDFLARE_FALLBACK_ORIGIN ?? 'proxy.helpnest.cloud'}
-            demoMode={demoMode}
-            isOwner={member.role === 'OWNER'}
-            workspaceId={workspaceId}
-          />
-        </div>
+        {/* Workspace settings — OWNER and ADMIN only */}
+        {isAdmin && (
+          <>
+            <div className="bg-white rounded-xl border border-border p-6">
+              <h2 className="font-medium text-ink mb-4">{t('workspace')}</h2>
+              <WorkspaceForm
+                name={workspace?.name ?? ''}
+                slug={workspace?.slug ?? ''}
+                customDomain={workspace?.customDomain ?? ''}
+                logo={workspace?.logo ?? ''}
+                brandText={workspace?.brandText ?? ''}
+                customBrandFontFamily={workspace?.customBrandFontFamily ?? ''}
+                customBrandFontUrl={workspace?.customBrandFontUrl ?? ''}
+                favicon={workspace?.favicon ?? ''}
+                metaTitle={workspace?.metaTitle ?? ''}
+                metaDescription={workspace?.metaDescription ?? ''}
+                appUrl={appUrl}
+                helpCenterDomain={process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''}
+                cloudMode={isCloudMode()}
+                planTier={planTier}
+                cnameTarget={process.env.CLOUDFLARE_FALLBACK_ORIGIN ?? 'proxy.helpnest.cloud'}
+                demoMode={demoMode}
+                isOwner={member.role === 'OWNER'}
+                workspaceId={workspaceId}
+              />
+            </div>
 
-        {/* Members */}
-        <MembersSection
-          members={serializedMembers}
-          currentUserId={userId}
-          callerRole={member.role}
-          demoMode={demoMode}
-        />
+            {/* Members */}
+            <MembersSection
+              members={serializedMembers}
+              currentUserId={userId}
+              callerRole={member.role}
+              demoMode={demoMode}
+            />
 
-        {/* Theme */}
-        <div className="bg-white rounded-xl border border-border p-6">
-          <h2 className="font-medium text-ink mb-1">{t('branding')}</h2>
-          <p className="text-sm text-muted mb-4">
-            {t('brandingDescription')}
-          </p>
-          <ThemePicker
-            themes={themes}
-            fontPresets={fontPresets}
-            radiusOptions={radiusOptions}
-            currentThemeId={workspace?.themeId ?? ''}
-            currentFontPresetId={workspace?.fontPresetId ?? null}
-            currentCustomCreamColor={workspace?.customCreamColor ?? ''}
-            currentCustomInkColor={workspace?.customInkColor ?? ''}
-            currentCustomMutedColor={workspace?.customMutedColor ?? ''}
-            currentCustomBorderColor={workspace?.customBorderColor ?? ''}
-            currentCustomAccentColor={workspace?.customAccentColor ?? ''}
-            currentCustomGreenColor={workspace?.customGreenColor ?? ''}
-            currentCustomWhiteColor={workspace?.customWhiteColor ?? ''}
-            currentCustomRadius={workspace?.customRadius ?? ''}
-            currentCustomHeadingFontFamily={workspace?.customHeadingFontFamily ?? ''}
-            currentCustomHeadingFontUrl={workspace?.customHeadingFontUrl ?? ''}
-            currentCustomBodyFontFamily={workspace?.customBodyFontFamily ?? ''}
-            currentCustomBodyFontUrl={workspace?.customBodyFontUrl ?? ''}
-            workspaceSlug={workspace?.slug ?? ''}
-            demoMode={demoMode}
-          />
-        </div>
+            {/* Theme */}
+            <div className="bg-white rounded-xl border border-border p-6">
+              <h2 className="font-medium text-ink mb-1">{t('branding')}</h2>
+              <p className="text-sm text-muted mb-4">
+                {t('brandingDescription')}
+              </p>
+              <ThemePicker
+                themes={themes}
+                fontPresets={fontPresets}
+                radiusOptions={radiusOptions}
+                currentThemeId={workspace?.themeId ?? ''}
+                currentFontPresetId={workspace?.fontPresetId ?? null}
+                currentCustomCreamColor={workspace?.customCreamColor ?? ''}
+                currentCustomInkColor={workspace?.customInkColor ?? ''}
+                currentCustomMutedColor={workspace?.customMutedColor ?? ''}
+                currentCustomBorderColor={workspace?.customBorderColor ?? ''}
+                currentCustomAccentColor={workspace?.customAccentColor ?? ''}
+                currentCustomGreenColor={workspace?.customGreenColor ?? ''}
+                currentCustomWhiteColor={workspace?.customWhiteColor ?? ''}
+                currentCustomRadius={workspace?.customRadius ?? ''}
+                currentCustomHeadingFontFamily={workspace?.customHeadingFontFamily ?? ''}
+                currentCustomHeadingFontUrl={workspace?.customHeadingFontUrl ?? ''}
+                currentCustomBodyFontFamily={workspace?.customBodyFontFamily ?? ''}
+                currentCustomBodyFontUrl={workspace?.customBodyFontUrl ?? ''}
+                workspaceSlug={workspace?.slug ?? ''}
+                demoMode={demoMode}
+              />
+            </div>
 
-        {/* AI Agent */}
-        <AiSettingsSection
-          aiEnabled={workspace?.aiEnabled ?? false}
-          aiProvider={workspace?.aiProvider ?? null}
-          aiModel={workspace?.aiModel ?? null}
-          aiGreeting={workspace?.aiGreeting ?? null}
-          aiInstructions={workspace?.aiInstructions ?? null}
-          aiEscalationThreshold={workspace?.aiEscalationThreshold ?? 0.3}
-          hasApiKey={!!workspace?.aiApiKey}
-          cloudMode={isCloudMode()}
-          planTier={planTier}
-          demoMode={demoMode}
-          productContext={workspace?.productContext ?? null}
-          autoDraftGapsEnabled={workspace?.autoDraftGapsEnabled ?? true}
-          autoDraftGapThreshold={workspace?.autoDraftGapThreshold ?? 2}
-          autoDraftExternalEnabled={workspace?.autoDraftExternalEnabled ?? true}
-          batchWindowMinutes={workspace?.batchWindowMinutes ?? 60}
-        />
+            {/* AI Agent */}
+            <AiSettingsSection
+              aiEnabled={workspace?.aiEnabled ?? false}
+              aiProvider={workspace?.aiProvider ?? null}
+              aiModel={workspace?.aiModel ?? null}
+              aiGreeting={workspace?.aiGreeting ?? null}
+              aiInstructions={workspace?.aiInstructions ?? null}
+              aiEscalationThreshold={workspace?.aiEscalationThreshold ?? 0.3}
+              hasApiKey={!!workspace?.aiApiKey}
+              cloudMode={isCloudMode()}
+              planTier={planTier}
+              demoMode={demoMode}
+              productContext={workspace?.productContext ?? null}
+              autoDraftGapsEnabled={workspace?.autoDraftGapsEnabled ?? true}
+              autoDraftGapThreshold={workspace?.autoDraftGapThreshold ?? 2}
+              autoDraftExternalEnabled={workspace?.autoDraftExternalEnabled ?? true}
+              batchWindowMinutes={workspace?.batchWindowMinutes ?? 60}
+              aiDraftRateLimit={workspace?.aiDraftRateLimit ?? 50}
+            />
 
-        {/* AI Search */}
-        <div className="bg-white rounded-xl border border-border p-6">
-          <h2 className="font-medium text-ink mb-1">{t('aiSearch')}</h2>
-          <p className="text-sm text-muted mb-4">
-            {isCloudMode()
-              ? 'Index your articles for AI-powered search. Run after publishing or updating articles.'
-              : t('aiSearchDescription')}
-          </p>
-          <SyncEmbeddingsButton workspaceId={workspaceId} />
-        </div>
+            {/* AI Search */}
+            <div className="bg-white rounded-xl border border-border p-6">
+              <h2 className="font-medium text-ink mb-1">{t('aiSearch')}</h2>
+              <p className="text-sm text-muted mb-4">
+                {isCloudMode()
+                  ? 'Index your articles for AI-powered search. Run after publishing or updating articles.'
+                  : t('aiSearchDescription')}
+              </p>
+              <SyncEmbeddingsButton workspaceId={workspaceId} />
+            </div>
 
-        {/* API Keys */}
-        <ApiKeysSection demoMode={demoMode} />
+            {/* API Keys */}
+            <ApiKeysSection demoMode={demoMode} />
+          </>
+        )}
       </div>
     </div>
   )

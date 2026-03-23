@@ -20,6 +20,7 @@ interface Props {
   autoDraftGapThreshold: number
   autoDraftExternalEnabled: boolean
   batchWindowMinutes: number
+  aiDraftRateLimit: number
 }
 
 export function AiSettingsSection({
@@ -38,6 +39,7 @@ export function AiSettingsSection({
   autoDraftGapThreshold: initAutoDraftGapThreshold,
   autoDraftExternalEnabled: initAutoDraftExternalEnabled,
   batchWindowMinutes: initBatchWindowMinutes,
+  aiDraftRateLimit: initAiDraftRateLimit,
 }: Props) {
   const [enabled, setEnabled] = useState(initEnabled)
   const [provider, setProvider] = useState((initProvider || 'anthropic').toLowerCase())
@@ -52,6 +54,7 @@ export function AiSettingsSection({
   const [autoDraftGapThreshold, setAutoDraftGapThreshold] = useState(initAutoDraftGapThreshold)
   const [autoDraftExternalEnabled, setAutoDraftExternalEnabled] = useState(initAutoDraftExternalEnabled)
   const [batchWindowMinutes, setBatchWindowMinutes] = useState(initBatchWindowMinutes)
+  const [aiDraftRateLimit, setAiDraftRateLimit] = useState(initAiDraftRateLimit)
   const t = useTranslations('aiSettings')
   const tc = useTranslations('common')
   const [saving, setSaving] = useState(false)
@@ -76,6 +79,7 @@ export function AiSettingsSection({
         autoDraftGapThreshold,
         autoDraftExternalEnabled,
         batchWindowMinutes,
+        aiDraftRateLimit,
       }
       if (removeApiKey) body.aiApiKey = null
       else if (apiKey) body.aiApiKey = apiKey
@@ -375,6 +379,28 @@ export function AiSettingsSection({
                 </p>
               </div>
             )}
+          </div>
+
+          <div className="border-t border-border pt-4 space-y-4">
+            <div>
+              <h3 className="text-sm font-medium text-ink">{t('draftRateLimit')}</h3>
+              <p className="text-xs text-muted mt-0.5">
+                {t('draftRateLimitHelp')}
+              </p>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink mb-1">
+                <input
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={aiDraftRateLimit}
+                  onChange={(e) => setAiDraftRateLimit(Math.max(1, Math.min(500, parseInt(e.target.value, 10) || 50)))}
+                  disabled={demoMode}
+                  className="inline-block w-20 me-1 px-2 py-0.5 border border-border rounded text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
+                /> {t('perHour')}
+              </label>
+            </div>
           </div>
 
         </>

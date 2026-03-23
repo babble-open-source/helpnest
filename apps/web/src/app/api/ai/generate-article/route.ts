@@ -2,12 +2,13 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
 import { prisma } from '@/lib/db'
 import { redis } from '@/lib/redis'
-import { draftArticle } from '@/lib/article-drafter'
+import { draftArticle, DraftError } from '@/lib/article-drafter'
 import { isByok } from '@/lib/ai/resolve-provider'
 import { checkLimit, incrementUsage } from '@/lib/cloud'
 import type { CodeContext } from '@/lib/article-drafter'
 
-const RATE_LIMIT_MAX = 20
+// Default rate limit — admins can override per-workspace via dashboard AI settings
+const DEFAULT_RATE_LIMIT = 50
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000 // 1 hour
 
 async function cacheIdempotent(workspaceId: string, key: string, result: object): Promise<void> {
@@ -23,14 +24,14 @@ async function cacheIdempotent(workspaceId: string, key: string, result: object)
 // Tracks per-workspace request counts within the current time slot.
 const _articleMemFallback = new Map<string, number>()
 
-async function checkRateLimit(workspaceId: string): Promise<{ limited: boolean }> {
+async function checkRateLimit(workspaceId: string, max: number): Promise<{ limited: boolean }> {
   if (redis) {
     try {
       const slot = Math.floor(Date.now() / RATE_LIMIT_WINDOW_MS)
       const key = `rl:generate-article:${workspaceId}:${slot}`
       const count = await redis.incr(key)
       if (count === 1) await redis.pexpire(key, RATE_LIMIT_WINDOW_MS * 2)
-      return { limited: count > RATE_LIMIT_MAX }
+      return { limited: count > max }
     } catch {
       // Redis unavailable — fall through to in-memory fallback
     }
@@ -41,7 +42,7 @@ async function checkRateLimit(workspaceId: string): Promise<{ limited: boolean }
   const slot = Math.floor(now / RATE_LIMIT_WINDOW_MS)
   const memKey = `${workspaceId}:${slot}`
   const current = _articleMemFallback.get(memKey) ?? 0
-  if (current >= RATE_LIMIT_MAX) return { limited: true }
+  if (current >= max) return { limited: true }
   _articleMemFallback.set(memKey, current + 1)
   // Prune stale slots to prevent unbounded memory growth
   for (const k of _articleMemFallback.keys()) {
@@ -81,23 +82,46 @@ export async function POST(request: Request) {
     codeContext?: unknown
   }
 
-  // Rate limit — check before DB query to reduce load under abuse
-  const rate = await checkRateLimit(authResult.workspaceId)
+  // Rate limit — check before any DB query to reduce load under abuse
+  const rate = await checkRateLimit(authResult.workspaceId, DEFAULT_RATE_LIMIT)
   if (rate.limited) {
     return NextResponse.json(
-      { error: 'Rate limit exceeded. Maximum 20 drafts per hour per workspace.' },
+      { error: `Rate limit exceeded. Maximum ${DEFAULT_RATE_LIMIT} drafts per hour per workspace.` },
       { status: 429 },
     )
+  }
+
+  // Single workspace query — all fields needed for auth, credits, and drafting
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: authResult.workspaceId },
+    select: {
+      aiApiKey: true,
+      aiDraftRateLimit: true,
+      autoDraftExternalEnabled: true,
+      aiEnabled: true,
+      productContext: true,
+      aiInstructions: true,
+      aiProvider: true,
+      aiModel: true,
+    },
+  })
+
+  // Per-workspace rate limit may be stricter than the default — re-check if needed
+  const workspaceLimit = workspace?.aiDraftRateLimit ?? DEFAULT_RATE_LIMIT
+  if (workspaceLimit < DEFAULT_RATE_LIMIT) {
+    const wsRate = await checkRateLimit(authResult.workspaceId, workspaceLimit)
+    if (wsRate.limited) {
+      return NextResponse.json(
+        { error: `Rate limit exceeded. Maximum ${workspaceLimit} drafts per hour per workspace.` },
+        { status: 429 },
+      )
+    }
   }
 
   // Check AI credit quota — BYOK allowed for self-hosted, PRO, BUSINESS
   const creditLimit = await checkLimit(authResult.workspaceId, 'aiCredits')
   const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || creditLimit.plan === 'PRO' || creditLimit.plan === 'BUSINESS'
-  const ws = await prisma.workspace.findUnique({
-    where: { id: authResult.workspaceId },
-    select: { aiApiKey: true },
-  })
-  if (!isByok({ aiApiKey: ws?.aiApiKey ?? null }, { byok: byokAllowed })) {
+  if (!isByok({ aiApiKey: workspace?.aiApiKey ?? null }, { byok: byokAllowed })) {
     if (!creditLimit.allowed) {
       return NextResponse.json(
         { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },
@@ -106,20 +130,6 @@ export async function POST(request: Request) {
     }
     incrementUsage(authResult.workspaceId, 'aiCredits')
   }
-
-  // Validate workspace is allowed to use external API drafting
-  const workspace = await prisma.workspace.findUnique({
-    where: { id: authResult.workspaceId },
-    select: {
-      autoDraftExternalEnabled: true,
-      aiEnabled: true,
-      productContext: true,
-      aiInstructions: true,
-      aiProvider: true,
-      aiApiKey: true,
-      aiModel: true,
-    },
-  })
 
   if (!workspace?.aiEnabled) {
     return NextResponse.json({ error: 'AI is not enabled for this workspace' }, { status: 403 })
@@ -211,14 +221,12 @@ export async function POST(request: Request) {
         gap: { id: gap.id, query: gap.query },
         workspaceSettings: workspace,
       })
-      if (!result) {
-        return NextResponse.json({ error: 'Draft generation failed' }, { status: 500 })
-      }
       await cacheIdempotent(authResult.workspaceId, idempotencyKey as string, result)
       return NextResponse.json(result)
     } catch (err) {
+      const status = err instanceof DraftError ? err.statusCode : 500
       const message = err instanceof Error ? err.message : 'Draft generation failed'
-      return NextResponse.json({ error: message }, { status: 500 })
+      return NextResponse.json({ error: message }, { status })
     }
   }
 
@@ -232,13 +240,11 @@ export async function POST(request: Request) {
       bypassThreshold: true,
       workspaceSettings: workspace,
     })
-    if (!result) {
-      return NextResponse.json({ error: 'Draft generation failed or was deduplicated' }, { status: 500 })
-    }
     await cacheIdempotent(authResult.workspaceId, idempotencyKey as string, result)
     return NextResponse.json(result)
   } catch (err) {
+    const status = err instanceof DraftError ? err.statusCode : 500
     const message = err instanceof Error ? err.message : 'Draft generation failed'
-    return NextResponse.json({ error: message }, { status: 500 })
+    return NextResponse.json({ error: message }, { status })
   }
 }

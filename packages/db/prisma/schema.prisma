@@ -85,6 +85,7 @@ model Workspace {
   autoDraftGapThreshold     Int        @default(2)
   autoDraftExternalEnabled  Boolean    @default(true)
   batchWindowMinutes        Int        @default(60)
+  aiDraftRateLimit          Int        @default(50)
   productContext            String?    @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
