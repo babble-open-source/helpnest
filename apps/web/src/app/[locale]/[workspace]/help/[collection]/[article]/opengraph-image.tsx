@@ -47,11 +47,11 @@ export default async function OgImage(props: Props) {
     customAccentColor: workspace?.customAccentColor ?? null,
   })
 
-  const title = truncateText(article?.title ?? 'Article', 100)
+  const title = truncateText(article?.title ?? 'Article', 70)
   const collectionLabel = article?.collection
     ? `${article.collection.emoji ?? '📄'} ${article.collection.title}`
     : ''
-  const authorName = article?.author?.name ?? ''
+  const authorName = article?.author?.name ? `By ${article.author.name}` : ''
   const workspaceName = workspace?.name ?? ''
 
   return new ImageResponse(
@@ -63,7 +63,6 @@ export default async function OgImage(props: Props) {
           display: 'flex',
           flexDirection: 'column',
           backgroundColor: colors.cream,
-          padding: 0,
         }}
       >
         {/* Content area */}
@@ -73,17 +72,18 @@ export default async function OgImage(props: Props) {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: '60px 72px 40px',
+            padding: '48px 64px',
           }}
         >
           {/* Collection label */}
           {collectionLabel && (
             <div
               style={{
-                fontSize: 22,
+                fontSize: 28,
                 color: colors.accent,
                 fontFamily: '"DM Sans"',
-                marginBottom: 20,
+                fontWeight: 600,
+                marginBottom: 16,
               }}
             >
               {collectionLabel}
@@ -93,11 +93,10 @@ export default async function OgImage(props: Props) {
           {/* Article title */}
           <div
             style={{
-              fontSize: 52,
+              fontSize: 64,
               fontFamily: '"Instrument Serif"',
               color: colors.ink,
-              lineHeight: 1.2,
-              marginBottom: 24,
+              lineHeight: 1.15,
             }}
           >
             {title}
@@ -107,12 +106,13 @@ export default async function OgImage(props: Props) {
           {authorName && (
             <div
               style={{
-                fontSize: 20,
+                fontSize: 26,
                 color: colors.muted,
                 fontFamily: '"DM Sans"',
+                marginTop: 24,
               }}
             >
-              {`By ${authorName}`}
+              {authorName}
             </div>
           )}
         </div>
@@ -124,12 +124,12 @@ export default async function OgImage(props: Props) {
             alignItems: 'center',
             justifyContent: 'space-between',
             backgroundColor: colors.ink,
-            padding: '20px 72px',
+            padding: '24px 64px',
           }}
         >
           <div
             style={{
-              fontSize: 22,
+              fontSize: 28,
               color: colors.cream,
               fontFamily: '"Instrument Serif"',
             }}
@@ -138,7 +138,7 @@ export default async function OgImage(props: Props) {
           </div>
           <div
             style={{
-              fontSize: 16,
+              fontSize: 22,
               color: colors.muted,
               fontFamily: '"DM Sans"',
             }}

@@ -66,7 +66,6 @@ export default async function OgImage(props: Props) {
           display: 'flex',
           flexDirection: 'column',
           backgroundColor: colors.cream,
-          padding: 0,
         }}
       >
         {/* Content area */}
@@ -76,49 +75,55 @@ export default async function OgImage(props: Props) {
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
-            padding: '60px 72px 40px',
+            padding: '48px 64px',
           }}
         >
           {/* Emoji */}
-          <div style={{ fontSize: 64, marginBottom: 24 }}>{emoji}</div>
+          <div style={{ fontSize: 80, marginBottom: 20 }}>{emoji}</div>
 
           {/* Collection title */}
           <div
             style={{
-              fontSize: 52,
+              fontSize: 64,
               fontFamily: '"Instrument Serif"',
               color: colors.ink,
-              lineHeight: 1.2,
-              marginBottom: 16,
+              lineHeight: 1.15,
             }}
           >
             {title}
           </div>
 
-          {/* Description */}
-          {description && (
-            <div
-              style={{
-                fontSize: 22,
-                color: colors.muted,
-                fontFamily: '"DM Sans"',
-                lineHeight: 1.4,
-                marginBottom: 16,
-              }}
-            >
-              {description}
-            </div>
-          )}
-
-          {/* Article count */}
+          {/* Description + count */}
           <div
             style={{
-              fontSize: 18,
-              color: colors.accent,
-              fontFamily: '"DM Sans"',
+              display: 'flex',
+              flexDirection: 'column',
+              marginTop: 20,
             }}
           >
-            {`${articleCount} ${articleCount === 1 ? 'article' : 'articles'}`}
+            {description && (
+              <div
+                style={{
+                  fontSize: 28,
+                  color: colors.muted,
+                  fontFamily: '"DM Sans"',
+                  lineHeight: 1.4,
+                  marginBottom: 12,
+                }}
+              >
+                {description}
+              </div>
+            )}
+            <div
+              style={{
+                fontSize: 24,
+                color: colors.accent,
+                fontFamily: '"DM Sans"',
+                fontWeight: 600,
+              }}
+            >
+              {`${articleCount} ${articleCount === 1 ? 'article' : 'articles'}`}
+            </div>
           </div>
         </div>
 
@@ -129,12 +134,12 @@ export default async function OgImage(props: Props) {
             alignItems: 'center',
             justifyContent: 'space-between',
             backgroundColor: colors.ink,
-            padding: '20px 72px',
+            padding: '24px 64px',
           }}
         >
           <div
             style={{
-              fontSize: 22,
+              fontSize: 28,
               color: colors.cream,
               fontFamily: '"Instrument Serif"',
             }}
@@ -143,7 +148,7 @@ export default async function OgImage(props: Props) {
           </div>
           <div
             style={{
-              fontSize: 16,
+              fontSize: 22,
               color: colors.muted,
               fontFamily: '"DM Sans"',
             }}
