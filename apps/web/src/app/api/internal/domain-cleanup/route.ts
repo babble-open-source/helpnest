@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { prisma } from '@/lib/db'
 import { findCustomHostname, deleteCustomHostname, isCloudflareEnabled } from '@/lib/cloudflare-saas'
+import { kvDeleteDomain } from '@/lib/cloudflare-kv'
 
 /**
  * POST /api/internal/domain-cleanup
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
     where: { id: workspaceId },
     data: { customDomain: null },
   })
+  kvDeleteDomain(domain).catch(() => {})
 
   console.info(`[domain-cleanup] Cleaned up custom domain "${domain}" for workspace ${workspaceId}`)
 
