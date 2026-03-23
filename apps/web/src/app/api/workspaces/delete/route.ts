@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { findCustomHostname, deleteCustomHostname, isCloudflareEnabled } from '@/lib/cloudflare-saas'
+import { kvDeleteDomain } from '@/lib/cloudflare-kv'
 import { isCloudMode } from '@/lib/cloud'
 import { qdrant, COLLECTION_NAME } from '@/lib/qdrant'
 
@@ -76,6 +77,7 @@ export async function POST(request: Request) {
       where: { id: workspaceId },
       data: { customDomain: null },
     }).catch(() => {})
+    kvDeleteDomain(workspace.customDomain).catch(() => {})
   }
 
   // 2. Qdrant vectors
