@@ -108,7 +108,15 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const iconUrl = state.workspace.favicon?.trim() || state.workspace.logo?.trim() || undefined
   const socialImage = toAbsoluteHttpUrl(state.workspace.logo?.trim())
 
+  const baseUrl = await getHelpBaseUrl()
+  const metadataBase = baseUrl
+    ? new URL(baseUrl)
+    : process.env.NEXT_PUBLIC_APP_URL
+      ? new URL(process.env.NEXT_PUBLIC_APP_URL)
+      : undefined
+
   return {
+    metadataBase,
     title,
     description,
     icons: iconUrl
