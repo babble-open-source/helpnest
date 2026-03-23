@@ -25,8 +25,11 @@ export default async function OgImage(props: Props) {
       ...(columns.has('customMutedColor') ? { customMutedColor: true } : {}),
       ...(columns.has('customBorderColor') ? { customBorderColor: true } : {}),
       ...(columns.has('customAccentColor') ? { customAccentColor: true } : {}),
+      ...(columns.has('fontPresetId') ? { fontPresetId: true } : {}),
       ...(columns.has('customHeadingFontFamily') ? { customHeadingFontFamily: true } : {}),
       ...(columns.has('customHeadingFontUrl') ? { customHeadingFontUrl: true } : {}),
+      ...(columns.has('customBodyFontFamily') ? { customBodyFontFamily: true } : {}),
+      ...(columns.has('customBodyFontUrl') ? { customBodyFontUrl: true } : {}),
       ...(columns.has('customBrandFontFamily') ? { customBrandFontFamily: true } : {}),
       ...(columns.has('customBrandFontUrl') ? { customBrandFontUrl: true } : {}),
     },
@@ -52,11 +55,14 @@ export default async function OgImage(props: Props) {
     customAccentColor: workspace?.customAccentColor ?? null,
   })
 
-  const fonts = await loadFonts({
-    headingFontFamily: workspace?.customHeadingFontFamily ?? null,
-    headingFontUrl: workspace?.customHeadingFontUrl ?? null,
-    brandFontFamily: workspace?.customBrandFontFamily ?? null,
-    brandFontUrl: workspace?.customBrandFontUrl ?? null,
+  const fonts = await loadFonts(workspace?.themeId ?? 'default', {
+    fontPresetId: workspace?.fontPresetId ?? null,
+    customHeadingFontFamily: workspace?.customHeadingFontFamily ?? null,
+    customHeadingFontUrl: workspace?.customHeadingFontUrl ?? null,
+    customBodyFontFamily: workspace?.customBodyFontFamily ?? null,
+    customBodyFontUrl: workspace?.customBodyFontUrl ?? null,
+    customBrandFontFamily: workspace?.customBrandFontFamily ?? null,
+    customBrandFontUrl: workspace?.customBrandFontUrl ?? null,
   })
 
   const emoji = collection?.emoji ?? '📄'

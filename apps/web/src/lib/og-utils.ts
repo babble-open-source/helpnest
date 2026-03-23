@@ -73,42 +73,52 @@ export interface OgFonts {
   brand: { name: string; data: ArrayBuffer } | null
 }
 
+/** Extract the primary font name from a CSS font-family stack. */
+function extractPrimaryFontName(fontStack: string): string {
+  const [primary = 'Instrument Serif'] = fontStack.split(',')
+  return primary.trim().replace(/^['"]|['"]$/g, '')
+}
+
 /**
- * Load fonts for OG image generation. Uses workspace custom fonts when
- * available, falling back to Instrument Serif (heading) and DM Sans (body).
+ * Load fonts for OG image generation.
+ * Resolves the full workspace theme (themeId + fontPresetId + custom overrides)
+ * so OG images always match the live help center typography.
  */
-export async function loadFonts(overrides?: {
-  headingFontFamily?: string | null
-  headingFontUrl?: string | null
-  brandFontFamily?: string | null
-  brandFontUrl?: string | null
-}): Promise<OgFonts> {
+export async function loadFonts(
+  themeId: string = 'default',
+  overrides: WorkspaceFontOverrides = {},
+): Promise<OgFonts> {
   const defaults = await loadDefaultFonts()
+  const theme = resolveWorkspaceTheme(themeId, overrides)
 
-  let headingName = 'Instrument Serif'
+  // Heading font — from resolved theme (includes preset + custom overrides)
+  let headingName = extractPrimaryFontName(theme.fonts.heading)
   let headingData = defaults.heading
-
-  // Custom heading font
-  if (overrides?.headingFontFamily && overrides?.headingFontUrl) {
-    const custom = await extractTtfFromCssUrl(overrides.headingFontUrl)
-    if (custom) {
-      headingName = overrides.headingFontFamily
-      headingData = custom
-    }
+  if (theme.fonts.headingUrl) {
+    const data = await extractTtfFromCssUrl(theme.fonts.headingUrl)
+    if (data) headingData = data
   }
 
-  // Custom brand font (for workspace name)
+  // Body font — from resolved theme (includes preset + custom overrides)
+  let bodyName = extractPrimaryFontName(theme.fonts.body)
+  let bodyData = defaults.body
+  if (theme.fonts.bodyUrl) {
+    const data = await extractTtfFromCssUrl(theme.fonts.bodyUrl)
+    if (data) bodyData = data
+  }
+
+  // Brand font — for workspace name in the branding bar
   let brand: OgFonts['brand'] = null
-  if (overrides?.brandFontFamily && overrides?.brandFontUrl) {
-    const custom = await extractTtfFromCssUrl(overrides.brandFontUrl)
-    if (custom) {
-      brand = { name: overrides.brandFontFamily, data: custom }
-    }
+  const brandFamily = overrides.customBrandFontFamily?.trim() ?? ''
+  const brandUrl = overrides.customBrandFontUrl?.trim() ?? ''
+  if (brandFamily && brandUrl) {
+    const data = await extractTtfFromCssUrl(brandUrl)
+    if (data) brand = { name: brandFamily, data }
   }
 
   return {
     heading: { name: headingName, data: headingData },
-    body: { name: 'DM Sans', data: defaults.body },
+    body: { name: bodyName, data: bodyData },
     brand,
   }
 }
