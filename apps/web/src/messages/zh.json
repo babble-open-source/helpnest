@@ -229,7 +229,8 @@
     "placeholder": "例如：配置 SSO",
     "generating": "生成中...",
     "generateButton": "生成",
-    "rateLimited": "草稿生成已达上限（每小时 20 篇），请等待整点后重试。"
+    "rateLimited": "草稿生成已达上限（每小时 20 篇），请等待整点后重试。",
+    "cancel": "取消"
   },
   "collectionsPage": {
     "collectionsOrganise": "合集帮助您按主题组织文章"

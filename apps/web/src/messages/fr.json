@@ -229,7 +229,8 @@
     "placeholder": "ex. : Configurer le SSO",
     "generating": "Génération...",
     "generateButton": "Générer",
-    "rateLimited": "Limite de brouillons atteinte (20/h). Réessayez après la réinitialisation de l'heure."
+    "rateLimited": "Limite de brouillons atteinte (20/h). Réessayez après la réinitialisation de l'heure.",
+    "cancel": "Annuler"
   },
   "collectionsPage": {
     "collectionsOrganise": "Les collections organisent vos articles par thèmes"

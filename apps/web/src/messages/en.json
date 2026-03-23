@@ -229,7 +229,8 @@
     "placeholder": "e.g. Setting up SSO",
     "generating": "Generating...",
     "generateButton": "Generate",
-    "rateLimited": "Draft limit reached (20/hr). Try again after the hour resets."
+    "rateLimited": "Draft limit reached (20/hr). Try again after the hour resets.",
+    "cancel": "Cancel"
   },
   "collectionsPage": {
     "collectionsOrganise": "Collections organise your articles into topics"

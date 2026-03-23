@@ -229,7 +229,8 @@
     "placeholder": "p. ej. Configurar SSO",
     "generating": "Generando...",
     "generateButton": "Generar",
-    "rateLimited": "Límite de borradores alcanzado (20/hr). Inténtalo de nuevo cuando se reinicie la hora."
+    "rateLimited": "Límite de borradores alcanzado (20/hr). Inténtalo de nuevo cuando se reinicie la hora.",
+    "cancel": "Cancelar"
   },
   "collectionsPage": {
     "collectionsOrganise": "Las colecciones organizan tus artículos por temas"

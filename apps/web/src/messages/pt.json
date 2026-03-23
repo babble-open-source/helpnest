@@ -229,7 +229,8 @@
     "placeholder": "ex.: Configurar SSO",
     "generating": "Gerando...",
     "generateButton": "Gerar",
-    "rateLimited": "Limite de rascunhos atingido (20/h). Tente novamente após o reinício da hora."
+    "rateLimited": "Limite de rascunhos atingido (20/h). Tente novamente após o reinício da hora.",
+    "cancel": "Cancelar"
   },
   "collectionsPage": {
     "collectionsOrganise": "As coleções organizam seus artigos por temas"
