@@ -81,11 +81,16 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   const host = getRequestHostname(req.headers)
   const externalBaseUrl = `https://${host}`
 
-  // Use req.url as the base — req.nextUrl.clone() uses the Host header which
-  // on Railway is dashboard.helpnest.cloud, creating a cross-origin rewrite
-  // that Next.js converts to a 308 redirect loop.
+  // Build rewrite URL using the forwarded host (X-Forwarded-Host) — this is
+  // what Next.js considers the "real" incoming origin. Using req.url would give
+  // us Railway's internal host (dashboard.helpnest.cloud), creating a cross-
+  // origin rewrite that Next.js converts to a 308 redirect loop.
+  const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim()
+  const rewriteBase = forwardedHost
+    ? `${req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() || 'https'}://${forwardedHost}`
+    : req.url
   const rewritePath = `/${locale}/${slug}/help${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`
-  const rewriteUrl = new URL(rewritePath + (search || ''), req.url)
+  const rewriteUrl = new URL(rewritePath + (search || ''), rewriteBase)
   const response = NextResponse.rewrite(rewriteUrl)
   response.headers.set('x-helpnest-base-url', externalBaseUrl)
   return response
@@ -140,7 +145,7 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
   const hasHelpNestHost = !!req.headers.get('x-helpnest-host')
 
   const host = getRequestHostname(req.headers)
-  if (!host) return hasHelpNestHost ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': '4-no-host' } }) : null
+  if (!host) return hasHelpNestHost ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } }) : null
   if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) || host === CUSTOM_DOMAIN?.toLowerCase()) return null
   if (isKnownHost(host) && !hasHelpNestHost) return null
 
@@ -161,7 +166,7 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
     if (!res.ok) {
       // API error — if BYOD, show error page; otherwise fall through
       return hasHelpNestHost
-        ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5', 'x-mw-step': `4-api-error:${res.status}` } })
+        ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5' } })
         : null
     }
 
@@ -169,7 +174,7 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
     if (!slug) {
       // Domain not found in DB
       return hasHelpNestHost
-        ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': `4-no-slug:${host}` } })
+        ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
         : null
     }
 
@@ -178,12 +183,12 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
 
     // BYOD domain hitting a non-help path — return 404
     return hasHelpNestHost
-      ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': '4-no-rewrite' } })
+      ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
       : null
   } catch {
     // Timeout or network error
     return hasHelpNestHost
-      ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5', 'x-mw-step': '4-fetch-error' } })
+      ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5' } })
       : null
   }
 }
@@ -225,15 +230,22 @@ export default auth(async (req) => {
   if (byodSlug) {
     const rewrite = rewriteToHelp(req, byodSlug)
     if (rewrite) return rewrite
+
+    // rewriteToHelp returns null when the path already has /${slug}/help —
+    // this happens when the request was previously redirected to the internal
+    // path. Let it through so Next.js can render the page.
+    const { pathname: byodPath } = req.nextUrl
+    const byodLocale = detectLocaleFromPath(byodPath)
+    const byodPWL = byodPath.replace(new RegExp(`^/${byodLocale}`), '') || '/'
+    if (byodPWL.startsWith(`/${byodSlug}/help`)) {
+      const byodHost = getRequestHostname(req.headers)
+      const response = NextResponse.next()
+      response.headers.set('x-helpnest-base-url', `https://${byodHost}`)
+      return response
+    }
+
     // BYOD domain hitting a non-help path (e.g. /dashboard) — block it
-    const { pathname: dbgPath } = req.nextUrl
-    const dbgLocale = detectLocaleFromPath(dbgPath)
-    const dbgPWL = dbgPath.replace(new RegExp(`^/${dbgLocale}`), '') || '/'
-    return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: {
-      'Content-Type': 'text/html',
-      'x-mw-step': '3-byod-no-rewrite',
-      'x-mw-debug': JSON.stringify({ slug: byodSlug, pathname: dbgPath, locale: dbgLocale, pathWithoutLocale: dbgPWL, url: req.url.slice(0, 200) }),
-    } })
+    return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
   }
 
   // 4. BYOD fallback — KV missed, try API fetch (terminal for BYOD requests)
@@ -249,7 +261,7 @@ export default auth(async (req) => {
   if (!req.headers.get('x-helpnest-host')) {
     const host = getRequestHostname(req.headers)
     if (!isKnownHost(host)) {
-      return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': `5-unknown-host:${host}` } })
+      return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
     }
   }
 
