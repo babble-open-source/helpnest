@@ -1,4 +1,5 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
+import { kvPutDomain } from '@/lib/cloudflare-kv'
 import { getFontPreset, radiusOptions } from '@/lib/branding'
 import { encryptApiKey } from '@/lib/ai/resolve-provider'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
@@ -644,6 +645,11 @@ export async function PATCH(request: Request) {
         ...(canPersistAiDraftRateLimit ? { aiDraftRateLimit: aiDraftRateLimit as number } : {}),
       },
     })
+    // If the slug changed and the workspace has a custom domain, refresh the KV
+    // mapping so the Cloudflare Worker routes to the new slug immediately.
+    if (slug !== undefined && updated.customDomain) {
+      kvPutDomain(updated.customDomain as string, updated.slug as string).catch(() => {})
+    }
     // Exclude aiApiKey from the response — the ciphertext has no client use
     // and if encryption is not configured the plaintext would be echoed back.
     const { aiApiKey: _omit, ...safeWorkspace } = updated as typeof updated & { aiApiKey?: unknown }
