@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation'
 import { cache } from 'react'
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 import { DashboardButton } from '@/components/help/DashboardButton'
+import { ScrollToTop } from '@/components/help/ScrollToTop'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 interface Props {
@@ -39,6 +40,7 @@ const getWorkspaceHelpBranding = cache(async (slug: string) => {
       name: true,
       themeId: true,
       logo: true,
+      deletedAt: true,
       // Migration-guarded branding fields — only selected when the column exists
       ...(columns.has('brandText') ? { brandText: true } : {}),
       ...(columns.has('favicon') ? { favicon: true } : {}),
@@ -62,7 +64,7 @@ const getWorkspaceHelpBranding = cache(async (slug: string) => {
     },
   })
 
-  if (!workspace) return null
+  if (!workspace || workspace.deletedAt) return null
 
   return {
     workspace: {
@@ -169,6 +171,8 @@ export default async function HelpCenterLayout({ children, ...props }: Props) {
 
       {/* Inject theme CSS variables — server-rendered, no flash */}
       <style dangerouslySetInnerHTML={{ __html: `:root { ${css} }` }} />
+
+      <ScrollToTop />
 
       {/* Persistent nav — stays mounted across page transitions */}
       <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
