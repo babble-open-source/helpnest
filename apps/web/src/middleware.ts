@@ -182,6 +182,15 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
     const rewrite = rewriteToHelp(req, slug)
     if (rewrite) return rewrite
 
+    // Path already has the /{slug}/help prefix — run intlMiddleware for locale
+    const dbLocale = detectLocaleFromPath(req.nextUrl.pathname)
+    const dbPWL = req.nextUrl.pathname.replace(new RegExp(`^/${dbLocale}`), '') || '/'
+    if (dbPWL.startsWith(`/${slug}/help`)) {
+      const response = intlMiddleware(req)
+      response.headers.set('x-helpnest-base-url', `https://${host}`)
+      return response
+    }
+
     // BYOD domain hitting a non-help path — return 404
     return hasHelpNestHost
       ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
@@ -247,7 +256,9 @@ export default auth(async (req) => {
     const byodPWL = byodPath.replace(new RegExp(`^/${byodLocale}`), '') || '/'
     if (byodPWL.startsWith(`/${byodSlug}/help`)) {
       const byodHost = getRequestHostname(req.headers)
-      const response = NextResponse.next()
+      // Run intlMiddleware so next-intl can resolve the locale from the URL
+      // (without this, locale switching via the LanguageSwitcher breaks)
+      const response = intlMiddleware(req)
       response.headers.set('x-helpnest-base-url', `https://${byodHost}`)
       return response
     }
