@@ -3,6 +3,7 @@ import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { resolveWorkspaceId } from '@/lib/workspace'
 import { findCustomHostname, deleteCustomHostname, isCloudflareEnabled } from '@/lib/cloudflare-saas'
+import { kvDeleteDomain } from '@/lib/cloudflare-kv'
 
 /**
  * POST /api/domains/remove
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
     where: { id: workspaceId },
     data: { customDomain: null },
   })
+  kvDeleteDomain(cleanDomain).catch(() => {})
 
   return NextResponse.json({ removed: true })
 }
