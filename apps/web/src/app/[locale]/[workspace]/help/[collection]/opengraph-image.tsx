@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
-import { OG_SIZE, resolveOgColors, loadFonts, truncateText } from '@/lib/og-utils'
+import { OG_SIZE, resolveOgColors, loadFonts, truncateText, type OgFonts } from '@/lib/og-utils'
 
 export const revalidate = 3600
 export const size = OG_SIZE
@@ -12,7 +12,6 @@ interface Props {
 
 export default async function OgImage(props: Props) {
   const params = await props.params
-  const fonts = await loadFonts()
 
   const columns = await getWorkspaceColumnSet()
   const workspace = await prisma.workspace.findFirst({
@@ -26,6 +25,10 @@ export default async function OgImage(props: Props) {
       ...(columns.has('customMutedColor') ? { customMutedColor: true } : {}),
       ...(columns.has('customBorderColor') ? { customBorderColor: true } : {}),
       ...(columns.has('customAccentColor') ? { customAccentColor: true } : {}),
+      ...(columns.has('customHeadingFontFamily') ? { customHeadingFontFamily: true } : {}),
+      ...(columns.has('customHeadingFontUrl') ? { customHeadingFontUrl: true } : {}),
+      ...(columns.has('customBrandFontFamily') ? { customBrandFontFamily: true } : {}),
+      ...(columns.has('customBrandFontUrl') ? { customBrandFontUrl: true } : {}),
     },
   })
 
@@ -49,6 +52,13 @@ export default async function OgImage(props: Props) {
     customAccentColor: workspace?.customAccentColor ?? null,
   })
 
+  const fonts = await loadFonts({
+    headingFontFamily: workspace?.customHeadingFontFamily ?? null,
+    headingFontUrl: workspace?.customHeadingFontUrl ?? null,
+    brandFontFamily: workspace?.customBrandFontFamily ?? null,
+    brandFontUrl: workspace?.customBrandFontUrl ?? null,
+  })
+
   const emoji = collection?.emoji ?? '📄'
   const title = truncateText(collection?.title ?? 'Collection', 80)
   const description = collection?.description
@@ -56,6 +66,18 @@ export default async function OgImage(props: Props) {
     : ''
   const articleCount = collection?._count?.articles ?? 0
   const workspaceName = workspace?.name ?? ''
+
+  const brandFontFamily = fonts.brand
+    ? `"${fonts.brand.name}"`
+    : `"${fonts.heading.name}"`
+
+  const fontList: { name: string; data: ArrayBuffer; style: 'normal' }[] = [
+    { name: fonts.heading.name, data: fonts.heading.data, style: 'normal' },
+    { name: fonts.body.name, data: fonts.body.data, style: 'normal' },
+  ]
+  if (fonts.brand) {
+    fontList.push({ name: fonts.brand.name, data: fonts.brand.data, style: 'normal' })
+  }
 
   return new ImageResponse(
     (
@@ -87,7 +109,7 @@ export default async function OgImage(props: Props) {
           <div
             style={{
               fontSize: 64,
-              fontFamily: '"Instrument Serif"',
+              fontFamily: `"${fonts.heading.name}"`,
               color: colors.ink,
               lineHeight: 1.15,
             }}
@@ -109,7 +131,7 @@ export default async function OgImage(props: Props) {
                 style={{
                   fontSize: 28,
                   color: colors.muted,
-                  fontFamily: '"DM Sans"',
+                  fontFamily: `"${fonts.body.name}"`,
                   lineHeight: 1.4,
                   marginBottom: 12,
                 }}
@@ -121,7 +143,7 @@ export default async function OgImage(props: Props) {
               style={{
                 fontSize: 24,
                 color: colors.accent,
-                fontFamily: '"DM Sans"',
+                fontFamily: `"${fonts.body.name}"`,
                 fontWeight: 600,
               }}
             >
@@ -145,7 +167,7 @@ export default async function OgImage(props: Props) {
             style={{
               fontSize: 26,
               color: colors.cream,
-              fontFamily: '"Instrument Serif"',
+              fontFamily: brandFontFamily,
             }}
           >
             {workspaceName}
@@ -154,7 +176,7 @@ export default async function OgImage(props: Props) {
             style={{
               fontSize: 20,
               color: colors.muted,
-              fontFamily: '"DM Sans"',
+              fontFamily: `"${fonts.body.name}"`,
             }}
           >
             Help Center
@@ -164,10 +186,7 @@ export default async function OgImage(props: Props) {
     ),
     {
       ...size,
-      fonts: [
-        { name: 'Instrument Serif', data: fonts.instrumentSerif, style: 'normal' },
-        { name: 'DM Sans', data: fonts.dmSans, style: 'normal' },
-      ],
+      fonts: fontList,
     },
   )
 }

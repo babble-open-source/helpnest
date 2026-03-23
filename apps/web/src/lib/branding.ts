@@ -137,7 +137,7 @@ export function getWorkspaceThemeCSS(themeId: string, overrides: WorkspaceFontOv
   const brandFontStack = getWorkspaceBrandFontStack(themeId, overrides)
   const baseCss = themeToCSS(theme)
 
-  return brandFontStack ? `${baseCss}; --font-brand: ${brandFontStack}` : baseCss
+  return `${baseCss}; --font-brand: ${brandFontStack ?? theme.fonts.heading}`
 }
 
 export function getWorkspaceFontUrls(themeId: string, overrides: WorkspaceFontOverrides = {}): string[] {
