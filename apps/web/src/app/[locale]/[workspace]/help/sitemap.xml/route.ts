@@ -72,7 +72,7 @@ export async function GET(
   const { workspace: slug } = params
 
   const workspace = await prisma.workspace.findFirst({
-    where: { slug, deletedAt: null },
+    where: { slug },
     select: { id: true, updatedAt: true },
   })
 

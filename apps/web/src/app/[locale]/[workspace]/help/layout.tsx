@@ -30,7 +30,7 @@ const getWorkspaceHelpBranding = cache(async (slug: string) => {
   const columns = await getWorkspaceColumnSet()
 
   const workspace = await prisma.workspace.findFirst({
-    where: { slug, deletedAt: null },
+    where: { slug },
     select: {
       id: true,
       name: true,

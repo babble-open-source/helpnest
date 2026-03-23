@@ -18,7 +18,7 @@ export default async function SearchPage(props: Props) {
   ])
   const columns = await getWorkspaceColumnSet()
   const workspace = await prisma.workspace.findFirst({
-    where: { slug: params.workspace, deletedAt: null },
+    where: { slug: params.workspace },
     select: {
       id: true,
       name: true,

@@ -15,7 +15,7 @@ export default async function AskAIPage(props: Props) {
   const t = await getTranslations('askAI')
   const columns = await getWorkspaceColumnSet()
   const workspace = await prisma.workspace.findFirst({
-    where: { slug: params.workspace, deletedAt: null },
+    where: { slug: params.workspace },
     select: {
       id: true,
       name: true,
