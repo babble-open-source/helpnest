@@ -3,6 +3,7 @@ import { jwtVerify } from 'jose'
 import { cookies } from 'next/headers'
 import { encode } from 'next-auth/jwt'
 import { prisma } from '@/lib/db'
+import { useSecureCookies } from '@/lib/auth.config'
 
 /**
  * Cloud Login — receives a short-lived JWT from helpnest-cloud's auth bridge
@@ -76,8 +77,9 @@ export async function GET(request: Request) {
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const isSecure = appUrl.startsWith('https')
-  const cookieName = isSecure
+  // Use the same useSecureCookies source of truth as auth.config.ts so the
+  // cookie name and flags are always consistent with next-auth's expectations.
+  const cookieName = useSecureCookies
     ? '__Secure-authjs.session-token'
     : 'authjs.session-token'
 
@@ -96,7 +98,7 @@ export async function GET(request: Request) {
   const cookieStore = await cookies()
   cookieStore.set(cookieName, sessionToken, {
     httpOnly: true,
-    secure: isSecure,
+    secure: useSecureCookies,
     sameSite: 'lax',
     path: '/',
     maxAge: 30 * 24 * 60 * 60,
