@@ -4,6 +4,7 @@ import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { SearchTrigger } from '@/components/help/SearchTrigger'
 import { AskAI } from '@/components/help/AskAI'
+import { getHelpCenterVisibility } from '@/lib/help-visibility'
 
 interface Props {
   params: Promise<{ workspace: string }>
@@ -21,16 +22,25 @@ export default async function HelpCenterHome(props: Props) {
     getTranslations('common'),
   ])
   const columns = await getWorkspaceColumnSet()
-  const workspace = await prisma.workspace.findFirst({
+  // Resolve workspace ID first for visibility check (lightweight query)
+  const workspaceRef = await prisma.workspace.findFirst({
     where: { slug: params.workspace },
+    select: { id: true, deletedAt: true },
+  })
+  if (!workspaceRef || workspaceRef.deletedAt) notFound()
+
+  const allowedVisibility = await getHelpCenterVisibility(workspaceRef.id)
+
+  // Now fetch full workspace with visibility-filtered relations
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceRef.id },
     select: {
       id: true,
       name: true,
       logo: true,
-      deletedAt: true,
       ...(columns.has('brandText') ? { brandText: true } : {}),
       collections: {
-        where: { isPublic: true, isArchived: false, parentId: null },
+        where: { visibility: { in: allowedVisibility }, isArchived: false, parentId: null },
         orderBy: { order: 'asc' },
         include: {
           _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
@@ -39,7 +49,7 @@ export default async function HelpCenterHome(props: Props) {
       articles: {
         where: {
           status: 'PUBLISHED',
-          collection: { is: { isPublic: true, isArchived: false } },
+          collection: { is: { visibility: { in: allowedVisibility }, isArchived: false } },
         },
         orderBy: { views: 'desc' },
         take: 5,
@@ -48,7 +58,8 @@ export default async function HelpCenterHome(props: Props) {
     },
   })
 
-  if (!workspace || workspace.deletedAt) notFound()
+  if (!workspace) notFound()
+  const showInternalBadge = allowedVisibility.includes('INTERNAL')
 
   return (
     <div className="min-h-screen bg-cream">
@@ -80,13 +91,21 @@ export default async function HelpCenterHome(props: Props) {
             <p className="text-muted">{t('noCollections')}</p>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {workspace.collections.map((col: { id: string; slug: string; emoji: string | null; title: string; description: string | null; _count: { articles: number } }) => (
+              {workspace.collections.map((col: { id: string; slug: string; emoji: string | null; title: string; description: string | null; visibility: string; _count: { articles: number } }) => (
                 <Link
                   key={col.id}
                   href={`/${params.workspace}/help/${col.slug}`}
                   className="group bg-white rounded-xl border border-border p-5 hover:border-accent hover:shadow-sm transition-all"
                 >
-                  <div className="text-2xl mb-3">{col.emoji ?? '📄'}</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-2xl">{col.emoji ?? '📄'}</span>
+                    {showInternalBadge && col.visibility === 'INTERNAL' && (
+                      <span className="inline-flex items-center gap-1 text-[0.6875rem] text-muted bg-cream border border-border rounded-full px-2 py-0.5">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        {t('internal')}
+                      </span>
+                    )}
+                  </div>
                   <h3 className="font-sans font-medium text-[0.9375rem] text-ink group-hover:text-accent transition-colors mb-1">
                     {col.title}
                   </h3>

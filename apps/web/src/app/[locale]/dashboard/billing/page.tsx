@@ -3,6 +3,7 @@ import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
 import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
+import { getTranslations } from 'next-intl/server'
 import { BillingContent } from './BillingContent'
 
 export default async function BillingPage() {
@@ -31,11 +32,13 @@ export default async function BillingPage() {
     prisma.member.count({ where: { workspaceId, deactivatedAt: null } }),
   ])
 
+  const t = await getTranslations('billing')
+
   return (
     <div className="p-6 md:p-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="font-serif text-3xl text-ink">Billing &amp; Plans</h1>
-        <p className="text-muted mt-1">Manage your subscription and track usage.</p>
+        <h1 className="font-serif text-3xl text-ink">{t('title')}</h1>
+        <p className="text-muted mt-1">{t('subtitle')}</p>
       </div>
 
       <BillingContent

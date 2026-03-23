@@ -12,6 +12,7 @@ interface Props {
     title: string
     description: string | null
     emoji: string | null
+    visibility: string
     articleCount: number
     isArchived: boolean
   }
@@ -28,6 +29,7 @@ export function CollectionActions({ collection, demoMode = false }: Props) {
   const [title, setTitle] = useState(collection.title)
   const [description, setDescription] = useState(collection.description ?? '')
   const [emoji, setEmoji] = useState(collection.emoji ?? '📁')
+  const [visibility, setVisibility] = useState(collection.visibility)
   const [saving, setSaving] = useState(false)
   const [editError, setEditError] = useState('')
 
@@ -42,6 +44,7 @@ export function CollectionActions({ collection, demoMode = false }: Props) {
     setTitle(collection.title)
     setDescription(collection.description ?? '')
     setEmoji(collection.emoji ?? '📁')
+    setVisibility(collection.visibility)
     setEditError('')
     setEditOpen(true)
   }
@@ -55,7 +58,7 @@ export function CollectionActions({ collection, demoMode = false }: Props) {
       const res = await fetch(`/api/collections/${collection.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), description: description.trim(), emoji }),
+        body: JSON.stringify({ title: title.trim(), description: description.trim(), emoji, visibility }),
       })
       if (!res.ok) {
         const data = await res.json() as { error?: string }
@@ -195,6 +198,43 @@ export function CollectionActions({ collection, demoMode = false }: Props) {
                   rows={2}
                   className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none bg-white text-ink"
                 />
+              </div>
+              {/* Visibility */}
+              <div>
+                <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-2">{t('visibility')}</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVisibility('PUBLIC')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${
+                      visibility === 'PUBLIC'
+                        ? 'border-accent bg-accent/5 text-ink'
+                        : 'border-border text-muted hover:border-ink'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    {t('visibilityPublic')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setVisibility('INTERNAL')}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${
+                      visibility === 'INTERNAL'
+                        ? 'border-accent bg-accent/5 text-ink'
+                        : 'border-border text-muted hover:border-ink'
+                    }`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                    {t('visibilityInternal')}
+                  </button>
+                </div>
+                {visibility !== collection.visibility && (
+                  <p className="text-xs text-accent mt-1.5">
+                    {visibility === 'PUBLIC'
+                      ? t('visibilityChangeToPublic')
+                      : t('visibilityChangeToInternal')}
+                  </p>
+                )}
               </div>
               {editError && <p className="text-sm text-red-500">{editError}</p>}
               <div className="flex items-center justify-end gap-3 pt-2">

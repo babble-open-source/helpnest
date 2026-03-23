@@ -103,7 +103,7 @@ export async function importCommand(options: ImportOptions) {
               description: col.description,
               emoji: col.emoji,
               slug: col.slug,
-              isPublic: true,
+              visibility: 'PUBLIC',
               isArchived: col.isArchived ?? false,
             },
           })
@@ -149,7 +149,7 @@ export async function importCommand(options: ImportOptions) {
             title: sectionName,
             slug: collectionSlug,
             emoji: '📂',
-            isPublic: true,
+            visibility: 'PUBLIC',
           },
         })
 
@@ -183,7 +183,7 @@ export async function importCommand(options: ImportOptions) {
             title: 'Imported Articles',
             slug: 'imported',
             emoji: '📥',
-            isPublic: true,
+            visibility: 'PUBLIC',
           },
         })
       }

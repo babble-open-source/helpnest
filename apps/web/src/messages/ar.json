@@ -35,6 +35,7 @@
     "articles": "{count, plural, zero {# مقالات} one {# مقالة} two {# مقالتان} few {# مقالات} many {# مقالة} other {# مقالات}}",
     "collections": "{count, plural, zero {# مجموعات} one {# مجموعة} two {# مجموعتان} few {# مجموعات} many {# مجموعة} other {# مجموعات}}",
     "results": "{count, plural, zero {# نتائج} one {# نتيجة} two {# نتيجتان} few {# نتائج} many {# نتيجة} other {# نتائج}}",
+    "internal": "داخلي",
     "saved": "Saved!"
   },
   "help": {
@@ -56,7 +57,8 @@
     "needMoreHelp": "هل تحتاج إلى مزيد من المساعدة؟",
     "cantFindLooking": "ألا تجد ما تبحث عنه؟",
     "browseAllArticles": "تصفّح جميع المقالات",
-    "backToHelpCenter": "العودة إلى مركز المساعدة"
+    "backToHelpCenter": "العودة إلى مركز المساعدة",
+    "internal": "داخلي"
   },
   "search": {
     "placeholder": "ابحث في المقالات...",
@@ -201,7 +203,9 @@
     "createArticle": "إنشاء مقالة →",
     "collectionsDescription": "تنظّم المجموعات مقالاتك في موضوعات",
     "noCollectionsYet": "لا توجد مجموعات بعد",
-    "manageConversations": "إدارة محادثات العملاء"
+    "manageConversations": "إدارة محادثات العملاء",
+    "billing": "الفواتير",
+    "billingShort": "ف"
   },
   "articlesTable": {
     "selectAll": "تحديد جميع المقالات",
@@ -389,7 +393,14 @@
     "createCollection": "إنشاء مجموعة",
     "creating": "جارٍ الإنشاء…",
     "placeholder": "مثال: البدء السريع",
-    "descriptionPlaceholder": "وصف مختصر يظهر تحت عنوان المجموعة"
+    "descriptionPlaceholder": "وصف مختصر يظهر تحت عنوان المجموعة",
+    "visibility": "الرؤية",
+    "visibilityPublic": "عام",
+    "visibilityInternal": "داخلي",
+    "visibilityPublicDescription": "مرئي للجميع في مركز المساعدة الخاص بك.",
+    "visibilityInternalDescription": "مرئي فقط لأعضاء مساحة العمل المسجلين.",
+    "visibilityChangeToPublic": "التغيير إلى عام سيكشف جميع المقالات في هذه المجموعة للعامة.",
+    "visibilityChangeToInternal": "التغيير إلى داخلي سيخفي جميع المقالات في هذه المجموعة من مركز المساعدة العام."
   },
   "members": {
     "title": "الأعضاء",
@@ -659,5 +670,39 @@
     "articlePreview": "كيف تبدأ…",
     "getInTouch": "تواصل معنا",
     "applyToDesigner": "تطبيق على المصمّم"
+  },
+  "billing": {
+    "title": "الفواتير والخطط",
+    "subtitle": "إدارة اشتراكك وتتبع الاستخدام.",
+    "currentUsage": "الاستخدام الحالي",
+    "planResets": "خطة {plan} · يُعاد ضبطها شهرياً",
+    "choosePlan": "اختر خطة",
+    "mostPopular": "الأكثر شعبية",
+    "currentPlan": "الخطة الحالية",
+    "upgradeToName": "الترقية إلى {name}",
+    "redirecting": "جارٍ التحويل…",
+    "manageViaPortal": "الإدارة عبر بوابة الفواتير أدناه",
+    "manageSubscription": "إدارة الاشتراك",
+    "manageSubscriptionDescription": "حدّث طريقة الدفع، حمّل الفواتير، أو ألغِ اشتراكك.",
+    "openBillingPortal": "فتح بوابة الفواتير",
+    "opening": "جارٍ الفتح…",
+    "domainWarningTitle": "تحذير النطاق المخصص",
+    "domainWarningMessage": "سيتوقف نطاقك المخصص {domain} عن العمل فوراً إذا خفّضت إلى الخطة المجانية.",
+    "continueToBilling": "المتابعة إلى بوابة الفواتير",
+    "articles": "المقالات",
+    "teamMembers": "أعضاء الفريق",
+    "aiCreditsPerMonth": "أرصدة الذكاء الاصطناعي / شهر",
+    "apiCallsPerMonth": "استدعاءات API / شهر",
+    "members": "الأعضاء",
+    "aiCredits": "أرصدة الذكاء الاصطناعي",
+    "apiCalls": "استدعاءات API",
+    "planFree": "مجاني",
+    "planPro": "احترافي",
+    "planBusiness": "أعمال",
+    "planFreeDescription": "مثالي للفرق الصغيرة في البداية",
+    "planProDescription": "للفرق المتنامية التي تحتاج مزيداً من القوة",
+    "planBusinessDescription": "نطاق غير محدود لعمليات الدعم الكبيرة",
+    "forever": "للأبد",
+    "perMonth": "شهرياً"
   }
 }

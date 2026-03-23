@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import type { WorkspacePlan } from '@/lib/cloud'
 
 interface Props {
@@ -19,18 +20,24 @@ const PLAN_DISPLAY = {
   BUSINESS: { articles: 'Unlimited', members: '50', aiCredits: '10K',  apiCalls: '500K' },
 }
 
-const PLANS = [
-  { key: 'FREE' as const, name: 'Free', price: '$0', period: 'forever', description: 'Perfect for small teams getting started', featured: false },
-  { key: 'PRO' as const, name: 'Pro', price: '$19', period: 'per month', description: 'For growing teams that need more power', featured: true },
-  { key: 'BUSINESS' as const, name: 'Business', price: '$79', period: 'per month', description: 'Unlimited scale for large support operations', featured: false },
-]
+function usePlans() {
+  const t = useTranslations('billing')
+  return [
+    { key: 'FREE' as const, name: t('planFree'), price: '$0', period: t('forever'), description: t('planFreeDescription'), featured: false },
+    { key: 'PRO' as const, name: t('planPro'), price: '$19', period: t('perMonth'), description: t('planProDescription'), featured: true },
+    { key: 'BUSINESS' as const, name: t('planBusiness'), price: '$79', period: t('perMonth'), description: t('planBusinessDescription'), featured: false },
+  ]
+}
 
-const FEATURES = [
-  { label: 'Articles', key: 'articles' as const },
-  { label: 'Team members', key: 'members' as const },
-  { label: 'AI credits / mo', key: 'aiCredits' as const },
-  { label: 'API calls / mo', key: 'apiCalls' as const },
-]
+function useFeatures() {
+  const t = useTranslations('billing')
+  return [
+    { label: t('articles'), key: 'articles' as const },
+    { label: t('teamMembers'), key: 'members' as const },
+    { label: t('aiCreditsPerMonth'), key: 'aiCredits' as const },
+    { label: t('apiCallsPerMonth'), key: 'apiCalls' as const },
+  ]
+}
 
 function UsageMeter({ label, current, limit }: { label: string; current: number; limit: number }) {
   const unlimited = limit === -1 || limit === Infinity
@@ -57,6 +64,10 @@ function UsageMeter({ label, current, limit }: { label: string; current: number;
 }
 
 export function BillingContent({ workspaceId, userEmail, role, plan, customDomain, liveArticleCount, liveMemberCount }: Props) {
+  const t = useTranslations('billing')
+  const tc = useTranslations('common')
+  const PLANS = usePlans()
+  const FEATURES = useFeatures()
   const [loading, setLoading] = useState<string | null>(null)
   const [showDomainWarning, setShowDomainWarning] = useState(false)
   const tier = plan?.plan ?? 'FREE'
@@ -116,9 +127,9 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
         <section className="bg-white rounded-xl border border-border p-6 space-y-5">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="font-medium text-ink">Current usage</h2>
+              <h2 className="font-medium text-ink">{t('currentUsage')}</h2>
               <p className="text-sm text-muted mt-0.5">
-                {tier.charAt(0) + tier.slice(1).toLowerCase()} plan &middot; Resets monthly
+                {t('planResets', { plan: tier.charAt(0) + tier.slice(1).toLowerCase() })}
               </p>
             </div>
             <span className="text-xs font-medium uppercase tracking-wide bg-border text-ink px-2.5 py-1 rounded-full">
@@ -126,17 +137,17 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <UsageMeter label="Articles"   current={liveArticleCount}  limit={(limits?.articles as number) ?? 25} />
-            <UsageMeter label="Members"    current={liveMemberCount}   limit={(limits?.members as number) ?? 3} />
-            <UsageMeter label="AI credits" current={usage?.aiCredits ?? 0} limit={(limits?.aiCredits as number) ?? 100} />
-            <UsageMeter label="API calls"  current={usage?.apiCalls ?? 0}  limit={(limits?.apiCalls as number) ?? 1000} />
+            <UsageMeter label={t('articles')}   current={liveArticleCount}  limit={(limits?.articles as number) ?? 25} />
+            <UsageMeter label={t('members')}    current={liveMemberCount}   limit={(limits?.members as number) ?? 3} />
+            <UsageMeter label={t('aiCredits')} current={usage?.aiCredits ?? 0} limit={(limits?.aiCredits as number) ?? 100} />
+            <UsageMeter label={t('apiCalls')}  current={usage?.apiCalls ?? 0}  limit={(limits?.apiCalls as number) ?? 1000} />
           </div>
         </section>
       )}
 
       {/* Plan cards */}
       <section>
-        <h2 className="font-serif text-xl text-ink mb-6">Choose a plan</h2>
+        <h2 className="font-serif text-xl text-ink mb-6">{t('choosePlan')}</h2>
         <div className="grid gap-5 grid-cols-1 md:grid-cols-3">
           {PLANS.map((p, idx) => {
             const isCurrent = p.key === tier
@@ -157,14 +168,14 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
                 {p.featured && !isCurrent && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="bg-accent text-white text-xs font-semibold px-3 py-1 rounded-full">
-                      Most popular
+                      {t('mostPopular')}
                     </span>
                   </div>
                 )}
                 {isCurrent && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                     <span className="bg-green text-white text-xs font-semibold px-3 py-1 rounded-full">
-                      Current plan
+                      {t('currentPlan')}
                     </span>
                   </div>
                 )}
@@ -195,7 +206,7 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
                     disabled
                     className="w-full text-center py-2.5 px-4 rounded-lg text-sm font-medium bg-cream text-muted border border-border cursor-not-allowed"
                   >
-                    Current plan
+                    {t('currentPlan')}
                   </button>
                 ) : canChange && isUpgrade ? (
                   <button
@@ -207,11 +218,11 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
                         : 'border border-border text-ink hover:bg-cream'
                     }`}
                   >
-                    {loading === p.key ? 'Redirecting\u2026' : `Upgrade to ${p.name}`}
+                    {loading === p.key ? t('redirecting') : t('upgradeToName', { name: p.name })}
                   </button>
                 ) : isDowngrade ? (
                   <p className="w-full text-center text-xs text-muted py-2.5">
-                    Manage via billing portal below
+                    {t('manageViaPortal')}
                   </p>
                 ) : null}
               </div>
@@ -223,16 +234,16 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
       {/* Manage subscription */}
       {tier !== 'FREE' && isOwner && (
         <section className="bg-white rounded-xl border border-border p-6">
-          <h2 className="font-medium text-ink mb-2">Manage subscription</h2>
+          <h2 className="font-medium text-ink mb-2">{t('manageSubscription')}</h2>
           <p className="text-sm text-muted mb-4">
-            Update your payment method, download invoices, or cancel your subscription.
+            {t('manageSubscriptionDescription')}
           </p>
           <button
             onClick={handlePortal}
             disabled={loading !== null}
             className="text-sm font-medium border border-border text-ink px-4 py-2 rounded-lg hover:bg-cream transition-colors disabled:opacity-50"
           >
-            {loading === 'portal' ? 'Opening\u2026' : 'Open billing portal'}
+            {loading === 'portal' ? t('opening') : t('openBillingPortal')}
           </button>
         </section>
       )}
@@ -241,23 +252,22 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
       {showDomainWarning && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40">
           <div className="bg-white rounded-xl border border-border shadow-lg p-6 max-w-md mx-4">
-            <h3 className="font-serif text-lg text-ink mb-2">Custom domain warning</h3>
+            <h3 className="font-serif text-lg text-ink mb-2">{t('domainWarningTitle')}</h3>
             <p className="text-sm text-muted mb-4">
-              Your custom domain <span className="font-medium text-ink">{customDomain}</span> will
-              stop working immediately if you downgrade to the Free plan.
+              {t('domainWarningMessage', { domain: customDomain ?? '' })}
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setShowDomainWarning(false)}
                 className="text-sm font-medium px-4 py-2 rounded-lg border border-border text-ink hover:bg-cream transition-colors"
               >
-                Cancel
+                {tc('cancel')}
               </button>
               <button
                 onClick={handlePortal}
                 className="text-sm font-medium px-4 py-2 rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors"
               >
-                Continue to billing portal
+                {t('continueToBilling')}
               </button>
             </div>
           </div>

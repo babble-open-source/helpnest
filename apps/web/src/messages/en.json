@@ -35,7 +35,8 @@
     "demo": "DEMO",
     "articles": "{count, plural, one {# article} other {# articles}}",
     "collections": "{count, plural, one {# collection} other {# collections}}",
-    "results": "{count, plural, one {# result} other {# results}}"
+    "results": "{count, plural, one {# result} other {# results}}",
+    "internal": "Internal"
   },
   "help": {
     "helpCenter": "Help Center",
@@ -56,7 +57,8 @@
     "needMoreHelp": "Need more help?",
     "cantFindLooking": "Can't find what you're looking for?",
     "browseAllArticles": "Browse all articles",
-    "backToHelpCenter": "Back to help center"
+    "backToHelpCenter": "Back to help center",
+    "internal": "Internal"
   },
   "search": {
     "placeholder": "Search articles...",
@@ -201,7 +203,9 @@
     "createArticle": "Create article →",
     "collectionsDescription": "Collections organise your articles into topics",
     "noCollectionsYet": "No collections yet",
-    "manageConversations": "Manage customer conversations"
+    "manageConversations": "Manage customer conversations",
+    "billing": "Billing",
+    "billingShort": "B"
   },
   "articlesTable": {
     "selectAll": "Select all articles",
@@ -389,7 +393,14 @@
     "createCollection": "Create collection",
     "creating": "Creating…",
     "placeholder": "e.g. Getting Started",
-    "descriptionPlaceholder": "Brief description shown under the collection title"
+    "descriptionPlaceholder": "Brief description shown under the collection title",
+    "visibility": "Visibility",
+    "visibilityPublic": "Public",
+    "visibilityInternal": "Internal",
+    "visibilityPublicDescription": "Visible to everyone on your help center.",
+    "visibilityInternalDescription": "Only visible to signed-in workspace members.",
+    "visibilityChangeToPublic": "Changing to Public will expose all articles in this collection to the public.",
+    "visibilityChangeToInternal": "Changing to Internal will hide all articles in this collection from the public help center."
   },
   "members": {
     "title": "Members",
@@ -659,5 +670,39 @@
     "articlePreview": "How to get started…",
     "getInTouch": "Get in touch",
     "applyToDesigner": "Apply to designer"
+  },
+  "billing": {
+    "title": "Billing & Plans",
+    "subtitle": "Manage your subscription and track usage.",
+    "currentUsage": "Current usage",
+    "planResets": "{plan} plan · Resets monthly",
+    "choosePlan": "Choose a plan",
+    "mostPopular": "Most popular",
+    "currentPlan": "Current plan",
+    "upgradeToName": "Upgrade to {name}",
+    "redirecting": "Redirecting…",
+    "manageViaPortal": "Manage via billing portal below",
+    "manageSubscription": "Manage subscription",
+    "manageSubscriptionDescription": "Update your payment method, download invoices, or cancel your subscription.",
+    "openBillingPortal": "Open billing portal",
+    "opening": "Opening…",
+    "domainWarningTitle": "Custom domain warning",
+    "domainWarningMessage": "Your custom domain {domain} will stop working immediately if you downgrade to the Free plan.",
+    "continueToBilling": "Continue to billing portal",
+    "articles": "Articles",
+    "teamMembers": "Team members",
+    "aiCreditsPerMonth": "AI credits / mo",
+    "apiCallsPerMonth": "API calls / mo",
+    "members": "Members",
+    "aiCredits": "AI credits",
+    "apiCalls": "API calls",
+    "planFree": "Free",
+    "planPro": "Pro",
+    "planBusiness": "Business",
+    "planFreeDescription": "Perfect for small teams getting started",
+    "planProDescription": "For growing teams that need more power",
+    "planBusinessDescription": "Unlimited scale for large support operations",
+    "forever": "forever",
+    "perMonth": "per month"
   }
 }

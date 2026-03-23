@@ -89,7 +89,7 @@ export async function GET(
       where: {
         workspaceId: workspace.id,
         status: 'PUBLISHED',
-        collection: { isPublic: true, isArchived: false },
+        collection: { visibility: 'PUBLIC', isArchived: false },
       },
       select: {
         slug: true,
@@ -100,7 +100,7 @@ export async function GET(
     prisma.collection.findMany({
       where: {
         workspaceId: workspace.id,
-        isPublic: true,
+        visibility: 'PUBLIC',
         isArchived: false,
       },
       select: {

@@ -348,6 +348,7 @@ export async function POST(request: Request) {
         aiModel: workspace.aiModel,
         aiInstructions: workspace.aiInstructions,
         aiEscalationThreshold: workspace.aiEscalationThreshold,
+        includeInternal: true, // A2A is authenticated — include internal articles
       }
 
       let aiResponseText = ''
@@ -544,6 +545,7 @@ export async function POST(request: Request) {
         aiModel: workspace.aiModel,
         aiInstructions: workspace.aiInstructions,
         aiEscalationThreshold: workspace.aiEscalationThreshold,
+        includeInternal: true, // A2A is authenticated — include internal articles
       }
 
       // Capture loop variables for the closure. `conversationId` is already

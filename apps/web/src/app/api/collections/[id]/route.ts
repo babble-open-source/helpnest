@@ -2,6 +2,7 @@ import { prisma } from '@/lib/db'
 import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
 import { isDemoMode } from '@/lib/demo'
+import { qdrant, COLLECTION_NAME } from '@/lib/qdrant'
 
 export async function GET(
   request: Request,
@@ -51,7 +52,7 @@ export async function PATCH(
 
   const col = await prisma.collection.findFirst({
     where: { id: params.id, workspaceId },
-    select: { id: true, slug: true },
+    select: { id: true, slug: true, visibility: true },
   })
   if (!col) return NextResponse.json({ error: 'Not found' }, { status: 404 })
 
@@ -59,7 +60,7 @@ export async function PATCH(
     title?: string
     description?: string
     emoji?: string
-    isPublic?: boolean
+    visibility?: string
     isArchived?: boolean
   }
 
@@ -75,16 +76,45 @@ export async function PATCH(
     newSlug = slug
   }
 
+  const newVisibility =
+    body.visibility !== undefined && (body.visibility === 'PUBLIC' || body.visibility === 'INTERNAL')
+      ? body.visibility
+      : undefined
+  const visibilityChanged = newVisibility !== undefined && newVisibility !== col.visibility
+
   const updated = await prisma.collection.update({
     where: { id: params.id },
     data: {
       ...(body.title !== undefined && { title: body.title, slug: newSlug }),
       ...(body.description !== undefined && { description: body.description || null }),
       ...(body.emoji !== undefined && { emoji: body.emoji }),
-      ...(body.isPublic !== undefined && { isPublic: body.isPublic }),
+      ...(newVisibility !== undefined && { visibility: newVisibility }),
       ...(body.isArchived !== undefined && { isArchived: body.isArchived }),
     },
   })
+
+  // When visibility changes, update the Qdrant payload metadata for all
+  // articles in this collection so vector search filters stay in sync.
+  // This is a lightweight payload-only update — no re-embedding required.
+  if (visibilityChanged) {
+    void (async () => {
+      try {
+        await qdrant.setPayload(COLLECTION_NAME, {
+          payload: { visibility: newVisibility },
+          filter: {
+            must: [
+              { key: 'collectionId', match: { value: params.id } },
+              { key: 'workspaceId', match: { value: workspaceId } },
+            ],
+          },
+        })
+      } catch (err) {
+        // Qdrant unavailable — vectors will be corrected on next full sync.
+        // The Prisma post-filter still enforces correct visibility.
+        console.error('[collections/PATCH] Failed to update Qdrant visibility payload:', err)
+      }
+    })()
+  }
 
   return NextResponse.json(updated)
 }

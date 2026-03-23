@@ -27,6 +27,7 @@ export default async function CollectionsPage(props: {
     id: string
     title: string
     emoji: string | null
+    visibility: string
     isArchived: boolean
     _count: { articles: number }
   }
@@ -35,6 +36,7 @@ export default async function CollectionsPage(props: {
     title: string
     description: string | null
     emoji: string | null
+    visibility: string
     isArchived: boolean
     _count: { articles: number }
     subCollections: SubCollection[]
@@ -103,6 +105,12 @@ export default async function CollectionsPage(props: {
                     <div>
                       <div className="flex items-center gap-2">
                         <Link href={`/dashboard/collections/${col.id}`} className="font-medium text-ink hover:text-accent transition-colors">{col.title}</Link>
+                        {col.visibility === 'INTERNAL' && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-cream border border-border px-2 py-0.5 text-[11px] font-medium text-muted">
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                            {tc('internal')}
+                          </span>
+                        )}
                         {col.isArchived && (
                           <span className="rounded-full bg-border/70 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-muted">
                             {tc('archived')}
@@ -123,6 +131,7 @@ export default async function CollectionsPage(props: {
                           title: col.title,
                           description: col.description,
                           emoji: col.emoji,
+                          visibility: col.visibility,
                           articleCount: col._count.articles,
                           isArchived: col.isArchived,
                         }}

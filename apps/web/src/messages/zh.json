@@ -35,6 +35,7 @@
     "articles": "{count, plural, other {# 篇文章}}",
     "collections": "{count, plural, other {# 个合集}}",
     "results": "{count, plural, other {# 条结果}}",
+    "internal": "内部",
     "saved": "Saved!"
   },
   "help": {
@@ -56,7 +57,8 @@
     "needMoreHelp": "需要更多帮助？",
     "cantFindLooking": "没找到您想要的内容？",
     "browseAllArticles": "浏览所有文章",
-    "backToHelpCenter": "返回帮助中心"
+    "backToHelpCenter": "返回帮助中心",
+    "internal": "内部"
   },
   "search": {
     "placeholder": "搜索文章...",
@@ -201,7 +203,9 @@
     "createArticle": "创建文章 →",
     "collectionsDescription": "合集帮助您按主题组织文章",
     "noCollectionsYet": "暂无合集",
-    "manageConversations": "管理客户对话"
+    "manageConversations": "管理客户对话",
+    "billing": "账单",
+    "billingShort": "账"
   },
   "articlesTable": {
     "selectAll": "选择所有文章",
@@ -389,7 +393,14 @@
     "createCollection": "创建合集",
     "creating": "创建中…",
     "placeholder": "例如：入门指南",
-    "descriptionPlaceholder": "显示在合集标题下方的简短描述"
+    "descriptionPlaceholder": "显示在合集标题下方的简短描述",
+    "visibility": "可见性",
+    "visibilityPublic": "公开",
+    "visibilityInternal": "内部",
+    "visibilityPublicDescription": "帮助中心的所有访客都可以看到。",
+    "visibilityInternalDescription": "仅对已登录的工作区成员可见。",
+    "visibilityChangeToPublic": "更改为公开将向公众展示此集合中的所有文章。",
+    "visibilityChangeToInternal": "更改为内部将从公开帮助中心隐藏此集合中的所有文章。"
   },
   "members": {
     "title": "成员",
@@ -659,5 +670,39 @@
     "articlePreview": "如何开始…",
     "getInTouch": "联系我们",
     "applyToDesigner": "应用到设计器"
+  },
+  "billing": {
+    "title": "账单与套餐",
+    "subtitle": "管理您的订阅并跟踪使用情况。",
+    "currentUsage": "当前用量",
+    "planResets": "{plan} 套餐 · 每月重置",
+    "choosePlan": "选择套餐",
+    "mostPopular": "最受欢迎",
+    "currentPlan": "当前套餐",
+    "upgradeToName": "升级到 {name}",
+    "redirecting": "正在跳转…",
+    "manageViaPortal": "通过账单门户管理",
+    "manageSubscription": "管理订阅",
+    "manageSubscriptionDescription": "更新付款方式、下载发票或取消订阅。",
+    "openBillingPortal": "打开账单门户",
+    "opening": "正在打开…",
+    "domainWarningTitle": "自定义域名警告",
+    "domainWarningMessage": "如果降级到免费套餐，您的自定义域名 {domain} 将立即停止工作。",
+    "continueToBilling": "继续前往账单门户",
+    "articles": "文章",
+    "teamMembers": "团队成员",
+    "aiCreditsPerMonth": "AI 额度/月",
+    "apiCallsPerMonth": "API 调用/月",
+    "members": "成员",
+    "aiCredits": "AI 额度",
+    "apiCalls": "API 调用",
+    "planFree": "免费",
+    "planPro": "专业版",
+    "planBusiness": "商业版",
+    "planFreeDescription": "适合刚起步的小型团队",
+    "planProDescription": "适合需要更多功能的成长型团队",
+    "planBusinessDescription": "为大型支持运营提供无限规模",
+    "forever": "永久",
+    "perMonth": "每月"
   }
 }

@@ -1,5 +1,6 @@
 export type ArticleStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 export type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
+export type CollectionVisibility = 'PUBLIC' | 'INTERNAL'
 
 export interface Workspace {
   id: string
@@ -20,7 +21,7 @@ export interface Collection {
   emoji: string | null
   slug: string
   order: number
-  isPublic: boolean
+  visibility: CollectionVisibility
   isArchived: boolean
   parentId: string | null
   createdAt?: string
@@ -91,7 +92,7 @@ export interface UpdateArticleParams {
 }
 
 export interface ListCollectionsParams {
-  isPublic?: boolean
+  visibility?: CollectionVisibility
   isArchived?: boolean
 }
 
@@ -100,7 +101,7 @@ export interface CreateCollectionParams {
   description?: string
   emoji?: string
   slug?: string
-  isPublic?: boolean
+  visibility?: CollectionVisibility
   isArchived?: boolean
   parentId?: string
 }
@@ -110,7 +111,7 @@ export interface UpdateCollectionParams {
   description?: string
   emoji?: string
   slug?: string
-  isPublic?: boolean
+  visibility?: CollectionVisibility
   isArchived?: boolean
   order?: number
 }

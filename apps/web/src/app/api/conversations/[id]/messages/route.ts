@@ -255,6 +255,7 @@ export async function POST(
       aiModel: conversation.workspace.aiModel,
       aiInstructions: conversation.workspace.aiInstructions,
       aiEscalationThreshold: conversation.workspace.aiEscalationThreshold,
+      includeInternal: false, // Widget conversations never access internal articles
     }
 
     const encoder = new TextEncoder()

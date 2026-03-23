@@ -17,4 +17,4 @@ export type {
   ConversationArticle,
   KnowledgeGap,
 } from './generated/prisma/client'
-export { MemberRole, ArticleStatus, ArticleFeedbackType, ConversationStatus, MessageRole, AiProvider } from './generated/prisma/client'
+export { MemberRole, ArticleStatus, ArticleFeedbackType, ConversationStatus, MessageRole, AiProvider, CollectionVisibility } from './generated/prisma/client'

@@ -52,10 +52,10 @@ describe('HelpNest SDK — Collections', () => {
   it('passes filter params as query string', async () => {
     mockFetch.mockReturnValueOnce(mockResponse({ data: [], total: 0 }))
 
-    await client.collections.list({ isPublic: true })
+    await client.collections.list({ visibility: 'PUBLIC' })
 
     const url: string = mockFetch.mock.calls[0][0] as string
-    expect(url).toContain('isPublic=true')
+    expect(url).toContain('visibility=PUBLIC')
   })
 
   it('gets a collection by id or slug', async () => {

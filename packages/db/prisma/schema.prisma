@@ -48,6 +48,11 @@ enum AiProvider {
   MISTRAL
 }
 
+enum CollectionVisibility {
+  PUBLIC
+  INTERNAL
+}
+
 model Workspace {
   id           String   @id @default(cuid())
   name         String
@@ -147,7 +152,7 @@ model Collection {
   emoji       String?
   slug        String
   order       Int     @default(0)
-  isPublic    Boolean @default(true)
+  visibility  CollectionVisibility @default(PUBLIC)
   isArchived  Boolean @default(false)
   parentId    String?
 

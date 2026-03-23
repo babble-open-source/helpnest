@@ -35,6 +35,7 @@
     "articles": "{count, plural, one {# artículo} other {# artículos}}",
     "collections": "{count, plural, one {# colección} other {# colecciones}}",
     "results": "{count, plural, one {# resultado} other {# resultados}}",
+    "internal": "Interno",
     "saved": "Saved!"
   },
   "help": {
@@ -56,7 +57,8 @@
     "needMoreHelp": "¿Necesitas más ayuda?",
     "cantFindLooking": "¿No encuentras lo que buscas?",
     "browseAllArticles": "Ver todos los artículos",
-    "backToHelpCenter": "Volver al centro de ayuda"
+    "backToHelpCenter": "Volver al centro de ayuda",
+    "internal": "Interno"
   },
   "search": {
     "placeholder": "Buscar artículos...",
@@ -201,7 +203,9 @@
     "createArticle": "Crear artículo →",
     "collectionsDescription": "Las colecciones organizan tus artículos por temas",
     "noCollectionsYet": "Aún no hay colecciones",
-    "manageConversations": "Gestionar conversaciones con clientes"
+    "manageConversations": "Gestionar conversaciones con clientes",
+    "billing": "Facturación",
+    "billingShort": "F"
   },
   "articlesTable": {
     "selectAll": "Seleccionar todos los artículos",
@@ -389,7 +393,14 @@
     "createCollection": "Crear colección",
     "creating": "Creando…",
     "placeholder": "p. ej. Primeros pasos",
-    "descriptionPlaceholder": "Breve descripción que aparece bajo el título de la colección"
+    "descriptionPlaceholder": "Breve descripción que aparece bajo el título de la colección",
+    "visibility": "Visibilidad",
+    "visibilityPublic": "Público",
+    "visibilityInternal": "Interno",
+    "visibilityPublicDescription": "Visible para todos en tu centro de ayuda.",
+    "visibilityInternalDescription": "Solo visible para miembros con sesión iniciada.",
+    "visibilityChangeToPublic": "Cambiar a Público expondrá todos los artículos de esta colección al público.",
+    "visibilityChangeToInternal": "Cambiar a Interno ocultará todos los artículos de esta colección del centro de ayuda público."
   },
   "members": {
     "title": "Miembros",
@@ -659,5 +670,39 @@
     "articlePreview": "Cómo empezar…",
     "getInTouch": "Ponerse en contacto",
     "applyToDesigner": "Aplicar al diseñador"
+  },
+  "billing": {
+    "title": "Facturación y Planes",
+    "subtitle": "Gestiona tu suscripción y controla el uso.",
+    "currentUsage": "Uso actual",
+    "planResets": "Plan {plan} · Se reinicia mensualmente",
+    "choosePlan": "Elige un plan",
+    "mostPopular": "Más popular",
+    "currentPlan": "Plan actual",
+    "upgradeToName": "Mejorar a {name}",
+    "redirecting": "Redirigiendo…",
+    "manageViaPortal": "Gestionar desde el portal de facturación",
+    "manageSubscription": "Gestionar suscripción",
+    "manageSubscriptionDescription": "Actualiza tu método de pago, descarga facturas o cancela tu suscripción.",
+    "openBillingPortal": "Abrir portal de facturación",
+    "opening": "Abriendo…",
+    "domainWarningTitle": "Advertencia de dominio personalizado",
+    "domainWarningMessage": "Tu dominio personalizado {domain} dejará de funcionar inmediatamente si bajas al plan Gratuito.",
+    "continueToBilling": "Continuar al portal de facturación",
+    "articles": "Artículos",
+    "teamMembers": "Miembros del equipo",
+    "aiCreditsPerMonth": "Créditos IA / mes",
+    "apiCallsPerMonth": "Llamadas API / mes",
+    "members": "Miembros",
+    "aiCredits": "Créditos IA",
+    "apiCalls": "Llamadas API",
+    "planFree": "Gratuito",
+    "planPro": "Pro",
+    "planBusiness": "Business",
+    "planFreeDescription": "Perfecto para equipos pequeños que empiezan",
+    "planProDescription": "Para equipos en crecimiento que necesitan más potencia",
+    "planBusinessDescription": "Escala ilimitada para grandes operaciones de soporte",
+    "forever": "para siempre",
+    "perMonth": "por mes"
   }
 }

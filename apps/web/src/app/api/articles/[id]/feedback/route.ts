@@ -23,11 +23,13 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
     }
 
+    // Accept feedback on any published article regardless of visibility.
+    // If a user can see the article (and its feedback widget), they should
+    // be able to submit feedback. Access control is enforced at the page level.
     const article = await prisma.article.findFirst({
       where: {
         id: params.id,
         status: 'PUBLISHED',
-        collection: { isPublic: true },
       },
       select: { id: true, workspaceId: true },
     })

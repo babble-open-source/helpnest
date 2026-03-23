@@ -89,7 +89,7 @@ Roles: `OWNER | ADMIN | EDITOR | VIEWER`. Soft-deleted via `deactivatedAt`.
 
 Article grouping. `slug` is unique per workspace.
 
-Key fields: `isPublic` (default `true`), `isArchived`, `parentId` (for nested collections).
+Key fields: `visibility` (default `PUBLIC`), `isArchived`, `parentId` (for nested collections).
 
 ### `Article`
 

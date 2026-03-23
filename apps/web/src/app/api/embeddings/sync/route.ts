@@ -31,7 +31,10 @@ export async function POST(request: Request) {
 
   const articles = await prisma.article.findMany({
     where: { workspaceId: targetWorkspaceId, status: 'PUBLISHED' },
-    select: { id: true, title: true, content: true, slug: true, collectionId: true },
+    select: {
+      id: true, title: true, content: true, slug: true, collectionId: true,
+      collection: { select: { visibility: true } },
+    },
   })
 
   let totalPoints = 0
@@ -48,6 +51,7 @@ export async function POST(request: Request) {
         articleId: article.id,
         workspaceId: targetWorkspaceId,
         collectionId: article.collectionId,
+        visibility: article.collection.visibility,
         slug: article.slug,
         title: article.title,
         chunk,

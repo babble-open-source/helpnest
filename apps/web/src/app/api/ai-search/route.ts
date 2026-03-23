@@ -5,6 +5,7 @@ import { embedText } from '@/lib/embeddings'
 import { redis } from '@/lib/redis'
 import { resolveProvider, isByok } from '@/lib/ai/resolve-provider'
 import { checkLimit, incrementUsage } from '@/lib/cloud'
+import { getApiVisibility } from '@/lib/help-visibility'
 
 type SearchResultLike = { payload?: Record<string, unknown> | null }
 type ArticleRow = {
@@ -182,6 +183,8 @@ export async function POST(request: Request) {
     )
   }
 
+  const allowedVisibility = await getApiVisibility(request, workspace.id)
+
   // 1. Embed the query (requires OPENAI_API_KEY; falls back to full-text if unavailable)
   let queryEmbedding: number[] = []
   try {
@@ -195,10 +198,23 @@ export async function POST(request: Request) {
   if (queryEmbedding.length > 0) {
     try {
       await ensureCollection()
+      // Build Qdrant filter — always scope by workspace. For unauthenticated
+      // users, exclude INTERNAL vectors using must_not (rather than requiring
+      // visibility=PUBLIC) so that legacy vectors without a visibility field
+      // still pass through. The Prisma post-filter provides defense-in-depth.
+      const qdrantFilter: {
+        must: Array<{ key: string; match: { value: string } }>
+        must_not?: Array<{ key: string; match: { value: string } }>
+      } = {
+        must: [{ key: 'workspaceId', match: { value: workspace.id } }],
+      }
+      if (!allowedVisibility.includes('INTERNAL')) {
+        qdrantFilter.must_not = [{ key: 'visibility', match: { value: 'INTERNAL' } }]
+      }
       searchResults = await qdrant.search(COLLECTION_NAME, {
         vector: queryEmbedding,
         limit: 5,
-        filter: { must: [{ key: 'workspaceId', match: { value: workspace.id } }] },
+        filter: qdrantFilter,
         with_payload: true,
       })
     } catch {
@@ -229,7 +245,7 @@ export async function POST(request: Request) {
         id: { in: articleIds },
         workspaceId: workspace.id,
         status: 'PUBLISHED',
-        collection: { is: { isPublic: true, isArchived: false } },
+        collection: { is: { visibility: { in: allowedVisibility }, isArchived: false } },
       },
       select: {
         id: true, title: true, slug: true, content: true,
@@ -255,7 +271,7 @@ export async function POST(request: Request) {
       JOIN "Collection" c ON a."collectionId" = c.id
       WHERE a."workspaceId" = ${workspace.id}
         AND a.status = 'PUBLISHED'
-        AND c."isPublic" = true
+        AND c."visibility"::text = ANY(${allowedVisibility})
         AND c."isArchived" = false
         AND to_tsvector('english', a.title || ' ' || a.content) @@ plainto_tsquery('english', ${normalizedQuery})
       ORDER BY ts_rank_cd(to_tsvector('english', a.title || ' ' || a.content), plainto_tsquery('english', ${normalizedQuery})) DESC

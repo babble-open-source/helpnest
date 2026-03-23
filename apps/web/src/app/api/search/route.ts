@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getApiVisibility } from '@/lib/help-visibility'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -33,6 +34,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ results: [] }, { headers: CORS_HEADERS })
   }
 
+  const allowedVisibility = await getApiVisibility(request, workspace.id)
+
   // Postgres full-text search using raw query for tsvector.
   // ts_headline generates the snippet server-side, avoiding fetching full content over the wire.
   type SearchRow = {
@@ -42,6 +45,7 @@ export async function GET(request: Request) {
     snippet: string
     collection_title: string
     collection_slug: string
+    collection_visibility: string
     views: number
     word_count: number
   }
@@ -61,13 +65,14 @@ export async function GET(request: Request) {
       ) AS snippet,
       c.title as collection_title,
       c.slug as collection_slug,
+      c.visibility::text as collection_visibility,
       a.views,
       array_length(regexp_split_to_array(a.content, '\s+'), 1) as word_count
     FROM "Article" a
     JOIN "Collection" c ON a."collectionId" = c.id
     WHERE a."workspaceId" = ${workspace.id}
       AND a.status = 'PUBLISHED'
-      AND c."isPublic" = true
+      AND c."visibility"::text = ANY(${allowedVisibility})
       AND c."isArchived" = false
       AND (
         to_tsvector('english', a.title || ' ' || a.content)
@@ -87,6 +92,7 @@ export async function GET(request: Request) {
     slug: r.slug,
     snippet: r.snippet ?? '',
     collection: { title: r.collection_title, slug: r.collection_slug },
+    internal: r.collection_visibility === 'INTERNAL',
     readTime: Math.max(1, Math.round((r.word_count ?? 0) / 200)),
   }))
 

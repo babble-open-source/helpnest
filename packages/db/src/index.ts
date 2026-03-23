@@ -36,4 +36,5 @@ export {
   ConversationStatus,
   MessageRole,
   AiProvider,
+  CollectionVisibility,
 } from '../generated/prisma/client'

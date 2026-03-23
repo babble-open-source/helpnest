@@ -20,6 +20,7 @@ import type { ChatMessage, StreamEvent, ToolDefinition } from '@/lib/ai/types'
 import { prisma } from '@/lib/db'
 import { embedText } from '@/lib/embeddings'
 import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
+import type { CollectionVisibility } from '@helpnest/db'
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -42,6 +43,8 @@ export interface AgentContext {
    * Typical default: 0.3. Set to 0 to disable auto-escalation.
    */
   aiEscalationThreshold: number
+  /** Whether to include internal articles in search. false for widget, true for dashboard. */
+  includeInternal?: boolean
 }
 
 export interface AgentResponse {
@@ -160,7 +163,9 @@ const AGENT_TOOLS: ToolDefinition[] = [
  * Both paths filter to published articles in public, non-archived collections so the
  * agent can never surface draft or restricted content to customers.
  */
-async function searchArticles(query: string, workspaceId: string): Promise<ArticleRow[]> {
+async function searchArticles(query: string, workspaceId: string, includeInternal = false): Promise<ArticleRow[]> {
+  const allowedVisibility: CollectionVisibility[] = includeInternal ? ['PUBLIC', 'INTERNAL'] : ['PUBLIC']
+
   // --- Vector path ---
   let queryEmbedding: number[] = []
   try {
@@ -172,10 +177,21 @@ async function searchArticles(query: string, workspaceId: string): Promise<Artic
   if (queryEmbedding.length > 0) {
     try {
       await ensureCollection()
+      // Use must_not to exclude INTERNAL (rather than requiring PUBLIC) so
+      // legacy vectors without a visibility field still pass through.
+      const qdrantFilter: {
+        must: Array<{ key: string; match: { value: string } }>
+        must_not?: Array<{ key: string; match: { value: string } }>
+      } = {
+        must: [{ key: 'workspaceId', match: { value: workspaceId } }],
+      }
+      if (!includeInternal) {
+        qdrantFilter.must_not = [{ key: 'visibility', match: { value: 'INTERNAL' } }]
+      }
       const results = await qdrant.search(COLLECTION_NAME, {
         vector: queryEmbedding,
         limit: 5,
-        filter: { must: [{ key: 'workspaceId', match: { value: workspaceId } }] },
+        filter: qdrantFilter,
         with_payload: true,
       })
 
@@ -197,7 +213,7 @@ async function searchArticles(query: string, workspaceId: string): Promise<Artic
             id: { in: articleIds },
             workspaceId,
             status: 'PUBLISHED',
-            collection: { is: { isPublic: true, isArchived: false } },
+            collection: { is: { visibility: { in: allowedVisibility }, isArchived: false } },
           },
           select: {
             id: true,
@@ -226,7 +242,7 @@ async function searchArticles(query: string, workspaceId: string): Promise<Artic
     JOIN   "Collection" c ON a."collectionId" = c.id
     WHERE  a."workspaceId" = ${workspaceId}
       AND  a.status = 'PUBLISHED'
-      AND  c."isPublic" = true
+      AND  c."visibility"::text = ANY(${allowedVisibility})
       AND  c."isArchived" = false
       AND  to_tsvector('english', a.title || ' ' || a.content)
              @@ plainto_tsquery('english', ${query})
@@ -388,7 +404,7 @@ export async function* runAgent(
         const rawQuery = tc.args['query']
         const query = typeof rawQuery === 'string' ? rawQuery.trim() : ''
 
-        const articles = await searchArticles(query, ctx.workspaceId)
+        const articles = await searchArticles(query, ctx.workspaceId, ctx.includeInternal)
 
         // Accumulate unique sources for the final done payload.
         for (const article of articles) {

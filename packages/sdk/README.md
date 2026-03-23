@@ -43,9 +43,9 @@ Authentication headers (`Authorization: Bearer <apiKey>` and `X-HelpNest-Workspa
 
 | Method | Description |
 |---|---|
-| `list(params?)` | List collections. Filter by `isPublic` or `isArchived`. |
+| `list(params?)` | List collections. Filter by `visibility` or `isArchived`. |
 | `get(idOrSlug)` | Fetch a single collection by ID or slug. |
-| `create(params)` | Create a collection (`title`, `description`, `emoji`, `slug`, `isPublic`, `parentId`). |
+| `create(params)` | Create a collection (`title`, `description`, `emoji`, `slug`, `visibility`, `parentId`). |
 | `update(id, params)` | Partially update a collection. Supports order reordering. |
 | `delete(id)` | Delete a collection. |
 

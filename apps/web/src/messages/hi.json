@@ -35,6 +35,7 @@
     "articles": "{count, plural, one {# लेख} other {# लेख}}",
     "collections": "{count, plural, one {# संग्रह} other {# संग्रह}}",
     "results": "{count, plural, one {# परिणाम} other {# परिणाम}}",
+    "internal": "आंतरिक",
     "saved": "Saved!"
   },
   "help": {
@@ -56,7 +57,8 @@
     "needMoreHelp": "और मदद चाहिए?",
     "cantFindLooking": "जो खोज रहे हैं वह नहीं मिल रहा?",
     "browseAllArticles": "सभी लेख देखें",
-    "backToHelpCenter": "सहायता केंद्र पर वापस जाएं"
+    "backToHelpCenter": "सहायता केंद्र पर वापस जाएं",
+    "internal": "आंतरिक"
   },
   "search": {
     "placeholder": "लेख खोजें...",
@@ -201,7 +203,9 @@
     "createArticle": "लेख बनाएं →",
     "collectionsDescription": "संग्रह आपके लेखों को विषयों में व्यवस्थित करते हैं",
     "noCollectionsYet": "अभी कोई संग्रह नहीं है",
-    "manageConversations": "ग्राहक बातचीत प्रबंधित करें"
+    "manageConversations": "ग्राहक बातचीत प्रबंधित करें",
+    "billing": "बिलिंग",
+    "billingShort": "बि"
   },
   "articlesTable": {
     "selectAll": "सभी लेख चुनें",
@@ -389,7 +393,14 @@
     "createCollection": "संग्रह बनाएं",
     "creating": "बना रहे हैं…",
     "placeholder": "जैसे: शुरुआत कैसे करें",
-    "descriptionPlaceholder": "संग्रह शीर्षक के नीचे दिखाया जाने वाला संक्षिप्त विवरण"
+    "descriptionPlaceholder": "संग्रह शीर्षक के नीचे दिखाया जाने वाला संक्षिप्त विवरण",
+    "visibility": "दृश्यता",
+    "visibilityPublic": "सार्वजनिक",
+    "visibilityInternal": "आंतरिक",
+    "visibilityPublicDescription": "आपके सहायता केंद्र पर सभी को दिखाई देता है।",
+    "visibilityInternalDescription": "केवल साइन-इन किए गए कार्यस्थान सदस्यों को दिखाई देता है।",
+    "visibilityChangeToPublic": "सार्वजनिक में बदलने से इस संग्रह के सभी लेख सार्वजनिक हो जाएंगे।",
+    "visibilityChangeToInternal": "आंतरिक में बदलने से इस संग्रह के सभी लेख सार्वजनिक सहायता केंद्र से छिप जाएंगे।"
   },
   "members": {
     "title": "सदस्य",
@@ -659,5 +670,39 @@
     "articlePreview": "शुरुआत कैसे करें…",
     "getInTouch": "संपर्क करें",
     "applyToDesigner": "डिज़ाइनर पर लागू करें"
+  },
+  "billing": {
+    "title": "बिलिंग और योजनाएं",
+    "subtitle": "अपनी सदस्यता प्रबंधित करें और उपयोग ट्रैक करें।",
+    "currentUsage": "वर्तमान उपयोग",
+    "planResets": "{plan} योजना · मासिक रीसेट",
+    "choosePlan": "योजना चुनें",
+    "mostPopular": "सबसे लोकप्रिय",
+    "currentPlan": "वर्तमान योजना",
+    "upgradeToName": "{name} में अपग्रेड करें",
+    "redirecting": "रीडायरेक्ट हो रहा है…",
+    "manageViaPortal": "नीचे बिलिंग पोर्टल से प्रबंधित करें",
+    "manageSubscription": "सदस्यता प्रबंधित करें",
+    "manageSubscriptionDescription": "अपनी भुगतान विधि अपडेट करें, चालान डाउनलोड करें, या अपनी सदस्यता रद्द करें।",
+    "openBillingPortal": "बिलिंग पोर्टल खोलें",
+    "opening": "खुल रहा है…",
+    "domainWarningTitle": "कस्टम डोमेन चेतावनी",
+    "domainWarningMessage": "अगर आप मुफ्त योजना में डाउनग्रेड करते हैं तो आपका कस्टम डोमेन {domain} तुरंत काम करना बंद कर देगा।",
+    "continueToBilling": "बिलिंग पोर्टल पर जारी रखें",
+    "articles": "लेख",
+    "teamMembers": "टीम सदस्य",
+    "aiCreditsPerMonth": "AI क्रेडिट / माह",
+    "apiCallsPerMonth": "API कॉल / माह",
+    "members": "सदस्य",
+    "aiCredits": "AI क्रेडिट",
+    "apiCalls": "API कॉल",
+    "planFree": "मुफ्त",
+    "planPro": "प्रो",
+    "planBusiness": "बिज़नेस",
+    "planFreeDescription": "शुरू करने वाली छोटी टीमों के लिए उत्तम",
+    "planProDescription": "बढ़ती टीमों के लिए जिन्हें अधिक शक्ति चाहिए",
+    "planBusinessDescription": "बड़े सहायता संचालन के लिए असीमित पैमाना",
+    "forever": "हमेशा के लिए",
+    "perMonth": "प्रति माह"
   }
 }

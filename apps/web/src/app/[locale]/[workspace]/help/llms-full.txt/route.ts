@@ -26,7 +26,7 @@ export async function GET(
       id: true,
       name: true,
       collections: {
-        where: { isPublic: true, isArchived: false },
+        where: { visibility: 'PUBLIC', isArchived: false },
         orderBy: { order: 'asc' },
         select: {
           title: true,

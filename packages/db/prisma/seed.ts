@@ -63,43 +63,49 @@ async function main() {
   const colGettingStarted = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'getting-started' } },
     update: {},
-    create: { workspaceId: docsWorkspace.id, title: 'Getting Started', description: 'Install and run HelpNest in minutes.', emoji: '🚀', slug: 'getting-started', order: 0, isPublic: true },
+    create: { workspaceId: docsWorkspace.id, title: 'Getting Started', description: 'Install and run HelpNest in minutes.', emoji: '🚀', slug: 'getting-started', order: 0, visibility: 'PUBLIC' },
   })
 
   const colSelfHosting = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'self-hosting' } },
     update: {},
-    create: { workspaceId: docsWorkspace.id, title: 'Self-Hosting', description: 'Run HelpNest on your own infrastructure.', emoji: '🖥️', slug: 'self-hosting', order: 1, isPublic: true },
+    create: { workspaceId: docsWorkspace.id, title: 'Self-Hosting', description: 'Run HelpNest on your own infrastructure.', emoji: '🖥️', slug: 'self-hosting', order: 1, visibility: 'PUBLIC' },
   })
 
   const colDashboard = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'using-helpnest' } },
     update: {},
-    create: { workspaceId: docsWorkspace.id, title: 'Using HelpNest', description: 'Managing your help center — articles, collections, themes.', emoji: '✏️', slug: 'using-helpnest', order: 2, isPublic: true },
+    create: { workspaceId: docsWorkspace.id, title: 'Using HelpNest', description: 'Managing your help center — articles, collections, themes.', emoji: '✏️', slug: 'using-helpnest', order: 2, visibility: 'PUBLIC' },
   })
 
   const colIntegrations = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'integrations' } },
     update: {},
-    create: { workspaceId: docsWorkspace.id, title: 'Integrations', description: 'Widget, API, SDK and third-party integrations.', emoji: '🔌', slug: 'integrations', order: 3, isPublic: true },
+    create: { workspaceId: docsWorkspace.id, title: 'Integrations', description: 'Widget, API, SDK and third-party integrations.', emoji: '🔌', slug: 'integrations', order: 3, visibility: 'PUBLIC' },
   })
 
   const colAbout = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'about' } },
     update: {},
-    create: { workspaceId: docsWorkspace.id, title: 'About', description: 'The story behind HelpNest — why it was built and who built it.', emoji: '💡', slug: 'about', order: 4, isPublic: true },
+    create: { workspaceId: docsWorkspace.id, title: 'About', description: 'The story behind HelpNest — why it was built and who built it.', emoji: '💡', slug: 'about', order: 4, visibility: 'PUBLIC' },
   })
 
   const colMigration = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'migration' } },
     update: {},
-    create: { workspaceId: docsWorkspace.id, title: 'Migration', description: 'Import your existing content from other platforms into HelpNest.', emoji: '🔄', slug: 'migration', order: 5, isPublic: true },
+    create: { workspaceId: docsWorkspace.id, title: 'Migration', description: 'Import your existing content from other platforms into HelpNest.', emoji: '🔄', slug: 'migration', order: 5, visibility: 'PUBLIC' },
   })
 
   const colAiDraft = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'ai-auto-draft' } },
     update: {},
-    create: { workspaceId: docsWorkspace.id, title: 'AI Auto-Draft', description: 'Automatically draft KB articles from code changes and unanswered customer questions.', emoji: '✨', slug: 'ai-auto-draft', order: 6, isPublic: true },
+    create: { workspaceId: docsWorkspace.id, title: 'AI Auto-Draft', description: 'Automatically draft KB articles from code changes and unanswered customer questions.', emoji: '✨', slug: 'ai-auto-draft', order: 6, visibility: 'PUBLIC' },
+  })
+
+  const colInternal = await prisma.collection.upsert({
+    where: { workspaceId_slug: { workspaceId: docsWorkspace.id, slug: 'internal-runbooks' } },
+    update: {},
+    create: { workspaceId: docsWorkspace.id, title: 'Internal Runbooks', description: 'Team-only operational guides and procedures.', emoji: '🔒', slug: 'internal-runbooks', order: 7, visibility: 'INTERNAL' },
   })
 
   const docsArticles = [
@@ -521,6 +527,16 @@ helpnest draft --workspace myproduct --feature-id FEAT-1234 --pr-title "Dark mod
   --helpnest-key hn_live_xxx \\
   --dry-run</code></pre>`,
     },
+
+    // Internal article (team-only)
+    {
+      collectionId: colInternal.id,
+      title: 'Incident Response Playbook',
+      slug: 'incident-response-playbook',
+      excerpt: 'Step-by-step guide for handling production incidents.',
+      order: 0,
+      content: `<h2>Severity levels</h2><ul><li><p><strong>SEV-1</strong> — Service is down for all users. Page the on-call immediately.</p></li><li><p><strong>SEV-2</strong> — Major feature degraded. Acknowledge within 15 minutes.</p></li><li><p><strong>SEV-3</strong> — Minor issue affecting a subset of users. Fix during business hours.</p></li></ul><h2>Response steps</h2><ol><li><p>Acknowledge the alert and join the incident channel</p></li><li><p>Assess scope and assign severity</p></li><li><p>Communicate status to stakeholders</p></li><li><p>Investigate root cause and implement fix</p></li><li><p>Write post-mortem within 48 hours</p></li></ol><p>This article is only visible to workspace members.</p>`,
+    },
   ]
 
   for (const article of docsArticles) {
@@ -568,25 +584,25 @@ helpnest draft --workspace myproduct --feature-id FEAT-1234 --pr-title "Dark mod
   const sColAccount = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: supportWorkspace.id, slug: 'account' } },
     update: {},
-    create: { workspaceId: supportWorkspace.id, title: 'Account & Team', description: 'Managing your HelpNest Cloud account, workspaces, and team members.', emoji: '👤', slug: 'account', order: 0, isPublic: true },
+    create: { workspaceId: supportWorkspace.id, title: 'Account & Team', description: 'Managing your HelpNest Cloud account, workspaces, and team members.', emoji: '👤', slug: 'account', order: 0, visibility: 'PUBLIC' },
   })
 
   const sColBilling = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: supportWorkspace.id, slug: 'billing' } },
     update: {},
-    create: { workspaceId: supportWorkspace.id, title: 'Billing & Plans', description: 'Subscriptions, invoices, and plan limits.', emoji: '💳', slug: 'billing', order: 1, isPublic: true },
+    create: { workspaceId: supportWorkspace.id, title: 'Billing & Plans', description: 'Subscriptions, invoices, and plan limits.', emoji: '💳', slug: 'billing', order: 1, visibility: 'PUBLIC' },
   })
 
   const sColSetup = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: supportWorkspace.id, slug: 'setup' } },
     update: {},
-    create: { workspaceId: supportWorkspace.id, title: 'Getting Set Up', description: 'First steps after signing up for HelpNest Cloud.', emoji: '🚀', slug: 'setup', order: 2, isPublic: true },
+    create: { workspaceId: supportWorkspace.id, title: 'Getting Set Up', description: 'First steps after signing up for HelpNest Cloud.', emoji: '🚀', slug: 'setup', order: 2, visibility: 'PUBLIC' },
   })
 
   const sColDomain = await prisma.collection.upsert({
     where: { workspaceId_slug: { workspaceId: supportWorkspace.id, slug: 'custom-domain' } },
     update: {},
-    create: { workspaceId: supportWorkspace.id, title: 'Custom Domains', description: 'Serve your help center on your own domain.', emoji: '🌐', slug: 'custom-domain', order: 3, isPublic: true },
+    create: { workspaceId: supportWorkspace.id, title: 'Custom Domains', description: 'Serve your help center on your own domain.', emoji: '🌐', slug: 'custom-domain', order: 3, visibility: 'PUBLIC' },
   })
 
   const supportArticles = [

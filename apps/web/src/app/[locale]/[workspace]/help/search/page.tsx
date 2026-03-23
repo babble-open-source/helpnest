@@ -2,6 +2,7 @@ import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
+import { getHelpCenterVisibility } from '@/lib/help-visibility'
 
 interface Props {
   params: Promise<{ workspace: string }>
@@ -27,6 +28,7 @@ export default async function SearchPage(props: Props) {
   })
   if (!workspace || workspace.deletedAt) notFound()
 
+  const allowedVisibility = await getHelpCenterVisibility(workspace.id)
   const q = searchParams.q?.trim() ?? ''
 
   type SearchResult = {
@@ -36,18 +38,20 @@ export default async function SearchPage(props: Props) {
     excerpt: string | null
     collection_title: string
     collection_slug: string
+    collection_visibility: string
   }
   const results: SearchResult[] = q.length >= 2
     ? await prisma.$queryRaw<SearchResult[]>`
         SELECT
           a.id, a.title, a.slug, a.excerpt,
           c.title as collection_title,
-          c.slug  as collection_slug
+          c.slug  as collection_slug,
+          c.visibility::text as collection_visibility
         FROM "Article" a
         JOIN "Collection" c ON a."collectionId" = c.id
         WHERE a."workspaceId" = ${workspace.id}
           AND a.status = 'PUBLISHED'
-          AND c."isPublic" = true
+          AND c."visibility"::text = ANY(${allowedVisibility})
           AND c."isArchived" = false
           AND (
             to_tsvector('english', COALESCE(a.title, '') || ' ' || COALESCE(a.content, ''))
@@ -105,9 +109,17 @@ export default async function SearchPage(props: Props) {
                   {r.excerpt && (
                     <p className="text-sm text-muted line-clamp-2 mb-2">{r.excerpt}</p>
                   )}
-                  <span className="text-xs text-muted bg-cream rounded-full px-2 py-0.5">
-                    {r.collection_title}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted bg-cream rounded-full px-2 py-0.5">
+                      {r.collection_title}
+                    </span>
+                    {r.collection_visibility === 'INTERNAL' && (
+                      <span className="inline-flex items-center gap-1 text-[0.6875rem] text-muted bg-cream border border-border rounded-full px-2 py-0.5">
+                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        {tc('internal')}
+                      </span>
+                    )}
+                  </div>
                 </Link>
               ))}
             </div>

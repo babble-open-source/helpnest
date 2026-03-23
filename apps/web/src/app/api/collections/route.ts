@@ -8,13 +8,14 @@ export async function GET(request: Request) {
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { searchParams } = new URL(request.url)
-  const isPublic = searchParams.get('isPublic')
+  const visibilityParam = searchParams.get('visibility')
+  const visibility = visibilityParam === 'PUBLIC' || visibilityParam === 'INTERNAL' ? visibilityParam : undefined
   const isArchived = searchParams.get('isArchived')
 
   const collections = await prisma.collection.findMany({
     where: {
       workspaceId: authResult.workspaceId,
-      ...(isPublic !== null ? { isPublic: isPublic === 'true' } : {}),
+      ...(visibility ? { visibility } : {}),
       ...(isArchived !== null ? { isArchived: isArchived === 'true' } : { isArchived: false }),
     },
     orderBy: { order: 'asc' },
@@ -46,8 +47,9 @@ export async function POST(request: Request) {
     }
   }
 
-  const body = await request.json() as { title?: string; description?: string; emoji?: string }
+  const body = await request.json() as { title?: string; description?: string; emoji?: string; visibility?: string }
   const { title, description, emoji } = body
+  const visibility = body.visibility === 'INTERNAL' ? 'INTERNAL' as const : 'PUBLIC' as const
 
   if (!title?.trim()) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -72,7 +74,7 @@ export async function POST(request: Request) {
           slug,
           description: description?.trim() || null,
           emoji: emoji || '📁',
-          isPublic: true,
+          visibility,
           order: count,
         },
       })
