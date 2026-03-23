@@ -140,7 +140,7 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
   const hasHelpNestHost = !!req.headers.get('x-helpnest-host')
 
   const host = getRequestHostname(req.headers)
-  if (!host) return hasHelpNestHost ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } }) : null
+  if (!host) return hasHelpNestHost ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': '4-no-host' } }) : null
   if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) || host === CUSTOM_DOMAIN?.toLowerCase()) return null
   if (isKnownHost(host) && !hasHelpNestHost) return null
 
@@ -161,7 +161,7 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
     if (!res.ok) {
       // API error — if BYOD, show error page; otherwise fall through
       return hasHelpNestHost
-        ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5' } })
+        ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5', 'x-mw-step': `4-api-error:${res.status}` } })
         : null
     }
 
@@ -169,7 +169,7 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
     if (!slug) {
       // Domain not found in DB
       return hasHelpNestHost
-        ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+        ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': `4-no-slug:${host}` } })
         : null
     }
 
@@ -178,12 +178,12 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
 
     // BYOD domain hitting a non-help path — return 404
     return hasHelpNestHost
-      ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+      ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': '4-no-rewrite' } })
       : null
   } catch {
     // Timeout or network error
     return hasHelpNestHost
-      ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5' } })
+      ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5', 'x-mw-step': '4-fetch-error' } })
       : null
   }
 }
@@ -226,7 +226,7 @@ export default auth(async (req) => {
     const rewrite = rewriteToHelp(req, byodSlug)
     if (rewrite) return rewrite
     // BYOD domain hitting a non-help path (e.g. /dashboard) — block it
-    return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+    return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': '3-byod-no-rewrite' } })
   }
 
   // 4. BYOD fallback — KV missed, try API fetch (terminal for BYOD requests)
@@ -242,7 +242,7 @@ export default auth(async (req) => {
   if (!req.headers.get('x-helpnest-host')) {
     const host = getRequestHostname(req.headers)
     if (!isKnownHost(host)) {
-      return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+      return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': `5-unknown-host:${host}` } })
     }
   }
 
