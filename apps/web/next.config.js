@@ -40,6 +40,11 @@ const nextConfig = {
     'notion-to-md',
     'jose',
   ],
+  async rewrites() {
+    return [
+      { source: '/widget.js', destination: '/api/widget.js' },
+    ]
+  },
   async headers() {
     return [
       {

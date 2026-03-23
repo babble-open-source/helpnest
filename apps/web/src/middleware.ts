@@ -86,8 +86,9 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   // us Railway's internal host (dashboard.helpnest.cloud), creating a cross-
   // origin rewrite that Next.js converts to a 308 redirect loop.
   const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim()
+  const proto = APP_ORIGIN.startsWith('https') ? 'https' : 'http'
   const rewriteBase = forwardedHost
-    ? `${req.headers.get('x-forwarded-proto')?.split(',')[0]?.trim() || 'https'}://${forwardedHost}`
+    ? `${proto}://${forwardedHost}`
     : req.url
   const rewritePath = `/${locale}/${slug}/help${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`
   const rewriteUrl = new URL(rewritePath + (search || ''), rewriteBase)
@@ -217,6 +218,11 @@ function handleAuthRedirect(
 // ---------------------------------------------------------------------------
 
 export default auth(async (req) => {
+  // 0. Widget script — bypass all routing and serve directly via rewrite
+  if (req.nextUrl.pathname === '/widget.js') {
+    return NextResponse.rewrite(new URL('/api/widget.js', req.url))
+  }
+
   // 1. Env var custom domain — fast path (self-hosted)
   const customDomainResponse = handleCustomDomain(req)
   if (customDomainResponse) return customDomainResponse
@@ -226,7 +232,9 @@ export default auth(async (req) => {
   if (subdomainResponse) return subdomainResponse
 
   // 3. BYOD fast path — slug resolved at edge by Cloudflare Worker KV
-  const byodSlug = req.headers.get('x-helpnest-slug')
+  // Only trust x-helpnest-slug when x-helpnest-host is also present (both set
+  // by the Worker). Without this, direct requests to Railway could spoof the slug.
+  const byodSlug = req.headers.get('x-helpnest-host') ? req.headers.get('x-helpnest-slug') : null
   if (byodSlug) {
     const rewrite = rewriteToHelp(req, byodSlug)
     if (rewrite) return rewrite
@@ -249,10 +257,9 @@ export default auth(async (req) => {
   }
 
   // 4. BYOD fallback — KV missed, try API fetch (terminal for BYOD requests)
-  if (!req.nextUrl.pathname.startsWith('/api/internal/')) {
-    const dbDomainResponse = await handleDBCustomDomain(req)
-    if (dbDomainResponse) return dbDomainResponse
-  }
+  // Note: /api/ paths are excluded by the matcher, so this always runs.
+  const dbDomainResponse = await handleDBCustomDomain(req)
+  if (dbDomainResponse) return dbDomainResponse
 
   // 5. Unknown host guard — block unrecognized external hosts that bypassed
   //    the Worker (no X-HelpNest-Host header) and aren't known app hosts.
