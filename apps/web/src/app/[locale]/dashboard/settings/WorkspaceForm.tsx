@@ -546,14 +546,37 @@ export function WorkspaceForm({
 
       <div className="pt-3 border-t border-border">
         <p className="text-xs text-muted mb-0.5">{t('helpCenterUrl')}</p>
-        <a
-          href={helpCenterDomain ? `https://${values.slug}.${helpCenterDomain}` : `${appUrl}/${values.slug}/help`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm font-mono text-accent hover:underline break-all"
-        >
-          {helpCenterDomain ? `${values.slug}.${helpCenterDomain}` : `${appUrl}/${values.slug}/help`}
-        </a>
+        {values.customDomain.trim() ? (
+          <div className="space-y-1">
+            <a
+              href={`https://${values.customDomain.trim()}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block text-sm font-mono text-accent hover:underline break-all"
+            >
+              {values.customDomain.trim()}
+            </a>
+            {helpCenterDomain && (
+              <a
+                href={`https://${values.slug}.${helpCenterDomain}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-xs font-mono text-muted hover:underline break-all"
+              >
+                {values.slug}.{helpCenterDomain}
+              </a>
+            )}
+          </div>
+        ) : (
+          <a
+            href={helpCenterDomain ? `https://${values.slug}.${helpCenterDomain}` : `${appUrl}/${values.slug}/help`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-mono text-accent hover:underline break-all"
+          >
+            {helpCenterDomain ? `${values.slug}.${helpCenterDomain}` : `${appUrl}/${values.slug}/help`}
+          </a>
+        )}
       </div>
 
       {isOwner && !demoMode && (
