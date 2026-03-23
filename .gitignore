@@ -36,3 +36,4 @@ packages/db/generated/
 *.tsbuildinfo
 next-env.d.ts
 docs/superpowers/
+.wrangler/
