@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { timingSafeEqual } from 'node:crypto'
 import { prisma } from '@/lib/db'
 import { qdrant, COLLECTION_NAME } from '@/lib/qdrant'
+import { kvDeleteDomain } from '@/lib/cloudflare-kv'
 
 /**
  * POST /api/internal/workspace-purge
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
 
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
-    select: { id: true, deletedAt: true },
+    select: { id: true, deletedAt: true, customDomain: true },
   })
 
   if (!workspace) {
@@ -52,6 +53,9 @@ export async function POST(request: Request) {
 
   // Hard delete — Postgres cascades all child records
   await prisma.workspace.delete({ where: { id: workspaceId } })
+  if (workspace.customDomain) {
+    kvDeleteDomain(workspace.customDomain).catch(() => {})
+  }
 
   console.info(`[workspace-purge] Hard-deleted workspace ${workspaceId}`)
 
