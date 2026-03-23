@@ -51,7 +51,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Workspace name does not match' }, { status: 400 })
   }
 
-  // Soft delete — mangle slug to free the unique constraint for re-use.
+  // Soft delete — mangle slug, clear customDomain, and set deletedAt atomically.
   // Original slug is recoverable from the workspace name on restore.
   const deletedAt = new Date()
   await prisma.workspace.update({
@@ -59,12 +59,13 @@ export async function POST(request: Request) {
     data: {
       deletedAt,
       slug: `${workspace.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 30)}--deleted-${workspaceId.slice(0, 8)}`,
+      customDomain: null,
     },
   })
 
   // Clean up external resources (fire-and-forget, don't block response)
 
-  // 1. Cloudflare custom hostname
+  // 1. Cloudflare custom hostname + KV eviction
   if (workspace.customDomain && isCloudflareEnabled()) {
     findCustomHostname(workspace.customDomain)
       .then((hostname) => {
@@ -73,10 +74,6 @@ export async function POST(request: Request) {
       .catch((err) => console.error('[workspace-delete] Cloudflare cleanup error:', err))
   }
   if (workspace.customDomain) {
-    prisma.workspace.update({
-      where: { id: workspaceId },
-      data: { customDomain: null },
-    }).catch(() => {})
     kvDeleteDomain(workspace.customDomain).catch(() => {})
   }
 
