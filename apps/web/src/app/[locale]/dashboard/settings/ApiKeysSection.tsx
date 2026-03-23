@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations, useFormatter } from 'next-intl'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 interface ApiKey {
   id: string
@@ -29,6 +30,7 @@ export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
   const [copied, setCopied] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [keyToDelete, setKeyToDelete] = useState<{ id: string; name: string } | null>(null)
 
   const fetchKeys = useCallback(async () => {
     try {
@@ -74,8 +76,8 @@ export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
     }
   }
 
-  async function handleDelete(id: string, name: string) {
-    if (!confirm(t('confirmDelete', { name }))) return
+  async function handleDelete(id: string) {
+    setKeyToDelete(null)
     setDeletingId(id)
     setError(null)
     try {
@@ -189,7 +191,7 @@ export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
                 <button
                   type="button"
                   disabled={deletingId === key.id}
-                  onClick={() => void handleDelete(key.id, key.name)}
+                  onClick={() => setKeyToDelete({ id: key.id, name: key.name })}
                   className="ms-4 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-cream disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {deletingId === key.id ? t('revoking') : t('revoke')}
@@ -199,6 +201,17 @@ export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
           ))}
         </ul>
       )}
+
+      <ConfirmDialog
+        open={!!keyToDelete}
+        title={t('revoke')}
+        message={keyToDelete ? t('confirmDelete', { name: keyToDelete.name }) : ''}
+        confirmLabel={t('revoke')}
+        cancelLabel={tc('cancel')}
+        destructive
+        onConfirm={() => { if (keyToDelete) void handleDelete(keyToDelete.id) }}
+        onCancel={() => setKeyToDelete(null)}
+      />
     </div>
   )
 }

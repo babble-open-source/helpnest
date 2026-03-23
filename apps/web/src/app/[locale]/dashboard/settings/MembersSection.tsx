@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
 
@@ -53,6 +54,7 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
   const [inviting, setInviting] = useState(false)
   const [inviteError, setInviteError] = useState('')
   const [actionError, setActionError] = useState('')
+  const [memberToRemove, setMemberToRemove] = useState<Member | null>(null)
 
   const canManage = !demoMode && (callerRole === 'OWNER' || callerRole === 'ADMIN')
 
@@ -147,9 +149,7 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
   }
 
   async function handleRemove(member: Member) {
-    const displayName = member.user.name ?? member.user.email
-    if (!confirm(t('confirmRemove', { name: displayName }))) return
-
+    setMemberToRemove(null)
     setActionError('')
 
     try {
@@ -315,7 +315,7 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
                   </button>
                   <button
                     type="button"
-                    onClick={() => void handleRemove(member)}
+                    onClick={() => setMemberToRemove(member)}
                     className="text-xs border border-border px-2 py-1 rounded text-red-500 hover:bg-cream transition-colors"
                   >
                     {t('remove')}
@@ -326,6 +326,17 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
           )
         })}
       </ul>
+
+      <ConfirmDialog
+        open={!!memberToRemove}
+        title={t('remove')}
+        message={memberToRemove ? t('confirmRemove', { name: memberToRemove.user.name ?? memberToRemove.user.email }) : ''}
+        confirmLabel={t('remove')}
+        cancelLabel={tc('cancel')}
+        destructive
+        onConfirm={() => { if (memberToRemove) void handleRemove(memberToRemove) }}
+        onCancel={() => setMemberToRemove(null)}
+      />
     </div>
   )
 }

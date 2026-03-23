@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import NextImage from 'next/image'
 import { normalizeAssetUrl, looksLikeFaviconAsset } from '@/lib/workspace-utils'
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 
 interface Props {
   name: string
@@ -82,6 +83,8 @@ export function WorkspaceForm({
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmName, setDeleteConfirmName] = useState('')
   const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [showRemoveDomainConfirm, setShowRemoveDomainConfirm] = useState(false)
 
   async function registerDomain() {
     if (!values.customDomain.trim()) return
@@ -127,7 +130,7 @@ export function WorkspaceForm({
   }
 
   async function handleRemove() {
-    if (!confirm('Are you sure you want to remove your custom domain? It will stop working immediately.')) return
+    setShowRemoveDomainConfirm(false)
     setStatus('saving')
     try {
       const res = await fetch('/api/domains/remove', {
@@ -151,6 +154,7 @@ export function WorkspaceForm({
   async function handleDeleteWorkspace() {
     if (!workspaceId) return
     setDeleting(true)
+    setDeleteError('')
     try {
       const res = await fetch('/api/workspaces/delete', {
         method: 'POST',
@@ -161,10 +165,10 @@ export function WorkspaceForm({
         router.push('/onboarding')
       } else {
         const data = await res.json()
-        alert(data.error || 'Failed to delete workspace')
+        setDeleteError(data.error || 'Failed to delete workspace')
       }
     } catch {
-      alert('Failed to delete workspace')
+      setDeleteError('Failed to delete workspace')
     } finally {
       setDeleting(false)
     }
@@ -344,7 +348,7 @@ export function WorkspaceForm({
                         </button>
                         <button
                           type="button"
-                          onClick={handleRemove}
+                          onClick={() => setShowRemoveDomainConfirm(true)}
                           disabled={status === 'saving'}
                           className="text-xs font-medium px-3 py-1.5 rounded-md border border-red-200 text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
                         >
@@ -596,6 +600,17 @@ export function WorkspaceForm({
         </div>
       )}
 
+      <ConfirmDialog
+        open={showRemoveDomainConfirm}
+        title="Remove custom domain"
+        message={`Are you sure you want to remove ${values.customDomain}? It will stop working immediately.`}
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        destructive
+        onConfirm={handleRemove}
+        onCancel={() => setShowRemoveDomainConfirm(false)}
+      />
+
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40">
           <div className="bg-white rounded-xl border border-border shadow-lg p-6 max-w-md mx-4">
@@ -610,10 +625,13 @@ export function WorkspaceForm({
             <input
               type="text"
               value={deleteConfirmName}
-              onChange={(e) => setDeleteConfirmName(e.target.value)}
+              onChange={(e) => { setDeleteConfirmName(e.target.value); setDeleteError('') }}
               placeholder={values.name}
               className="w-full px-3 py-2 text-sm border border-border rounded-lg mb-4 focus:outline-none focus:ring-1 focus:ring-red-300"
             />
+            {deleteError && (
+              <p className="text-sm text-red-500 mb-3">{deleteError}</p>
+            )}
             <div className="flex gap-3 justify-end">
               <button
                 type="button"
