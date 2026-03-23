@@ -8,8 +8,6 @@ import { Link } from '@/i18n/navigation'
 import { getTranslations, getFormatter } from 'next-intl/server'
 import { ArticleContent } from '@/components/help/ArticleContent'
 import { ArticleFeedback } from '@/components/help/ArticleFeedback'
-import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
-import { DashboardButton } from '@/components/help/DashboardButton'
 import { locales } from '@/i18n/config'
 import { getHelpBaseUrl } from '@/lib/help-url'
 
@@ -141,34 +139,23 @@ export default async function ArticlePage(props: Props) {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
-      <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-2 text-sm">
-          <div className="flex items-center gap-2 min-w-0">
-            <WorkspaceBrandLink
-              href={`/${params.workspace}/help`}
-              name={workspace.name}
-              logo={workspace.logo}
-              brandText={workspace.brandText ?? null}
-              hideNameWhenLogo
-              className="shrink-0"
-              textClassName="text-muted hover:text-ink transition-colors"
-            />
-            <span className="text-border">/</span>
-            <Link
-              href={`/${params.workspace}/help/${params.collection}`}
-              className="text-muted hover:text-ink transition-colors shrink-0"
-            >
-              {article.collection.title}
-            </Link>
-            <span className="text-border">/</span>
-            <span className="text-ink font-medium truncate">{article.title}</span>
-          </div>
-          <DashboardButton />
-        </div>
-      </nav>
-
       <div className="max-w-4xl mx-auto px-4 py-6 sm:py-12">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm text-muted mb-6">
+          <Link href={`/${params.workspace}/help`} className="hover:text-ink transition-colors">
+            {t('helpCenter')}
+          </Link>
+          <span className="text-border">/</span>
+          <Link
+            href={`/${params.workspace}/help/${params.collection}`}
+            className="hover:text-ink transition-colors"
+          >
+            {article.collection.title}
+          </Link>
+          <span className="text-border">/</span>
+          <span className="text-ink font-medium truncate">{article.title}</span>
+        </nav>
+
         <div className="flex gap-8 lg:gap-12">
           {/* Main content */}
           <article className="flex-1 min-w-0 max-w-2xl">

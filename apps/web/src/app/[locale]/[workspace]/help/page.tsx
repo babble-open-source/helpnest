@@ -4,9 +4,6 @@ import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { SearchTrigger } from '@/components/help/SearchTrigger'
 import { AskAI } from '@/components/help/AskAI'
-import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
-import { DashboardButton } from '@/components/help/DashboardButton'
-import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 interface Props {
   params: Promise<{ workspace: string }>
@@ -54,25 +51,6 @@ export default async function HelpCenterHome(props: Props) {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
-      <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
-          <WorkspaceBrandLink
-            href={`/${params.workspace}/help`}
-            name={workspace.name}
-            logo={workspace.logo}
-            brandText={workspace.brandText ?? null}
-            hideNameWhenLogo
-            textClassName="font-serif text-xl text-ink"
-          />
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted hidden sm:block">{t('helpCenter')}</span>
-            <LanguageSwitcher />
-            <DashboardButton />
-          </div>
-        </div>
-      </nav>
-
       {/* Hero */}
       <section className="bg-ink text-cream py-10 sm:py-16 px-4">
         <div className="max-w-2xl mx-auto text-center">

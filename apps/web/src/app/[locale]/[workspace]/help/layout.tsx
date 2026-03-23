@@ -5,6 +5,9 @@ import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { getHelpBaseUrl } from '@/lib/help-url'
 import { notFound } from 'next/navigation'
 import { cache } from 'react'
+import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
+import { DashboardButton } from '@/components/help/DashboardButton'
+import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 
 interface Props {
   children: React.ReactNode
@@ -37,6 +40,7 @@ const getWorkspaceHelpBranding = cache(async (slug: string) => {
       themeId: true,
       logo: true,
       // Migration-guarded branding fields — only selected when the column exists
+      ...(columns.has('brandText') ? { brandText: true } : {}),
       ...(columns.has('favicon') ? { favicon: true } : {}),
       ...(columns.has('metaTitle') ? { metaTitle: true } : {}),
       ...(columns.has('metaDescription') ? { metaDescription: true } : {}),
@@ -66,6 +70,7 @@ const getWorkspaceHelpBranding = cache(async (slug: string) => {
       name: workspace.name,
       themeId: workspace.themeId,
       logo: workspace.logo,
+      brandText: workspace.brandText ?? null,
       favicon: workspace.favicon ?? null,
       metaTitle: workspace.metaTitle ?? null,
       metaDescription: workspace.metaDescription ?? null,
@@ -164,6 +169,24 @@ export default async function HelpCenterLayout({ children, ...props }: Props) {
 
       {/* Inject theme CSS variables — server-rendered, no flash */}
       <style dangerouslySetInnerHTML={{ __html: `:root { ${css} }` }} />
+
+      {/* Persistent nav — stays mounted across page transitions */}
+      <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between">
+          <WorkspaceBrandLink
+            href={`/${params.workspace}/help`}
+            name={state.workspace.name}
+            logo={state.workspace.logo}
+            brandText={state.workspace.brandText}
+            hideNameWhenLogo
+            textClassName="font-serif text-xl text-ink"
+          />
+          <div className="flex items-center gap-3">
+            <LanguageSwitcher />
+            <DashboardButton />
+          </div>
+        </div>
+      </nav>
 
       {children}
     </>

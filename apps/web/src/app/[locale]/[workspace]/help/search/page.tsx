@@ -2,8 +2,6 @@ import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
-import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
-import { DashboardButton } from '@/components/help/DashboardButton'
 
 interface Props {
   params: Promise<{ workspace: string }>
@@ -65,35 +63,16 @@ export default async function SearchPage(props: Props) {
 
   return (
     <div className="min-h-screen bg-cream">
-      {/* Nav */}
-      <nav className="sticky top-0 z-10 bg-cream/95 backdrop-blur border-b border-border">
-        <div className="max-w-4xl mx-auto px-4 h-14 flex items-center justify-between gap-2 text-sm">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <WorkspaceBrandLink
-              href={`/${params.workspace}/help`}
-              name={workspace.name}
-              logo={workspace.logo}
-              brandText={workspace.brandText ?? null}
-              hideNameWhenLogo
-              className="shrink-0"
-              textClassName="text-muted hover:text-ink transition-colors"
-            />
-            <span className="text-border shrink-0">/</span>
-            <form method="GET" action="" className="flex-1 min-w-0">
-              <input
-                name="q"
-                defaultValue={q}
-                autoFocus
-                placeholder={t('placeholder')}
-                className="w-full bg-white border border-border rounded-lg px-3 py-1.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-              />
-            </form>
-          </div>
-          <DashboardButton />
-        </div>
-      </nav>
-
       <main className="max-w-4xl mx-auto px-4 py-6 sm:py-10">
+        <form method="GET" action="" className="mb-6">
+          <input
+            name="q"
+            defaultValue={q}
+            autoFocus
+            placeholder={t('placeholder')}
+            className="w-full bg-white border border-border rounded-lg px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+          />
+        </form>
         {q.length < 2 ? (
           <p className="text-muted text-sm">{t('minChars')}</p>
         ) : results.length === 0 ? (
