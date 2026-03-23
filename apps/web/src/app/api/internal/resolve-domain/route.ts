@@ -39,8 +39,10 @@ export async function GET(request: Request) {
   const host = new URL(request.url).searchParams.get('host')?.toLowerCase().trim()
   if (!host) return NextResponse.json({ slug: null })
 
+  // deletedAt filter is not needed here — soft-deleted workspaces have
+  // customDomain cleared to null by the delete route, so they won't match.
   const workspace = await prisma.workspace.findFirst({
-    where: { customDomain: host, deletedAt: null },
+    where: { customDomain: host },
     select: { slug: true },
   })
 

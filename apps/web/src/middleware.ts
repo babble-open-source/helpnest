@@ -81,12 +81,10 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   const host = getRequestHostname(req.headers)
   const externalBaseUrl = `https://${host}`
 
-  // Build rewrite URL using req.url as base to preserve the same origin.
-  // req.nextUrl.clone() uses the Host header (dashboard.helpnest.cloud on Railway),
-  // which creates a cross-origin rewrite that Next.js converts to a redirect loop.
-  const rewritePath = `/${locale}/${slug}/help${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`
-  const rewriteUrl = new URL(rewritePath + (search || ''), req.url)
-  const response = NextResponse.rewrite(rewriteUrl)
+  const url = req.nextUrl.clone()
+  url.pathname = `/${locale}/${slug}/help${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`
+  url.search = search
+  const response = NextResponse.rewrite(url)
   response.headers.set('x-helpnest-base-url', externalBaseUrl)
   return response
 }
