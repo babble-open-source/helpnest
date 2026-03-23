@@ -226,7 +226,14 @@ export default auth(async (req) => {
     const rewrite = rewriteToHelp(req, byodSlug)
     if (rewrite) return rewrite
     // BYOD domain hitting a non-help path (e.g. /dashboard) — block it
-    return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html', 'x-mw-step': '3-byod-no-rewrite' } })
+    const { pathname: dbgPath } = req.nextUrl
+    const dbgLocale = detectLocaleFromPath(dbgPath)
+    const dbgPWL = dbgPath.replace(new RegExp(`^/${dbgLocale}`), '') || '/'
+    return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: {
+      'Content-Type': 'text/html',
+      'x-mw-step': '3-byod-no-rewrite',
+      'x-mw-debug': JSON.stringify({ slug: byodSlug, pathname: dbgPath, locale: dbgLocale, pathWithoutLocale: dbgPWL, url: req.url.slice(0, 200) }),
+    } })
   }
 
   // 4. BYOD fallback — KV missed, try API fetch (terminal for BYOD requests)
