@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
-import { OG_SIZE, resolveOgColors, loadFonts, truncateText, type OgFonts } from '@/lib/og-utils'
+import { OG_SIZE, resolveOgColors, loadFonts, truncateText } from '@/lib/og-utils'
 
 export const revalidate = 3600
 export const size = OG_SIZE

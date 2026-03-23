@@ -48,8 +48,11 @@ export function loadDefaultFonts() {
 }
 
 /**
- * Extract the first .ttf URL from a Google Fonts CSS stylesheet URL.
- * Returns null if the URL is invalid or the CSS doesn't contain a TTF.
+ * Extract a normal-weight .ttf URL from a Google Fonts CSS stylesheet URL.
+ * Prefers font-style:normal blocks — Google Fonts CSS for fonts requested with
+ * italic variants (e.g. Lora:ital,wght@0,400;1,400) may list italic first,
+ * which would cause OG image text to render italic unintentionally.
+ * Falls back to the first TTF URL found if no normal block is present.
  */
 async function extractTtfFromCssUrl(cssUrl: string): Promise<ArrayBuffer | null> {
   try {
@@ -58,9 +61,23 @@ async function extractTtfFromCssUrl(cssUrl: string): Promise<ArrayBuffer | null>
     })
     if (!res.ok) return null
     const css = await res.text()
-    const match = css.match(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+\.ttf)\)/)
-    if (!match?.[1]) return null
-    const fontRes = await fetch(match[1])
+
+    // Split into @font-face blocks and prefer font-style: normal
+    const blocks = css.split('@font-face')
+    let ttfUrl: string | null = null
+    for (const block of blocks) {
+      if (!/font-style:\s*normal/.test(block)) continue
+      const m = block.match(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+\.ttf)\)/)
+      if (m?.[1]) { ttfUrl = m[1]; break }
+    }
+    // Fallback: any TTF in the stylesheet
+    if (!ttfUrl) {
+      const m = css.match(/url\((https:\/\/fonts\.gstatic\.com\/[^)]+\.ttf)\)/)
+      ttfUrl = m?.[1] ?? null
+    }
+
+    if (!ttfUrl) return null
+    const fontRes = await fetch(ttfUrl)
     return fontRes.ok ? fontRes.arrayBuffer() : null
   } catch {
     return null
