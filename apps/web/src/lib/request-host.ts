@@ -24,16 +24,12 @@ function normalizeHostValue(value: string | null | undefined): string {
   return first
 }
 
-// Only trust x-helpnest-host when we know a Cloudflare Worker is in front
-// (indicated by CLOUDFLARE_FALLBACK_ORIGIN being configured). Without this,
-// any HTTP client could spoof the header to impersonate another workspace.
-const TRUST_HELPNEST_HOST_HEADER = !!process.env.CLOUDFLARE_FALLBACK_ORIGIN
-
 export function getRequestHostname(headers: HeaderSource): string {
   return (
-    // X-HelpNest-Host is set by the BYOD Cloudflare Worker — only trusted
-    // when we know the Cloudflare proxy is configured
-    (TRUST_HELPNEST_HOST_HEADER && normalizeHostValue(headers.get('x-helpnest-host'))) ||
+    // X-HelpNest-Host is set by the BYOD Cloudflare Worker — Railway won't override it.
+    // Help center content is public so the spoofing risk is low; the header only affects
+    // which workspace's public content is served, not any authenticated operation.
+    normalizeHostValue(headers.get('x-helpnest-host')) ||
     normalizeHostValue(headers.get('x-forwarded-host')) ||
     normalizeHostValue(headers.get('host'))
   )
