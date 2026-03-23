@@ -1,11 +1,13 @@
 import type { Metadata } from 'next'
 import { cache } from 'react'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { locales } from '@/i18n/config'
 import { getHelpBaseUrl } from '@/lib/help-url'
+import { getHelpCenterVisibility } from '@/lib/help-visibility'
+import type { CollectionVisibility } from '@helpnest/db'
 
 interface Props {
   params: Promise<{ locale: string; workspace: string; collection: string }>
@@ -27,7 +29,7 @@ const getWorkspace = cache(async (slug: string) => {
   return ws
 })
 
-const getCollection = cache((workspaceId: string, slug: string) =>
+const getCollection = cache((workspaceId: string, slug: string, allowedVisibility: CollectionVisibility[]) =>
   prisma.collection.findUnique({
     where: { workspaceId_slug: { workspaceId, slug } },
     include: {
@@ -37,7 +39,7 @@ const getCollection = cache((workspaceId: string, slug: string) =>
         include: { author: true },
       },
       subCollections: {
-        where: { isPublic: true, isArchived: false },
+        where: { visibility: { in: allowedVisibility }, isArchived: false },
         include: {
           _count: { select: { articles: { where: { status: 'PUBLISHED' } } } },
         },
@@ -53,32 +55,44 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const workspace = await getWorkspace(params.workspace)
   if (!workspace) return {}
 
-  const collection = await getCollection(workspace.id, params.collection)
+  const allowedVisibility = await getHelpCenterVisibility(workspace.id)
+  const collection = await getCollection(workspace.id, params.collection, allowedVisibility)
   if (!collection) return {}
+
+  // Don't leak internal collection metadata to unauthenticated users / crawlers
+  if (collection.visibility === 'INTERNAL' && !allowedVisibility.includes('INTERNAL')) return {}
 
   const title = `${collection.title} — ${workspace.name} ${t('helpCenter')}`
   const description = collection.description ?? title
 
+  const baseUrl = await getHelpBaseUrl()
+  const canonicalUrl = baseUrl
+    ? `${baseUrl}/${params.locale}/${params.collection}`
+    : undefined
+
   return {
     title,
     description,
-    alternates: await (async () => {
-      const baseUrl = await getHelpBaseUrl()
-      return {
-        languages: Object.fromEntries(
-          locales.map((l) => [
-            l,
-            baseUrl
-              ? `${baseUrl}/${l}/${params.collection}`
-              : `/${l}/${params.workspace}/help/${params.collection}`,
-          ]),
-        ),
-      }
-    })(),
+    alternates: {
+      canonical: canonicalUrl,
+      languages: Object.fromEntries(
+        locales.map((l) => [
+          l,
+          baseUrl
+            ? `${baseUrl}/${l}/${params.collection}`
+            : `/${l}/${params.workspace}/help/${params.collection}`,
+        ]),
+      ),
+    },
     openGraph: {
       title,
       description,
       type: 'website',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
     },
   }
 }
@@ -97,8 +111,17 @@ export default async function CollectionPage(props: Props) {
   const workspace = await getWorkspace(params.workspace)
   if (!workspace) notFound()
 
-  const collection = await getCollection(workspace.id, params.collection)
-  if (!collection || !collection.isPublic || collection.isArchived) notFound()
+  const allowedVisibility = await getHelpCenterVisibility(workspace.id)
+  const collection = await getCollection(workspace.id, params.collection, allowedVisibility)
+
+  if (!collection || collection.isArchived) notFound()
+
+  // If collection is INTERNAL and user is not a member, show login prompt
+  if (collection.visibility === 'INTERNAL' && !allowedVisibility.includes('INTERNAL')) {
+    redirect(`/login?callbackUrl=/${params.workspace}/help/${params.collection}`)
+  }
+
+  const showInternalBadge = allowedVisibility.includes('INTERNAL') && collection.visibility === 'INTERNAL'
 
   return (
     <div className="min-h-screen bg-cream">
@@ -115,7 +138,15 @@ export default async function CollectionPage(props: Props) {
         {/* Collection header */}
         <div className="mb-10">
           <div className="text-4xl mb-4">{collection.emoji ?? '📄'}</div>
-          <h1 className="font-serif text-3xl sm:text-4xl text-ink leading-snug mb-3">{collection.title}</h1>
+          <div className="flex items-center gap-3 mb-3">
+            <h1 className="font-serif text-3xl sm:text-4xl text-ink leading-snug">{collection.title}</h1>
+            {showInternalBadge && (
+              <span className="inline-flex items-center gap-1 text-xs text-muted bg-cream border border-border rounded-full px-2.5 py-1">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                {t('internal')}
+              </span>
+            )}
+          </div>
           {collection.description && (
             <p className="text-muted text-lg">{collection.description}</p>
           )}

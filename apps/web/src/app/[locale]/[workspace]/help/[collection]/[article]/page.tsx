@@ -3,7 +3,7 @@ import { cache } from 'react'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { incrementArticleViews } from '@/lib/counters'
 import { slugify } from '@/lib/slugify'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations, getFormatter } from 'next-intl/server'
 import { ArticleContent } from '@/components/help/ArticleContent'
@@ -11,6 +11,7 @@ import { ArticleFeedback } from '@/components/help/ArticleFeedback'
 import { TableOfContents } from '@/components/help/TableOfContents'
 import { locales } from '@/i18n/config'
 import { getHelpBaseUrl } from '@/lib/help-url'
+import { getHelpCenterVisibility } from '@/lib/help-visibility'
 
 interface Props {
   params: Promise<{ locale: string; workspace: string; collection: string; article: string }>
@@ -93,30 +94,47 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const article = await getArticle(workspace.id, params.article)
   if (!article) return {}
 
+  // Don't leak internal article metadata to unauthenticated users / crawlers
+  if (article.collection.visibility === 'INTERNAL') {
+    const allowedVisibility = await getHelpCenterVisibility(workspace.id)
+    if (!allowedVisibility.includes('INTERNAL')) return {}
+  }
+
   const title = `${article.title} — ${workspace.name} ${t('helpCenter')}`
   const description = article.excerpt ?? title
+
+  const baseUrl = await getHelpBaseUrl()
+  const canonicalUrl = baseUrl
+    ? `${baseUrl}/${params.locale}/${params.collection}/${params.article}`
+    : undefined
 
   return {
     title,
     description,
-    alternates: await (async () => {
-      const baseUrl = await getHelpBaseUrl()
-      return {
-        languages: Object.fromEntries(
-          locales.map((l) => [
-            l,
-            baseUrl
-              ? `${baseUrl}/${l}/${params.collection}/${params.article}`
-              : `/${l}/${params.workspace}/help/${params.collection}/${params.article}`,
-          ]),
-        ),
-      }
-    })(),
+    alternates: {
+      canonical: canonicalUrl,
+      languages: Object.fromEntries(
+        locales.map((l) => [
+          l,
+          baseUrl
+            ? `${baseUrl}/${l}/${params.collection}/${params.article}`
+            : `/${l}/${params.workspace}/help/${params.collection}/${params.article}`,
+        ]),
+      ),
+    },
     openGraph: {
       title,
       description,
       type: 'article',
       modifiedTime: article.updatedAt.toISOString(),
+      publishedTime: article.publishedAt?.toISOString(),
+      authors: article.author.name ? [article.author.name] : undefined,
+      section: article.collection.title,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
     },
   }
 }
@@ -129,7 +147,16 @@ export default async function ArticlePage(props: Props) {
   if (!workspace) notFound()
 
   const article = await getArticle(workspace.id, params.article)
-  if (!article || article.status !== 'PUBLISHED' || !article.collection.isPublic || article.collection.isArchived) notFound()
+  if (!article || article.status !== 'PUBLISHED' || article.collection.isArchived) notFound()
+
+  const allowedVisibility = await getHelpCenterVisibility(workspace.id)
+
+  // If collection is INTERNAL and user is not a member, redirect to login
+  if (article.collection.visibility === 'INTERNAL' && !allowedVisibility.includes('INTERNAL')) {
+    redirect(`/login?callbackUrl=/${params.workspace}/help/${params.collection}/${params.article}`)
+  }
+
+  const isInternal = article.collection.visibility === 'INTERNAL'
 
   // Increment view count — buffered in Redis, flushed to DB at threshold (fire and forget)
   incrementArticleViews(article.id).catch(() => {})
@@ -139,7 +166,7 @@ export default async function ArticlePage(props: Props) {
     where: {
       collectionId: article.collectionId,
       status: 'PUBLISHED',
-      collection: { is: { isPublic: true, isArchived: false } },
+      collection: { is: { visibility: { in: allowedVisibility }, isArchived: false } },
       id: { not: article.id },
     },
     select: { id: true, title: true, slug: true },
@@ -181,6 +208,12 @@ export default async function ArticlePage(props: Props) {
                 >
                   {article.collection.title}
                 </Link>
+                {isInternal && (
+                  <span className="inline-flex items-center gap-1 bg-cream border border-border rounded-full px-2 py-0.5">
+                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                    {t('internal')}
+                  </span>
+                )}
                 <span>·</span>
                 <span>{t('minRead', { minutes })}</span>
               </div>
