@@ -8,6 +8,7 @@ import { Link } from '@/i18n/navigation'
 import { getTranslations, getFormatter } from 'next-intl/server'
 import { ArticleContent } from '@/components/help/ArticleContent'
 import { ArticleFeedback } from '@/components/help/ArticleFeedback'
+import { TableOfContents } from '@/components/help/TableOfContents'
 import { locales } from '@/i18n/config'
 import { getHelpBaseUrl } from '@/lib/help-url'
 
@@ -243,22 +244,7 @@ export default async function ArticlePage(props: Props) {
           {/* Sidebar TOC */}
           {headings.length > 0 && (
             <aside className="hidden lg:block w-56 shrink-0">
-              <div className="sticky top-20">
-                <p className="text-xs font-medium text-muted uppercase tracking-wide mb-3">{t('onThisPage')}</p>
-                <nav className="space-y-1">
-                  {headings.map((h) => (
-                    <a
-                      key={h.id}
-                      href={`#${h.id}`}
-                      className={`block text-sm text-muted hover:text-ink transition-colors py-0.5 ${
-                        h.level === 2 ? 'ps-0' : h.level === 3 ? 'ps-3' : 'ps-0'
-                      }`}
-                    >
-                      {h.text}
-                    </a>
-                  ))}
-                </nav>
-              </div>
+              <TableOfContents headings={headings} label={t('onThisPage')} />
             </aside>
           )}
         </div>
