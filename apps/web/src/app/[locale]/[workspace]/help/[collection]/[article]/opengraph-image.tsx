@@ -65,14 +65,16 @@ export default async function OgImage(props: Props) {
           backgroundColor: colors.cream,
         }}
       >
-        {/* Content area */}
+        {/* Content area — centered for square-crop platforms like WhatsApp */}
         <div
           style={{
             flex: 1,
             display: 'flex',
             flexDirection: 'column',
+            alignItems: 'center',
             justifyContent: 'center',
-            padding: '48px 64px',
+            textAlign: 'center',
+            padding: '48px 80px',
           }}
         >
           {/* Collection label */}
@@ -122,14 +124,15 @@ export default async function OgImage(props: Props) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
+            justifyContent: 'center',
+            gap: 24,
             backgroundColor: colors.ink,
             padding: '24px 64px',
           }}
         >
           <div
             style={{
-              fontSize: 28,
+              fontSize: 26,
               color: colors.cream,
               fontFamily: '"Instrument Serif"',
             }}
@@ -138,7 +141,7 @@ export default async function OgImage(props: Props) {
           </div>
           <div
             style={{
-              fontSize: 22,
+              fontSize: 20,
               color: colors.muted,
               fontFamily: '"DM Sans"',
             }}

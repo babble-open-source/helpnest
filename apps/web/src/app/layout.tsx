@@ -22,7 +22,7 @@ export function generateMetadata(): Metadata {
 
   return {
     title: 'HelpNest',
-    description: 'The open-source help center for developer tools',
+    description: 'The open-source help center platform',
     icons: customFavicon
       ? { icon: customFavicon, shortcut: customFavicon }
       : {
