@@ -452,9 +452,9 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
 
         {/* Footer */}
         <div className="px-6 py-2 border-t border-border bg-white flex items-center gap-4 text-xs text-muted shrink-0">
-          <span>{wordCount} {t('words')}</span>
+          <span>{t('words', { count: wordCount })}</span>
           <span>&middot;</span>
-          <span>{readTime} {t('readTime')}</span>
+          <span>{t('readTime', { minutes: readTime })}</span>
         </div>
       </div>
 
