@@ -36,7 +36,8 @@
     "collections": "{count, plural, one {# संग्रह} other {# संग्रह}}",
     "results": "{count, plural, one {# परिणाम} other {# परिणाम}}",
     "internal": "आंतरिक",
-    "saved": "Saved!"
+    "saved": "Saved!",
+    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}"
   },
   "help": {
     "helpCenter": "सहायता केंद्र",
@@ -215,6 +216,7 @@
     "views": "दृश्य",
     "feedbackCol": "फ़ीडबैक",
     "updated": "अपडेट किया गया",
+    "actions": "क्रियाएँ",
     "ai": "AI",
     "aiUpdate": "AI अपडेट",
     "noVotes": "कोई वोट नहीं",
@@ -359,7 +361,7 @@
     "slugEmpty": "स्लग खाली नहीं हो सकता",
     "slugMaxLength": "/200",
     "saveSlug": "स्लग सहेजें",
-    "helpCollectionPath": "help/collection/",
+    "helpCollectionPath": "help/collection",
     "excerpt": "सारांश",
     "excerptPlaceholder": "लेख सूचियों में दिखाया जाने वाला संक्षिप्त विवरण...",
     "deleteArticle": "लेख हटाएं",
@@ -400,7 +402,11 @@
     "visibilityPublicDescription": "आपके सहायता केंद्र पर सभी को दिखाई देता है।",
     "visibilityInternalDescription": "केवल साइन-इन किए गए कार्यस्थान सदस्यों को दिखाई देता है।",
     "visibilityChangeToPublic": "सार्वजनिक में बदलने से इस संग्रह के सभी लेख सार्वजनिक हो जाएंगे।",
-    "visibilityChangeToInternal": "आंतरिक में बदलने से इस संग्रह के सभी लेख सार्वजनिक सहायता केंद्र से छिप जाएंगे।"
+    "visibilityChangeToInternal": "आंतरिक में बदलने से इस संग्रह के सभी लेख सार्वजनिक सहायता केंद्र से छिप जाएंगे।",
+    "hasSubCollections": "This collection has {count} sub-collection(s). Delete them first.",
+    "newSubCollection": "+ Sub-collection",
+    "createSubCollection": "Create sub-collection",
+    "inCollection": "in {title}"
   },
   "members": {
     "title": "सदस्य",

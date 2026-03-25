@@ -8,9 +8,10 @@ interface TooltipProps {
   children: React.ReactNode
   side?: 'top' | 'bottom'
   align?: 'center' | 'start' | 'end'
+  wrapperClassName?: string
 }
 
-export function Tooltip({ content, children, side = 'top', align = 'center' }: TooltipProps) {
+export function Tooltip({ content, children, side = 'top', align = 'center', wrapperClassName }: TooltipProps) {
   const [visible, setVisible] = useState(false)
   const [coords, setCoords] = useState({ top: 0, left: 0 })
   const wrapperRef = useRef<HTMLDivElement>(null)
@@ -57,7 +58,7 @@ export function Tooltip({ content, children, side = 'top', align = 'center' }: T
   return (
     <div
       ref={wrapperRef}
-      className="inline-flex"
+      className={`inline-flex${wrapperClassName ? ` ${wrapperClassName}` : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setVisible(false)}
     >

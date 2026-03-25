@@ -36,7 +36,8 @@
     "collections": "{count, plural, zero {# مجموعات} one {# مجموعة} two {# مجموعتان} few {# مجموعات} many {# مجموعة} other {# مجموعات}}",
     "results": "{count, plural, zero {# نتائج} one {# نتيجة} two {# نتيجتان} few {# نتائج} many {# نتيجة} other {# نتائج}}",
     "internal": "داخلي",
-    "saved": "Saved!"
+    "saved": "Saved!",
+    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}"
   },
   "help": {
     "helpCenter": "مركز المساعدة",
@@ -215,6 +216,7 @@
     "views": "المشاهدات",
     "feedbackCol": "الملاحظات",
     "updated": "محدَّث",
+    "actions": "الإجراءات",
     "ai": "AI",
     "aiUpdate": "تحديث AI",
     "noVotes": "لا أصوات",
@@ -359,7 +361,7 @@
     "slugEmpty": "لا يمكن أن يكون المعرّف فارغاً",
     "slugMaxLength": "/200",
     "saveSlug": "حفظ المعرّف",
-    "helpCollectionPath": "help/collection/",
+    "helpCollectionPath": "help/collection",
     "excerpt": "مقتطف",
     "excerptPlaceholder": "ملخص مختصر يظهر في قوائم المقالات...",
     "deleteArticle": "حذف المقالة",
@@ -400,7 +402,11 @@
     "visibilityPublicDescription": "مرئي للجميع في مركز المساعدة الخاص بك.",
     "visibilityInternalDescription": "مرئي فقط لأعضاء مساحة العمل المسجلين.",
     "visibilityChangeToPublic": "التغيير إلى عام سيكشف جميع المقالات في هذه المجموعة للعامة.",
-    "visibilityChangeToInternal": "التغيير إلى داخلي سيخفي جميع المقالات في هذه المجموعة من مركز المساعدة العام."
+    "visibilityChangeToInternal": "التغيير إلى داخلي سيخفي جميع المقالات في هذه المجموعة من مركز المساعدة العام.",
+    "hasSubCollections": "This collection has {count} sub-collection(s). Delete them first.",
+    "newSubCollection": "+ Sub-collection",
+    "createSubCollection": "Create sub-collection",
+    "inCollection": "in {title}"
   },
   "members": {
     "title": "الأعضاء",

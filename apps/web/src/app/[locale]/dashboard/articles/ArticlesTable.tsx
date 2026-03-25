@@ -105,9 +105,9 @@ export function ArticlesTable({ articles, demoMode }: Props) {
 
   return (
     <div className="relative">
-      <div className="bg-white rounded-xl border border-border overflow-hidden">
+      <div className="bg-white rounded-xl border border-border overflow-x-auto">
         <table className="w-full">
-          <thead className="border-b border-border">
+          <thead className="border-b border-border sticky top-0 bg-white z-10">
             <tr>
               <th className="px-4 py-3 w-10">
                 <input
@@ -119,10 +119,10 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                   aria-label={t('selectAll')}
                 />
               </th>
-              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
+              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide w-[25%]">
                 {t('title')}
               </th>
-              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden sm:table-cell">
+              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden sm:table-cell w-[22%]">
                 {t('collection')}
               </th>
               <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
@@ -137,7 +137,9 @@ export function ArticlesTable({ articles, demoMode }: Props) {
               <th className="text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
                 {t('updated')}
               </th>
-              <th className="px-4 py-3" />
+              <th className="text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
+                {t('actions')}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -182,8 +184,8 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                       </p>
                     )}
                   </td>
-                  <td className="px-4 py-3 hidden sm:table-cell">
-                    <span className="text-sm text-muted">{article.collection.title}</span>
+                  <td className="px-4 py-3 hidden sm:table-cell max-w-0">
+                    <span className="text-sm text-muted truncate block">{article.collection.title}</span>
                   </td>
                   <td className="px-4 py-3">
                     <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_STYLES[article.status]}`}>
@@ -217,7 +219,7 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                       )
                     })()}
                   </td>
-                  <td className="px-4 py-3 text-end hidden lg:table-cell">
+                  <td className="px-4 py-3 text-end hidden lg:table-cell whitespace-nowrap">
                     <span className="text-sm text-muted">
                       {format.relativeTime(article.updatedAt, now)}
                     </span>

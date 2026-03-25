@@ -1,14 +1,14 @@
-import { auth, resolveSessionUserId } from '@/lib/auth'
-import { resolveWorkspaceId } from '@/lib/workspace'
+'use server'
+
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { auth, resolveSessionUserId } from '@/lib/auth'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { getTranslations } from 'next-intl/server'
 import { slugify } from '@/lib/slugify'
 
-export default async function NewArticlePage(props: {
-  searchParams: Promise<{ collection?: string }>
-}) {
-  const [session, searchParams, t] = await Promise.all([auth(), props.searchParams, getTranslations('editor')])
+export async function createArticle(formData: FormData) {
+  const session = await auth()
   if (!session?.user) redirect('/login')
 
   const userId = await resolveSessionUserId(session)
@@ -17,10 +17,13 @@ export default async function NewArticlePage(props: {
   const workspaceId = await resolveWorkspaceId(userId)
   if (!workspaceId) redirect('/dashboard')
 
-  // Use the ?collection= param if provided and valid, otherwise fall back to the first collection.
-  let collection = searchParams.collection
+  const t = await getTranslations('editor')
+  const collectionId = formData.get('collectionId') as string | null
+
+  // Use the provided collection if valid, otherwise fall back to first collection.
+  let collection = collectionId
     ? await prisma.collection.findFirst({
-        where: { id: searchParams.collection, workspaceId, isArchived: false },
+        where: { id: collectionId, workspaceId, isArchived: false },
         select: { id: true },
       })
     : null
@@ -39,7 +42,7 @@ export default async function NewArticlePage(props: {
   let slug = slugify(title)
   let i = 1
   while (await prisma.article.findUnique({
-    where: { workspaceId_slug: { workspaceId, slug } }
+    where: { workspaceId_slug: { workspaceId, slug } },
   })) {
     slug = `${slugify(title)}-${i++}`
   }
@@ -56,6 +59,5 @@ export default async function NewArticlePage(props: {
     },
   })
 
-  const pickCollection = !searchParams.collection
-  redirect(`/dashboard/articles/${article.id}/edit${pickCollection ? '?pickCollection=true' : ''}`)
+  redirect(`/dashboard/articles/${article.id}/edit`)
 }

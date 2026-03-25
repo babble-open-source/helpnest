@@ -5,8 +5,8 @@ import { prisma } from '@/lib/db'
 import { ArticleEditor } from '@/components/editor/ArticleEditor'
 import { isHtml, mdToHtml } from '@/lib/content'
 
-export default async function EditArticlePage(props: { params: Promise<{ id: string }> }) {
-  const params = await props.params
+export default async function EditArticlePage(props: { params: Promise<{ id: string }>; searchParams: Promise<{ pickCollection?: string }> }) {
+  const [params, searchParams] = await Promise.all([props.params, props.searchParams])
   const session = await auth()
   if (!session?.user) redirect('/login')
 
@@ -21,7 +21,7 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
     select: { slug: true },
   })
 
-  const collections = await prisma.collection.findMany({
+  const rawCollections = await prisma.collection.findMany({
     where: {
       workspaceId: article.workspaceId,
       OR: [
@@ -29,12 +29,27 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
         { id: article.collectionId },
       ],
     },
-    select: { id: true, title: true, emoji: true, isArchived: true },
-    orderBy: [
-      { isArchived: 'asc' },
-      { order: 'asc' },
-    ],
+    select: { id: true, title: true, emoji: true, isArchived: true, parentId: true },
+    orderBy: [{ isArchived: 'asc' }, { order: 'asc' }],
   })
+
+  // Build hierarchical flat list: root → subs → grandchildren
+  const byParent = new Map<string | null, typeof rawCollections>()
+  for (const c of rawCollections) {
+    const key = c.parentId ?? null
+    if (!byParent.has(key)) byParent.set(key, [])
+    byParent.get(key)!.push(c)
+  }
+  const collections: (typeof rawCollections[0] & { depth: number })[] = []
+  for (const root of byParent.get(null) ?? []) {
+    collections.push({ ...root, depth: 0 })
+    for (const sub of byParent.get(root.id) ?? []) {
+      collections.push({ ...sub, depth: 1 })
+      for (const grand of byParent.get(sub.id) ?? []) {
+        collections.push({ ...grand, depth: 2 })
+      }
+    }
+  }
 
   // Load draftContent if present (unsaved edits on a published article),
   // otherwise fall back to the live content. Convert Markdown on the way in.
@@ -58,6 +73,7 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
       }}
       collections={collections}
       workspaceSlug={workspace?.slug ?? ''}
+      autoOpenCollectionPicker={searchParams.pickCollection === 'true'}
     />
   )
 }

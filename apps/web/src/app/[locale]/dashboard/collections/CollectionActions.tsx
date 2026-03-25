@@ -14,6 +14,7 @@ interface Props {
     emoji: string | null
     visibility: string
     articleCount: number
+    subCollectionCount: number
     isArchived: boolean
   }
   demoMode?: boolean
@@ -268,6 +269,11 @@ export function CollectionActions({ collection, demoMode = false }: Props) {
               <h2 className="font-medium text-ink mb-2">{t('deleteCollection')}</h2>
               <p className="text-sm text-muted">
                 <strong className="text-ink">{collection.title}</strong>{t('willBeDeleted')}
+                {collection.subCollectionCount > 0 && (
+                  <span className="block mt-1 text-red-500">
+                    {t('hasSubCollections', { count: collection.subCollectionCount })}
+                  </span>
+                )}
                 {collection.articleCount > 0 && (
                   <span className="block mt-1 text-red-500">
                     {t('hasArticles', { count: collection.articleCount })}
@@ -284,7 +290,7 @@ export function CollectionActions({ collection, demoMode = false }: Props) {
                 </button>
                 <button
                   onClick={confirmDelete}
-                  disabled={deleting || collection.articleCount > 0}
+                  disabled={deleting || collection.articleCount > 0 || collection.subCollectionCount > 0}
                   className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors font-medium disabled:opacity-50"
                 >
                   {deleting ? tc('deleting') : tc('delete')}

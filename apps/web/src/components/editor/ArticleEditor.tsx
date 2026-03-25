@@ -52,6 +52,7 @@ interface Props {
   article: Article
   collections: Collection[]
   workspaceSlug: string
+  autoOpenCollectionPicker?: boolean
 }
 
 interface ArticleVersion {
@@ -65,7 +66,7 @@ interface ArticleVersion {
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 
-export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
+export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCollectionPicker }: Props) {
   const t = useTranslations('editor')
   const tCommon = useTranslations('common')
   const format = useFormatter()
@@ -476,6 +477,7 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
         }}
         status={status}
         collections={collections}
+        autoOpenPicker={autoOpenCollectionPicker}
       />}
 
       {/* Version history modal */}

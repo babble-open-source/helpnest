@@ -36,7 +36,8 @@
     "collections": "{count, plural, one {# colección} other {# colecciones}}",
     "results": "{count, plural, one {# resultado} other {# resultados}}",
     "internal": "Interno",
-    "saved": "Saved!"
+    "saved": "Saved!",
+    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}"
   },
   "help": {
     "helpCenter": "Centro de ayuda",
@@ -215,6 +216,7 @@
     "views": "Vistas",
     "feedbackCol": "Comentarios",
     "updated": "Actualizado",
+    "actions": "Acciones",
     "ai": "IA",
     "aiUpdate": "Actualización IA",
     "noVotes": "Sin votos",
@@ -359,7 +361,7 @@
     "slugEmpty": "El slug no puede estar vacío",
     "slugMaxLength": "/200",
     "saveSlug": "Guardar slug",
-    "helpCollectionPath": "help/collection/",
+    "helpCollectionPath": "help/collection",
     "excerpt": "Extracto",
     "excerptPlaceholder": "Breve resumen que se muestra en las listas de artículos...",
     "deleteArticle": "Eliminar artículo",
@@ -400,7 +402,11 @@
     "visibilityPublicDescription": "Visible para todos en tu centro de ayuda.",
     "visibilityInternalDescription": "Solo visible para miembros con sesión iniciada.",
     "visibilityChangeToPublic": "Cambiar a Público expondrá todos los artículos de esta colección al público.",
-    "visibilityChangeToInternal": "Cambiar a Interno ocultará todos los artículos de esta colección del centro de ayuda público."
+    "visibilityChangeToInternal": "Cambiar a Interno ocultará todos los artículos de esta colección del centro de ayuda público.",
+    "hasSubCollections": "This collection has {count} sub-collection(s). Delete them first.",
+    "newSubCollection": "+ Sub-collection",
+    "createSubCollection": "Create sub-collection",
+    "inCollection": "in {title}"
   },
   "members": {
     "title": "Miembros",

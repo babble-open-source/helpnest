@@ -36,7 +36,8 @@
     "collections": "{count, plural, other {# 个合集}}",
     "results": "{count, plural, other {# 条结果}}",
     "internal": "内部",
-    "saved": "Saved!"
+    "saved": "Saved!",
+    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}"
   },
   "help": {
     "helpCenter": "帮助中心",
@@ -215,6 +216,7 @@
     "views": "浏览量",
     "feedbackCol": "反馈",
     "updated": "更新时间",
+    "actions": "操作",
     "ai": "AI",
     "aiUpdate": "AI 更新",
     "noVotes": "暂无投票",
@@ -359,7 +361,7 @@
     "slugEmpty": "别名不能为空",
     "slugMaxLength": "/200",
     "saveSlug": "保存别名",
-    "helpCollectionPath": "help/collection/",
+    "helpCollectionPath": "help/collection",
     "excerpt": "摘要",
     "excerptPlaceholder": "在文章列表中显示的简短说明...",
     "deleteArticle": "删除文章",
@@ -400,7 +402,11 @@
     "visibilityPublicDescription": "帮助中心的所有访客都可以看到。",
     "visibilityInternalDescription": "仅对已登录的工作区成员可见。",
     "visibilityChangeToPublic": "更改为公开将向公众展示此集合中的所有文章。",
-    "visibilityChangeToInternal": "更改为内部将从公开帮助中心隐藏此集合中的所有文章。"
+    "visibilityChangeToInternal": "更改为内部将从公开帮助中心隐藏此集合中的所有文章。",
+    "hasSubCollections": "This collection has {count} sub-collection(s). Delete them first.",
+    "newSubCollection": "+ Sub-collection",
+    "createSubCollection": "Create sub-collection",
+    "inCollection": "in {title}"
   },
   "members": {
     "title": "成员",
