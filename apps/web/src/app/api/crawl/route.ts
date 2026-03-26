@@ -11,6 +11,7 @@ import {
   buildArticlePrompt,
   parseArticleResponse,
 } from '@helpnest/crawler'
+import { createHash } from 'crypto'
 
 export async function POST(request: Request) {
   // 1. Auth check
@@ -116,8 +117,7 @@ export async function POST(request: Request) {
     const analysis = analyzeContent(extracted.markdown, url)
 
     // Compute a simple content hash for deduplication
-    const crypto = require('crypto') as typeof import('crypto')
-    const contentHash = crypto.createHash('sha256').update(extracted.markdown).digest('hex').slice(0, 16)
+    const contentHash = createHash('sha256').update(extracted.markdown).digest('hex').slice(0, 16)
 
     // 8. Create CrawlPage record
     const crawlPage = await prisma.crawlPage.create({
@@ -244,6 +244,8 @@ export async function POST(request: Request) {
         content: articleDraft.content,
         excerpt: articleDraft.excerpt,
         status: 'DRAFT',
+        aiGenerated: true,
+        aiPrompt: prompt.userMessage,
       },
     })
 
