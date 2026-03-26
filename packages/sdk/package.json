@@ -1,6 +1,6 @@
 {
   "name": "@helpnest/sdk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": false,
   "description": "JavaScript/TypeScript SDK for HelpNest — the open-source AI-first customer support platform",
   "license": "MIT",
@@ -31,7 +31,9 @@
       "require": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public"
   },
