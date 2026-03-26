@@ -40,12 +40,10 @@ export async function checkArticleSimilarity(
 
   if (embedding.length === 0) return noMatch
 
-  // Get all article embeddings for this workspace
+  // Get all article embeddings for this workspace with article titles
   const searchIndexes = await prisma.searchIndex.findMany({
-    where: { workspaceId, embedding: { not: null } },
-    select: {
-      articleId: true,
-      embedding: true,
+    where: { workspaceId },
+    include: {
       article: { select: { title: true } },
     },
   })
@@ -62,7 +60,7 @@ export async function checkArticleSimilarity(
     const score = cosineSimilarity(embedding, storedEmbedding)
     if (score > bestScore) {
       bestScore = score
-      bestMatch = { articleId: index.articleId, title: index.article?.title ?? '' }
+      bestMatch = { articleId: index.articleId, title: index.article.title }
     }
   }
 
@@ -83,9 +81,9 @@ function cosineSimilarity(a: number[], b: number[]): number {
   let normA = 0
   let normB = 0
   for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i]
-    normA += a[i] * a[i]
-    normB += b[i] * b[i]
+    dotProduct += a[i]! * b[i]!
+    normA += a[i]! * a[i]!
+    normB += b[i]! * b[i]!
   }
   const denominator = Math.sqrt(normA) * Math.sqrt(normB)
   return denominator === 0 ? 0 : dotProduct / denominator

@@ -108,7 +108,7 @@ async function processDeepCrawlJob(
   let articlesCreated = 0
 
   for (let i = 0; i < crawlJob.pages.length; i++) {
-    const page = crawlJob.pages[i]
+    const page = crawlJob.pages[i]!
 
     // Refresh lock TTL
     if (redis) await redis.expire(lockKey, 600)

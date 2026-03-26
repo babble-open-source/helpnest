@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
 import { prisma } from '@/lib/db'
 import { randomBytes } from 'crypto'
-import * as cheerio from 'cheerio'
 
 export async function POST(request: Request) {
   const auth = await requireAuth(request)
@@ -71,8 +70,8 @@ export async function POST(request: Request) {
       }
 
       const html = await res.text()
-      const $ = cheerio.load(html)
-      const metaContent = $('meta[name="helpnest-verify"]').attr('content')
+      const match = html.match(/<meta\s+name=["']helpnest-verify["']\s+content=["']([^"']+)["']/i)
+      const metaContent = match?.[1] ?? null
 
       if (metaContent === record.token) {
         await prisma.domainVerification.update({
