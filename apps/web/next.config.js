@@ -39,6 +39,8 @@ const nextConfig = {
     '@notionhq/client',
     'notion-to-md',
     'jose',
+    'playwright-core',
+    '@helpnest/crawler',
   ],
   async rewrites() {
     return [
