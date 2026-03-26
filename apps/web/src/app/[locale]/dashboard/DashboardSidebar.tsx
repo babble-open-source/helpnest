@@ -1,20 +1,13 @@
 'use client'
 
 import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
+import NextImage from 'next/image'
 import { InboxBadge } from './InboxBadge'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
-
-interface WorkspaceItem {
-  id: string
-  name: string
-  slug: string
-  logo: string | null
-  role: string
-}
 
 interface Props {
   workspaceId: string
@@ -24,7 +17,6 @@ interface Props {
   userName: string
   userEmail: string
   userInitial: string
-  workspaces?: WorkspaceItem[]
   cloudMode?: boolean
 }
 
@@ -36,78 +28,14 @@ export function DashboardSidebar({
   userName,
   userEmail,
   userInitial,
-  workspaces,
   cloudMode,
 }: Props) {
   const [open, setOpen] = useState(true)
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [wsMenuOpen, setWsMenuOpen] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [newName, setNewName] = useState('')
-  const [createError, setCreateError] = useState<string | null>(null)
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations('dashboard')
   const tc = useTranslations('common')
-
-  const hasMultiWorkspace = !!workspaces && workspaces.length > 0
-  const wsMenuRef = useRef<HTMLDivElement>(null)
-
-  // Close workspace dropdown on outside click
-  useEffect(() => {
-    if (!wsMenuOpen) return
-    function handleClick(e: MouseEvent) {
-      if (wsMenuRef.current && !wsMenuRef.current.contains(e.target as Node)) {
-        setWsMenuOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [wsMenuOpen])
-
-  async function switchWorkspace(targetId: string) {
-    if (targetId === workspaceId) {
-      setWsMenuOpen(false)
-      return
-    }
-    try {
-      const res = await fetch('/api/workspaces/switch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ workspaceId: targetId }),
-      })
-      if (!res.ok) return
-      setWsMenuOpen(false)
-      window.location.assign(`/${locale}/dashboard`)
-    } catch {
-      // Network error — do nothing
-    }
-  }
-
-  async function createWorkspace() {
-    if (!newName.trim()) return
-    setCreateError(null)
-    setCreating(true)
-    try {
-      const res = await fetch('/api/workspaces/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newName.trim() }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        setCreateError(data.error ?? 'Failed to create workspace')
-        setCreating(false)
-        return
-      }
-      setNewName('')
-      setWsMenuOpen(false)
-      window.location.assign(`/${locale}/dashboard`)
-    } catch {
-      setCreateError('Network error')
-      setCreating(false)
-    }
-  }
 
   const navItems = [
     { href: '/dashboard', label: t('overview') },
@@ -210,65 +138,26 @@ export function DashboardSidebar({
           </button>
         </div>
 
-        {/* Workspace switcher — cloud mode only */}
-        {hasMultiWorkspace && open && (
-          <div ref={wsMenuRef} className="px-2 py-2 border-b border-white/10 shrink-0 relative">
-            <button
-              onClick={() => setWsMenuOpen(!wsMenuOpen)}
-              className="w-full flex items-center justify-between px-2 py-1.5 rounded-md text-sm text-cream/80 hover:text-cream hover:bg-white/10 transition-colors"
-            >
-              <span className="truncate">{workspaceName}</span>
-              <svg className={`w-3.5 h-3.5 shrink-0 transition-transform ${wsMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-
-            {wsMenuOpen && (
-              <div className="absolute start-2 end-2 top-full mt-1 bg-ink border border-white/20 rounded-lg shadow-xl z-50 overflow-hidden">
-                <div className="max-h-48 overflow-y-auto">
-                  {workspaces!.map((ws) => (
-                    <button
-                      key={ws.id}
-                      onClick={() => switchWorkspace(ws.id)}
-                      className={`w-full text-start px-3 py-2 text-sm transition-colors ${
-                        ws.id === workspaceId
-                          ? 'bg-white/15 text-cream font-medium'
-                          : 'text-cream/70 hover:bg-white/10 hover:text-cream'
-                      }`}
-                    >
-                      <span className="block truncate">{ws.name}</span>
-                      <span className="block text-xs text-cream/40 truncate">
-                        {ws.slug}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="border-t border-white/10 p-2">
-                  {createError && (
-                    <p className="text-xs text-red-400 px-1 pb-1">{createError}</p>
-                  )}
-                  <div className="flex gap-1">
-                    <input
-                      type="text"
-                      value={newName}
-                      onChange={(e) => setNewName(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && createWorkspace()}
-                      placeholder="New workspace..."
-                      className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded px-2 py-1 text-xs text-cream placeholder:text-cream/40 focus:outline-none focus:ring-1 focus:ring-white/40"
-                    />
-                    <button
-                      onClick={createWorkspace}
-                      disabled={creating || !newName.trim()}
-                      className="px-2 py-1 bg-accent text-white text-xs rounded hover:bg-accent/90 disabled:opacity-50 shrink-0"
-                    >
-                      {creating ? '...' : '+'}
-                    </button>
-                  </div>
-                </div>
+        {/* Workspace hub link — cloud mode only */}
+        {open && (
+          <a
+            href={`/${locale}/workspaces`}
+            className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors group"
+          >
+            {workspaceLogo ? (
+              <NextImage src={workspaceLogo} alt="" width={32} height={32} unoptimized className="w-8 h-8 rounded-lg object-contain border border-white/10 bg-white p-1" />
+            ) : (
+              <div className="w-8 h-8 rounded-lg bg-white/10 text-cream flex items-center justify-center text-sm font-medium">
+                {workspaceName[0]?.toUpperCase() ?? '?'}
               </div>
             )}
-          </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-cream truncate">{workspaceBrandText ?? workspaceName}</p>
+            </div>
+            <svg className="w-4 h-4 text-cream/40 group-hover:text-cream transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </a>
         )}
 
         {/* Nav */}

@@ -21,29 +21,20 @@ export const resolveWorkspaceId = cache(async function resolveWorkspaceId(userId
   const preferred = cookieStore.get(WORKSPACE_COOKIE)?.value
 
   if (preferred) {
-    // Verify the user is still an active member of this workspace
     const member = await prisma.member.findFirst({
-      where: { userId, workspaceId: preferred, deactivatedAt: null },
+      where: { userId, workspaceId: preferred, deactivatedAt: null, workspace: { deletedAt: null } },
       select: { workspaceId: true },
     })
-    if (member) {
-      // Check workspace isn't soft-deleted (cheap single-row lookup by PK)
-      const ws = await prisma.workspace.findUnique({ where: { id: preferred }, select: { deletedAt: true } })
-      if (ws && ws.deletedAt === null) return member.workspaceId
-    }
+    if (member) return member.workspaceId
   }
 
   // Fallback: first active workspace (deterministic order)
   const member = await prisma.member.findFirst({
-    where: { userId, deactivatedAt: null },
+    where: { userId, deactivatedAt: null, workspace: { deletedAt: null } },
     select: { workspaceId: true },
     orderBy: { id: 'asc' },
   })
-  if (!member) return null
-  // Check workspace isn't soft-deleted
-  const ws = await prisma.workspace.findUnique({ where: { id: member.workspaceId }, select: { deletedAt: true } })
-  if (ws && ws.deletedAt === null) return member.workspaceId
-  return null
+  return member?.workspaceId ?? null
 })
 
 /**
@@ -71,4 +62,48 @@ export async function getUserWorkspaces(userId: string) {
       logo: m.workspace.logo,
       role: m.role,
     }))
+}
+
+/**
+ * Get all workspaces the user belongs to, split by active/deleted.
+ * Used by the /workspaces hub page.
+ */
+export async function getAllUserWorkspaces(userId: string) {
+  const members = await prisma.member.findMany({
+    where: { userId, deactivatedAt: null },
+    include: {
+      workspace: {
+        select: { id: true, name: true, slug: true, logo: true, deletedAt: true },
+      },
+    },
+    orderBy: { workspace: { name: 'asc' } },
+  })
+
+  const active: Array<{
+    id: string; name: string; slug: string; logo: string | null;
+    role: string; deletedAt: null
+  }> = []
+  const deleted: Array<{
+    id: string; name: string; slug: string; logo: string | null;
+    role: string; deletedAt: Date
+  }> = []
+
+  for (const m of members) {
+    const entry = {
+      id: m.workspace.id,
+      name: m.workspace.name,
+      slug: m.workspace.slug,
+      logo: m.workspace.logo,
+      role: m.role,
+      deletedAt: m.workspace.deletedAt,
+    }
+    if (m.workspace.deletedAt === null) {
+      active.push({ ...entry, deletedAt: null })
+    } else {
+      deleted.push({ ...entry, deletedAt: m.workspace.deletedAt })
+    }
+  }
+
+  deleted.sort((a, b) => b.deletedAt.getTime() - a.deletedAt.getTime())
+  return { active, deleted }
 }

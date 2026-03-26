@@ -68,8 +68,9 @@ export function ArticleMetaSidebar({
   const clickTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
   useEffect(() => {
+    const timers = clickTimers.current
     return () => {
-      Object.values(clickTimers.current).forEach(clearTimeout)
+      Object.values(timers).forEach(clearTimeout)
     }
   }, [])
 

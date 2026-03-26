@@ -74,7 +74,7 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   if (pathWithoutLocale.startsWith('/api/')) return null
   if (pathWithoutLocale === '/widget.js') return null
   // App routes that should never be rewritten by subdomain routing
-  const APP_PATHS = ['/dashboard', '/login', '/signup', '/onboarding', '/invite/']
+  const APP_PATHS = ['/dashboard', '/login', '/signup', '/onboarding', '/invite/', '/workspaces']
   if (APP_PATHS.some((p) => pathWithoutLocale.startsWith(p))) return null
   if (pathWithoutLocale.startsWith('/imports/') || pathWithoutLocale === '/manifest.json' || pathWithoutLocale.match(/\.(png|ico|svg|jpg|jpeg|webp)$/)) return null
 
@@ -216,7 +216,7 @@ function handleAuthRedirect(
   const locale = detectLocaleFromPath(pathname)
   const pathWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), '') || '/'
 
-  if (pathWithoutLocale.startsWith('/dashboard') && !isLoggedIn) {
+  if ((pathWithoutLocale.startsWith('/dashboard') || pathWithoutLocale.startsWith('/workspaces')) && !isLoggedIn) {
     return NextResponse.redirect(new URL(`/${locale}/login`, req.url))
   }
   return null

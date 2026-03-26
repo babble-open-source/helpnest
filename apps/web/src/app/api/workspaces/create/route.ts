@@ -83,6 +83,7 @@ export async function POST(request: Request) {
     'api', 'admin', 'dashboard', 'login', 'logout', 'signup', 'onboarding',
     'invite', 'settings', 'billing', 'help', 'www', 'mail', 'support',
     'status', 'health', 'static', 'assets', '_next', 'imports', 'widget',
+    'workspaces',
   ])
 
   const trimmedName = name.trim()
@@ -115,7 +116,16 @@ export async function POST(request: Request) {
           }
         }
 
-        const slugTaken = await tx.workspace.findUnique({ where: { slug } })
+        // Lazy mangle: if a soft-deleted workspace holds this slug, free it.
+        // Must be inside the transaction to prevent races with restore.
+        await tx.workspace.updateMany({
+          where: { slug, deletedAt: { not: null } },
+          data: { slug: `${slug}--deleted-${Date.now().toString(36)}` },
+        })
+
+        const slugTaken = await tx.workspace.findFirst({
+          where: { slug, deletedAt: null },
+        })
         if (slugTaken) {
           throw Object.assign(new Error('SLUG_TAKEN'), { code: 'SLUG_TAKEN' })
         }
