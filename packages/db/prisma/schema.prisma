@@ -77,6 +77,11 @@ enum CrawlPageStatus {
   FAILED
 }
 
+enum VerificationMethod {
+  META_TAG
+  DNS_TXT
+}
+
 model Workspace {
   id           String   @id @default(cuid())
   name         String
@@ -129,6 +134,7 @@ model Workspace {
   conversations Conversation[]
   knowledgeGaps KnowledgeGap[]
   crawlJobs     CrawlJob[]
+  domainVerifications DomainVerification[]
 
   deletedAt DateTime?
 
@@ -389,6 +395,9 @@ model CrawlJob {
   workspaceId     String
   userId          String
   sourceUrl       String
+  goalPrompt      String         @default("") @db.Text
+  discoveredUrls  Json?
+  approvedUrls    Json?
   mode            CrawlMode      @default(SINGLE)
   status          CrawlJobStatus @default(PENDING)
   config          Json?
@@ -408,21 +417,35 @@ model CrawlJob {
 }
 
 model CrawlPage {
-  id          String          @id @default(cuid())
-  crawlJobId  String
-  url         String
-  status      CrawlPageStatus @default(PENDING)
-  contentHash String?
-  contentType String?
-  language    String?
-  rawContent  String?         @db.Text
-  articleId   String?         @unique
-  skipReason  String?
-  createdAt   DateTime        @default(now())
+  id               String          @id @default(cuid())
+  crawlJobId       String
+  url              String
+  status           CrawlPageStatus @default(PENDING)
+  contentType      String?
+  language         String?
+  rawContent       String?         @db.Text
+  articleId        String?         @unique
+  similarArticleId String?
+  skipReason       String?
+  createdAt        DateTime        @default(now())
 
   crawlJob CrawlJob @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
   article  Article? @relation(fields: [articleId], references: [id])
 
   @@index([crawlJobId])
-  @@index([contentHash])
+}
+
+model DomainVerification {
+  id          String             @id @default(cuid())
+  workspaceId String
+  domain      String
+  method      VerificationMethod
+  token       String
+  verifiedAt  DateTime?
+  createdAt   DateTime           @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([workspaceId, domain])
+  @@index([workspaceId])
 }
