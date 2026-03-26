@@ -1,3 +1,4 @@
+import * as cheerio from 'cheerio'
 import TurndownService from 'turndown'
 
 interface ExtractedContent {
@@ -5,31 +6,33 @@ interface ExtractedContent {
   markdown: string
 }
 
-const STRIP_TAGS = ['script', 'style', 'nav', 'footer', 'header', 'iframe', 'noscript', 'svg']
+const STRIP_SELECTORS = 'script, style, nav, footer, header, iframe, noscript, svg'
 
 export function extractContent(
   html: string,
   url: string,
   maxLength: number = 50000,
 ): ExtractedContent {
-  let cleaned = html
+  const $ = cheerio.load(html)
 
-  // Strip unwanted tags and their contents
-  for (const tag of STRIP_TAGS) {
-    const regex = new RegExp(`<${tag}[^>]*>[\\s\\S]*?<\\/${tag}>`, 'gi')
-    cleaned = cleaned.replace(regex, '')
-    // Also strip self-closing variants
-    const selfClosing = new RegExp(`<${tag}[^>]*\\/?>`, 'gi')
-    cleaned = cleaned.replace(selfClosing, '')
-  }
+  // Extract title BEFORE stripping elements (h1 may be inside header)
+  const title = extractTitle($, url)
+
+  // Strip unwanted elements
+  $(STRIP_SELECTORS).remove()
 
   // Try to extract content from <main> or <article> tags
-  const mainMatch = cleaned.match(/<main[^>]*>([\s\S]*?)<\/main>/i)
-  const articleMatch = cleaned.match(/<article[^>]*>([\s\S]*?)<\/article>/i)
-  const contentHtml = mainMatch?.[1] ?? articleMatch?.[1] ?? extractBody(cleaned)
+  const mainEl = $('main')
+  const articleEl = $('article')
+  let contentHtml: string
 
-  // Extract title: first <h1>, then <title>, then URL path
-  const title = extractTitle(cleaned, url)
+  if (mainEl.length > 0) {
+    contentHtml = mainEl.html() ?? ''
+  } else if (articleEl.length > 0) {
+    contentHtml = articleEl.html() ?? ''
+  } else {
+    contentHtml = $('body').html() ?? $.html()
+  }
 
   // Convert HTML to Markdown
   const turndown = new TurndownService({
@@ -47,23 +50,14 @@ export function extractContent(
   return { title, markdown }
 }
 
-function extractBody(html: string): string {
-  const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)
-  return bodyMatch?.[1] ?? html
-}
-
-function extractTitle(html: string, url: string): string {
-  // Try h1 first
-  const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i)
-  if (h1Match) {
-    return stripTags(h1Match[1]).trim()
-  }
+function extractTitle($: cheerio.CheerioAPI, url: string): string {
+  // Try h1 first (from full document, before stripping)
+  const h1 = $('h1').first().text().trim()
+  if (h1) return h1
 
   // Try <title> tag
-  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
-  if (titleMatch) {
-    return stripTags(titleMatch[1]).trim()
-  }
+  const titleTag = $('title').first().text().trim()
+  if (titleTag) return titleTag
 
   // Fallback: last segment of URL path
   try {
@@ -73,8 +67,4 @@ function extractTitle(html: string, url: string): string {
   } catch {
     return 'Untitled'
   }
-}
-
-function stripTags(html: string): string {
-  return html.replace(/<[^>]*>/g, '')
 }

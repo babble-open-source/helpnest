@@ -58,6 +58,18 @@ export async function POST(request: Request) {
   }
   const url = validation.url
 
+  // Rate limit: max 20 crawls per workspace per hour
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+  const recentCrawls = await prisma.crawlJob.count({
+    where: { workspaceId, createdAt: { gte: oneHourAgo } },
+  })
+  if (recentCrawls >= 20) {
+    return NextResponse.json(
+      { error: 'Rate limit exceeded. Max 20 crawls per hour per workspace.' },
+      { status: 429 },
+    )
+  }
+
   // 3. Get workspace AI settings
   const workspace = await prisma.workspace.findUnique({
     where: { id: workspaceId },
@@ -116,8 +128,25 @@ export async function POST(request: Request) {
     // 7. Analyze content
     const analysis = analyzeContent(extracted.markdown, url)
 
-    // Compute a simple content hash for deduplication
+    // Compute content hash for deduplication
     const contentHash = createHash('sha256').update(extracted.markdown).digest('hex').slice(0, 16)
+
+    // Check for duplicate content in this workspace
+    const existingPage = await prisma.crawlPage.findFirst({
+      where: {
+        contentHash,
+        articleId: { not: null },
+        crawlJob: { workspaceId },
+      },
+      select: { articleId: true },
+    })
+    if (existingPage) {
+      return NextResponse.json({
+        crawlJobId: null,
+        skipped: true,
+        skipReason: 'Duplicate content already exists in this workspace',
+      })
+    }
 
     // 8. Create CrawlPage record
     const crawlPage = await prisma.crawlPage.create({
@@ -162,8 +191,14 @@ export async function POST(request: Request) {
       select: { title: true },
     })
 
+    // Truncate content to ~4000 tokens before AI call
+    const MAX_AI_CONTENT_LENGTH = 16000
+    const truncatedMarkdown = extracted.markdown.length > MAX_AI_CONTENT_LENGTH
+      ? extracted.markdown.slice(0, MAX_AI_CONTENT_LENGTH)
+      : extracted.markdown
+
     const prompt = buildArticlePrompt({
-      markdown: extracted.markdown,
+      markdown: truncatedMarkdown,
       title: extracted.title,
       url,
       contentType: analysis.contentType,

@@ -65,4 +65,22 @@ describe('validateUrl', () => {
     const result = validateUrl('  https://example.com  ')
     expect(result).toEqual({ valid: true, url: 'https://example.com/', error: null })
   })
+
+  it('rejects IPv6 loopback', () => {
+    const result = validateUrl('http://[::1]:3000')
+    expect(result.valid).toBe(false)
+    expect(result.error).toBe('Cannot crawl local or private addresses')
+  })
+
+  it('rejects link-local addresses (169.254.x)', () => {
+    const result = validateUrl('http://169.254.169.254/latest/meta-data/')
+    expect(result.valid).toBe(false)
+    expect(result.error).toBe('Cannot crawl local or private addresses')
+  })
+
+  it('rejects IPv6 private addresses (fc00::)', () => {
+    const result = validateUrl('http://[fc00::1]')
+    expect(result.valid).toBe(false)
+    expect(result.error).toBe('Cannot crawl local or private addresses')
+  })
 })

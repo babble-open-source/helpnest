@@ -4,12 +4,13 @@ interface ValidationResult {
   error: string | null
 }
 
-const BLOCKED_HOSTNAMES = ['localhost', '0.0.0.0']
+const BLOCKED_HOSTNAMES = ['localhost', '0.0.0.0', '[::1]', '[::0]']
 
 const PRIVATE_IP_PREFIXES = [
   '127.',
   '10.',
   '192.168.',
+  '169.254.',
   '172.16.',
   '172.17.',
   '172.18.',
@@ -27,6 +28,8 @@ const PRIVATE_IP_PREFIXES = [
   '172.30.',
   '172.31.',
 ]
+
+const BLOCKED_IPV6_PREFIXES = ['::1', '::0', 'fc00:', 'fd00:', 'fe80:', '::ffff:127.', '::ffff:10.', '::ffff:192.168.', '::ffff:169.254.']
 
 export function validateUrl(input: string): ValidationResult {
   const trimmed = input.trim()
@@ -51,9 +54,16 @@ export function validateUrl(input: string): ValidationResult {
   }
 
   const hostname = parsed.hostname
+  // Strip brackets from IPv6 addresses for comparison
+  const bareHost = hostname.startsWith('[') && hostname.endsWith(']') ? hostname.slice(1, -1) : hostname
+
   if (
     BLOCKED_HOSTNAMES.includes(hostname) ||
-    PRIVATE_IP_PREFIXES.some((prefix) => hostname.startsWith(prefix))
+    PRIVATE_IP_PREFIXES.some((prefix) => hostname.startsWith(prefix)) ||
+    BLOCKED_IPV6_PREFIXES.some((prefix) => bareHost.startsWith(prefix)) ||
+    bareHost === '::1' ||
+    bareHost === '::' ||
+    bareHost === '0:0:0:0:0:0:0:1'
   ) {
     return { valid: false, url: null, error: 'Cannot crawl local or private addresses' }
   }
