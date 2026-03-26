@@ -334,6 +334,10 @@ describe('getWorkspaceFontUrls', () => {
     mockGetTheme.mockReturnValueOnce({
       id: 'default',
       name: 'Default',
+      description: 'Default theme',
+      author: 'HelpNest',
+      tags: [],
+      dark: false,
       colors: {
         cream: '#F7F4EE',
         ink: '#1A1814',

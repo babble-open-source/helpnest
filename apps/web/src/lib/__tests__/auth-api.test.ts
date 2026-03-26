@@ -77,7 +77,7 @@ describe('requireAuth — Bearer token', () => {
 
 describe('requireAuth — session auth', () => {
   it('returns null when there is no auth header and no active session', async () => {
-    mockAuth.mockResolvedValue(null)
+    mockAuth.mockResolvedValue(null as never)
 
     const result = await requireAuth(makeRequest())
 

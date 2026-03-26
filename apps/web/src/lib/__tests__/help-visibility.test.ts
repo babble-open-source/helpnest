@@ -35,7 +35,7 @@ beforeEach(() => {
 
 describe('getHelpCenterVisibility', () => {
   it("returns ['PUBLIC'] when there is no active session", async () => {
-    mockAuth.mockResolvedValue(null)
+    mockAuth.mockResolvedValue(null as never)
 
     const result = await getHelpCenterVisibility('ws-abc')
 
