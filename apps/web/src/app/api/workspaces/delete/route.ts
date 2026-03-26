@@ -52,14 +52,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Workspace name does not match' }, { status: 400 })
   }
 
-  // Soft delete — mangle slug, clear customDomain, and set deletedAt atomically.
-  // Original slug is recoverable from the workspace name on restore.
+  // Soft delete — preserve slug, clear customDomain, and set deletedAt.
   const deletedAt = new Date()
   await prisma.workspace.update({
     where: { id: workspaceId },
     data: {
       deletedAt,
-      slug: `${workspace.name.toLowerCase().replace(/[^a-z0-9-]/g, '-').slice(0, 30)}--deleted-${workspaceId.slice(0, 8)}`,
       customDomain: null,
     },
   })

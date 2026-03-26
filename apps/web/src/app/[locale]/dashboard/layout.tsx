@@ -1,5 +1,5 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
-import { resolveWorkspaceId, getUserWorkspaces } from '@/lib/workspace'
+import { resolveWorkspaceId } from '@/lib/workspace'
 import { isCloudMode } from '@/lib/cloud'
 import { getWorkspaceFontUrls, getWorkspaceThemeCSS } from '@/lib/branding'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
@@ -122,7 +122,6 @@ export default async function DashboardLayout({ children }: { children: React.Re
           userName={session.user.name ?? 'User'}
           userEmail={session.user.email ?? ''}
           userInitial={userInitial}
-          workspaces={isCloudMode() ? await getUserWorkspaces(userId) : undefined}
           cloudMode={isCloudMode()}
         />
         <main className="flex-1 overflow-auto pt-14 lg:pt-0">
