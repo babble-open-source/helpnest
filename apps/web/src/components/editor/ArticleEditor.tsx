@@ -470,6 +470,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
         excerpt={excerpt}
         onExcerptChange={setExcerpt}
         collectionId={collectionId}
+        collectionSlug={collectionSlug}
         onCollectionChange={(id) => {
           setCollectionId(id)
           const col = collections.find((c) => c.id === id)

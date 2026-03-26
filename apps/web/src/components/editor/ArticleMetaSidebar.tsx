@@ -28,6 +28,7 @@ interface Props {
   excerpt: string
   onExcerptChange: (v: string) => void
   collectionId: string
+  collectionSlug: string
   onCollectionChange: (v: string) => void
   status: string
   collections: Collection[]
@@ -44,6 +45,7 @@ export function ArticleMetaSidebar({
   excerpt,
   onExcerptChange,
   collectionId,
+  collectionSlug,
   onCollectionChange,
   status,
   collections,
@@ -570,9 +572,9 @@ export function ArticleMetaSidebar({
           </div>
           <p
             className="text-xs text-muted mt-1 overflow-hidden text-ellipsis whitespace-nowrap"
-            title={`${t('helpCollectionPath')}/${slug}`}
+            title={`help/${collectionSlug}/${slug}`}
           >
-            {t('helpCollectionPath')}/<strong>{slug}</strong>
+            help/{collectionSlug}/<strong>{slug}</strong>
           </p>
         </div>
 

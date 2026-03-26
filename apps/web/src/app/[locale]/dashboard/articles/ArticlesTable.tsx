@@ -105,11 +105,11 @@ export function ArticlesTable({ articles, demoMode }: Props) {
 
   return (
     <div className="relative">
-      <div className="bg-white rounded-xl border border-border overflow-x-auto">
+      <div className="bg-white rounded-xl border border-border">
         <table className="w-full">
-          <thead className="border-b border-border sticky top-0 bg-white z-10">
-            <tr>
-              <th className="px-4 py-3 w-10">
+          <thead>
+            <tr className="border-b border-border">
+              <th className="sticky top-0 bg-white z-10 px-4 py-3 w-10 rounded-tl-xl">
                 <input
                   type="checkbox"
                   checked={allSelected}
@@ -119,25 +119,25 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                   aria-label={t('selectAll')}
                 />
               </th>
-              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide w-[25%]">
+              <th className="sticky top-0 bg-white z-10 text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide w-[25%]">
                 {t('title')}
               </th>
-              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden sm:table-cell w-[22%]">
+              <th className="sticky top-0 bg-white z-10 text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden sm:table-cell w-[22%]">
                 {t('collection')}
               </th>
-              <th className="text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
+              <th className="sticky top-0 bg-white z-10 text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
                 {t('status')}
               </th>
-              <th className="text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden md:table-cell">
+              <th className="sticky top-0 bg-white z-10 text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden md:table-cell">
                 {t('views')}
               </th>
-              <th className="text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
+              <th className="sticky top-0 bg-white z-10 text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
                 {t('feedbackCol')}
               </th>
-              <th className="text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
+              <th className="sticky top-0 bg-white z-10 text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
                 {t('updated')}
               </th>
-              <th className="text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
+              <th className="sticky top-0 bg-white z-10 text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide rounded-tr-xl">
                 {t('actions')}
               </th>
             </tr>

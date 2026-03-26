@@ -284,7 +284,8 @@ export default auth(async (req) => {
   }
 
   // 6. Cloud path redirect — helpnest.cloud/en/<slug>/help → <slug>.helpnest.cloud
-  if (process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN) {
+  // Only runs in production (HTTPS) — skip for local dev (http://localhost)
+  if (process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN && APP_ORIGIN.startsWith('https://')) {
     const host = getRequestHostname(req.headers)
     if (host === APP_HOST) {
       const { pathname } = req.nextUrl
@@ -296,7 +297,7 @@ export default auth(async (req) => {
         const restPath = pathWithoutLocale.replace(`/${slug}/help`, '') || ''
         return NextResponse.redirect(
           `https://${slug}.${HELP_CENTER_DOMAIN}${restPath}${req.nextUrl.search}`,
-          308,
+          302,
         )
       }
     }

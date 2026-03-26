@@ -1,4 +1,6 @@
-import 'dotenv/config'
+import path from 'node:path'
+import { config } from 'dotenv'
+config({ path: path.resolve(__dirname, '../../../.env') })
 import { PrismaClient, ArticleStatus, MemberRole } from '../generated/prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
 import bcrypt from 'bcryptjs'
