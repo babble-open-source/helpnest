@@ -6,3 +6,4 @@ export type {
 } from './types'
 
 export { validateUrl } from './url-validator'
+export { extractContent } from './content-extractor'
