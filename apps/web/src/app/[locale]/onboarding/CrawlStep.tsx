@@ -23,6 +23,7 @@ export function CrawlStep({
 }) {
   const t = useTranslations('crawl')
   const [state, setState] = useState<CrawlState>('idle')
+  const [goal, setGoal] = useState('')
   const [url, setUrl] = useState('')
   const [urlError, setUrlError] = useState<string | null>(null)
   const [crawlError, setCrawlError] = useState<string | null>(null)
@@ -50,7 +51,7 @@ export function CrawlStep({
       const res = await fetch('/api/crawl', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: normalized }),
+        body: JSON.stringify({ url: normalized, goal: goal.trim() }),
       })
 
       const data = await res.json()
@@ -80,6 +81,7 @@ export function CrawlStep({
   }
 
   function handleCrawlAnother() {
+    setGoal('')
     setUrl('')
     setUrlError(null)
     setCrawlError(null)
@@ -142,8 +144,22 @@ export function CrawlStep({
         {(state === 'idle' || state === 'error') && (
           <div className="space-y-3">
             <div>
+              <label htmlFor="crawl-goal" className="block text-sm font-medium text-ink mb-1.5">
+                {t('goalLabel')}
+              </label>
+              <input
+                id="crawl-goal"
+                type="text"
+                value={goal}
+                onChange={(e) => setGoal(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={t('goalPlaceholder')}
+                className="w-full px-3 py-2.5 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+              />
+            </div>
+            <div>
               <label htmlFor="crawl-url" className="block text-sm font-medium text-ink mb-1.5">
-                {t('pageUrl')}
+                {t('urlLabel')}
               </label>
               <input
                 id="crawl-url"
@@ -158,7 +174,7 @@ export function CrawlStep({
             <button
               type="button"
               onClick={handleGenerate}
-              disabled={!url.trim()}
+              disabled={!goal.trim() || !url.trim()}
               className="w-full bg-accent text-white py-2.5 px-4 rounded-lg hover:bg-accent/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {t('generateButton')}
@@ -178,14 +194,14 @@ export function CrawlStep({
         )}
 
         {state !== 'done' && (
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <button
               type="button"
               onClick={onSkip}
               disabled={state === 'crawling'}
               className="text-sm text-muted hover:text-ink transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {t('skipStep')}
+              {t('skipLink')}
             </button>
           </div>
         )}

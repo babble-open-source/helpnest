@@ -646,12 +646,17 @@
     "loading": "Loading...",
     "seedTitle": "Create articles from your website",
     "seedDescription": "Paste your website URL and we'll turn it into help articles",
-    "generateButton": "Create Articles",
+    "goalLabel": "What's the first thing your customers need help with?",
+    "goalPlaceholder": "Getting started with our product",
+    "urlLabel": "Where can we see it?",
+    "urlPlaceholder": "https://yourapp.com",
+    "generateButton": "Generate Articles",
     "generating": "Reading your site...",
     "articleCreated": "Article created!",
     "crawlAnother": "Import Another Page",
     "goToDashboard": "Go to Dashboard",
-    "skipStep": "Skip \u2014 I'll write from scratch"
+    "skipStep": "Skip \u2014 I'll write from scratch",
+    "skipLink": "or skip \u2192"
   },
   "workspace": {
     "demoDisabled": "Workspace settings cannot be changed in demo mode.",
