@@ -53,6 +53,30 @@ enum CollectionVisibility {
   INTERNAL
 }
 
+enum CrawlMode {
+  SINGLE
+  DEEP
+  FLOW
+}
+
+enum CrawlJobStatus {
+  PENDING
+  CRAWLING
+  EXTRACTING
+  GENERATING
+  COMPLETED
+  FAILED
+}
+
+enum CrawlPageStatus {
+  PENDING
+  FETCHED
+  EXTRACTED
+  GENERATED
+  SKIPPED
+  FAILED
+}
+
 model Workspace {
   id           String   @id @default(cuid())
   name         String
@@ -104,6 +128,7 @@ model Workspace {
   invites       Invite[]
   conversations Conversation[]
   knowledgeGaps KnowledgeGap[]
+  crawlJobs     CrawlJob[]
 
   deletedAt DateTime?
 
@@ -125,6 +150,7 @@ model User {
   articleVersions  ArticleVersion[]
   invitesSent      Invite[]
   resolvedGaps     KnowledgeGap[]
+  crawlJobs        CrawlJob[]
 }
 
 model Member {
@@ -196,6 +222,7 @@ model Article {
   feedback         ArticleFeedback[]
   conversationRefs ConversationArticle[]
   resolvedGaps     KnowledgeGap[]
+  crawlPage        CrawlPage?
 
   @@unique([workspaceId, slug])
   @@index([workspaceId])
@@ -355,4 +382,47 @@ model KnowledgeGap {
   @@unique([workspaceId, queryHash])
   @@index([workspaceId, resolvedAt])
   @@index([workspaceId, occurrences])
+}
+
+model CrawlJob {
+  id              String         @id @default(cuid())
+  workspaceId     String
+  userId          String
+  sourceUrl       String
+  mode            CrawlMode      @default(SINGLE)
+  status          CrawlJobStatus @default(PENDING)
+  config          Json?
+  totalPages      Int            @default(0)
+  processedPages  Int            @default(0)
+  articlesCreated Int            @default(0)
+  error           String?
+  createdAt       DateTime       @default(now())
+  completedAt     DateTime?
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id])
+  pages     CrawlPage[]
+
+  @@index([workspaceId])
+  @@index([status])
+}
+
+model CrawlPage {
+  id          String          @id @default(cuid())
+  crawlJobId  String
+  url         String
+  status      CrawlPageStatus @default(PENDING)
+  contentHash String?
+  contentType String?
+  language    String?
+  rawContent  String?         @db.Text
+  articleId   String?         @unique
+  skipReason  String?
+  createdAt   DateTime        @default(now())
+
+  crawlJob CrawlJob @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+  article  Article? @relation(fields: [articleId], references: [id])
+
+  @@index([crawlJobId])
+  @@index([contentHash])
 }
