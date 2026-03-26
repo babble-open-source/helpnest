@@ -29,7 +29,7 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
         { id: article.collectionId },
       ],
     },
-    select: { id: true, title: true, emoji: true, isArchived: true, parentId: true },
+    select: { id: true, title: true, slug: true, emoji: true, isArchived: true, parentId: true },
     orderBy: [{ isArchived: 'asc' }, { order: 'asc' }],
   })
 

@@ -8,6 +8,7 @@ import { Tooltip } from '@/components/ui/Tooltip'
 interface Collection {
   id: string
   title: string
+  slug: string
   emoji: string | null
   isArchived?: boolean
   depth?: number
@@ -62,9 +63,15 @@ export function ArticleMetaSidebar({
   const [collectionOpen, setCollectionOpen] = useState(false)
   const [collectionSearch, setCollectionSearch] = useState('')
   const [viewingId, setViewingId] = useState<string | null>(null)
-  const [navPath, setNavPath] = useState<{ id: string | null; title: string; emoji?: string | null }[]>([{ id: null, title: 'All Collections' }])
+  const [navPath, setNavPath] = useState<{ id: string | null; title: string; emoji?: string | null }[]>([{ id: null, title: tCol('allCollections') }])
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
   const clickTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
+
+  useEffect(() => {
+    return () => {
+      Object.values(clickTimers.current).forEach(clearTimeout)
+    }
+  }, [])
 
   // Create form state
   const EMOJI_OPTIONS = ['📁', '📄', '🚀', '⚡', '🛠️', '💡', '🎯', '📚', '🔧', '✨', '🌟', '🔑']
@@ -84,7 +91,7 @@ export function ArticleMetaSidebar({
     setCollectionOpen(true)
     setCollectionSearch('')
     setViewingId(null)
-    setNavPath([{ id: null, title: 'All Collections' }])
+    setNavPath([{ id: null, title: tCol('allCollections') }])
     setHighlightedId(hasPickedCollection ? collectionId : null)
   }
 
@@ -94,6 +101,7 @@ export function ArticleMetaSidebar({
     setHighlightedId(null)
     setShowCreate(false)
     setNewTitle('')
+    setNewDescription('')
     setNewEmoji('📁')
     setCreateError('')
   }
@@ -124,11 +132,12 @@ export function ArticleMetaSidebar({
         setCreateError(data.error ?? tCommon('somethingWentWrong'))
         return
       }
-      const created = await res.json() as { id: string; title: string; emoji: string | null; isArchived: boolean }
+      const created = await res.json() as { id: string; title: string; slug: string; emoji: string | null; isArchived: boolean }
       const parentDepth = viewingId ? (localCollections.find((c) => c.id === viewingId)?.depth ?? 0) : -1
       setLocalCollections((prev) => [...prev, {
         id: created.id,
         title: created.title,
+        slug: created.slug,
         emoji: created.emoji,
         isArchived: created.isArchived,
         depth: parentDepth + 1,
@@ -261,7 +270,7 @@ export function ArticleMetaSidebar({
             {t('collection')}
           </label>
           {/* Trigger */}
-          <Tooltip content={hasPickedCollection ? (selectedCollection?.title ?? '—') : 'Select a collection'} wrapperClassName="w-full">
+          <Tooltip content={hasPickedCollection ? (selectedCollection?.title ?? '—') : tCol('selectCollection')} wrapperClassName="w-full">
             <button
               type="button"
               onClick={openModal}
@@ -271,7 +280,7 @@ export function ArticleMetaSidebar({
               <span className={`flex-1 text-left truncate ${!hasPickedCollection ? 'text-muted' : ''}`}>
                 {hasPickedCollection
                   ? (selectedCollection?.title ?? '—')
-                  : 'Select a collection'}
+                  : tCol('selectCollection')}
                 {hasPickedCollection && selectedCollection?.isArchived && <span className="ml-1 text-muted">({tCommon('archived')})</span>}
               </span>
               <svg className="shrink-0 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -287,7 +296,7 @@ export function ArticleMetaSidebar({
 
                 {/* Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
-                  <p className="font-medium text-ink">Move to collection</p>
+                  <p className="font-medium text-ink">{tCol('moveToCollection')}</p>
                   <button onClick={closeModal} className="text-muted hover:text-ink transition-colors text-lg leading-none">&#x2715;</button>
                 </div>
 
@@ -299,7 +308,7 @@ export function ArticleMetaSidebar({
                     onClick={() => navPath.length > 1 && navigateTo(navPath.length - 2)}
                     disabled={navPath.length <= 1}
                     className="shrink-0 flex items-center justify-center w-7 h-7 rounded-lg border border-border text-muted hover:text-ink hover:border-ink/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-                    title="Go back"
+                    title={tCol('goBack')}
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -332,7 +341,7 @@ export function ArticleMetaSidebar({
                     type="text"
                     value={collectionSearch}
                     onChange={(e) => setCollectionSearch(e.target.value)}
-                    placeholder="Search..."
+                    placeholder={tCol('searchCollections')}
                     className="shrink-0 w-44 px-3 py-1.5 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-white text-ink placeholder:text-muted"
                   />
                 </div>
@@ -343,7 +352,7 @@ export function ArticleMetaSidebar({
                     searchResults.length === 0 ? (
                       <div className="flex flex-col items-center justify-center h-full text-muted">
                         <p className="text-4xl mb-2">🔍</p>
-                        <p className="text-sm">No collections found</p>
+                        <p className="text-sm">{tCol('noCollectionsFound')}</p>
                       </div>
                     ) : (
                       <ul className="divide-y divide-border border border-border rounded-xl overflow-hidden">
@@ -381,7 +390,7 @@ export function ArticleMetaSidebar({
                   ) : currentItems.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-muted">
                       <p className="text-4xl mb-2">📭</p>
-                      <p className="text-sm">No sub-collections here</p>
+                      <p className="text-sm">{tCol('noSubCollections')}</p>
                     </div>
                   ) : (
                     <div className="grid grid-cols-4 gap-3">
@@ -409,7 +418,7 @@ export function ArticleMetaSidebar({
                               {c.title}
                             </span>
                             {isFolder && (
-                              <span className="text-[10px] text-muted/70">double-click to open</span>
+                              <span className="text-[10px] text-muted/70">{tCol('doubleClickToOpen')}</span>
                             )}
                           </button>
                         )
@@ -423,7 +432,7 @@ export function ArticleMetaSidebar({
                   <div className="absolute inset-0 bg-white rounded-2xl flex flex-col overflow-hidden">
                     <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
                       <div>
-                        <p className="font-medium text-ink">New collection</p>
+                        <p className="font-medium text-ink">{tCol('createCollection')}</p>
                         <p className="text-xs text-muted mt-0.5">
                           in {navPath.at(-1)?.emoji ? `${navPath.at(-1)?.emoji} ` : ''}{navPath.at(-1)?.title}
                         </p>
@@ -514,12 +523,12 @@ export function ArticleMetaSidebar({
                       onClick={() => { setShowCreate(true); setNewTitle(''); setNewDescription(''); setNewEmoji('📁'); setNewVisibility('PUBLIC'); setCreateError('') }}
                       className="text-xs text-muted hover:text-accent transition-colors"
                     >
-                      + New collection
+                      {tCol('newCollection')}
                     </button>
                   ) : <span />}
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={closeModal} className="px-4 py-2 text-sm text-muted hover:text-ink transition-colors">
-                      Cancel
+                      {tCommon('cancel')}
                     </button>
                     <button
                       type="button"
@@ -527,7 +536,7 @@ export function ArticleMetaSidebar({
                       disabled={!highlightedId || highlightedId === collectionId}
                       className="px-4 py-2 text-sm bg-ink text-cream rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed font-medium"
                     >
-                      {highlightedId && highlightedId !== collectionId ? 'Move here' : 'Select'}
+                      {highlightedId && highlightedId !== collectionId ? tCol('moveHere') : tCol('select')}
                     </button>
                   </div>
                 </div>

@@ -406,7 +406,17 @@
     "visibilityPublicDescription": "Visible to everyone on your help center.",
     "visibilityInternalDescription": "Only visible to signed-in workspace members.",
     "visibilityChangeToPublic": "Changing to Public will expose all articles in this collection to the public.",
-    "visibilityChangeToInternal": "Changing to Internal will hide all articles in this collection from the public help center."
+    "visibilityChangeToInternal": "Changing to Internal will hide all articles in this collection from the public help center.",
+    "allCollections": "All Collections",
+    "moveToCollection": "Move to collection",
+    "goBack": "Go back",
+    "searchCollections": "Search...",
+    "noCollectionsFound": "No collections found",
+    "noSubCollections": "No sub-collections here",
+    "doubleClickToOpen": "double-click to open",
+    "moveHere": "Move here",
+    "select": "Select",
+    "selectCollection": "Select a collection"
   },
   "members": {
     "title": "Members",

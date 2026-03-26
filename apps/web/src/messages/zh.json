@@ -406,7 +406,17 @@
     "hasSubCollections": "This collection has {count} sub-collection(s). Delete them first.",
     "newSubCollection": "+ Sub-collection",
     "createSubCollection": "Create sub-collection",
-    "inCollection": "in {title}"
+    "inCollection": "in {title}",
+    "allCollections": "所有集合",
+    "moveToCollection": "移动到集合",
+    "goBack": "返回",
+    "searchCollections": "搜索...",
+    "noCollectionsFound": "未找到集合",
+    "noSubCollections": "此处没有子集合",
+    "doubleClickToOpen": "双击打开",
+    "moveHere": "移动到此处",
+    "select": "选择",
+    "selectCollection": "选择一个集合"
   },
   "members": {
     "title": "成员",

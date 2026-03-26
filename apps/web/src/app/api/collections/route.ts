@@ -25,10 +25,11 @@ export async function GET(request: Request) {
 }
 
 /** Walk up the parent chain and return the depth of the given collection (1 = root). */
-async function getCollectionDepth(id: string): Promise<number> {
+async function getCollectionDepth(id: string, depth = 1): Promise<number> {
+  if (depth > 10) return depth
   const col = await prisma.collection.findUnique({ where: { id }, select: { parentId: true } })
-  if (!col?.parentId) return 1
-  return 1 + await getCollectionDepth(col.parentId)
+  if (!col?.parentId) return depth
+  return getCollectionDepth(col.parentId, depth + 1)
 }
 
 export async function POST(request: Request) {

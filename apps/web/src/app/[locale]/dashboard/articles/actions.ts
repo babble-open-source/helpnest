@@ -1,6 +1,7 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
@@ -39,25 +40,38 @@ export async function createArticle(formData: FormData) {
   if (!collection) redirect('/dashboard/collections')
 
   const title = t('untitled')
-  let slug = slugify(title)
+  const baseSlug = slugify(title)
+
+  // Retry on unique slug conflict to handle concurrent creates (TOCTOU-safe)
+  let slug = baseSlug
   let i = 1
-  while (await prisma.article.findUnique({
-    where: { workspaceId_slug: { workspaceId, slug } },
-  })) {
-    slug = `${slugify(title)}-${i++}`
+  let article: { id: string } | undefined
+  for (let attempt = 0; attempt < 5; attempt++) {
+    try {
+      article = await prisma.article.create({
+        data: {
+          workspaceId,
+          collectionId: collection.id,
+          authorId: userId,
+          title,
+          slug,
+          content: '',
+          status: 'DRAFT',
+        },
+      })
+      break
+    } catch (e: unknown) {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        slug = `${baseSlug}-${i++}`
+      } else {
+        throw e
+      }
+    }
   }
 
-  const article = await prisma.article.create({
-    data: {
-      workspaceId,
-      collectionId: collection.id,
-      authorId: userId,
-      title,
-      slug,
-      content: '',
-      status: 'DRAFT',
-    },
-  })
+  if (!article) {
+    throw new Error('Failed to create article after multiple attempts due to slug conflicts')
+  }
 
   redirect(`/dashboard/articles/${article.id}/edit`)
 }

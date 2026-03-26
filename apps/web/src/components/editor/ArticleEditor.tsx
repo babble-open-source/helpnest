@@ -44,6 +44,7 @@ interface Article {
 interface Collection {
   id: string
   title: string
+  slug: string
   emoji: string | null
   isArchived?: boolean
 }
@@ -474,7 +475,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
         onCollectionChange={(id) => {
           setCollectionId(id)
           const col = collections.find((c) => c.id === id)
-          if (col) setCollectionSlug(col.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
+          if (col) setCollectionSlug(col.slug)
         }}
         status={status}
         collections={collections}

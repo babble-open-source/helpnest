@@ -406,7 +406,17 @@
     "hasSubCollections": "This collection has {count} sub-collection(s). Delete them first.",
     "newSubCollection": "+ Sub-collection",
     "createSubCollection": "Create sub-collection",
-    "inCollection": "in {title}"
+    "inCollection": "in {title}",
+    "allCollections": "Todas las colecciones",
+    "moveToCollection": "Mover a colección",
+    "goBack": "Volver",
+    "searchCollections": "Buscar...",
+    "noCollectionsFound": "No se encontraron colecciones",
+    "noSubCollections": "No hay sub-colecciones aquí",
+    "doubleClickToOpen": "doble clic para abrir",
+    "moveHere": "Mover aquí",
+    "select": "Seleccionar",
+    "selectCollection": "Seleccionar una colección"
   },
   "members": {
     "title": "Miembros",

@@ -406,7 +406,17 @@
     "hasSubCollections": "This collection has {count} sub-collection(s). Delete them first.",
     "newSubCollection": "+ Sub-collection",
     "createSubCollection": "Create sub-collection",
-    "inCollection": "in {title}"
+    "inCollection": "in {title}",
+    "allCollections": "सभी संग्रह",
+    "moveToCollection": "संग्रह में ले जाएं",
+    "goBack": "वापस जाएं",
+    "searchCollections": "खोजें...",
+    "noCollectionsFound": "कोई संग्रह नहीं मिला",
+    "noSubCollections": "यहां कोई उप-संग्रह नहीं है",
+    "doubleClickToOpen": "खोलने के लिए डबल-क्लिक करें",
+    "moveHere": "यहां ले जाएं",
+    "select": "चुनें",
+    "selectCollection": "एक संग्रह चुनें"
   },
   "members": {
     "title": "सदस्य",

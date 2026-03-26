@@ -406,7 +406,17 @@
     "hasSubCollections": "This collection has {count} sub-collection(s). Delete them first.",
     "newSubCollection": "+ Sub-collection",
     "createSubCollection": "Create sub-collection",
-    "inCollection": "in {title}"
+    "inCollection": "in {title}",
+    "allCollections": "جميع المجموعات",
+    "moveToCollection": "نقل إلى مجموعة",
+    "goBack": "رجوع",
+    "searchCollections": "بحث...",
+    "noCollectionsFound": "لم يتم العثور على مجموعات",
+    "noSubCollections": "لا توجد مجموعات فرعية هنا",
+    "doubleClickToOpen": "انقر مرتين للفتح",
+    "moveHere": "نقل هنا",
+    "select": "تحديد",
+    "selectCollection": "اختر مجموعة"
   },
   "members": {
     "title": "الأعضاء",

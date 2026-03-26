@@ -158,7 +158,7 @@ export default async function CollectionDetailPage(props: {
                   collection={{
                     id: sub.id,
                     title: sub.title,
-                    description: null,
+                    description: sub.description,
                     emoji: sub.emoji,
                     visibility: sub.visibility,
                     articleCount: sub._count.articles,
