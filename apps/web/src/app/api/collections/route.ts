@@ -86,9 +86,9 @@ export async function POST(request: Request) {
   })
 
   // Retry on unique slug conflict to handle concurrent creates (TOCTOU-safe)
+  const MAX_SLUG_ATTEMPTS = 5
   let slug = baseSlug
-  let i = 1
-  for (;;) {
+  for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
     try {
       const collection = await prisma.collection.create({
         data: {
@@ -105,10 +105,15 @@ export async function POST(request: Request) {
       return NextResponse.json(collection, { status: 201 })
     } catch (e: unknown) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-        slug = `${baseSlug}-${i++}`
+        slug = `${baseSlug}-${attempt + 1}`
       } else {
         throw e
       }
     }
   }
+
+  return NextResponse.json(
+    { error: 'Unable to generate a unique slug after multiple attempts' },
+    { status: 500 },
+  )
 }

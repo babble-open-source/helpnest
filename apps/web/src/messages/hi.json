@@ -416,7 +416,10 @@
     "doubleClickToOpen": "खोलने के लिए डबल-क्लिक करें",
     "moveHere": "यहां ले जाएं",
     "select": "चुनें",
-    "selectCollection": "एक संग्रह चुनें"
+    "selectCollection": "एक संग्रह चुनें",
+    "clickToSelectOrOpen": "Click to select · Double-click to open",
+    "clickToSelect": "Click to select",
+    "currentCollection": "Current collection"
   },
   "members": {
     "title": "सदस्य",

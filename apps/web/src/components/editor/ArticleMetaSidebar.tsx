@@ -63,7 +63,7 @@ export function ArticleMetaSidebar({
   const [collectionOpen, setCollectionOpen] = useState(false)
   const [collectionSearch, setCollectionSearch] = useState('')
   const [viewingId, setViewingId] = useState<string | null>(null)
-  const [navPath, setNavPath] = useState<{ id: string | null; title: string; emoji?: string | null }[]>([{ id: null, title: tCol('allCollections') }])
+  const [navPath, setNavPath] = useState<{ id: string | null; title: string; emoji?: string | null }[]>([{ id: null, title: '', emoji: undefined }])
   const [highlightedId, setHighlightedId] = useState<string | null>(null)
   const clickTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({})
 
@@ -403,7 +403,7 @@ export function ArticleMetaSidebar({
                             key={c.id}
                             type="button"
                             onClick={() => handleTileClick(c)}
-                            title={isFolder ? 'Click to select · Double-click to open' : 'Click to select'}
+                            title={isFolder ? tCol('clickToSelectOrOpen') : tCol('clickToSelect')}
                             className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-center select-none cursor-pointer
                               ${isHighlighted
                                 ? 'border-accent bg-accent/10 shadow-sm'
@@ -411,7 +411,7 @@ export function ArticleMetaSidebar({
                               }`}
                           >
                             {isCurrent && (
-                              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent" title="Current collection" />
+                              <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-accent" title={tCol('currentCollection')} />
                             )}
                             <span className="text-4xl leading-none">{c.emoji ?? (isFolder ? '📁' : '📄')}</span>
                             <span className={`text-xs font-medium leading-tight line-clamp-2 w-full ${isHighlighted ? 'text-accent' : 'text-ink'}`}>
@@ -434,7 +434,7 @@ export function ArticleMetaSidebar({
                       <div>
                         <p className="font-medium text-ink">{tCol('createCollection')}</p>
                         <p className="text-xs text-muted mt-0.5">
-                          in {navPath.at(-1)?.emoji ? `${navPath.at(-1)?.emoji} ` : ''}{navPath.at(-1)?.title}
+                          {tCol('inCollection', { title: `${navPath.at(-1)?.emoji ? `${navPath.at(-1)?.emoji} ` : ''}${navPath.at(-1)?.title}` })}
                         </p>
                       </div>
                       <button onClick={() => { setShowCreate(false); setCreateError('') }} className="text-muted hover:text-ink transition-colors text-lg leading-none">&#x2715;</button>

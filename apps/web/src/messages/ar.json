@@ -416,7 +416,10 @@
     "doubleClickToOpen": "انقر مرتين للفتح",
     "moveHere": "نقل هنا",
     "select": "تحديد",
-    "selectCollection": "اختر مجموعة"
+    "selectCollection": "اختر مجموعة",
+    "clickToSelectOrOpen": "Click to select · Double-click to open",
+    "clickToSelect": "Click to select",
+    "currentCollection": "Current collection"
   },
   "members": {
     "title": "الأعضاء",

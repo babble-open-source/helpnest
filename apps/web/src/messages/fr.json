@@ -416,7 +416,10 @@
     "doubleClickToOpen": "double-cliquer pour ouvrir",
     "moveHere": "Déplacer ici",
     "select": "Sélectionner",
-    "selectCollection": "Sélectionner une collection"
+    "selectCollection": "Sélectionner une collection",
+    "clickToSelectOrOpen": "Click to select · Double-click to open",
+    "clickToSelect": "Click to select",
+    "currentCollection": "Current collection"
   },
   "members": {
     "title": "Membres",

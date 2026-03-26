@@ -416,7 +416,10 @@
     "doubleClickToOpen": "双击打开",
     "moveHere": "移动到此处",
     "select": "选择",
-    "selectCollection": "选择一个集合"
+    "selectCollection": "选择一个集合",
+    "clickToSelectOrOpen": "Click to select · Double-click to open",
+    "clickToSelect": "Click to select",
+    "currentCollection": "Current collection"
   },
   "members": {
     "title": "成员",
