@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { cookies } from 'next/headers'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { findCustomHostname, deleteCustomHostname, isCloudflareEnabled } from '@/lib/cloudflare-saas'
@@ -62,6 +63,11 @@ export async function POST(request: Request) {
       customDomain: null,
     },
   })
+
+  // Clear the active workspace cookie so resolveWorkspaceId falls through
+  // to the next available workspace on the next page load.
+  const cookieStore = await cookies()
+  cookieStore.delete('helpnest-workspace')
 
   // Clean up external resources (fire-and-forget, don't block response)
 
