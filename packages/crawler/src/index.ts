@@ -7,3 +7,4 @@ export type {
 
 export { validateUrl } from './url-validator'
 export { extractContent } from './content-extractor'
+export { analyzeContent } from './content-analyzer'
