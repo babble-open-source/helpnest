@@ -12,7 +12,8 @@ export async function fetchPage(
   let browser = null
 
   try {
-    browser = await chromium.launch({ headless: true })
+    const executablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined
+    browser = await chromium.launch({ headless: true, executablePath })
     const context = await browser.newContext({
       userAgent:
         'Mozilla/5.0 (compatible; HelpNestBot/1.0; +https://helpnest.cloud/bot)',

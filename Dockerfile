@@ -19,6 +19,7 @@ COPY packages/db/package.json     ./packages/db/
 COPY packages/ui/package.json     ./packages/ui/
 COPY packages/widget/package.json ./packages/widget/
 COPY packages/config/package.json ./packages/config/
+COPY packages/crawler/package.json ./packages/crawler/
 
 # Install all workspace dependencies.
 RUN pnpm install --frozen-lockfile
@@ -104,9 +105,13 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-RUN apk add --no-cache openssl \
+RUN apk add --no-cache openssl chromium \
  && addgroup --system --gid 1001 nodejs \
  && adduser  --system --uid 1001 nextjs
+
+# Playwright uses system Chromium instead of downloading its own
+ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 # Next.js standalone output (includes traced node_modules for the app server).
 COPY --from=builder /app/apps/web/.next/standalone ./
