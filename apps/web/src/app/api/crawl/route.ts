@@ -3,15 +3,19 @@ import { requireAuth } from '@/lib/auth-api'
 import { prisma } from '@/lib/db'
 import { uniqueCollectionSlug, uniqueArticleSlug } from '@/lib/unique-slug'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
+import { checkArticleSimilarity } from '@/lib/crawl-similarity'
 import {
   validateUrl,
   fetchPage,
   extractContent,
   analyzeContent,
-  buildArticlePrompt,
+  discoverLinks,
+  buildLinkFilterPrompt,
+  parseLinkFilterResponse,
+  detectLoginWall,
+  buildGoalPrompt,
   parseArticleResponse,
 } from '@helpnest/crawler'
-import { createHash } from 'crypto'
 
 export async function POST(request: Request) {
   // 1. Auth check
@@ -45,10 +49,14 @@ export async function POST(request: Request) {
 
   const body = await request.json() as {
     url?: string
+    goal?: string
     collectionId?: string
   }
 
-  // 2. Validate URL
+  // 2. Validate goal and URL
+  const goal = body.goal?.trim()
+  if (!goal) return NextResponse.json({ error: 'Goal prompt is required' }, { status: 400 })
+
   const rawUrl = body.url?.trim()
   if (!rawUrl) return NextResponse.json({ error: 'URL is required' }, { status: 400 })
 
@@ -96,236 +104,340 @@ export async function POST(request: Request) {
     )
   }
 
-  // 4. Create CrawlJob record
-  const crawlJob = await prisma.crawlJob.create({
-    data: {
-      workspaceId,
-      userId: authorId,
-      sourceUrl: url,
-      mode: 'SINGLE',
-      status: 'CRAWLING',
-      totalPages: 1,
-    },
-  })
-
   try {
-    // 5. Fetch page with Playwright
+    // 4. Fetch starting page with Playwright
     const fetchResult = await fetchPage(url)
     if (fetchResult.error || !fetchResult.html) {
-      await prisma.crawlJob.update({
-        where: { id: crawlJob.id },
-        data: { status: 'FAILED', error: fetchResult.error ?? 'Failed to fetch page', completedAt: new Date() },
-      })
       return NextResponse.json(
-        { error: `Failed to fetch page: ${fetchResult.error ?? 'No HTML returned'}`, crawlJobId: crawlJob.id },
+        { error: `Failed to fetch page: ${fetchResult.error ?? 'No HTML returned'}` },
         { status: 502 },
       )
     }
 
-    // 6. Extract content to Markdown
-    const extracted = extractContent(fetchResult.html, url)
+    const startingHtml = fetchResult.html
 
-    // 7. Analyze content
-    const analysis = analyzeContent(extracted.markdown, url)
+    // 5. Discover same-domain links on the page
+    const domain = new URL(url).hostname
+    const discoveredLinks = discoverLinks(startingHtml, url)
 
-    // Compute content hash for deduplication
-    const contentHash = createHash('sha256').update(extracted.markdown).digest('hex').slice(0, 16)
+    // 6. Build AI link filter prompt with the goal, send to AI provider
+    const filterPrompt = buildLinkFilterPrompt(discoveredLinks, goal, domain)
 
-    // Check for duplicate content in this workspace
-    const existingPage = await prisma.crawlPage.findFirst({
-      where: {
-        contentHash,
-        articleId: { not: null },
-        crawlJob: { workspaceId },
-      },
-      select: { articleId: true },
-    })
-    if (existingPage) {
-      return NextResponse.json({
-        crawlJobId: null,
-        skipped: true,
-        skipReason: 'Duplicate content already exists in this workspace',
-      })
-    }
-
-    // 8. Create CrawlPage record
-    const crawlPage = await prisma.crawlPage.create({
-      data: {
-        crawlJobId: crawlJob.id,
-        url,
-        status: 'EXTRACTED',
-        contentHash,
-        contentType: analysis.contentType,
-        language: analysis.language,
-        rawContent: extracted.markdown,
-      },
-    })
-
-    // 9. If content too short, skip
-    if (analysis.tooShort) {
-      await prisma.crawlPage.update({
-        where: { id: crawlPage.id },
-        data: { status: 'SKIPPED', skipReason: 'Content too short (less than 100 characters)' },
-      })
-      await prisma.crawlJob.update({
-        where: { id: crawlJob.id },
-        data: { status: 'COMPLETED', processedPages: 1, completedAt: new Date() },
-      })
-      return NextResponse.json({
-        crawlJobId: crawlJob.id,
-        skipped: true,
-        skipReason: 'Content too short',
-        sensitiveDataWarnings: analysis.sensitiveDataWarnings,
-      })
-    }
-
-    // Update job status to GENERATING
-    await prisma.crawlJob.update({
-      where: { id: crawlJob.id },
-      data: { status: 'GENERATING' },
-    })
-
-    // 10. Build AI prompt and stream response
-    const existingCollections = await prisma.collection.findMany({
-      where: { workspaceId },
-      select: { title: true },
-    })
-
-    // Truncate content to ~4000 tokens before AI call
-    const MAX_AI_CONTENT_LENGTH = 16000
-    const truncatedMarkdown = extracted.markdown.length > MAX_AI_CONTENT_LENGTH
-      ? extracted.markdown.slice(0, MAX_AI_CONTENT_LENGTH)
-      : extracted.markdown
-
-    const prompt = buildArticlePrompt({
-      markdown: truncatedMarkdown,
-      title: extracted.title,
-      url,
-      contentType: analysis.contentType,
-      workspaceName: workspace.name,
-      existingCollections: existingCollections.map((c) => c.title),
-    })
-
-    let aiResponseText = ''
+    let filterResponseText = ''
     for await (const event of provider.streamChat({
-      system: prompt.system,
-      messages: [{ role: 'user', content: prompt.userMessage }],
+      system: filterPrompt.system,
+      messages: [{ role: 'user', content: filterPrompt.userMessage }],
       maxTokens: 4096,
     })) {
       if (event.type === 'text') {
-        aiResponseText += event.text
+        filterResponseText += event.text
       } else if (event.type === 'error') {
         throw new Error(`AI provider error: ${event.message}`)
       }
     }
 
-    // 11. Parse AI response into ArticleDraft
-    const articleDraft = parseArticleResponse(aiResponseText)
+    // 7. Parse AI response to get filtered links + mode recommendation
+    const filterResult = parseLinkFilterResponse(filterResponseText)
+    const { mode, selectedLinks } = filterResult
 
-    // Update CrawlPage to GENERATED
-    await prisma.crawlPage.update({
-      where: { id: crawlPage.id },
-      data: { status: 'GENERATED' },
-    })
+    if (mode === 'focused') {
+      // ── FOCUSED MODE (≤5 pages) ──────────────────────────────────────
 
-    // 12. Resolve collection
-    let collectionId = body.collectionId ?? null
-
-    if (!collectionId && articleDraft.suggestedCollection) {
-      // Try to find an existing collection matching the AI suggestion
-      const match = await prisma.collection.findFirst({
-        where: {
+      // 8. Create CrawlJob
+      const crawlJob = await prisma.crawlJob.create({
+        data: {
           workspaceId,
-          title: { equals: articleDraft.suggestedCollection, mode: 'insensitive' },
+          userId: authorId,
+          sourceUrl: url,
+          goalPrompt: goal,
+          mode: 'SINGLE',
+          status: 'CRAWLING',
+          totalPages: 1 + selectedLinks.length,
         },
       })
-      if (match) {
-        collectionId = match.id
-      } else {
-        // Create a new collection from the AI suggestion
-        const colSlug = await uniqueCollectionSlug(articleDraft.suggestedCollection, workspaceId)
-        const newCol = await prisma.collection.create({
-          data: { workspaceId, title: articleDraft.suggestedCollection, slug: colSlug },
-        })
-        collectionId = newCol.id
-      }
-    }
 
-    if (!collectionId) {
-      // Fallback: find or create a "Crawled Pages" collection
-      const fallback = await prisma.collection.findFirst({
-        where: { workspaceId, slug: 'crawled-pages' },
+      const existingCollections = await prisma.collection.findMany({
+        where: { workspaceId },
+        select: { title: true },
       })
-      if (fallback) {
-        collectionId = fallback.id
-      } else {
-        const colSlug = await uniqueCollectionSlug('Crawled Pages', workspaceId)
-        const newCol = await prisma.collection.create({
-          data: { workspaceId, title: 'Crawled Pages', slug: colSlug },
-        })
-        collectionId = newCol.id
+
+      const MAX_AI_CONTENT_LENGTH = 16000
+      const articles: Array<{
+        id: string
+        title: string
+        slug: string
+        collectionId: string | null
+        excerpt: string
+        confidence: number
+      }> = []
+      const previousTitles: string[] = []
+      let processedPages = 0
+
+      // Build a list of pages to process: starting page first, then selected links
+      const pagesToProcess = [
+        { url, html: startingHtml },
+        ...selectedLinks.map((link) => ({ url: link.url, html: null as string | null })),
+      ]
+
+      for (let i = 0; i < pagesToProcess.length; i++) {
+        const page = pagesToProcess[i]!
+        processedPages++
+
+        try {
+          // a. Fetch (skip starting page — already fetched)
+          let html = page.html
+          if (!html) {
+            const result = await fetchPage(page.url)
+            if (result.error || !result.html) {
+              await prisma.crawlPage.create({
+                data: {
+                  crawlJobId: crawlJob.id,
+                  url: page.url,
+                  status: 'FAILED',
+                  skipReason: `Fetch failed: ${result.error ?? 'No HTML'}`,
+                },
+              })
+              continue
+            }
+            html = result.html
+          }
+
+          // b. Detect login wall → skip
+          if (detectLoginWall(html, page.url)) {
+            await prisma.crawlPage.create({
+              data: {
+                crawlJobId: crawlJob.id,
+                url: page.url,
+                status: 'SKIPPED',
+                skipReason: 'Login wall detected',
+              },
+            })
+            continue
+          }
+
+          // c. Extract content
+          const extracted = extractContent(html, page.url)
+
+          // d. Analyze content → skip if too short
+          const analysis = analyzeContent(extracted.markdown, page.url)
+          if (analysis.tooShort) {
+            await prisma.crawlPage.create({
+              data: {
+                crawlJobId: crawlJob.id,
+                url: page.url,
+                status: 'SKIPPED',
+                contentType: analysis.contentType,
+                language: analysis.language,
+                skipReason: 'Content too short (less than 100 characters)',
+              },
+            })
+            continue
+          }
+
+          // e. Truncate to 16k chars
+          const truncatedMarkdown = extracted.markdown.length > MAX_AI_CONTENT_LENGTH
+            ? extracted.markdown.slice(0, MAX_AI_CONTENT_LENGTH)
+            : extracted.markdown
+
+          // f. Build goal-aware prompt with series context
+          const prompt = buildGoalPrompt({
+            markdown: truncatedMarkdown,
+            title: extracted.title,
+            url: page.url,
+            contentType: analysis.contentType,
+            workspaceName: workspace.name,
+            existingCollections: existingCollections.map((c) => c.title),
+            goal,
+            seriesContext: i > 0
+              ? {
+                  articleNumber: i + 1,
+                  totalArticles: pagesToProcess.length,
+                  previousTitles,
+                }
+              : undefined,
+          })
+
+          // g. Stream AI response, parse article draft
+          let aiResponseText = ''
+          for await (const event of provider.streamChat({
+            system: prompt.system,
+            messages: [{ role: 'user', content: prompt.userMessage }],
+            maxTokens: 4096,
+          })) {
+            if (event.type === 'text') {
+              aiResponseText += event.text
+            } else if (event.type === 'error') {
+              throw new Error(`AI provider error: ${event.message}`)
+            }
+          }
+
+          const articleDraft = parseArticleResponse(aiResponseText)
+
+          // h. Check embedding similarity → skip if duplicate, flag if suspicious
+          const similarity = await checkArticleSimilarity(extracted.markdown, workspaceId)
+          if (similarity.isDuplicate) {
+            await prisma.crawlPage.create({
+              data: {
+                crawlJobId: crawlJob.id,
+                url: page.url,
+                status: 'SKIPPED',
+                contentType: analysis.contentType,
+                language: analysis.language,
+                similarArticleId: similarity.similarArticleId,
+                skipReason: `Duplicate content (similarity: ${similarity.score.toFixed(2)})`,
+              },
+            })
+            continue
+          }
+
+          // i. Resolve collection
+          let collectionId = body.collectionId ?? null
+
+          if (!collectionId && articleDraft.suggestedCollection) {
+            const match = await prisma.collection.findFirst({
+              where: {
+                workspaceId,
+                title: { equals: articleDraft.suggestedCollection, mode: 'insensitive' },
+              },
+            })
+            if (match) {
+              collectionId = match.id
+            } else {
+              const colSlug = await uniqueCollectionSlug(articleDraft.suggestedCollection, workspaceId)
+              const newCol = await prisma.collection.create({
+                data: { workspaceId, title: articleDraft.suggestedCollection, slug: colSlug },
+              })
+              collectionId = newCol.id
+            }
+          }
+
+          if (!collectionId) {
+            const fallback = await prisma.collection.findFirst({
+              where: { workspaceId, slug: 'crawled-pages' },
+            })
+            if (fallback) {
+              collectionId = fallback.id
+            } else {
+              const colSlug = await uniqueCollectionSlug('Crawled Pages', workspaceId)
+              const newCol = await prisma.collection.create({
+                data: { workspaceId, title: 'Crawled Pages', slug: colSlug },
+              })
+              collectionId = newCol.id
+            }
+          }
+
+          // j. Create Article as DRAFT with aiGenerated=true
+          const articleSlug = await uniqueArticleSlug(articleDraft.title, workspaceId)
+          const article = await prisma.article.create({
+            data: {
+              workspaceId,
+              collectionId,
+              authorId,
+              title: articleDraft.title,
+              slug: articleSlug,
+              content: articleDraft.content,
+              excerpt: articleDraft.excerpt,
+              status: 'DRAFT',
+              aiGenerated: true,
+              aiPrompt: prompt.userMessage,
+            },
+          })
+
+          // k. Create CrawlPage
+          await prisma.crawlPage.create({
+            data: {
+              crawlJobId: crawlJob.id,
+              url: page.url,
+              status: 'GENERATED',
+              contentType: analysis.contentType,
+              language: analysis.language,
+              articleId: article.id,
+              similarArticleId: similarity.isSuspicious ? similarity.similarArticleId : null,
+            },
+          })
+
+          previousTitles.push(articleDraft.title)
+          articles.push({
+            id: article.id,
+            title: article.title,
+            slug: article.slug,
+            collectionId: article.collectionId,
+            excerpt: articleDraft.excerpt,
+            confidence: articleDraft.confidence,
+          })
+        } catch (pageErr) {
+          const pageMessage = pageErr instanceof Error ? pageErr.message : String(pageErr)
+          await prisma.crawlPage.create({
+            data: {
+              crawlJobId: crawlJob.id,
+              url: page.url,
+              status: 'FAILED',
+              skipReason: pageMessage,
+            },
+          })
+        }
       }
+
+      // 10. Update CrawlJob as COMPLETED
+      await prisma.crawlJob.update({
+        where: { id: crawlJob.id },
+        data: {
+          status: 'COMPLETED',
+          processedPages,
+          articlesCreated: articles.length,
+          completedAt: new Date(),
+        },
+      })
+
+      // 11. Return results immediately
+      return NextResponse.json({
+        crawlJobId: crawlJob.id,
+        mode: 'focused',
+        articles,
+        totalPages: pagesToProcess.length,
+        processedPages,
+        articlesCreated: articles.length,
+      })
+    } else {
+      // ── DISCOVERY MODE (>5 pages) ────────────────────────────────────
+
+      // 8. Check domain verification for this domain
+      const verification = await prisma.domainVerification.findFirst({
+        where: {
+          workspaceId,
+          domain,
+          verifiedAt: { not: null },
+        },
+      })
+      const requiresVerification = !verification
+
+      // 9. Create CrawlJob (mode=DEEP, status=PENDING)
+      const crawlJob = await prisma.crawlJob.create({
+        data: {
+          workspaceId,
+          userId: authorId,
+          sourceUrl: url,
+          goalPrompt: goal,
+          mode: 'DEEP',
+          status: 'PENDING',
+          totalPages: selectedLinks.length + 1,
+          discoveredUrls: [url, ...selectedLinks.map((l) => l.url)],
+        },
+      })
+
+      // 10. Return page list for approval
+      return NextResponse.json({
+        crawlJobId: crawlJob.id,
+        mode: 'discovery',
+        pages: selectedLinks,
+        totalPages: selectedLinks.length + 1,
+        requiresVerification,
+      })
     }
-
-    // 13. Create Article with status DRAFT
-    const articleSlug = await uniqueArticleSlug(articleDraft.title, workspaceId)
-    const article = await prisma.article.create({
-      data: {
-        workspaceId,
-        collectionId,
-        authorId,
-        title: articleDraft.title,
-        slug: articleSlug,
-        content: articleDraft.content,
-        excerpt: articleDraft.excerpt,
-        status: 'DRAFT',
-        aiGenerated: true,
-        aiPrompt: prompt.userMessage,
-      },
-    })
-
-    // 14. Update CrawlPage with articleId, purge rawContent
-    await prisma.crawlPage.update({
-      where: { id: crawlPage.id },
-      data: { articleId: article.id, rawContent: null },
-    })
-
-    // 15. Update CrawlJob as completed
-    await prisma.crawlJob.update({
-      where: { id: crawlJob.id },
-      data: {
-        status: 'COMPLETED',
-        processedPages: 1,
-        articlesCreated: 1,
-        completedAt: new Date(),
-      },
-    })
-
-    // 16. Return result
-    return NextResponse.json({
-      crawlJobId: crawlJob.id,
-      skipped: false,
-      article: {
-        id: article.id,
-        title: article.title,
-        slug: article.slug,
-        collectionId: article.collectionId,
-        excerpt: articleDraft.excerpt,
-        confidence: articleDraft.confidence,
-      },
-      contentType: analysis.contentType,
-      sensitiveDataWarnings: analysis.sensitiveDataWarnings,
-    })
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    await prisma.crawlJob.update({
-      where: { id: crawlJob.id },
-      data: { status: 'FAILED', error: message, completedAt: new Date() },
-    }).catch(() => {
-      // Ignore update failure — the original error is more important
-    })
     return NextResponse.json(
-      { error: `Crawl failed: ${message}`, crawlJobId: crawlJob.id },
+      { error: `Crawl failed: ${message}` },
       { status: 500 },
     )
   }
