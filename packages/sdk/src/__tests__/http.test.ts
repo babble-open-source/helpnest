@@ -350,7 +350,7 @@ describe('HttpClient — response handling', () => {
   it('HelpNestError carries the HTTP statusCode', async () => {
     mockFetch.mockReturnValueOnce(mockResponse({ error: 'Gone' }, 410))
 
-    const err: HelpNestError = await client.get('/old-endpoint').catch((e) => e)
+    const err = await client.get('/old-endpoint').catch((e) => e) as HelpNestError
     expect(err.statusCode).toBe(410)
   })
 
@@ -359,7 +359,7 @@ describe('HttpClient — response handling', () => {
       mockResponse({ error: 'Article limit exceeded for your plan' }, 422),
     )
 
-    const err: HelpNestError = await client.get('/articles').catch((e) => e)
+    const err = await client.get('/articles').catch((e) => e) as HelpNestError
     expect(err.message).toContain('Article limit exceeded for your plan')
   })
 
@@ -367,7 +367,7 @@ describe('HttpClient — response handling', () => {
     // Simulates a gateway-level HTML error page that is not valid JSON.
     mockFetch.mockReturnValueOnce(mockErrorResponseNonJson(502, 'Bad Gateway'))
 
-    const err: HelpNestError = await client.get('/articles').catch((e) => e)
+    const err = await client.get('/articles').catch((e) => e) as HelpNestError
     expect(err).toBeInstanceOf(HelpNestError)
     expect(err.statusCode).toBe(502)
     // Falls back to the default message which includes statusText
@@ -381,7 +381,7 @@ describe('HttpClient — response handling', () => {
       mockResponse({ message: 'Something went wrong' }, 503),
     )
 
-    const err: HelpNestError = await client.get('/articles').catch((e) => e)
+    const err = await client.get('/articles').catch((e) => e) as HelpNestError
     // Without an "error" field the client falls back to the status line.
     expect(err.statusCode).toBe(503)
     expect(err.message).toContain('503')
