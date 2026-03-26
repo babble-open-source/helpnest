@@ -156,6 +156,7 @@ export function ArticleMetaSidebar({
 
   function navigateTo(idx: number) {
     const item = navPath[idx]
+    if (!item) return
     setNavPath(navPath.slice(0, idx + 1))
     setViewingId(item.id)
     setHighlightedId(item.id)
@@ -424,7 +425,7 @@ export function ArticleMetaSidebar({
                       <div>
                         <p className="font-medium text-ink">New collection</p>
                         <p className="text-xs text-muted mt-0.5">
-                          in {navPath[navPath.length - 1].emoji ? `${navPath[navPath.length - 1].emoji} ` : ''}{navPath[navPath.length - 1].title}
+                          in {navPath.at(-1)?.emoji ? `${navPath.at(-1)?.emoji} ` : ''}{navPath.at(-1)?.title}
                         </p>
                       </div>
                       <button onClick={() => { setShowCreate(false); setCreateError('') }} className="text-muted hover:text-ink transition-colors text-lg leading-none">&#x2715;</button>
