@@ -297,7 +297,7 @@ export default auth(async (req) => {
         const restPath = pathWithoutLocale.replace(`/${slug}/help`, '') || ''
         return NextResponse.redirect(
           `https://${slug}.${HELP_CENTER_DOMAIN}${restPath}${req.nextUrl.search}`,
-          302,
+          308,
         )
       }
     }
