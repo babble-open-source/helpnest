@@ -5,8 +5,10 @@ import { prisma } from '@/lib/db'
 import { getTranslations } from 'next-intl/server'
 import { slugify } from '@/lib/slugify'
 
-export default async function NewArticlePage() {
-  const [session, t] = await Promise.all([auth(), getTranslations('editor')])
+export default async function NewArticlePage(props: {
+  searchParams: Promise<{ collection?: string }>
+}) {
+  const [session, searchParams, t] = await Promise.all([auth(), props.searchParams, getTranslations('editor')])
   if (!session?.user) redirect('/login')
 
   const userId = await resolveSessionUserId(session)
@@ -15,11 +17,22 @@ export default async function NewArticlePage() {
   const workspaceId = await resolveWorkspaceId(userId)
   if (!workspaceId) redirect('/dashboard')
 
-  const collection = await prisma.collection.findFirst({
-    where: { workspaceId, isArchived: false },
-    orderBy: { order: 'asc' },
-    select: { id: true },
-  })
+  // Use the ?collection= param if provided and valid, otherwise fall back to the first collection.
+  let collection = searchParams.collection
+    ? await prisma.collection.findFirst({
+        where: { id: searchParams.collection, workspaceId, isArchived: false },
+        select: { id: true },
+      })
+    : null
+
+  if (!collection) {
+    collection = await prisma.collection.findFirst({
+      where: { workspaceId, isArchived: false },
+      orderBy: { order: 'asc' },
+      select: { id: true },
+    })
+  }
+
   if (!collection) redirect('/dashboard/collections')
 
   const title = t('untitled')
@@ -43,5 +56,6 @@ export default async function NewArticlePage() {
     },
   })
 
-  redirect(`/dashboard/articles/${article.id}/edit`)
+  const pickCollection = !searchParams.collection
+  redirect(`/dashboard/articles/${article.id}/edit${pickCollection ? '?pickCollection=true' : ''}`)
 }

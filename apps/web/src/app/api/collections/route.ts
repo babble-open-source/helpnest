@@ -24,6 +24,14 @@ export async function GET(request: Request) {
   return NextResponse.json({ data: collections, total: collections.length })
 }
 
+/** Walk up the parent chain and return the depth of the given collection (1 = root). */
+async function getCollectionDepth(id: string, depth = 1): Promise<number> {
+  if (depth > 10) return depth
+  const col = await prisma.collection.findUnique({ where: { id }, select: { parentId: true } })
+  if (!col?.parentId) return depth
+  return getCollectionDepth(col.parentId, depth + 1)
+}
+
 export async function POST(request: Request) {
   const authResult = await requireAuth(request)
   if (!authResult) {
@@ -47,25 +55,40 @@ export async function POST(request: Request) {
     }
   }
 
-  const body = await request.json() as { title?: string; description?: string; emoji?: string; visibility?: string }
-  const { title, description, emoji } = body
+  const body = await request.json() as { title?: string; description?: string; emoji?: string; visibility?: string; parentId?: string }
+  const { title, description, emoji, parentId } = body
   const visibility = body.visibility === 'INTERNAL' ? 'INTERNAL' as const : 'PUBLIC' as const
 
   if (!title?.trim()) {
     return NextResponse.json({ error: 'Title is required' }, { status: 400 })
   }
 
+  // Validate parent and depth when creating a sub-collection.
+  if (parentId) {
+    const parent = await prisma.collection.findFirst({
+      where: { id: parentId, workspaceId },
+      select: { id: true },
+    })
+    if (!parent) {
+      return NextResponse.json({ error: 'Parent collection not found' }, { status: 404 })
+    }
+    const parentDepth = await getCollectionDepth(parentId)
+    if (parentDepth >= 3) {
+      return NextResponse.json({ error: 'Maximum nesting depth of 3 levels reached.' }, { status: 422 })
+    }
+  }
+
   const baseSlug = title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
-  // Order: append after existing top-level collections
+  // Order: append after existing siblings at the same level.
   const count = await prisma.collection.count({
-    where: { workspaceId, parentId: null },
+    where: { workspaceId, parentId: parentId ?? null },
   })
 
   // Retry on unique slug conflict to handle concurrent creates (TOCTOU-safe)
+  const MAX_SLUG_ATTEMPTS = 5
   let slug = baseSlug
-  let i = 1
-  for (;;) {
+  for (let attempt = 0; attempt < MAX_SLUG_ATTEMPTS; attempt++) {
     try {
       const collection = await prisma.collection.create({
         data: {
@@ -76,15 +99,21 @@ export async function POST(request: Request) {
           emoji: emoji || '📁',
           visibility,
           order: count,
+          ...(parentId ? { parentId } : {}),
         },
       })
       return NextResponse.json(collection, { status: 201 })
     } catch (e: unknown) {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
-        slug = `${baseSlug}-${i++}`
+        slug = `${baseSlug}-${attempt + 1}`
       } else {
         throw e
       }
     }
   }
+
+  return NextResponse.json(
+    { error: 'Unable to generate a unique slug after multiple attempts' },
+    { status: 500 },
+  )
 }

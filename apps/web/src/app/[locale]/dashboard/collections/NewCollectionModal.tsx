@@ -6,7 +6,12 @@ import { useTranslations } from 'next-intl'
 
 const EMOJI_OPTIONS = ['📁', '📄', '🚀', '⚡', '🛠️', '💡', '🎯', '📚', '🔧', '✨', '🌟', '🔑']
 
-export function NewCollectionModal() {
+interface Props {
+  parentId?: string
+  parentTitle?: string
+}
+
+export function NewCollectionModal({ parentId, parentTitle }: Props = {}) {
   const router = useRouter()
   const t = useTranslations('collectionsActions')
   const tc = useTranslations('common')
@@ -17,6 +22,8 @@ export function NewCollectionModal() {
   const [visibility, setVisibility] = useState<'PUBLIC' | 'INTERNAL'>('PUBLIC')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+
+  const isSubCollection = !!parentId
 
   function reset() {
     setTitle('')
@@ -40,7 +47,13 @@ export function NewCollectionModal() {
       const res = await fetch('/api/collections', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title: title.trim(), description: description.trim(), emoji, visibility }),
+        body: JSON.stringify({
+          title: title.trim(),
+          description: description.trim(),
+          emoji,
+          visibility,
+          ...(parentId ? { parentId } : {}),
+        }),
       })
       if (!res.ok) {
         const data = await res.json() as { error?: string }
@@ -58,12 +71,21 @@ export function NewCollectionModal() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(true)}
-        className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium"
-      >
-        {t('newCollection')}
-      </button>
+      {isSubCollection ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="bg-ink text-cream px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium"
+        >
+          {t('newSubCollection')}
+        </button>
+      ) : (
+        <button
+          onClick={() => setOpen(true)}
+          className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium"
+        >
+          {t('newCollection')}
+        </button>
+      )}
 
       {open && (
         <div
@@ -75,7 +97,14 @@ export function NewCollectionModal() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="font-medium text-ink">{t('createCollection')}</h2>
+              <div>
+                <h2 className="font-medium text-ink">
+                  {isSubCollection ? t('createSubCollection') : t('createCollection')}
+                </h2>
+                {isSubCollection && parentTitle && (
+                  <p className="text-xs text-muted mt-0.5">{t('inCollection', { title: parentTitle })}</p>
+                )}
+              </div>
               <button onClick={close} className="text-muted hover:text-ink transition-colors">
                 &#x2715;
               </button>
@@ -187,7 +216,7 @@ export function NewCollectionModal() {
                   disabled={saving || !title.trim()}
                   className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium disabled:opacity-50"
                 >
-                  {saving ? t('creating') : t('createCollection')}
+                  {saving ? t('creating') : isSubCollection ? t('createSubCollection') : t('createCollection')}
                 </button>
               </div>
             </form>

@@ -140,9 +140,16 @@ export async function DELETE(
 
   const col = await prisma.collection.findFirst({
     where: { id: params.id, workspaceId },
-    select: { id: true, _count: { select: { articles: true } } },
+    select: { id: true, _count: { select: { articles: true, subCollections: true } } },
   })
   if (!col) return NextResponse.json({ error: 'Not found' }, { status: 404 })
+
+  if (col._count.subCollections > 0) {
+    return NextResponse.json(
+      { error: `Cannot delete — this collection has ${col._count.subCollections} sub-collection${col._count.subCollections !== 1 ? 's' : ''}. Delete them first.` },
+      { status: 409 }
+    )
+  }
 
   if (col._count.articles > 0) {
     return NextResponse.json(

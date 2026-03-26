@@ -36,7 +36,18 @@ const getWorkspace = cache(async (slug: string) => {
 const getArticle = cache((workspaceId: string, slug: string) =>
   prisma.article.findUnique({
     where: { workspaceId_slug: { workspaceId, slug } },
-    include: { author: true, collection: true },
+    include: {
+      author: true,
+      collection: {
+        include: {
+          parent: {
+            include: {
+              parent: true,
+            },
+          },
+        },
+      },
+    },
   })
 )
 
@@ -181,19 +192,35 @@ export default async function ArticlePage(props: Props) {
     <div className="min-h-screen bg-cream">
       <div className="max-w-4xl mx-auto px-4 py-6 sm:py-12">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted mb-6">
-          <Link href={`/${params.workspace}/help`} className="hover:text-ink transition-colors">
+        <nav className="flex items-center gap-2 text-sm text-muted mb-6 flex-wrap">
+          <Link href={`/${params.workspace}/help`} className="hover:text-ink transition-colors shrink-0">
             {t('helpCenter')}
           </Link>
-          <span className="text-border">/</span>
+          {article.collection.parent?.parent && (
+            <>
+              <span className="text-border shrink-0">/</span>
+              <Link href={`/${params.workspace}/help/${article.collection.parent.parent.slug}`} className="hover:text-ink transition-colors truncate max-w-[120px] sm:max-w-[200px]">
+                {article.collection.parent.parent.title}
+              </Link>
+            </>
+          )}
+          {article.collection.parent && (
+            <>
+              <span className="text-border shrink-0">/</span>
+              <Link href={`/${params.workspace}/help/${article.collection.parent.slug}`} className="hover:text-ink transition-colors truncate max-w-[120px] sm:max-w-[200px]">
+                {article.collection.parent.title}
+              </Link>
+            </>
+          )}
+          <span className="text-border shrink-0">/</span>
           <Link
             href={`/${params.workspace}/help/${params.collection}`}
-            className="hover:text-ink transition-colors"
+            className="hover:text-ink transition-colors truncate max-w-[120px] sm:max-w-[200px]"
           >
             {article.collection.title}
           </Link>
-          <span className="text-border">/</span>
-          <span className="text-ink font-medium truncate">{article.title}</span>
+          <span className="text-border shrink-0">/</span>
+          <span className="text-ink font-medium truncate max-w-[160px] sm:max-w-[240px]">{article.title}</span>
         </nav>
 
         <div className="flex gap-8 lg:gap-12">
@@ -202,19 +229,12 @@ export default async function ArticlePage(props: Props) {
             {/* Article header */}
             <header className="mb-8">
               <div className="flex items-center gap-2 text-xs text-muted mb-3">
-                <Link
-                  href={`/${params.workspace}/help/${params.collection}`}
-                  className="bg-cream border border-border rounded-full px-2 py-0.5 hover:border-accent transition-colors"
-                >
-                  {article.collection.title}
-                </Link>
                 {isInternal && (
                   <span className="inline-flex items-center gap-1 bg-cream border border-border rounded-full px-2 py-0.5">
                     <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                     {t('internal')}
                   </span>
                 )}
-                <span>·</span>
                 <span>{t('minRead', { minutes })}</span>
               </div>
               <h1 className="font-serif text-3xl sm:text-4xl text-ink mb-4 leading-tight">{article.title}</h1>

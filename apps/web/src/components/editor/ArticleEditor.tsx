@@ -44,6 +44,7 @@ interface Article {
 interface Collection {
   id: string
   title: string
+  slug: string
   emoji: string | null
   isArchived?: boolean
 }
@@ -52,6 +53,7 @@ interface Props {
   article: Article
   collections: Collection[]
   workspaceSlug: string
+  autoOpenCollectionPicker?: boolean
 }
 
 interface ArticleVersion {
@@ -65,7 +67,7 @@ interface ArticleVersion {
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 
-export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
+export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCollectionPicker }: Props) {
   const t = useTranslations('editor')
   const tCommon = useTranslations('common')
   const format = useFormatter()
@@ -469,13 +471,15 @@ export function ArticleEditor({ article, collections, workspaceSlug }: Props) {
         excerpt={excerpt}
         onExcerptChange={setExcerpt}
         collectionId={collectionId}
+        collectionSlug={collectionSlug}
         onCollectionChange={(id) => {
           setCollectionId(id)
           const col = collections.find((c) => c.id === id)
-          if (col) setCollectionSlug(col.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''))
+          if (col) setCollectionSlug(col.slug)
         }}
         status={status}
         collections={collections}
+        autoOpenPicker={autoOpenCollectionPicker}
       />}
 
       {/* Version history modal */}

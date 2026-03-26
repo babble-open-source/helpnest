@@ -33,6 +33,7 @@ const getCollection = cache((workspaceId: string, slug: string, allowedVisibilit
   prisma.collection.findUnique({
     where: { workspaceId_slug: { workspaceId, slug } },
     include: {
+      parent: { select: { id: true, title: true, slug: true, parent: { select: { id: true, title: true, slug: true } } } },
       articles: {
         where: { status: 'PUBLISHED' },
         orderBy: { order: 'asc' },
@@ -127,28 +128,44 @@ export default async function CollectionPage(props: Props) {
     <div className="min-h-screen bg-cream">
       <main className="max-w-4xl mx-auto px-4 py-6 sm:py-12">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted mb-6">
-          <Link href={`/${params.workspace}/help`} className="hover:text-ink transition-colors">
+        <nav className="flex items-center gap-2 text-sm text-muted mb-6 flex-wrap">
+          <Link href={`/${params.workspace}/help`} className="hover:text-ink transition-colors shrink-0">
             {t('helpCenter')}
           </Link>
-          <span className="text-border">/</span>
-          <span className="text-ink font-medium truncate">{collection.title}</span>
+          {collection.parent?.parent && (
+            <>
+              <span className="text-border shrink-0">/</span>
+              <Link href={`/${params.workspace}/help/${collection.parent.parent.slug}`} className="hover:text-ink transition-colors truncate max-w-[120px] sm:max-w-[200px]">
+                {collection.parent.parent.title}
+              </Link>
+            </>
+          )}
+          {collection.parent && (
+            <>
+              <span className="text-border shrink-0">/</span>
+              <Link href={`/${params.workspace}/help/${collection.parent.slug}`} className="hover:text-ink transition-colors truncate max-w-[120px] sm:max-w-[200px]">
+                {collection.parent.title}
+              </Link>
+            </>
+          )}
+          <span className="text-border shrink-0">/</span>
+          <span className="text-ink font-medium truncate max-w-[160px] sm:max-w-[240px]">{collection.title}</span>
         </nav>
 
         {/* Collection header */}
         <div className="mb-10">
-          <div className="text-4xl mb-4">{collection.emoji ?? '📄'}</div>
           <div className="flex items-center gap-3 mb-3">
+            <span className="text-4xl shrink-0">{collection.emoji ?? '📄'}</span>
             <h1 className="font-serif text-3xl sm:text-4xl text-ink leading-snug">{collection.title}</h1>
             {showInternalBadge && (
-              <span className="inline-flex items-center gap-1 text-xs text-muted bg-cream border border-border rounded-full px-2.5 py-1">
+              <span className="inline-flex items-center gap-1 text-xs text-muted bg-cream border border-border rounded-full px-2.5 py-1 shrink-0">
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                 {t('internal')}
               </span>
             )}
           </div>
           {collection.description && (
-            <p className="text-muted text-lg">{collection.description}</p>
+            <p className="text-muted text-lg mt-1">{collection.description}</p>
           )}
         </div>
 
@@ -161,13 +178,16 @@ export default async function CollectionPage(props: Props) {
                 <Link
                   key={sub.id}
                   href={`/${params.workspace}/help/${sub.slug}`}
-                  className="flex items-center gap-3 bg-white border border-border rounded-lg p-3 hover:border-accent transition-colors group"
+                  className="flex items-center gap-4 bg-white border border-border rounded-xl p-4 hover:border-accent/60 hover:shadow-sm transition-all group"
                 >
-                  <span className="text-xl">{sub.emoji ?? '📂'}</span>
-                  <div>
-                    <p className="font-medium text-ink group-hover:text-accent transition-colors">{sub.title}</p>
-                    <p className="text-xs text-muted">{tc('articles', { count: sub._count.articles })}</p>
+                  <span className="text-2xl shrink-0">{sub.emoji ?? '📂'}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-ink group-hover:text-accent transition-colors truncate">{sub.title}</p>
+                    <p className="text-xs text-muted mt-0.5">{tc('articles', { count: sub._count.articles })}</p>
                   </div>
+                  <svg className="w-4 h-4 text-muted group-hover:text-accent transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
                 </Link>
               ))}
             </div>
