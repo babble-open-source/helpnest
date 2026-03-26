@@ -38,6 +38,7 @@ Authentication headers (`Authorization: Bearer <apiKey>` and `X-HelpNest-Workspa
 | `createVersion(articleId, params)` | Snapshot the current article as a new version. |
 | `export(params?)` | Bulk export published articles grouped by collection. Supports `format: 'markdown'` and pagination. |
 | `changes(since, params?)` | Fetch articles changed since an ISO 8601 timestamp. Returns a cursor for incremental polling. |
+| `batch(params)` | Bulk operate on articles by IDs. Actions: `delete`, `publish`, `archive`, `draft`. |
 
 ### `client.collections`
 
@@ -58,6 +59,7 @@ Authentication headers (`Authorization: Bearer <apiKey>` and `X-HelpNest-Workspa
 | `create(params)` | Start a new conversation. `workspaceSlug` is required. |
 | `updateStatus(id, status, resolutionSummary?)` | Transition conversation status. |
 | `assign(id, memberId \| null)` | Assign to or unassign from a team member. |
+| `count()` | Get a count of escalated conversations. |
 
 ### `client.messages`
 
@@ -65,6 +67,17 @@ Authentication headers (`Authorization: Bearer <apiKey>` and `X-HelpNest-Workspa
 |---|---|
 | `list(conversationId, since?)` | Fetch messages, optionally filtered to those after a timestamp. |
 | `send(conversationId, params)` | Send a message to a conversation. |
+
+### `client.knowledgeGaps`
+
+| Method | Description |
+|---|---|
+| `list(params?)` | List knowledge gaps (unanswered queries). Filter by `resolved` status with pagination. |
+| `resolve(params)` | Mark a knowledge gap as resolved, optionally linking it to an article. |
+
+### `client.health()`
+
+Returns the API and service health status including database and vector search checks.
 
 ## Key Types
 
@@ -76,7 +89,6 @@ type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
 type ConversationStatus =
   | 'ACTIVE'
   | 'ESCALATED'
-  | 'HUMAN_ACTIVE'
   | 'RESOLVED_AI'
   | 'RESOLVED_HUMAN'
   | 'CLOSED'
