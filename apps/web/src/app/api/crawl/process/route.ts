@@ -12,6 +12,7 @@ import {
   parseArticleResponse,
 } from '@helpnest/crawler'
 import { checkArticleSimilarity } from '@/lib/crawl-similarity'
+import { checkAiCredits, incrementAiCredits } from '@/lib/ai-credits'
 
 const MAX_CONCURRENT_WORKERS = 3
 const DELAY_BETWEEN_PAGES_MS = 2000
@@ -162,6 +163,17 @@ async function processDeepCrawlJob(
         ? extracted.markdown.slice(0, MAX_AI_CONTENT_LENGTH)
         : extracted.markdown
 
+      // Check AI credits before generation
+      const credits = await checkAiCredits(workspaceId)
+      if (!credits.allowed) {
+        await prisma.crawlPage.update({
+          where: { id: page.id },
+          data: { status: 'SKIPPED', skipReason: 'AI credits exhausted' },
+        })
+        await updateJobProgress(crawlJobId, articlesCreated)
+        continue
+      }
+
       // Generate article with goal + series context
       const prompt = buildGoalPrompt({
         markdown: truncated,
@@ -266,6 +278,8 @@ async function processDeepCrawlJob(
           ...(similarity.isSuspicious ? { similarArticleId: similarity.similarArticleId } : {}),
         },
       })
+
+      await incrementAiCredits(workspaceId)
 
       generatedTitles.push(draft.title)
       articlesCreated++

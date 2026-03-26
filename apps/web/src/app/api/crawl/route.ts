@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { uniqueCollectionSlug, uniqueArticleSlug } from '@/lib/unique-slug'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
 import { checkArticleSimilarity } from '@/lib/crawl-similarity'
+import { checkAiCredits, incrementAiCredits } from '@/lib/ai-credits'
 import {
   validateUrl,
   fetchPage,
@@ -76,6 +77,15 @@ export async function POST(request: Request) {
       { error: 'Rate limit exceeded. Max 20 crawls per hour per workspace.' },
       { status: 429 },
     )
+  }
+
+  // Check AI credits
+  const credits = await checkAiCredits(workspaceId)
+  if (!credits.allowed) {
+    return NextResponse.json({
+      error: 'AI credits exhausted. Configure your own AI key in workspace settings or upgrade your plan.',
+      credits: { used: credits.used, limit: credits.limit, remaining: 0 },
+    }, { status: 402 })
   }
 
   // 3. Get workspace AI settings
@@ -356,6 +366,8 @@ export async function POST(request: Request) {
             },
           })
 
+          await incrementAiCredits(workspaceId)
+
           previousTitles.push(articleDraft.title)
           articles.push({
             id: article.id,
@@ -390,6 +402,8 @@ export async function POST(request: Request) {
       })
 
       // 11. Return results immediately
+      // Re-check credits after generation for the response
+      const updatedCredits = await checkAiCredits(workspaceId)
       return NextResponse.json({
         crawlJobId: crawlJob.id,
         mode: 'focused',
@@ -397,6 +411,7 @@ export async function POST(request: Request) {
         totalPages: pagesToProcess.length,
         processedPages,
         articlesCreated: articles.length,
+        credits: { used: updatedCredits.used, limit: updatedCredits.limit, remaining: updatedCredits.remaining },
       })
     } else {
       // ── DISCOVERY MODE (>5 pages) ────────────────────────────────────
