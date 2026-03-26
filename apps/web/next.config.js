@@ -39,7 +39,18 @@ const nextConfig = {
     '@notionhq/client',
     'notion-to-md',
     'jose',
+    'playwright-core',
+    '@helpnest/crawler',
   ],
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Playwright-core must be fully external — serverExternalPackages alone
+      // doesn't prevent webpack from resolving its transitive deps (chromium-bidi).
+      config.externals = config.externals || []
+      config.externals.push('playwright-core')
+    }
+    return config
+  },
   async rewrites() {
     return [
       { source: '/widget.js', destination: '/api/widget.js' },

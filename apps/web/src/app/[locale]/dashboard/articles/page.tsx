@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { GenerateTopicButton } from './GenerateTopicButton'
+import { ImportFromWebsiteButton } from './ImportFromWebsiteButton'
 import { ArticlesTable } from './ArticlesTable'
 import { SearchInput } from '@/components/ui/SearchInput'
 
@@ -71,6 +72,7 @@ export default async function ArticlesPage(props: {
         </div>
         <div className="flex flex-wrap items-center gap-2 shrink-0">
           <GenerateTopicButton />
+          <ImportFromWebsiteButton />
           <Link
             href="/dashboard/articles/new"
             className="bg-ink text-cream px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium shrink-0"

@@ -20,6 +20,11 @@ export default async function WorkspacesPage() {
   const currentWorkspaceId = cookieStore.get('helpnest-workspace')?.value ?? null
   const cloudMode = isCloudMode()
 
+  const helpCenterDomain = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+  const slugPrefix = helpCenterDomain ? '' : `${appUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}/`
+  const slugSuffix = helpCenterDomain ? `.${helpCenterDomain}` : ''
+
   return (
     <div className="min-h-screen bg-cream">
       <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
@@ -39,6 +44,8 @@ export default async function WorkspacesPage() {
           }))}
           currentWorkspaceId={currentWorkspaceId}
           cloudMode={cloudMode}
+          slugPrefix={slugPrefix}
+          slugSuffix={slugSuffix}
         />
       </div>
     </div>
