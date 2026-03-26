@@ -49,6 +49,7 @@ ENV NODE_ENV=production
 ENV DATABASE_URL=postgresql://build:build@localhost:5432/build_placeholder
 
 RUN pnpm --filter @helpnest/widget build
+RUN pnpm --filter @helpnest/crawler build
 RUN cd apps/web && pnpm build
 
 # Stage the Prisma CLI dependency tree needed by the runner's init container
