@@ -78,6 +78,12 @@ export function CrawlStep({
         return
       }
 
+      if (data.mode === 'discovery') {
+        setCrawlError('This needs more pages than a quick import. Try the full Import tool from the dashboard after setup.')
+        setState('error')
+        return
+      }
+
       if (data.skipped) {
         setCrawlError(data.skipReason ?? t('pageSkippedDefault'))
         setState('error')

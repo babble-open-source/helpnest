@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { requireAuth } from '@/lib/auth-api'
 import { prisma } from '@/lib/db'
 import { randomBytes } from 'crypto'
+import { validateUrl } from '@helpnest/crawler'
 
 export async function POST(request: Request) {
   const auth = await requireAuth(request)
@@ -61,7 +62,13 @@ export async function POST(request: Request) {
     if (record.verifiedAt) return NextResponse.json({ verified: true, domain })
 
     try {
-      const res = await fetch(`https://${domain}`, {
+      const domainUrl = `https://${domain}`
+      const domainCheck = validateUrl(domainUrl)
+      if (!domainCheck.valid) {
+        return NextResponse.json({ verified: false, error: 'Invalid domain' }, { status: 400 })
+      }
+
+      const res = await fetch(domainUrl, {
         signal: AbortSignal.timeout(10000),
         headers: { 'User-Agent': 'HelpNestBot/1.0 (+https://helpnest.cloud/bot)' },
       })

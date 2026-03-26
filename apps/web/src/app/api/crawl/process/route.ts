@@ -4,6 +4,7 @@ import { redis } from '@/lib/redis'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
 import { uniqueCollectionSlug, uniqueArticleSlug } from '@/lib/unique-slug'
 import {
+  validateUrl,
   fetchPage,
   extractContent,
   analyzeContent,
@@ -12,7 +13,7 @@ import {
   parseArticleResponse,
 } from '@helpnest/crawler'
 import { checkArticleSimilarity } from '@/lib/crawl-similarity'
-import { checkAiCredits, incrementAiCredits } from '@/lib/ai-credits'
+import { tryConsumeAiCredit } from '@/lib/ai-credits'
 
 const MAX_CONCURRENT_WORKERS = 3
 const DELAY_BETWEEN_PAGES_MS = 2000
@@ -115,6 +116,17 @@ async function processDeepCrawlJob(
     if (redis) await redis.expire(lockKey, 600)
 
     try {
+      // SSRF validation before fetching
+      const urlCheck = validateUrl(page.url)
+      if (!urlCheck.valid) {
+        await prisma.crawlPage.update({
+          where: { id: page.id },
+          data: { status: 'SKIPPED', skipReason: `URL validation failed: ${urlCheck.error ?? 'Invalid URL'}` },
+        })
+        await updateJobProgress(crawlJobId, articlesCreated)
+        continue
+      }
+
       // Fetch page
       const fetchResult = await fetchPage(page.url)
       if (fetchResult.error || !fetchResult.html) {
@@ -163,9 +175,9 @@ async function processDeepCrawlJob(
         ? extracted.markdown.slice(0, MAX_AI_CONTENT_LENGTH)
         : extracted.markdown
 
-      // Check AI credits before generation
-      const credits = await checkAiCredits(workspaceId)
-      if (!credits.allowed) {
+      // Atomically consume one AI credit before generation
+      const creditConsumed = await tryConsumeAiCredit(workspaceId)
+      if (!creditConsumed) {
         await prisma.crawlPage.update({
           where: { id: page.id },
           data: { status: 'SKIPPED', skipReason: 'AI credits exhausted' },
@@ -278,8 +290,6 @@ async function processDeepCrawlJob(
           ...(similarity.isSuspicious ? { similarArticleId: similarity.similarArticleId } : {}),
         },
       })
-
-      await incrementAiCredits(workspaceId)
 
       generatedTitles.push(draft.title)
       articlesCreated++

@@ -59,3 +59,21 @@ export async function incrementAiCredits(workspaceId: string, count: number = 1)
     data: { aiCreditsUsed: { increment: count } },
   })
 }
+
+/**
+ * Atomically check and consume one AI credit for a workspace.
+ * Returns true if a credit was consumed, false if credits are exhausted.
+ *
+ * Uses a single UPDATE with a WHERE condition to prevent TOCTOU races:
+ * - If workspace has its own AI key (aiApiKey IS NOT NULL), always succeeds
+ * - Otherwise only increments if aiCreditsUsed < aiCreditsLimit
+ */
+export async function tryConsumeAiCredit(workspaceId: string): Promise<boolean> {
+  const result = await prisma.$executeRaw`
+    UPDATE "Workspace"
+    SET "aiCreditsUsed" = "aiCreditsUsed" + 1
+    WHERE id = ${workspaceId}
+    AND ("aiApiKey" IS NOT NULL OR "aiCreditsUsed" < "aiCreditsLimit")
+  `
+  return result > 0
+}

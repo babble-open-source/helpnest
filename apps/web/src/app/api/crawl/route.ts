@@ -4,7 +4,7 @@ import { prisma } from '@/lib/db'
 import { uniqueCollectionSlug, uniqueArticleSlug } from '@/lib/unique-slug'
 import { resolveProvider } from '@/lib/ai/resolve-provider'
 import { checkArticleSimilarity } from '@/lib/crawl-similarity'
-import { checkAiCredits, incrementAiCredits } from '@/lib/ai-credits'
+import { checkAiCredits, tryConsumeAiCredit } from '@/lib/ai-credits'
 import {
   validateUrl,
   fetchPage,
@@ -16,6 +16,8 @@ import {
   detectLoginWall,
   buildGoalPrompt,
   parseArticleResponse,
+  fetchRobotsTxt,
+  parseRobotsTxt,
 } from '@helpnest/crawler'
 
 export async function POST(request: Request) {
@@ -128,7 +130,12 @@ export async function POST(request: Request) {
 
     // 5. Discover same-domain links on the page
     const domain = new URL(url).hostname
-    const discoveredLinks = discoverLinks(startingHtml, url)
+    let discoveredLinks = discoverLinks(startingHtml, url)
+
+    // 5a. Fetch robots.txt and filter discovered links accordingly
+    const robotsTxt = await fetchRobotsTxt(url)
+    const robots = parseRobotsTxt(robotsTxt)
+    discoveredLinks = discoveredLinks.filter(l => robots.isAllowed(l.url))
 
     // 6. Build AI link filter prompt with the goal, send to AI provider
     const filterPrompt = buildLinkFilterPrompt(discoveredLinks, goal, domain)
@@ -197,6 +204,18 @@ export async function POST(request: Request) {
           // a. Fetch (skip starting page — already fetched)
           let html = page.html
           if (!html) {
+            const urlCheck = validateUrl(page.url)
+            if (!urlCheck.valid) {
+              await prisma.crawlPage.create({
+                data: {
+                  crawlJobId: crawlJob.id,
+                  url: page.url,
+                  status: 'SKIPPED',
+                  skipReason: `URL validation failed: ${urlCheck.error ?? 'Invalid URL'}`,
+                },
+              })
+              continue
+            }
             const result = await fetchPage(page.url)
             if (result.error || !result.html) {
               await prisma.crawlPage.create({
@@ -248,6 +267,20 @@ export async function POST(request: Request) {
           const truncatedMarkdown = extracted.markdown.length > MAX_AI_CONTENT_LENGTH
             ? extracted.markdown.slice(0, MAX_AI_CONTENT_LENGTH)
             : extracted.markdown
+
+          // e1. Atomically consume one AI credit before generation
+          const creditConsumed = await tryConsumeAiCredit(workspaceId)
+          if (!creditConsumed) {
+            await prisma.crawlPage.create({
+              data: {
+                crawlJobId: crawlJob.id,
+                url: page.url,
+                status: 'SKIPPED',
+                skipReason: 'AI credits exhausted',
+              },
+            })
+            continue
+          }
 
           // f. Build goal-aware prompt with series context
           const prompt = buildGoalPrompt({
@@ -365,8 +398,6 @@ export async function POST(request: Request) {
               similarArticleId: similarity.isSuspicious ? similarity.similarArticleId : null,
             },
           })
-
-          await incrementAiCredits(workspaceId)
 
           previousTitles.push(articleDraft.title)
           articles.push({
