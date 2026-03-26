@@ -138,7 +138,7 @@ export function DashboardSidebar({
           </button>
         </div>
 
-        {/* Workspace hub link — cloud mode only */}
+        {/* Workspace hub link */}
         {open && (
           <a
             href={`/${locale}/workspaces`}
