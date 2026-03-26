@@ -2,7 +2,7 @@
   "name": "helpnest",
   "version": "0.3.0",
   "description": "HelpNest CLI — auto-draft KB articles from PRs and GitHub history",
-  "homepage": "https://github.com/babble-open-source/helpnest",
+  "homepage": "https://helpnest.cloud/",
   "repository": {
     "type": "git",
     "url": "https://github.com/babble-open-source/helpnest.git",
@@ -12,6 +12,7 @@
     "url": "https://github.com/babble-open-source/helpnest/issues"
   },
   "license": "MIT",
+  "author": "Sharan Karthikeyan <karthikeyansharan00@gmail.com>",
   "type": "module",
   "bin": {
     "helpnest": "./dist/index.js"
@@ -24,6 +25,9 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm build"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "chalk": "^5.3.0",

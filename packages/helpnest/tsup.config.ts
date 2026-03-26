@@ -7,4 +7,5 @@ export default defineConfig({
   outDir: 'dist',
   clean: true,
   splitting: false,
+  minifySyntax: true,
 })

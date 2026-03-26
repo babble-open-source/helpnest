@@ -3,7 +3,9 @@
   "version": "0.2.0",
   "private": false,
   "description": "JavaScript/TypeScript SDK for HelpNest — the open-source AI-first customer support platform",
-  "homepage": "https://github.com/babble-open-source/helpnest",
+  "license": "MIT",
+  "author": "Sharan Karthikeyan <karthikeyansharan00@gmail.com>",
+  "homepage": "https://helpnest.cloud/",
   "repository": {
     "type": "git",
     "url": "https://github.com/babble-open-source/helpnest.git",
@@ -30,6 +32,12 @@
     }
   },
   "files": ["dist"],
+  "publishConfig": {
+    "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {},
   "devDependencies": {
     "tsup": "^8.0.0",

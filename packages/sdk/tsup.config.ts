@@ -8,5 +8,6 @@ export default defineConfig({
   splitting: false,
   sourcemap: true,
   minify: false,
+  minifySyntax: true,
   treeshake: true,
 })

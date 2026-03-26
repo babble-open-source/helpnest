@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": false,
   "description": "MCP server for HelpNest — expose your knowledge base to AI assistants",
-  "homepage": "https://github.com/babble-open-source/helpnest",
+  "homepage": "https://helpnest.cloud/",
   "repository": {
     "type": "git",
     "url": "https://github.com/babble-open-source/helpnest.git",
@@ -13,13 +13,15 @@
     "url": "https://github.com/babble-open-source/helpnest/issues"
   },
   "license": "MIT",
+  "author": "Sharan Karthikeyan <karthikeyansharan00@gmail.com>",
   "bin": {
     "helpnest-mcp": "./dist/index.js"
   },
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "prepublishOnly": "pnpm build"
   },
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -34,6 +36,9 @@
   "files": ["dist"],
   "publishConfig": {
     "access": "public"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

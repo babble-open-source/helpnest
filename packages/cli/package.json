@@ -1,9 +1,10 @@
 {
   "name": "@helpnest/cli",
   "version": "0.1.0",
-  "description": "Official CLI for HelpNest — workspace setup, content import/export, deployment, and AI article drafting",
+  "description": "Official CLI for HelpNest — workspace setup, content import/export, and deployment",
   "license": "MIT",
-  "homepage": "https://github.com/babble-open-source/helpnest",
+  "author": "Sharan Karthikeyan <karthikeyansharan00@gmail.com>",
+  "homepage": "https://helpnest.cloud/",
   "repository": {
     "type": "git",
     "url": "https://github.com/babble-open-source/helpnest.git",
@@ -35,6 +36,9 @@
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
     "prepublishOnly": "pnpm build"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "@helpnest/db": "workspace:*",
