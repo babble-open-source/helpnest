@@ -1,14 +1,11 @@
 'use client'
 
 import { useState } from 'react'
-import { CrawlModal } from './CrawlModal'
-
-interface Collection {
-  id: string
-  title: string
-}
+import { useTranslations } from 'next-intl'
+import { CrawlModal, type Collection } from './CrawlModal'
 
 export function ImportFromWebsiteButton() {
+  const t = useTranslations('crawl')
   const [open, setOpen] = useState(false)
   const [collections, setCollections] = useState<Collection[]>([])
   const [loading, setLoading] = useState(false)
@@ -19,10 +16,15 @@ export function ImportFromWebsiteButton() {
       const res = await fetch('/api/collections')
       if (res.ok) {
         const data = (await res.json()) as { data: Collection[] }
-        setCollections(data.data ?? [])
+        setCollections(
+          (data.data ?? []).map((c) => ({
+            id: c.id,
+            title: c.title,
+            parentId: c.parentId ?? null,
+          }))
+        )
       }
     } catch {
-      // Non-critical — the modal still works with an empty list
       setCollections([])
     } finally {
       setLoading(false)
@@ -38,16 +40,14 @@ export function ImportFromWebsiteButton() {
         disabled={loading}
         className="border border-border text-ink px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-cream transition-colors font-medium shrink-0 disabled:opacity-50"
       >
-        {loading ? 'Loading...' : 'Import from Website'}
+        {loading ? t('loading') : t('importFromWebsite')}
       </button>
 
       {open && (
         <CrawlModal
           collections={collections}
           onClose={() => setOpen(false)}
-          onSuccess={() => {
-            // router.refresh() is already called inside CrawlModal
-          }}
+          onSuccess={() => {}}
         />
       )}
     </>

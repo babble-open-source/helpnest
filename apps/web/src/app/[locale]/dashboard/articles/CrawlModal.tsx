@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { useRouter } from '@/i18n/navigation'
+import { useTranslations } from 'next-intl'
 
 interface CrawlResult {
   crawlJobId: string
@@ -19,12 +20,24 @@ interface CrawlResult {
   sensitiveDataWarnings?: string[]
 }
 
-interface Collection {
+export interface Collection {
   id: string
   title: string
+  parentId: string | null
 }
 
 type ModalState = 'idle' | 'crawling' | 'done' | 'error'
+
+// Build full path for a collection (e.g., "API Reference / Authentication / OAuth")
+function buildPath(collection: Collection, collectionsById: Map<string, Collection>): string {
+  const parts: string[] = []
+  let current: Collection | undefined = collection
+  while (current) {
+    parts.unshift(current.title)
+    current = current.parentId ? collectionsById.get(current.parentId) : undefined
+  }
+  return parts.join(' / ')
+}
 
 export function CrawlModal({
   collections,
@@ -36,6 +49,7 @@ export function CrawlModal({
   onSuccess: () => void
 }) {
   const router = useRouter()
+  const t = useTranslations('crawl')
   const [state, setState] = useState<ModalState>('idle')
   const [url, setUrl] = useState('')
   const [collectionId, setCollectionId] = useState('')
@@ -44,12 +58,10 @@ export function CrawlModal({
   const urlInputRef = useRef<HTMLInputElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
 
-  // Auto-focus URL input on open
   useEffect(() => {
     urlInputRef.current?.focus()
   }, [])
 
-  // Close on Escape
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
@@ -93,7 +105,7 @@ export function CrawlModal({
       onSuccess()
       router.refresh()
     } catch {
-      setErrorMessage('Failed to connect. Please check your connection and try again.')
+      setErrorMessage(t('connectionError'))
       setState('error')
     }
   }
@@ -114,29 +126,22 @@ export function CrawlModal({
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
-      aria-label="Import from Website"
+      aria-label={t('title')}
     >
       <div className="bg-cream border border-border rounded-xl shadow-xl w-full max-w-lg">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border">
-          <h2 className="font-serif text-xl text-ink">Import from Website</h2>
+          <h2 className="font-serif text-xl text-ink">{t('title')}</h2>
           <button
             onClick={onClose}
             className="text-muted hover:text-ink transition-colors p-1 rounded-md hover:bg-border/50"
-            aria-label="Close modal"
+            aria-label={t('cancel')}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path
-                d="M2 2l12 12M14 2L2 14"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-              />
+              <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
             </svg>
           </button>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5">
           {state === 'idle' && (
             <IdleState
@@ -150,13 +155,10 @@ export function CrawlModal({
               urlInputRef={urlInputRef}
             />
           )}
-
           {state === 'crawling' && <CrawlingState />}
-
           {state === 'done' && result && (
             <DoneState result={result} onImportAnother={handleReset} onClose={onClose} />
           )}
-
           {state === 'error' && (
             <ErrorState message={errorMessage} onRetry={handleReset} onClose={onClose} />
           )}
@@ -167,7 +169,168 @@ export function CrawlModal({
 }
 
 // ---------------------------------------------------------------------------
-// Idle state — URL input + collection picker + extension nudge
+// Searchable Collection Picker
+// ---------------------------------------------------------------------------
+
+function CollectionPicker({
+  collections,
+  selectedId,
+  onSelect,
+}: {
+  collections: Collection[]
+  selectedId: string
+  onSelect: (id: string) => void
+}) {
+  const t = useTranslations('crawl')
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  const collectionsById = useMemo(() => {
+    const map = new Map<string, Collection>()
+    for (const c of collections) map.set(c.id, c)
+    return map
+  }, [collections])
+
+  const collectionsWithPath = useMemo(() => {
+    return collections.map((c) => ({
+      ...c,
+      path: buildPath(c, collectionsById),
+    }))
+  }, [collections, collectionsById])
+
+  const filtered = useMemo(() => {
+    if (!query.trim()) return collectionsWithPath
+    const q = query.toLowerCase()
+    return collectionsWithPath.filter(
+      (c) => c.title.toLowerCase().includes(q) || c.path.toLowerCase().includes(q)
+    )
+  }, [query, collectionsWithPath])
+
+  const selectedCollection = selectedId ? collectionsById.get(selectedId) : null
+  const selectedPath = selectedCollection ? buildPath(selectedCollection, collectionsById) : null
+
+  // Close on click outside
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  function handleSelect(id: string) {
+    onSelect(id)
+    setQuery('')
+    setIsOpen(false)
+  }
+
+  function handleClear() {
+    onSelect('')
+    setQuery('')
+    setIsOpen(false)
+  }
+
+  if (collections.length === 0) return null
+
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label className="text-xs font-medium text-ink">
+        {t('collection')}{' '}
+        <span className="text-muted font-normal">({t('collectionOptional')})</span>
+      </label>
+      <div ref={containerRef} className="relative">
+        {/* Display selected or show search input */}
+        {selectedId && !isOpen ? (
+          <button
+            type="button"
+            onClick={() => { setIsOpen(true); setTimeout(() => inputRef.current?.focus(), 0) }}
+            className="w-full text-left text-sm bg-white border border-border rounded-lg px-3 py-2 text-ink flex items-center justify-between hover:border-ink/30 transition-colors"
+          >
+            <div className="min-w-0">
+              <span className="block truncate">{selectedCollection?.title}</span>
+              {selectedPath && selectedPath !== selectedCollection?.title && (
+                <span className="block text-xs text-muted truncate">{selectedPath}</span>
+              )}
+            </div>
+            <span
+              onClick={(e) => { e.stopPropagation(); handleClear() }}
+              className="ml-2 text-muted hover:text-ink shrink-0 cursor-pointer"
+              aria-label={t('autoOrganize')}
+            >
+              &times;
+            </span>
+          </button>
+        ) : (
+          <div className="relative">
+            <input
+              ref={inputRef}
+              type="text"
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); setIsOpen(true) }}
+              onFocus={() => setIsOpen(true)}
+              placeholder={isOpen ? t('searchCollections') : t('autoOrganize')}
+              className="w-full text-sm bg-white border border-border rounded-lg pl-8 pr-3 py-2 outline-none focus:border-ink text-ink placeholder:text-muted transition-colors"
+              autoComplete="off"
+            />
+            <svg
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
+              width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"
+            >
+              <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
+              <path d="M11 11l3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </div>
+        )}
+
+        {/* Dropdown results */}
+        {isOpen && (
+          <div className="absolute z-10 mt-1 w-full bg-white border border-border rounded-lg shadow-lg max-h-52 overflow-y-auto">
+            {/* Auto-organize option */}
+            <button
+              type="button"
+              onClick={handleClear}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-cream transition-colors ${
+                !selectedId ? 'text-accent font-medium' : 'text-muted'
+              }`}
+            >
+              {t('autoOrganize')}
+            </button>
+            <div className="border-t border-border" />
+
+            {filtered.length === 0 ? (
+              <p className="px-3 py-3 text-xs text-muted text-center">
+                {t('noCollectionsFound')}
+              </p>
+            ) : (
+              filtered.map((c) => (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => handleSelect(c.id)}
+                  className={`w-full text-left px-3 py-2 hover:bg-cream transition-colors ${
+                    c.id === selectedId ? 'bg-cream' : ''
+                  }`}
+                >
+                  <span className="block text-sm text-ink truncate">{c.title}</span>
+                  {c.path !== c.title && (
+                    <span className="block text-xs text-muted truncate">{c.path}</span>
+                  )}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Idle state
 // ---------------------------------------------------------------------------
 
 function IdleState({
@@ -189,17 +352,15 @@ function IdleState({
   onCancel: () => void
   urlInputRef: React.RefObject<HTMLInputElement | null>
 }) {
+  const t = useTranslations('crawl')
+
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted leading-relaxed">
-        Paste a public URL and HelpNest will fetch the page, extract its content, and generate a
-        help article draft using AI.
-      </p>
+      <p className="text-sm text-muted leading-relaxed">{t('description')}</p>
 
-      {/* URL input */}
       <div className="flex flex-col gap-1.5">
         <label htmlFor="crawl-url" className="text-xs font-medium text-ink">
-          Page URL
+          {t('pageUrl')}
         </label>
         <input
           ref={urlInputRef}
@@ -208,49 +369,32 @@ function IdleState({
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && url.trim() && onSubmit()}
-          placeholder="https://example.com/support/getting-started"
+          placeholder={t('urlPlaceholder')}
           className="w-full text-sm bg-white border border-border rounded-lg px-3 py-2 outline-none focus:border-ink text-ink placeholder:text-muted transition-colors"
           autoComplete="off"
           spellCheck={false}
         />
       </div>
 
-      {/* Collection picker */}
-      <div className="flex flex-col gap-1.5">
-        <label htmlFor="crawl-collection" className="text-xs font-medium text-ink">
-          Add to collection{' '}
-          <span className="text-muted font-normal">(optional)</span>
-        </label>
-        <select
-          id="crawl-collection"
-          value={collectionId}
-          onChange={(e) => onCollectionChange(e.target.value)}
-          className="w-full text-sm bg-white border border-border rounded-lg px-3 py-2 outline-none focus:border-ink text-ink transition-colors"
-        >
-          <option value="">Auto-organize (AI picks the best collection)</option>
-          {collections.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.title}
-            </option>
-          ))}
-        </select>
-      </div>
+      <CollectionPicker
+        collections={collections}
+        selectedId={collectionId}
+        onSelect={onCollectionChange}
+      />
 
-      {/* Extension nudge */}
       <div className="bg-white border border-border rounded-lg px-4 py-3 text-xs text-muted leading-relaxed">
-        <span className="font-medium text-ink">Want to import pages behind login?</span>{' '}
-        Our Chrome Extension lets you capture authenticated pages.{' '}
-        <span className="text-accent font-medium">Coming soon.</span>
+        <span className="font-medium text-ink">{t('extensionNudge')}</span>{' '}
+        {t('extensionDescription')}{' '}
+        <span className="text-accent font-medium">{t('extensionComingSoon')}</span>
       </div>
 
-      {/* Actions */}
       <div className="flex items-center justify-end gap-2 pt-1">
         <button
           type="button"
           onClick={onCancel}
           className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
         >
-          Cancel
+          {t('cancel')}
         </button>
         <button
           type="button"
@@ -258,7 +402,7 @@ function IdleState({
           disabled={!url.trim()}
           className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          Import
+          {t('importButton')}
         </button>
       </div>
     </div>
@@ -266,26 +410,24 @@ function IdleState({
 }
 
 // ---------------------------------------------------------------------------
-// Crawling state — spinner
+// Crawling state
 // ---------------------------------------------------------------------------
 
 function CrawlingState() {
+  const t = useTranslations('crawl')
   return (
     <div className="flex flex-col items-center gap-4 py-8">
-      <div
-        className="w-8 h-8 border-2 border-border border-t-accent rounded-full animate-spin"
-        aria-hidden="true"
-      />
+      <div className="w-8 h-8 border-2 border-border border-t-accent rounded-full animate-spin" aria-hidden="true" />
       <div className="text-center">
-        <p className="text-sm font-medium text-ink">Fetching and analyzing page...</p>
-        <p className="text-xs text-muted mt-1">This usually takes 10–30 seconds</p>
+        <p className="text-sm font-medium text-ink">{t('crawling')}</p>
+        <p className="text-xs text-muted mt-1">{t('crawlingHelp')}</p>
       </div>
     </div>
   )
 }
 
 // ---------------------------------------------------------------------------
-// Done state — success or skipped
+// Done state
 // ---------------------------------------------------------------------------
 
 function DoneState({
@@ -297,38 +439,29 @@ function DoneState({
   onImportAnother: () => void
   onClose: () => void
 }) {
+  const t = useTranslations('crawl')
+
   if (result.skipped) {
     return (
       <div className="flex flex-col gap-4">
         <div className="flex items-start gap-3 bg-white border border-border rounded-lg px-4 py-3">
           <span className="text-base mt-0.5" aria-hidden="true">&#9888;&#65039;</span>
           <div>
-            <p className="text-sm font-medium text-ink">Page skipped</p>
+            <p className="text-sm font-medium text-ink">{t('pageSkipped')}</p>
             <p className="text-xs text-muted mt-0.5">
-              {result.skipReason ??
-                'The page did not contain enough content to generate an article.'}
+              {result.skipReason ?? t('pageSkippedDefault')}
             </p>
           </div>
         </div>
-
         {result.sensitiveDataWarnings && result.sensitiveDataWarnings.length > 0 && (
           <SensitiveDataWarnings warnings={result.sensitiveDataWarnings} />
         )}
-
         <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onImportAnother}
-            className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-          >
-            Try another URL
+          <button type="button" onClick={onImportAnother} className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream">
+            {t('tryAnother')}
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="bg-ink text-cream text-sm font-medium px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors"
-          >
-            Done
+          <button type="button" onClick={onClose} className="bg-ink text-cream text-sm font-medium px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors">
+            {t('done')}
           </button>
         </div>
       </div>
@@ -340,7 +473,7 @@ function DoneState({
       <div className="flex items-start gap-3 bg-white border border-border rounded-lg px-4 py-3">
         <span className="text-base mt-0.5 text-green-700" aria-hidden="true">&#10003;</span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium text-ink">Draft article created</p>
+          <p className="text-sm font-medium text-ink">{t('draftCreated')}</p>
           {result.article && (
             <a
               href={`/dashboard/articles/${result.article.id}/edit`}
@@ -351,35 +484,23 @@ function DoneState({
           )}
           {result.article?.confidence != null && (
             <p className="text-xs text-muted mt-1">
-              Confidence: {Math.round(result.article.confidence * 100)}%
+              {t('confidence', { percent: Math.round(result.article.confidence * 100) })}
               {result.contentType && (
-                <span className="ml-2 capitalize">
-                  {result.contentType.replace(/_/g, ' ')}
-                </span>
+                <span className="ml-2 capitalize">{result.contentType.replace(/_/g, ' ')}</span>
               )}
             </p>
           )}
         </div>
       </div>
-
       {result.sensitiveDataWarnings && result.sensitiveDataWarnings.length > 0 && (
         <SensitiveDataWarnings warnings={result.sensitiveDataWarnings} />
       )}
-
       <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onImportAnother}
-          className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-        >
-          Import another
+        <button type="button" onClick={onImportAnother} className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream">
+          {t('importAnother')}
         </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="bg-ink text-cream text-sm font-medium px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors"
-        >
-          Done
+        <button type="button" onClick={onClose} className="bg-ink text-cream text-sm font-medium px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors">
+          {t('done')}
         </button>
       </div>
     </div>
@@ -399,30 +520,22 @@ function ErrorState({
   onRetry: () => void
   onClose: () => void
 }) {
+  const t = useTranslations('crawl')
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-start gap-3 bg-white border border-red-200 rounded-lg px-4 py-3">
         <span className="text-base mt-0.5 text-red-500" aria-hidden="true">&#x2715;</span>
         <div>
-          <p className="text-sm font-medium text-ink">Import failed</p>
+          <p className="text-sm font-medium text-ink">{t('importFailed')}</p>
           <p className="text-xs text-muted mt-0.5 break-words">{message}</p>
         </div>
       </div>
-
       <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-        >
-          Cancel
+        <button type="button" onClick={onClose} className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream">
+          {t('cancel')}
         </button>
-        <button
-          type="button"
-          onClick={onRetry}
-          className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-accent/90 transition-colors"
-        >
-          Try again
+        <button type="button" onClick={onRetry} className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-accent/90 transition-colors">
+          {t('tryAgain')}
         </button>
       </div>
     </div>
@@ -430,22 +543,19 @@ function ErrorState({
 }
 
 // ---------------------------------------------------------------------------
-// Shared: sensitive data warning banner
+// Sensitive data warning
 // ---------------------------------------------------------------------------
 
 function SensitiveDataWarnings({ warnings }: { warnings: string[] }) {
+  const t = useTranslations('crawl')
   return (
     <div className="flex items-start gap-3 bg-white border border-amber-200 rounded-lg px-4 py-3">
       <span className="text-base mt-0.5 text-amber-500" aria-hidden="true">&#9888;</span>
       <div>
-        <p className="text-xs font-medium text-ink">
-          Sensitive data detected — review before publishing
-        </p>
+        <p className="text-xs font-medium text-ink">{t('sensitiveDataWarning')}</p>
         <ul className="mt-1 space-y-0.5">
           {warnings.map((w) => (
-            <li key={w} className="text-xs text-muted">
-              {w}
-            </li>
+            <li key={w} className="text-xs text-muted">{w}</li>
           ))}
         </ul>
       </div>
