@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslations } from 'next-intl'
+import { AiCreditsIndicator } from '@/components/AiCreditsIndicator'
 
 type CrawlState = 'idle' | 'crawling' | 'done' | 'error'
 
@@ -10,6 +11,13 @@ interface CrawlResult {
   articleId: string
   skipped: boolean
   skipReason?: string
+}
+
+interface CreditsInfo {
+  used: number
+  limit: number
+  remaining: number
+  hasOwnKey: boolean
 }
 
 export function CrawlStep({
@@ -28,6 +36,14 @@ export function CrawlStep({
   const [urlError, setUrlError] = useState<string | null>(null)
   const [crawlError, setCrawlError] = useState<string | null>(null)
   const [result, setResult] = useState<CrawlResult | null>(null)
+  const [credits, setCredits] = useState<CreditsInfo | null>(null)
+
+  useEffect(() => {
+    fetch('/api/crawl/credits')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: CreditsInfo | null) => { if (data) setCredits(data) })
+      .catch(() => {/* credits display is non-critical */})
+  }, [])
 
   function normalizeUrl(value: string): string {
     const trimmed = value.trim()
@@ -66,6 +82,14 @@ export function CrawlStep({
         setCrawlError(data.skipReason ?? t('pageSkippedDefault'))
         setState('error')
         return
+      }
+
+      if (data.credits) {
+        setCredits((prev) =>
+          prev
+            ? { ...prev, used: data.credits.used, limit: data.credits.limit, remaining: data.credits.remaining }
+            : prev
+        )
       }
 
       setResult({
@@ -141,52 +165,81 @@ export function CrawlStep({
           </p>
         )}
 
-        {(state === 'idle' || state === 'error') && (
-          <div className="space-y-3">
-            <div>
-              <label htmlFor="crawl-goal" className="block text-sm font-medium text-ink mb-1.5">
-                {t('goalLabel')}
-              </label>
-              <input
-                id="crawl-goal"
-                type="text"
-                value={goal}
-                onChange={(e) => setGoal(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={t('goalPlaceholder')}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
-              />
+        {(state === 'idle' || state === 'error') && (() => {
+          const creditsExhausted = credits !== null && credits.limit !== -1 && credits.remaining === 0
+          return (
+            <div className="space-y-3">
+              {creditsExhausted ? (
+                <p className="text-sm text-muted bg-white border border-border rounded-lg px-4 py-3 text-center">
+                  {"You've used all free articles. You can add your AI key in Settings later."}
+                </p>
+              ) : (
+                <>
+                  <div>
+                    <label htmlFor="crawl-goal" className="block text-sm font-medium text-ink mb-1.5">
+                      {t('goalLabel')}
+                    </label>
+                    <input
+                      id="crawl-goal"
+                      type="text"
+                      value={goal}
+                      onChange={(e) => setGoal(e.target.value)}
+                      onKeyDown={handleKeyDown}
+                      placeholder={t('goalPlaceholder')}
+                      className="w-full px-3 py-2.5 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="crawl-url" className="block text-sm font-medium text-ink mb-1.5">
+                      {t('urlLabel')}
+                    </label>
+                    <input
+                      id="crawl-url"
+                      type="url"
+                      value={url}
+                      onChange={(e) => { setUrl(e.target.value); if (urlError) setUrlError(null) }}
+                      onKeyDown={handleKeyDown}
+                      placeholder={t('urlPlaceholder')}
+                      className="w-full px-3 py-2.5 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
+                    />
+                  </div>
+                  <div>
+                    <button
+                      type="button"
+                      onClick={handleGenerate}
+                      disabled={!goal.trim() || !url.trim()}
+                      className="w-full bg-accent text-white py-2.5 px-4 rounded-lg hover:bg-accent/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {t('generateButton')}
+                    </button>
+                    {credits !== null && (
+                      <div className="mt-2 text-center">
+                        <AiCreditsIndicator
+                          used={credits.used}
+                          limit={credits.limit}
+                          remaining={credits.remaining}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
             </div>
-            <div>
-              <label htmlFor="crawl-url" className="block text-sm font-medium text-ink mb-1.5">
-                {t('urlLabel')}
-              </label>
-              <input
-                id="crawl-url"
-                type="url"
-                value={url}
-                onChange={(e) => { setUrl(e.target.value); if (urlError) setUrlError(null) }}
-                onKeyDown={handleKeyDown}
-                placeholder={t('urlPlaceholder')}
-                className="w-full px-3 py-2.5 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={handleGenerate}
-              disabled={!goal.trim() || !url.trim()}
-              className="w-full bg-accent text-white py-2.5 px-4 rounded-lg hover:bg-accent/90 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t('generateButton')}
-            </button>
-          </div>
-        )}
+          )
+        })()}
 
         {state === 'done' && (
           <div className="space-y-3">
-            <button type="button" onClick={handleCrawlAnother} className="w-full border border-border bg-white text-ink py-2.5 px-4 rounded-lg hover:bg-cream transition-colors font-medium text-sm">
-              {t('crawlAnother')}
-            </button>
+            {(credits === null || credits.limit === -1 || credits.remaining > 0) && (
+              <button type="button" onClick={handleCrawlAnother} className="w-full border border-border bg-white text-ink py-2.5 px-4 rounded-lg hover:bg-cream transition-colors font-medium text-sm">
+                {t('crawlAnother')}
+              </button>
+            )}
+            {credits !== null && credits.limit !== -1 && credits.remaining === 0 && (
+              <p className="text-xs text-muted text-center">
+                {"You've used all free articles. You can add your AI key in Settings later."}
+              </p>
+            )}
             <button type="button" onClick={onComplete} className="w-full bg-accent text-white py-2.5 px-4 rounded-lg hover:bg-accent/90 transition-colors font-medium">
               {t('goToDashboard')}
             </button>

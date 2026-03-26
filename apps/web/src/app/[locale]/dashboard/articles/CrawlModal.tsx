@@ -5,6 +5,7 @@ import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { DiscoveryApproval } from './DiscoveryApproval'
 import { CrawlProgress } from './CrawlProgress'
+import { AiCreditsIndicator } from '@/components/AiCreditsIndicator'
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -26,6 +27,13 @@ export interface DiscoveryPage {
   priority: 'high' | 'medium' | 'low'
 }
 
+interface CreditsInfo {
+  used: number
+  limit: number
+  remaining: number
+  hasOwnKey: boolean
+}
+
 interface FocusedCrawlResponse {
   crawlJobId: string
   mode: 'focused'
@@ -34,6 +42,7 @@ interface FocusedCrawlResponse {
   totalPages: number
   processedPages: number
   articlesCreated: number
+  credits?: { used: number; limit: number; remaining: number }
 }
 
 interface DiscoveryCrawlResponse {
@@ -93,11 +102,16 @@ export function CrawlModal({
   const [discoveryResult, setDiscoveryResult] = useState<DiscoveryCrawlResponse | null>(null)
   const [activeCrawlJobId, setActiveCrawlJobId] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState('')
+  const [credits, setCredits] = useState<CreditsInfo | null>(null)
   const goalInputRef = useRef<HTMLInputElement>(null)
   const backdropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     goalInputRef.current?.focus()
+    fetch('/api/crawl/credits')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: CreditsInfo | null) => { if (data) setCredits(data) })
+      .catch(() => {/* credits display is non-critical */})
   }, [])
 
   useEffect(() => {
@@ -144,7 +158,15 @@ export function CrawlModal({
       }
 
       if (data.mode === 'focused') {
-        setFocusedResult(data as FocusedCrawlResponse)
+        const focused = data as FocusedCrawlResponse
+        setFocusedResult(focused)
+        if (focused.credits) {
+          setCredits((prev) =>
+            prev
+              ? { ...prev, used: focused.credits!.used, limit: focused.credits!.limit, remaining: focused.credits!.remaining }
+              : prev
+          )
+        }
         setState('done')
         onSuccess()
         router.refresh()
@@ -226,6 +248,7 @@ export function CrawlModal({
               onSubmit={handleCrawl}
               onCancel={onClose}
               goalInputRef={goalInputRef}
+              credits={credits}
             />
           )}
           {state === 'crawling' && <CrawlingState />}
@@ -451,6 +474,7 @@ function IdleState({
   onSubmit,
   onCancel,
   goalInputRef,
+  credits,
 }: {
   url: string
   onUrlChange: (v: string) => void
@@ -462,9 +486,11 @@ function IdleState({
   onSubmit: () => void
   onCancel: () => void
   goalInputRef: React.RefObject<HTMLInputElement | null>
+  credits: CreditsInfo | null
 }) {
   const t = useTranslations('crawl')
-  const canSubmit = goal.trim().length > 0 && url.trim().length > 0
+  const creditsExhausted = credits !== null && credits.limit !== -1 && credits.remaining === 0
+  const canSubmit = goal.trim().length > 0 && url.trim().length > 0 && !creditsExhausted
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'Enter' && canSubmit) onSubmit()
@@ -523,22 +549,33 @@ function IdleState({
         <span className="text-accent font-medium">{t('extensionComingSoon')}</span>
       </div>
 
-      <div className="flex items-center justify-end gap-2 pt-1">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-        >
-          {t('cancel')}
-        </button>
-        <button
-          type="button"
-          onClick={onSubmit}
-          disabled={!canSubmit}
-          className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-        >
-          {t('importButton')}
-        </button>
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <div className="flex-1">
+          {credits !== null && (
+            <AiCreditsIndicator
+              used={credits.used}
+              limit={credits.limit}
+              remaining={credits.remaining}
+            />
+          )}
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
+          >
+            {t('cancel')}
+          </button>
+          <button
+            type="button"
+            onClick={onSubmit}
+            disabled={!canSubmit}
+            className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {t('importButton')}
+          </button>
+        </div>
       </div>
     </div>
   )
