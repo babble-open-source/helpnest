@@ -2,6 +2,7 @@ import type { HttpClient } from '../http'
 import type {
   Conversation,
   ConversationMessage,
+  ConversationStatus,
   CreateConversationParams,
   ListConversationsParams,
   PaginatedResponse,
@@ -16,12 +17,7 @@ export class ConversationsResource {
    * Optionally filter by status or paginate.
    */
   async list(params?: ListConversationsParams): Promise<PaginatedResponse<Conversation>> {
-    const q = new URLSearchParams()
-    if (params?.status) q.set('status', params.status)
-    if (params?.page) q.set('page', String(params.page))
-    if (params?.limit) q.set('limit', String(params.limit))
-    const qs = q.toString()
-    return this.http.get(`/conversations${qs ? `?${qs}` : ''}`)
+    return this.http.get('/conversations', params as Record<string, string | number | boolean | undefined>)
   }
 
   /**
@@ -42,7 +38,7 @@ export class ConversationsResource {
    * Update the status of a conversation.
    * Optionally provide a resolution summary when closing or resolving.
    */
-  async updateStatus(id: string, status: string, resolutionSummary?: string): Promise<Conversation> {
+  async updateStatus(id: string, status: ConversationStatus, resolutionSummary?: string): Promise<Conversation> {
     return this.http.patch(`/conversations/${id}`, { status, resolutionSummary })
   }
 
@@ -51,6 +47,13 @@ export class ConversationsResource {
    */
   async assign(id: string, memberId: string | null): Promise<Conversation> {
     return this.http.post(`/conversations/${id}/assign`, { memberId })
+  }
+
+  /**
+   * Get a count of escalated conversations.
+   */
+  async count(): Promise<{ escalated: number }> {
+    return this.http.get('/conversations/count')
   }
 }
 
@@ -62,8 +65,10 @@ export class MessagesResource {
    * Optionally pass an ISO timestamp to fetch only messages since that point.
    */
   async list(conversationId: string, since?: string): Promise<{ messages: ConversationMessage[] }> {
-    const q = since ? `?since=${encodeURIComponent(since)}` : ''
-    return this.http.get(`/conversations/${conversationId}/messages${q}`)
+    return this.http.get(
+      `/conversations/${conversationId}/messages`,
+      since ? { since } : undefined,
+    )
   }
 
   /**

@@ -31,6 +31,9 @@ yarn-error.log*
 packages/db/node_modules/
 packages/db/generated/
 
+# Test coverage
+coverage/
+
 # Misc
 .vercel
 *.tsbuildinfo

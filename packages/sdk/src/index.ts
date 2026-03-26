@@ -2,27 +2,41 @@ import { HttpClient } from './http'
 import { ArticlesResource } from './resources/articles'
 import { CollectionsResource } from './resources/collections'
 import { ConversationsResource, MessagesResource } from './resources/conversations'
-import type { HelpNestConfig } from './types'
+import { KnowledgeGapsResource } from './resources/knowledge-gaps'
+import type { HealthResponse, HelpNestConfig } from './types'
 
 export { HelpNestError } from './http'
 export type {
   Article,
   ArticleStatus,
   ArticleVersion,
+  BatchArticleAction,
+  BatchArticleParams,
+  BatchArticleResponse,
+  ChangeFeedEntry,
+  ChangeFeedResponse,
   Collection,
+  CollectionVisibility,
   Conversation,
   ConversationMessage,
   ConversationStatus,
   CreateArticleParams,
   CreateCollectionParams,
   CreateConversationParams,
+  ExportArticle,
+  ExportCollection,
+  ExportResponse,
+  HealthResponse,
   HelpNestConfig,
+  KnowledgeGap,
   ListArticlesParams,
   ListCollectionsParams,
   ListConversationsParams,
+  ListKnowledgeGapsParams,
   MemberRole,
   MessageRole,
   PaginatedResponse,
+  ResolveKnowledgeGapParams,
   SearchResult,
   SendMessageParams,
   UpdateArticleParams,
@@ -57,12 +71,24 @@ export class HelpNest {
   readonly conversations: ConversationsResource
   /** Conversation message management */
   readonly messages: MessagesResource
+  /** Knowledge gap tracking */
+  readonly knowledgeGaps: KnowledgeGapsResource
+
+  private http: HttpClient
 
   constructor(config: HelpNestConfig) {
-    const http = new HttpClient(config)
-    this.articles = new ArticlesResource(http)
-    this.collections = new CollectionsResource(http)
-    this.conversations = new ConversationsResource(http)
-    this.messages = new MessagesResource(http)
+    this.http = new HttpClient(config)
+    this.articles = new ArticlesResource(this.http)
+    this.collections = new CollectionsResource(this.http)
+    this.conversations = new ConversationsResource(this.http)
+    this.messages = new MessagesResource(this.http)
+    this.knowledgeGaps = new KnowledgeGapsResource(this.http)
+  }
+
+  /**
+   * Check API and service health.
+   */
+  async health(): Promise<HealthResponse> {
+    return this.http.get<HealthResponse>('/health')
   }
 }

@@ -2,6 +2,8 @@ import type { HttpClient } from '../http'
 import type {
   Article,
   ArticleVersion,
+  BatchArticleParams,
+  BatchArticleResponse,
   ChangeFeedResponse,
   CreateArticleParams,
   ExportResponse,
@@ -89,5 +91,13 @@ export class ArticlesResource {
    */
   async changes(since: string, params?: { limit?: number }): Promise<ChangeFeedResponse> {
     return this.http.get<ChangeFeedResponse>('/articles/changes', { since, ...params } as Record<string, string | number | boolean | undefined>)
+  }
+
+  /**
+   * Perform batch operations on multiple articles.
+   * Actions: 'delete', 'publish', 'archive', 'draft'.
+   */
+  async batch(params: BatchArticleParams): Promise<BatchArticleResponse> {
+    return this.http.post<BatchArticleResponse>('/articles/batch', params)
   }
 }

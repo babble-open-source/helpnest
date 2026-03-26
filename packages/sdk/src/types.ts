@@ -25,6 +25,7 @@ export interface Collection {
   isArchived: boolean
   parentId: string | null
   createdAt?: string
+  updatedAt?: string
 }
 
 export interface Article {
@@ -150,7 +151,7 @@ export interface ConversationMessage {
   conversationId: string
   role: MessageRole
   content: string
-  sources?: unknown
+  sources?: Array<{ id: string; title: string; slug: string; collection?: { slug: string; title: string } }> | null
   confidence: number | null
   feedbackHelpful: boolean | null
   createdAt: string
@@ -176,6 +177,55 @@ export interface HelpNestConfig {
   apiKey: string
   workspace: string
   baseUrl?: string
+}
+
+// ── Article batch types ─────────────────────────────────────────────────────
+
+export type BatchArticleAction = 'delete' | 'publish' | 'archive' | 'draft'
+
+export interface BatchArticleParams {
+  ids: string[]
+  action: BatchArticleAction
+}
+
+export interface BatchArticleResponse {
+  deleted?: number
+  updated?: number
+}
+
+// ── Knowledge gap types ─────────────────────────────────────────────────────
+
+export interface KnowledgeGap {
+  id: string
+  query: string
+  occurrences: number
+  resolvedAt: string | null
+  resolvedById: string | null
+  resolvedArticleId: string | null
+  resolvedBy: { name: string; email: string } | null
+  resolvedArticle: { id: string; title: string; slug: string } | null
+}
+
+export interface ListKnowledgeGapsParams {
+  resolved?: boolean
+  page?: number
+  limit?: number
+}
+
+export interface ResolveKnowledgeGapParams {
+  id: string
+  articleId?: string | null
+}
+
+// ── Health check types ──────────────────────────────────────────────────────
+
+export interface HealthResponse {
+  status: 'ok' | 'degraded'
+  checks: {
+    database: 'ok' | 'error'
+    qdrant?: 'ok' | 'error'
+  }
+  timestamp: string
 }
 
 // ── Export / change-feed types ───────────────────────────────────────────────
