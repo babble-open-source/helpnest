@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { RestoreModal } from './RestoreModal'
+import { CreateWorkspaceModal } from './CreateWorkspaceModal'
 
 interface Workspace {
   id: string
@@ -18,15 +19,18 @@ interface Props {
   deleted: Workspace[]
   currentWorkspaceId: string | null
   cloudMode: boolean
+  slugPrefix: string
+  slugSuffix: string
 }
 
 const RESTORE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
 
-export function WorkspaceList({ active, deleted, currentWorkspaceId, cloudMode }: Props) {
+export function WorkspaceList({ active, deleted, currentWorkspaceId, cloudMode, slugPrefix, slugSuffix }: Props) {
   const t = useTranslations('workspaces')
   const locale = useLocale()
   const [restoreTarget, setRestoreTarget] = useState<Workspace | null>(null)
   const [switching, setSwitching] = useState<string | null>(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
   const now = Date.now()
   const restorable = deleted.filter((w) => {
@@ -74,7 +78,7 @@ export function WorkspaceList({ active, deleted, currentWorkspaceId, cloudMode }
         <p className="font-medium text-ink mb-1">{t('emptyTitle')}</p>
         <p className="text-muted text-sm mb-6">{t('emptyDescription')}</p>
         <button
-          onClick={() => window.location.assign(`/${locale}/onboarding`)}
+          onClick={() => setShowCreateModal(true)}
           className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium"
         >
           {t('createWorkspace')}
@@ -87,7 +91,7 @@ export function WorkspaceList({ active, deleted, currentWorkspaceId, cloudMode }
     <>
       <div className="flex justify-end mb-6">
         <button
-          onClick={() => window.location.assign(`/${locale}/onboarding`)}
+          onClick={() => setShowCreateModal(true)}
           className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium"
         >
           {t('createWorkspace')}
@@ -208,6 +212,14 @@ export function WorkspaceList({ active, deleted, currentWorkspaceId, cloudMode }
           cloudMode={cloudMode}
           onClose={() => setRestoreTarget(null)}
           onSuccess={handleRestoreSuccess}
+        />
+      )}
+
+      {showCreateModal && (
+        <CreateWorkspaceModal
+          slugPrefix={slugPrefix}
+          slugSuffix={slugSuffix}
+          onClose={() => setShowCreateModal(false)}
         />
       )}
     </>

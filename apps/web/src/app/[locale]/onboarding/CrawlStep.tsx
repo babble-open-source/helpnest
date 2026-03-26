@@ -15,9 +15,11 @@ interface CrawlResult {
 export function CrawlStep({
   onSkip,
   onComplete,
+  compact = false,
 }: {
   onSkip: () => void
   onComplete: () => void
+  compact?: boolean
 }) {
   const t = useTranslations('crawl')
   const [state, setState] = useState<CrawlState>('idle')
@@ -93,10 +95,10 @@ export function CrawlStep({
   }
 
   return (
-    <main className="min-h-screen bg-cream flex items-center justify-center">
-      <div className="w-full max-w-md px-6 py-10">
+    <div className={compact ? '' : 'min-h-screen bg-cream flex items-center justify-center'}>
+      <div className={compact ? 'w-full' : 'w-full max-w-md px-6 py-10'}>
         <div className="text-center mb-8">
-          <h1 className="font-serif text-3xl text-ink mb-2">{t('seedTitle')}</h1>
+          <h1 className={`font-serif text-ink mb-2 ${compact ? 'text-xl' : 'text-3xl'}`}>{t('seedTitle')}</h1>
           <p className="text-muted text-sm">{t('seedDescription')}</p>
         </div>
 
@@ -188,6 +190,6 @@ export function CrawlStep({
           </div>
         )}
       </div>
-    </main>
+    </div>
   )
 }
