@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { CrawlStep } from './CrawlStep'
 
 function slugify(str: string): string {
   return str
@@ -40,6 +41,7 @@ export function OnboardingForm({
   translations: Translations
 }) {
   const router = useRouter()
+  const [step, setStep] = useState<'workspace' | 'crawl'>('workspace')
   const [name, setName] = useState(userName ? `${userName}'s Help Center` : '')
   const [slug, setSlug] = useState('')
   const [slugEdited, setSlugEdited] = useState(false)
@@ -80,12 +82,27 @@ export function OnboardingForm({
         return
       }
 
-      router.push('/dashboard')
-      router.refresh()
+      setLoading(false)
+      setStep('crawl')
     } catch {
       setError('Network error. Please try again.')
       setLoading(false)
     }
+  }
+
+  if (step === 'crawl') {
+    return (
+      <CrawlStep
+        onSkip={() => {
+          router.push('/dashboard')
+          router.refresh()
+        }}
+        onComplete={() => {
+          router.push('/dashboard')
+          router.refresh()
+        }}
+      />
+    )
   }
 
   return (
