@@ -120,6 +120,8 @@ model Workspace {
   autoDraftExternalEnabled  Boolean    @default(true)
   batchWindowMinutes        Int        @default(60)
   aiDraftRateLimit          Int        @default(50)
+  aiCreditsUsed             Int        @default(0)
+  aiCreditsLimit            Int        @default(5)
   productContext            String?    @db.Text
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
