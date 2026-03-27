@@ -1,4 +1,4 @@
-import type { ArticleDraft } from './types'
+import type { ArticleDraft, GoalPromptInput } from './types'
 
 interface PromptInput {
   markdown: string
@@ -79,6 +79,46 @@ export function parseArticleResponse(raw: string): ArticleDraft {
     suggestedCollection: null,
     confidence: 0.3,
   }
+}
+
+export function buildGoalPrompt(input: GoalPromptInput): PromptOutput {
+  const collectionList =
+    input.existingCollections.length > 0
+      ? `\n\nExisting collections: ${input.existingCollections.join(', ')}`
+      : '\n\nNo existing collections yet — suggest a collection name.'
+
+  let seriesInstruction = ''
+  if (input.seriesContext) {
+    const { articleNumber, totalArticles, previousTitles } = input.seriesContext
+    seriesInstruction = `\n\nThis is article ${articleNumber} of ${totalArticles} in a series.
+Previous articles: ${previousTitles.join(', ')}
+Write about what THIS page adds to the topic without repeating what previous articles already covered.`
+  }
+
+  const system = `You are a help article writer for ${input.workspaceName}.
+The user wants help content about: "${input.goal}"
+
+Based on the page content provided, create a help article that serves this goal.
+Focus on what customers need to know. Write clear, actionable steps where appropriate.
+${CONTENT_TYPE_INSTRUCTIONS[input.contentType] ?? CONTENT_TYPE_INSTRUCTIONS.other}${seriesInstruction}
+
+Respond with ONLY a JSON object:
+- title: string — clear article title relevant to the goal
+- content: string — full article body in Markdown
+- excerpt: string — 1-2 sentence summary
+- suggestedCollection: string | null — which collection this belongs in${collectionList}
+- confidence: number — 0 to 1, how useful this article is for the stated goal`
+
+  const userMessage = `Goal: ${input.goal}
+Source URL: ${input.url}
+Page title: ${input.title}
+Content type: ${input.contentType}
+
+---
+
+${input.markdown}`
+
+  return { system, userMessage }
 }
 
 function normalizeArticle(parsed: Record<string, unknown>): ArticleDraft {
