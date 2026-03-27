@@ -36,7 +36,8 @@ export async function POST(request: Request) {
   const validatedUrls = body.approvedUrls.filter((u) => {
     const check = validateUrl(u)
     if (!check.valid) return false
-    if (discoveredUrls && discoveredUrls.length > 0 && !discoveredUrls.includes(u)) return false
+    if (!discoveredUrls || discoveredUrls.length === 0) return false
+    if (!discoveredUrls.includes(u)) return false
     return true
   })
 
