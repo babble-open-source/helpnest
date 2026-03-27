@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
+import Link from 'next/link'
 import { SensitiveDataWarnings } from './CrawlModal'
 
 // ---------------------------------------------------------------------------
@@ -356,12 +357,12 @@ export function CrawlProgress({
             >
               {t('importAnotherUrl')}
             </button>
-            <a
+            <Link
               href="/dashboard/articles"
               className="bg-ink text-cream text-sm font-medium px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors"
             >
               {t('viewAllArticles')}
-            </a>
+            </Link>
           </>
         ) : (
           <button
