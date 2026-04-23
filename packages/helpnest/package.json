@@ -5,7 +5,7 @@
   "homepage": "https://helpnest.cloud/",
   "repository": {
     "type": "git",
-    "url": "https://github.com/babble-open-source/helpnest.git",
+    "url": "git+https://github.com/babble-open-source/helpnest.git",
     "directory": "packages/helpnest"
   },
   "bugs": {
@@ -15,7 +15,7 @@
   "author": "Sharan Karthikeyan <karthikeyansharan00@gmail.com>",
   "type": "module",
   "bin": {
-    "helpnest": "./dist/index.js"
+    "helpnest": "dist/index.js"
   },
   "files": [
     "dist"
