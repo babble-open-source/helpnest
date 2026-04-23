@@ -22,12 +22,10 @@ export function renderArticleFeedback(articleId: string): string {
 }
 
 export function bindFeedbackEvents(container: HTMLElement) {
-  const feedbackEls = container.querySelectorAll('.hn-feedback')
-  for (const el of feedbackEls) {
+  container.querySelectorAll('.hn-feedback').forEach((el) => {
     const articleId = (el as HTMLElement).dataset.articleId
-    if (!articleId) continue
-    const buttons = el.querySelectorAll('.hn-feedback-btn')
-    for (const btn of buttons) {
+    if (!articleId) return
+    el.querySelectorAll('.hn-feedback-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const type = (btn as HTMLElement).dataset.feedback as 'helpful' | 'not'
         void submitArticleFeedback(articleId, type)
@@ -36,6 +34,6 @@ export function bindFeedbackEvents(container: HTMLElement) {
         if (buttonsDiv) buttonsDiv.style.display = 'none'
         if (thanks) thanks.style.display = 'block'
       })
-    }
-  }
+    })
+  })
 }

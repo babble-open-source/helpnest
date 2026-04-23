@@ -1,4 +1,4 @@
-import { HelpPanel } from './panel'
+import { HelpNestWidget } from './widget'
 
 function init() {
   const script = document.currentScript as HTMLScriptElement | null
@@ -16,15 +16,13 @@ function init() {
     ?? (typeof window !== 'undefined' ? window.location.origin : '')
 
   const position = (script.dataset['position'] as 'bottom-right' | 'bottom-left') ?? 'bottom-right'
-  const title = script.dataset['title'] ?? 'How can we help?'
-  const mode = (script.dataset['mode'] as 'chat' | 'search') ?? 'chat'
-  const greeting = script.dataset['greeting'] ?? 'Hi! How can I help you today?'
 
-  const panel = new HelpPanel({ workspace, baseUrl, position, title, mode, greeting })
+  const widget = new HelpNestWidget({ workspace, baseUrl, position })
+
   if ('requestIdleCallback' in window) {
-    requestIdleCallback(() => panel.mount(), { timeout: 2000 })
+    requestIdleCallback(() => widget.mount(), { timeout: 2000 })
   } else {
-    setTimeout(() => panel.mount(), 0)
+    setTimeout(() => widget.mount(), 0)
   }
 }
 
