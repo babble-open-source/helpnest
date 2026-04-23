@@ -365,7 +365,7 @@ model ConversationArticle {
   articleId      String
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  article      Article      @relation(fields: [articleId], references: [id])
+  article      Article      @relation(fields: [articleId], references: [id], onDelete: Cascade)
 
   @@unique([conversationId, articleId])
   @@index([articleId])
