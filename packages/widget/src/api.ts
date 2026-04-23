@@ -28,9 +28,7 @@ export async function fetchArticles(collectionId: string): Promise<{ collection:
 }
 
 export async function fetchArticle(articleId: string): Promise<ArticleDetail | null> {
-  const res = await fetch(`${baseUrl}/api/articles/${encodeURIComponent(articleId)}`, {
-    headers: { 'Accept': 'application/json' },
-  })
+  const res = await fetch(`${baseUrl}/api/widget/article/${encodeURIComponent(articleId)}`)
   if (!res.ok) return null
   return res.json() as Promise<ArticleDetail>
 }
