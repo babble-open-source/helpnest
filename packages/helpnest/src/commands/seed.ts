@@ -717,28 +717,41 @@ export async function seedCommand(options: SeedOptions): Promise<void> {
       console.warn(chalk.yellow('  Tip: Pass --local <path> alongside --topics to ground articles in your codebase.'))
     }
 
-    const items: SeedItem[] = topicList.map((t) => {
+    const items: SeedItem[] = []
+    const skippedTopics: string[] = []
+
+    for (const t of topicList) {
       const files = topicFilesMap[t] ?? []
+
+      if (files.length === 0 && isLocalMode) {
+        skippedTopics.push(t)
+        continue
+      }
+
       const codeContext = files.length > 0
         ? { prTitle: t.slice(0, 200), prBody: buildCodeBody(localPath!, files) }
         : undefined
 
-      if (files.length === 0 && Object.keys(topicFilesMap).length > 0) {
-        console.warn(chalk.dim(`  No files matched topic "${t}" — generating without code context`))
-      }
-
-      return {
+      items.push({
         sourceType: 'topic' as const,
         label: `Topic: ${t}`,
         idempotencyKey: makeKey(scope ?? 'topics', 'topic', t.toLowerCase()),
         topic: t,
         codeContext,
+      })
+    }
+
+    if (skippedTopics.length > 0) {
+      console.log(chalk.yellow(`\n  Skipped ${skippedTopics.length} topic(s) — no matching files found in codebase:`))
+      for (const t of skippedTopics) {
+        console.log(chalk.yellow(`    • ${t}`))
       }
-    })
+      console.log(chalk.yellow(`  Tip: run 'helpnest draft --topic "<topic>" --local <path>' for each to use single-topic file search.\n`))
+    }
 
     allItems.push(...items)
     sourceCounts['topics'] = items.length
-    console.log(chalk.dim(`  Added ${items.length} topics`))
+    console.log(chalk.dim(`  Added ${items.length} topics (${skippedTopics.length} skipped — no code context)`))
   }
 
   if (allItems.length === 0) {
