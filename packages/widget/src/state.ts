@@ -1,5 +1,7 @@
 import type { WidgetState, TabId, ViewType, WidgetConfig, CollectionNode, ConversationSummary, ArticleSummary } from './types'
 
+export type TransitionDirection = 'push' | 'pop' | 'fade' | 'none'
+
 type Listener = () => void
 
 const initialState: WidgetState = {
@@ -14,7 +16,16 @@ const initialState: WidgetState = {
 }
 
 let state: WidgetState = { ...initialState }
+let lastTransition: TransitionDirection = 'none'
 const listeners: Set<Listener> = new Set()
+
+export function getTransitionDirection(): TransitionDirection {
+  return lastTransition
+}
+
+export function clearTransitionDirection() {
+  lastTransition = 'none'
+}
 
 export function getState(): WidgetState {
   return state
@@ -40,6 +51,7 @@ export function setOpen(isOpen: boolean) {
 }
 
 export function switchTab(tab: TabId) {
+  lastTransition = 'fade'
   state = {
     ...state,
     activeTab: tab,
@@ -49,6 +61,7 @@ export function switchTab(tab: TabId) {
 }
 
 export function pushView(view: ViewType) {
+  lastTransition = 'push'
   state = {
     ...state,
     viewStack: [...state.viewStack, view],
@@ -58,6 +71,7 @@ export function pushView(view: ViewType) {
 
 export function popView(): ViewType | null {
   if (state.viewStack.length <= 1) return null
+  lastTransition = 'pop'
   const newStack = state.viewStack.slice(0, -1)
   state = { ...state, viewStack: newStack }
   notify()

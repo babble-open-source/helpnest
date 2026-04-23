@@ -1,5 +1,5 @@
 import type { InitConfig, TabId, ViewType } from './types'
-import { getState, subscribe, setConfig, setOpen, switchTab, popView, setCollections, setConversations } from './state'
+import { getState, subscribe, setConfig, setOpen, switchTab, popView, setCollections, setConversations, getTransitionDirection, clearTransitionDirection } from './state'
 import { initApi, fetchConfig, fetchCollections, fetchConversations } from './api'
 import { renderHome, bindHomeEvents } from './views/home'
 import { renderMessages, bindMessagesEvents } from './views/messages'
@@ -10,6 +10,7 @@ import { renderArticle, bindArticleEvents, loadArticle } from './views/article'
 import { widgetStyles } from './styles'
 
 const STORAGE_SESSION_KEY = 'helpnest:session:'
+const TRANSITION_MS = 200
 
 export class HelpNestWidget {
   private initConfig: InitConfig
@@ -19,6 +20,8 @@ export class HelpNestWidget {
   private launcher: HTMLElement | null = null
   private unsubscribe: (() => void) | null = null
   private rendering = false
+  private currentViewKind: string = ''
+  private viewContainer: HTMLElement | null = null
 
   constructor(config: InitConfig) {
     this.initConfig = config
@@ -37,10 +40,10 @@ export class HelpNestWidget {
     this.launcher.className = `hn-launcher ${this.initConfig.position === 'bottom-left' ? 'hn-launcher-left' : ''}`
     this.launcher.setAttribute('aria-label', 'Open help')
     this.launcher.innerHTML = `
-      <svg class="hn-launcher-open" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg class="hn-launcher-icon hn-launcher-open" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
       </svg>
-      <svg class="hn-launcher-close" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+      <svg class="hn-launcher-icon hn-launcher-close" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="6 9 12 15 18 9"/>
       </svg>
     `
@@ -107,10 +110,8 @@ export class HelpNestWidget {
   private open() {
     setOpen(true)
     this.panel?.classList.remove('hn-panel-hidden')
-    const openIcon = this.launcher?.querySelector('.hn-launcher-open') as HTMLElement | null
-    const closeIcon = this.launcher?.querySelector('.hn-launcher-close') as HTMLElement | null
-    if (openIcon) openIcon.style.display = 'none'
-    if (closeIcon) closeIcon.style.display = ''
+    this.panel?.classList.add('hn-panel-enter')
+    this.launcher?.classList.add('hn-launcher-active')
 
     const { config, activeTab } = getState()
     if (activeTab === 'messages' && config?.aiEnabled) {
@@ -119,12 +120,15 @@ export class HelpNestWidget {
   }
 
   private close() {
-    setOpen(false)
-    this.panel?.classList.add('hn-panel-hidden')
-    const openIcon = this.launcher?.querySelector('.hn-launcher-open') as HTMLElement | null
-    const closeIcon = this.launcher?.querySelector('.hn-launcher-close') as HTMLElement | null
-    if (openIcon) openIcon.style.display = ''
-    if (closeIcon) closeIcon.style.display = 'none'
+    if (!this.panel) return
+    this.panel.classList.add('hn-panel-exit')
+    this.launcher?.classList.remove('hn-launcher-active')
+
+    setTimeout(() => {
+      setOpen(false)
+      this.panel?.classList.add('hn-panel-hidden')
+      this.panel?.classList.remove('hn-panel-exit', 'hn-panel-enter')
+    }, TRANSITION_MS)
   }
 
   private async refreshConversations() {
@@ -144,49 +148,112 @@ export class HelpNestWidget {
     if (!state.config) return
 
     this.rendering = true
+    const direction = getTransitionDirection()
+    clearTransitionDirection()
 
     try {
       const view = state.viewStack[state.viewStack.length - 1] ?? { kind: state.activeTab }
-      let viewHtml = ''
+      const viewHtml = await this.renderView(view, state.config.slug)
+      const viewKey = this.viewKey(view)
 
-      switch (view.kind) {
-        case 'home':
-          viewHtml = renderHome()
-          break
-        case 'messages':
-          viewHtml = renderMessages()
-          break
-        case 'help':
-          viewHtml = renderHelp()
-          break
-        case 'chat':
-          await initChatView(view.conversationId)
-          viewHtml = renderChat()
-          break
-        case 'collection-detail': {
-          const data = await loadCollectionDetail(view.collectionId, state.collections)
-          viewHtml = renderCollectionDetail(data)
-          break
-        }
-        case 'article': {
-          const article = await loadArticle(view.articleId)
-          if (article) {
-            ;(article as unknown as Record<string, unknown>).workspaceSlug = state.config.slug
-            viewHtml = renderArticle(article)
-          } else {
-            viewHtml = '<div class="hn-error">Article not found</div>'
-          }
-          break
-        }
+      if (direction !== 'none' && this.viewContainer && viewKey !== this.currentViewKind) {
+        await this.transitionView(viewHtml, view, direction)
+      } else {
+        this.swapView(viewHtml, view)
       }
 
-      this.panel.innerHTML = `<div class="hn-view-stack">${viewHtml}</div>`
-
-      this.bindViewEvents(view)
+      this.currentViewKind = viewKey
+      this.bindTabBarEvents()
       this.bindHeaderEvents()
     } finally {
       this.rendering = false
     }
+  }
+
+  private async renderView(view: ViewType, slug: string): Promise<string> {
+    switch (view.kind) {
+      case 'home':
+        return renderHome()
+      case 'messages':
+        return renderMessages()
+      case 'help':
+        return renderHelp()
+      case 'chat':
+        await initChatView(view.conversationId)
+        return renderChat()
+      case 'collection-detail': {
+        const data = await loadCollectionDetail(view.collectionId, getState().collections)
+        return renderCollectionDetail(data)
+      }
+      case 'article': {
+        const article = await loadArticle(view.articleId)
+        if (article) {
+          ;(article as unknown as Record<string, unknown>).workspaceSlug = slug
+          return renderArticle(article)
+        }
+        return '<div class="hn-error">Article not found</div>'
+      }
+    }
+  }
+
+  private viewKey(view: ViewType): string {
+    switch (view.kind) {
+      case 'collection-detail': return `collection-detail:${view.collectionId}`
+      case 'article': return `article:${view.articleId}`
+      case 'chat': return `chat:${view.conversationId ?? 'new'}`
+      default: return view.kind
+    }
+  }
+
+  private swapView(html: string, view: ViewType) {
+    if (!this.panel) return
+    this.panel.innerHTML = `<div class="hn-view-stack"><div class="hn-view-layer">${html}</div></div>`
+    this.viewContainer = this.panel.querySelector('.hn-view-stack')
+    this.bindViewEvents(view)
+  }
+
+  private transitionView(html: string, view: ViewType, direction: string): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.panel || !this.viewContainer) {
+        this.swapView(html, view)
+        resolve()
+        return
+      }
+
+      const oldLayer = this.viewContainer.querySelector('.hn-view-layer') as HTMLElement | null
+      const newLayer = document.createElement('div')
+      newLayer.className = 'hn-view-layer'
+      newLayer.innerHTML = html
+
+      if (direction === 'push') {
+        newLayer.classList.add('hn-enter-right')
+        oldLayer?.classList.add('hn-exit-left')
+      } else if (direction === 'pop') {
+        newLayer.classList.add('hn-enter-left')
+        oldLayer?.classList.add('hn-exit-right')
+      } else {
+        newLayer.classList.add('hn-enter-fade')
+        oldLayer?.classList.add('hn-exit-fade')
+      }
+
+      this.viewContainer.appendChild(newLayer)
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          newLayer.classList.add('hn-view-active')
+          if (oldLayer) oldLayer.classList.add('hn-view-leaving')
+        })
+      })
+
+      setTimeout(() => {
+        if (oldLayer && oldLayer.parentNode) {
+          oldLayer.parentNode.removeChild(oldLayer)
+        }
+        newLayer.className = 'hn-view-layer'
+        this.bindViewEvents(view)
+        resolve()
+      }, TRANSITION_MS)
+    })
   }
 
   private bindViewEvents(view: ViewType) {

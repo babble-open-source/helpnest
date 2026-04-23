@@ -51,9 +51,20 @@ export async function fetchConversations(sessionToken: string): Promise<Conversa
 }
 
 export async function submitArticleFeedback(articleId: string, type: 'helpful' | 'not'): Promise<void> {
-  await fetch(`${baseUrl}/api/articles/${encodeURIComponent(articleId)}/feedback`, {
+  const voterToken = getVoterToken()
+  await fetch(`${baseUrl}/api/widget/article/${encodeURIComponent(articleId)}/feedback`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ type }),
+    body: JSON.stringify({ type, voterToken }),
   })
+}
+
+function getVoterToken(): string {
+  const key = 'helpnest:voter'
+  let token = localStorage.getItem(key)
+  if (!token) {
+    token = crypto.randomUUID()
+    localStorage.setItem(key, token)
+  }
+  return token
 }
