@@ -1,6 +1,6 @@
 {
   "name": "@helpnest/mcp",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": false,
   "description": "MCP server for HelpNest — expose your knowledge base to AI assistants",
   "homepage": "https://helpnest.cloud/",
@@ -43,10 +43,10 @@
     "node": ">=18"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
-    "@helpnest/sdk": "workspace:*"
+    "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
+    "@helpnest/sdk": "workspace:*",
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0"
