@@ -448,12 +448,16 @@ export const widgetStyles = `
     text-align: left;
     width: 100%;
     font-family: inherit;
-    transition: border-color 0.1s, box-shadow 0.1s;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
   }
 
   .hn-home-cta:hover {
     border-color: var(--hn-ink);
     box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .hn-home-cta:active {
+    transform: scale(0.98);
   }
 
   .hn-home-cta-icon {
@@ -733,11 +737,15 @@ export const widgetStyles = `
     font-weight: 600;
     font-family: inherit;
     cursor: pointer;
-    transition: opacity 0.1s;
+    transition: opacity 0.15s ease, transform 0.1s ease;
   }
 
   .hn-messages-cta:hover {
     opacity: 0.9;
+  }
+
+  .hn-messages-cta:active {
+    transform: scale(0.97);
   }
 
   /* ─── Help ───────────────────────────────────────────────────────────────── */
@@ -853,11 +861,16 @@ export const widgetStyles = `
     text-align: left;
     width: 100%;
     font-family: inherit;
-    transition: border-color 0.1s;
+    transition: border-color 0.15s ease, transform 0.1s ease, background 0.15s ease;
   }
 
   .hn-col-card:hover {
     border-color: var(--hn-ink);
+  }
+
+  .hn-col-card:active {
+    transform: scale(0.98);
+    background: var(--hn-cream);
   }
 
   .hn-col-card-body {
@@ -1182,11 +1195,15 @@ export const widgetStyles = `
     font-size: 12px;
     font-family: inherit;
     cursor: pointer;
-    transition: border-color 0.1s;
+    transition: border-color 0.15s ease, transform 0.1s ease;
   }
 
   .hn-feedback-btn:hover {
     border-color: var(--hn-ink);
+  }
+
+  .hn-feedback-btn:active {
+    transform: scale(0.95);
   }
 
   .hn-feedback-thanks {
@@ -1456,11 +1473,15 @@ export const widgetStyles = `
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
-    transition: border-color 0.1s;
+    transition: border-color 0.15s ease, transform 0.1s ease;
   }
 
   .hn-chat-escalate-btn:hover {
     border-color: var(--hn-ink);
+  }
+
+  .hn-chat-escalate-btn:active {
+    transform: scale(0.97);
   }
 
   /* Composer */
@@ -1518,11 +1539,12 @@ export const widgetStyles = `
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.1s;
+    transition: opacity 0.15s ease, transform 0.1s ease;
     padding: 0;
   }
 
   .hn-chat-send:hover { opacity: 0.9; }
+  .hn-chat-send:active { transform: scale(0.9); }
 
   .hn-chat-send:disabled {
     opacity: 0.45;
