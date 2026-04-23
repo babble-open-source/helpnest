@@ -15,7 +15,7 @@
   "license": "MIT",
   "author": "Sharan Karthikeyan <karthikeyansharan00@gmail.com>",
   "bin": {
-    "helpnest-mcp": "dist/index.js"
+    "helpnest-mcp": "dist/index.mjs"
   },
   "scripts": {
     "build": "tsup",
