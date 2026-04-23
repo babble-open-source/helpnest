@@ -37,6 +37,19 @@ export class ChatManager {
     return this.session
   }
 
+  setSession(conversationId: string) {
+    const stored = localStorage.getItem(STORAGE_KEY_PREFIX + this.config.workspace)
+    if (stored) {
+      try {
+        const session = JSON.parse(stored) as ChatSession
+        if (session.conversationId === conversationId) {
+          this.session = session
+          return
+        }
+      } catch { /* ignore */ }
+    }
+  }
+
   setOnNewMessages(cb: (msgs: ConversationMessage[]) => void) {
     this.onNewMessages = cb
   }
