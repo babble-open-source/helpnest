@@ -1,6 +1,6 @@
 {
   "name": "helpnest",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "HelpNest CLI — auto-draft KB articles from PRs and GitHub history",
   "homepage": "https://helpnest.cloud/",
   "repository": {
