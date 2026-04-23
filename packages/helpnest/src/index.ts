@@ -1,12 +1,16 @@
 #!/usr/bin/env node
+import { createRequire } from 'module'
 import { program } from 'commander'
 import { draftCommand } from './commands/draft.js'
 import { seedCommand } from './commands/seed.js'
 
+const require = createRequire(import.meta.url)
+const { version } = require('../package.json') as { version: string }
+
 program
   .name('helpnest')
   .description('HelpNest CLI — auto-draft KB articles from PRs and GitHub history')
-  .version('0.3.0')
+  .version(version)
 
 program
   .command('draft')
