@@ -402,13 +402,13 @@ importers:
 
   packages/mcp:
     dependencies:
-      '@helpnest/sdk':
-        specifier: workspace:*
-        version: link:../sdk
       '@modelcontextprotocol/sdk':
         specifier: ^1.0.0
         version: 1.27.1(zod@4.3.6)
     devDependencies:
+      '@helpnest/sdk':
+        specifier: workspace:*
+        version: link:../sdk
       '@types/node':
         specifier: ^20.0.0
         version: 20.19.37
