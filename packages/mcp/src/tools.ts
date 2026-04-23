@@ -82,6 +82,66 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ['question'],
       },
     },
+    {
+      name: 'create_collection',
+      description:
+        'Create a new collection (category) in the knowledge base. Returns the created ' +
+        'collection ID which can be used as collectionId when creating articles.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'Collection title (e.g. "Getting Started")' },
+          description: { type: 'string', description: 'Short description of the collection' },
+          emoji: { type: 'string', description: 'Emoji icon for the collection (e.g. "🚀")' },
+          slug: { type: 'string', description: 'URL slug (auto-generated from title if omitted)' },
+        },
+        required: ['title'],
+      },
+    },
+    {
+      name: 'create_article',
+      description:
+        'Create a new help article in the knowledge base. Content should be Markdown. ' +
+        'Returns the created article ID and slug.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          title: { type: 'string', description: 'Article title' },
+          content: { type: 'string', description: 'Article body in Markdown' },
+          collection_id: { type: 'string', description: 'ID of the collection to put this article in' },
+          excerpt: { type: 'string', description: 'Short summary shown in search results' },
+          slug: { type: 'string', description: 'URL slug (auto-generated from title if omitted)' },
+          status: { type: 'string', enum: ['DRAFT', 'PUBLISHED'], description: 'Publish status (default: PUBLISHED)' },
+        },
+        required: ['title', 'content', 'collection_id'],
+      },
+    },
+    {
+      name: 'update_article',
+      description: 'Update an existing article by its ID or slug.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          slug_or_id: { type: 'string', description: 'Article slug or ID to update' },
+          title: { type: 'string', description: 'New title' },
+          content: { type: 'string', description: 'New body in Markdown' },
+          excerpt: { type: 'string', description: 'New excerpt' },
+          status: { type: 'string', enum: ['DRAFT', 'PUBLISHED', 'ARCHIVED'], description: 'New status' },
+        },
+        required: ['slug_or_id'],
+      },
+    },
+    {
+      name: 'delete_article',
+      description: 'Permanently delete an article by its ID or slug.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          slug_or_id: { type: 'string', description: 'Article slug or ID to delete' },
+        },
+        required: ['slug_or_id'],
+      },
+    },
   ]
 }
 
@@ -102,6 +162,14 @@ export async function handleToolCall(
         return await listCollections(client)
       case 'ask_question':
         return await askQuestion(client, args)
+      case 'create_collection':
+        return await createCollection(client, args)
+      case 'create_article':
+        return await createArticle(client, args)
+      case 'update_article':
+        return await updateArticle(client, args)
+      case 'delete_article':
+        return await deleteArticle(client, args)
       default:
         return errorResult(`Unknown tool: ${toolName}`)
     }
@@ -208,6 +276,76 @@ async function askQuestion(client: HelpNest, args: Record<string, unknown>): Pro
   return textResult(
     `Here are the most relevant knowledge base articles for "${question}":\n\n${sections}`,
   )
+}
+
+async function createCollection(client: HelpNest, args: Record<string, unknown>): Promise<ToolResult> {
+  const title = args.title
+  if (typeof title !== 'string' || title.trim() === '') {
+    return errorResult('title must be a non-empty string')
+  }
+
+  const collection = await client.collections.create({
+    title: title.trim(),
+    ...(typeof args.description === 'string' ? { description: args.description } : {}),
+    ...(typeof args.emoji === 'string' ? { emoji: args.emoji } : {}),
+    ...(typeof args.slug === 'string' ? { slug: args.slug } : {}),
+    visibility: 'PUBLIC',
+  })
+
+  return textResult(
+    `Collection created.\n\n**Title:** ${collection.title}\n**ID:** ${collection.id}\n**Slug:** ${collection.slug}`,
+  )
+}
+
+async function createArticle(client: HelpNest, args: Record<string, unknown>): Promise<ToolResult> {
+  const title = args.title
+  const content = args.content
+  const collectionId = args.collection_id
+
+  if (typeof title !== 'string' || title.trim() === '') return errorResult('title must be a non-empty string')
+  if (typeof content !== 'string' || content.trim() === '') return errorResult('content must be a non-empty string')
+  if (typeof collectionId !== 'string' || collectionId.trim() === '') return errorResult('collection_id must be a non-empty string')
+
+  const article = await client.articles.create({
+    title: title.trim(),
+    content: content.trim(),
+    collectionId: collectionId.trim(),
+    status: args.status === 'DRAFT' ? 'DRAFT' : 'PUBLISHED',
+    ...(typeof args.excerpt === 'string' ? { excerpt: args.excerpt } : {}),
+    ...(typeof args.slug === 'string' ? { slug: args.slug } : {}),
+  })
+
+  return textResult(
+    `Article created.\n\n**Title:** ${article.title}\n**ID:** ${article.id}\n**Slug:** ${article.slug}\n**Status:** ${article.status}`,
+  )
+}
+
+async function updateArticle(client: HelpNest, args: Record<string, unknown>): Promise<ToolResult> {
+  const slugOrId = args.slug_or_id
+  if (typeof slugOrId !== 'string' || slugOrId.trim() === '') return errorResult('slug_or_id must be a non-empty string')
+
+  const article = await client.articles.get(slugOrId.trim())
+
+  const updated = await client.articles.update(article.id, {
+    ...(typeof args.title === 'string' ? { title: args.title } : {}),
+    ...(typeof args.content === 'string' ? { content: args.content } : {}),
+    ...(typeof args.excerpt === 'string' ? { excerpt: args.excerpt } : {}),
+    ...(args.status === 'DRAFT' || args.status === 'PUBLISHED' || args.status === 'ARCHIVED'
+      ? { status: args.status }
+      : {}),
+  })
+
+  return textResult(`Article updated.\n\n**Title:** ${updated.title}\n**ID:** ${updated.id}\n**Status:** ${updated.status}`)
+}
+
+async function deleteArticle(client: HelpNest, args: Record<string, unknown>): Promise<ToolResult> {
+  const slugOrId = args.slug_or_id
+  if (typeof slugOrId !== 'string' || slugOrId.trim() === '') return errorResult('slug_or_id must be a non-empty string')
+
+  const article = await client.articles.get(slugOrId.trim())
+  await client.articles.delete(article.id)
+
+  return textResult(`Article "${article.title}" (${article.id}) deleted.`)
 }
 
 // ── Result helpers ────────────────────────────────────────────────────────────
