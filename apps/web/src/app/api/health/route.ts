@@ -27,8 +27,9 @@ export async function GET() {
 
   const allOk = Object.values(checks).every((v) => v === 'ok')
 
+  // Always return 200 so Railway/Kubernetes healthchecks pass when the process
+  // is alive. Degraded status is visible in the response body for monitoring.
   return NextResponse.json(
     { status: allOk ? 'ok' : 'degraded', checks, timestamp: new Date().toISOString() },
-    { status: allOk ? 200 : 503 },
   )
 }
