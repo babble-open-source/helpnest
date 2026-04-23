@@ -88,12 +88,12 @@ describe('GET /api/health', () => {
     expect(body.checks.database).toBe('ok')
   })
 
-  it('returns 503 with status "degraded" when the DB $queryRaw throws', async () => {
+  it('returns 200 with status "degraded" when the DB $queryRaw throws', async () => {
     mockQueryRaw.mockRejectedValue(new Error('Connection refused'))
 
     const res = await GET()
 
-    expect(res.status).toBe(503)
+    expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.status).toBe('degraded')
     expect(body.checks.database).toBe('error')
@@ -138,28 +138,28 @@ describe('GET /api/health', () => {
     expect(mockQdrantGetCollections).toHaveBeenCalledOnce()
   })
 
-  it('returns 503 with degraded when QDRANT_URL is set but Qdrant is unreachable', async () => {
+  it('returns 200 with degraded when QDRANT_URL is set but Qdrant is unreachable', async () => {
     process.env.QDRANT_URL = 'http://localhost:6333'
     mockQueryRaw.mockResolvedValue([{ '?column?': 1 }] as never)
     mockQdrantGetCollections.mockRejectedValue(new Error('ECONNREFUSED'))
 
     const res = await GET()
 
-    expect(res.status).toBe(503)
+    expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.status).toBe('degraded')
     expect(body.checks.database).toBe('ok')
     expect(body.checks.qdrant).toBe('error')
   })
 
-  it('returns 503 degraded when both DB and Qdrant fail', async () => {
+  it('returns 200 degraded when both DB and Qdrant fail', async () => {
     process.env.QDRANT_URL = 'http://localhost:6333'
     mockQueryRaw.mockRejectedValue(new Error('DB down'))
     mockQdrantGetCollections.mockRejectedValue(new Error('Qdrant down'))
 
     const res = await GET()
 
-    expect(res.status).toBe(503)
+    expect(res.status).toBe(200)
     const body = await res.json()
     expect(body.status).toBe('degraded')
     expect(body.checks.database).toBe('error')
