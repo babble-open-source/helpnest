@@ -94,6 +94,7 @@ export function getToolDefinitions(): ToolDefinition[] {
           description: { type: 'string', description: 'Short description of the collection' },
           emoji: { type: 'string', description: 'Emoji icon for the collection (e.g. "🚀")' },
           slug: { type: 'string', description: 'URL slug (auto-generated from title if omitted)' },
+          parent_id: { type: 'string', description: 'ID of the parent collection to nest this collection under' },
         },
         required: ['title'],
       },
@@ -289,6 +290,7 @@ async function createCollection(client: HelpNest, args: Record<string, unknown>)
     ...(typeof args.description === 'string' ? { description: args.description } : {}),
     ...(typeof args.emoji === 'string' ? { emoji: args.emoji } : {}),
     ...(typeof args.slug === 'string' ? { slug: args.slug } : {}),
+    ...(typeof args.parent_id === 'string' ? { parentId: args.parent_id } : {}),
     visibility: 'PUBLIC',
   })
 
