@@ -1,15 +1,14 @@
 import { defineConfig } from 'tsup'
 
 export default defineConfig({
-  entry: ['src/index.ts'],
-  format: ['cjs', 'esm'],
-  dts: true,
+  entry: { index: 'src/index.ts' },
+  format: ['esm'],
+  dts: false,
   clean: true,
   splitting: false,
-  sourcemap: true,
-  minify: false,
-  minifySyntax: true,
+  sourcemap: false,
   treeshake: true,
+  noExternal: ['@helpnest/sdk'],
   banner: {
     js: '#!/usr/bin/env node',
   },
