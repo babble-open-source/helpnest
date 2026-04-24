@@ -1,7 +1,7 @@
 import type { ConversationMessage, Source } from './types'
 
 const STORAGE_KEY_PREFIX = 'helpnest:chat:'
-const SESSIONS_KEY_PREFIX = 'helpnest:sessions:'
+export const SESSIONS_KEY_PREFIX = 'helpnest:sessions:'
 const VISITOR_KEY_PREFIX = 'helpnest:visitor:'
 const POLL_INTERVAL = 5000
 const POLL_TIMEOUT = 10 * 60 * 1000 // 10 minutes
@@ -46,10 +46,13 @@ export class ChatManager {
     if (mapRaw) {
       try {
         const arr = JSON.parse(mapRaw) as Array<{ sessionToken: string; conversationId: string } | string>
-        for (const entry of arr) {
-          if (typeof entry === 'object' && entry.conversationId === conversationId) {
-            this.session = { sessionToken: entry.sessionToken, conversationId, lastMessageAt: Date.now() }
-            return
+        // Guard: old-format entries are bare strings; new format is objects with conversationId
+        if (Array.isArray(arr)) {
+          for (const entry of arr) {
+            if (typeof entry === 'object' && entry.conversationId === conversationId) {
+              this.session = { sessionToken: entry.sessionToken, conversationId, lastMessageAt: 0 }
+              return
+            }
           }
         }
       } catch { /* ignore */ }
@@ -65,8 +68,9 @@ export class ChatManager {
         }
       } catch { /* ignore */ }
     }
-    // No token found — set partial session; loadMessages will auth via X-Visitor-Id
-    this.session = { sessionToken: '', conversationId, lastMessageAt: Date.now() }
+    // No token found — partial session; loadMessages will auth via X-Visitor-Id.
+    // lastMessageAt=0 so this view-only session doesn't corrupt sort order.
+    this.session = { sessionToken: '', conversationId, lastMessageAt: 0 }
   }
 
   setOnNewMessages(cb: (msgs: ConversationMessage[]) => void) {
@@ -202,8 +206,12 @@ export class ChatManager {
     if (this.session.sessionToken) {
       headers['X-Session-Token'] = this.session.sessionToken
     } else {
-      // No stored session token (old conversation) — auth via stable visitorId
-      headers['X-Visitor-Id'] = this.getVisitorId()
+      // No stored session token (old conversation) — auth via stable visitorId.
+      // If visitorId is unavailable (e.g. localStorage quota exceeded), bail out
+      // rather than sending an empty header that would fall through to 401.
+      const vid = this.getVisitorId()
+      if (!vid) return []
+      headers['X-Visitor-Id'] = vid
     }
     try {
       const res = await fetch(url.toString(), { headers })
@@ -281,6 +289,8 @@ export class ChatManager {
     const key = SESSIONS_KEY_PREFIX + this.config.workspace
     const raw = localStorage.getItem(key)
     if (!raw) return []
+    // Array may contain bare strings (pre-migration format) or {sessionToken, conversationId} objects.
+    // Both formats must be handled permanently — existing user localStorage is never rewritten.
     const arr = JSON.parse(raw) as Array<{ sessionToken: string; conversationId: string } | string>
     return arr.map((e) => (typeof e === 'string' ? e : e.sessionToken))
   }

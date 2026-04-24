@@ -66,7 +66,9 @@ export async function GET(
   if (sessionToken) {
     conversationWhere = { id, sessionToken }
   } else if (visitorId) {
-    // Widget read-only auth via stable visitorId (no sessionToken stored for older conversations)
+    // Widget read-only auth via stable visitorId (no sessionToken stored for older conversations).
+    // { id, visitorId } is sufficient: the visitorId is a per-browser UUID the visitor controls,
+    // so they can only match conversations they themselves created — cross-user access is impossible.
     conversationWhere = { id, visitorId }
   } else {
     const authResult = await requireAuth(request)

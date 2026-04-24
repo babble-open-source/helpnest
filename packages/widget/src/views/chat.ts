@@ -118,6 +118,8 @@ export function renderChat(): string {
       </div>`
     : ''
 
+  // isReadOnly takes priority over RESOLVED: a tokenless session can't send
+  // messages even if the conversation happens to also be resolved.
   const isReadOnly = !chatManager?.getSession()?.sessionToken
   const composerDisabled = isStreaming || chatManager?.getState() === 'RESOLVED' || isReadOnly ? 'disabled' : ''
   const composerPlaceholder = isReadOnly

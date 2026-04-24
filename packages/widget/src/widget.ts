@@ -8,6 +8,7 @@ import { renderChat, bindChatEvents, initChatView, setChatRerender, resetChatVie
 import { renderCollectionDetail, bindCollectionDetailEvents, loadCollectionDetail } from './views/collection-detail'
 import { renderArticle, bindArticleEvents, loadArticle } from './views/article'
 import { renderTabBar } from './components/tab-bar'
+import { SESSIONS_KEY_PREFIX } from './chat'
 import { widgetStyles } from './styles'
 
 const TRANSITION_MS = 200
@@ -219,7 +220,7 @@ export class HelpNestWidget {
   private getAllSessionTokens(): string[] {
     const tokens = new Set<string>()
 
-    const stored = localStorage.getItem('helpnest:sessions:' + this.initConfig.workspace)
+    const stored = localStorage.getItem(SESSIONS_KEY_PREFIX + this.initConfig.workspace)
     if (stored) {
       try {
         const arr = JSON.parse(stored) as Array<{ sessionToken: string } | string>
