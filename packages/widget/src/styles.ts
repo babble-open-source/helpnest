@@ -185,6 +185,7 @@ export const widgetStyles = `
     flex: 1;
     min-height: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     will-change: transform, opacity;
   }
@@ -1355,12 +1356,13 @@ export const widgetStyles = `
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-width: 88%;
+    max-width: 85%;
   }
 
   .hn-msg-right {
     align-self: flex-end;
     align-items: flex-end;
+    margin-right: 2px;
   }
 
   .hn-msg-left {
