@@ -19,6 +19,8 @@ export class HelpNestWidget {
   private shadow: ShadowRoot | null = null
   private panel: HTMLElement | null = null
   private launcher: HTMLElement | null = null
+  private expandOverlay: HTMLElement | null = null
+  private isExpanded = false
   private unsubscribe: (() => void) | null = null
   private rendering = false
   private pendingRender = false
@@ -51,6 +53,10 @@ export class HelpNestWidget {
       </svg>
     `
     this.shadow.appendChild(this.launcher)
+
+    this.expandOverlay = document.createElement('div')
+    this.expandOverlay.className = 'hn-expand-overlay'
+    this.shadow.appendChild(this.expandOverlay)
 
     this.panel = document.createElement('div')
     this.panel.className = 'hn-panel hn-panel-hidden'
@@ -89,9 +95,13 @@ export class HelpNestWidget {
     })
 
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && getState().isOpen) this.close()
+      if (e.key !== 'Escape') return
+      if (this.isExpanded) this.toggleExpand()
+      else if (getState().isOpen) this.close()
     })
 
+    this.expandOverlay.addEventListener('click', () => this.toggleExpand())
+    this.panel.addEventListener('hn:expand', () => this.toggleExpand())
     this.panel.addEventListener('hn:close', () => this.close())
 
     this.unsubscribe = subscribe(() => void this.render())
@@ -190,6 +200,10 @@ export class HelpNestWidget {
 
   private close() {
     if (!this.panel) return
+    if (this.isExpanded) {
+      this.root?.classList.remove('hn-expanded')
+      this.isExpanded = false
+    }
     this.panel.classList.add('hn-panel-exit')
     this.launcher?.classList.remove('hn-launcher-active')
 
@@ -198,6 +212,18 @@ export class HelpNestWidget {
       this.panel?.classList.add('hn-panel-hidden')
       this.panel?.classList.remove('hn-panel-exit', 'hn-panel-enter')
     }, TRANSITION_MS)
+  }
+
+  private toggleExpand() {
+    if (!this.root || !this.panel) return
+    this.isExpanded = !this.isExpanded
+    if (this.isExpanded) {
+      this.root.classList.add('hn-expanded')
+      this.panel.classList.add('hn-panel-expanding')
+      setTimeout(() => this.panel?.classList.remove('hn-panel-expanding'), 300)
+    } else {
+      this.root.classList.remove('hn-expanded')
+    }
   }
 
   private async refreshConversations() {

@@ -57,7 +57,6 @@ export function renderArticle(article: ArticleDetail): string {
         showBack: true,
         showClose: true,
         showExpand: true,
-        expandUrl: helpCenterUrl,
       })}
       <div class="hn-view-body hn-article-body">
         <h2 class="hn-article-title">${escapeHtml(article.title)}</h2>
@@ -107,6 +106,10 @@ export function bindArticleEvents(container: HTMLElement): void {
 
   container.querySelector('.hn-header-close')?.addEventListener('click', () => {
     container.dispatchEvent(new CustomEvent('hn:close', { bubbles: true }))
+  })
+
+  container.querySelector('.hn-header-expand')?.addEventListener('click', () => {
+    container.dispatchEvent(new CustomEvent('hn:expand', { bubbles: true }))
   })
 
   bindFeedbackEvents(container)

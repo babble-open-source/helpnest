@@ -110,7 +110,7 @@ export function renderMessages(): string {
 
   return `
     <div class="hn-view hn-view-messages">
-      ${renderHeader({ title: 'Messages', showClose: true })}
+      ${renderHeader({ title: 'Messages', showClose: true, showExpand: true })}
       <div class="hn-view-body hn-view-body-flush">
         ${bodyHtml}
       </div>
@@ -134,7 +134,10 @@ export function bindMessagesEvents(container: HTMLElement): void {
   })
 
   container.querySelector('.hn-header-close')?.addEventListener('click', () => {
-    // close event bubbles up to the widget panel
     container.dispatchEvent(new CustomEvent('hn:close', { bubbles: true }))
+  })
+
+  container.querySelector('.hn-header-expand')?.addEventListener('click', () => {
+    container.dispatchEvent(new CustomEvent('hn:expand', { bubbles: true }))
   })
 }
