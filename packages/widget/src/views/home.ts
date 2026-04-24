@@ -1,4 +1,4 @@
-import { getState, switchTab, pushView } from '../state'
+import { getState, switchTab, pushView, switchTabAndPush } from '../state'
 import { renderTabBar } from '../components/tab-bar'
 import type { CollectionNode } from '../types'
 
@@ -98,8 +98,7 @@ export function bindHomeEvents(container: HTMLElement): void {
   })
 
   container.querySelector('[data-action="send-message"]')?.addEventListener('click', () => {
-    switchTab('messages')
-    pushView({ kind: 'chat' })
+    switchTabAndPush('messages', { kind: 'chat' })
   })
 
   container.querySelector('[data-action="view-all"]')?.addEventListener('click', () => {
@@ -111,8 +110,7 @@ export function bindHomeEvents(container: HTMLElement): void {
       const collectionId = (btn as HTMLElement).dataset.collectionId
       const title = (btn as HTMLElement).dataset.collectionTitle
       if (collectionId && title) {
-        switchTab('help')
-        pushView({ kind: 'collection-detail', collectionId, title })
+        switchTabAndPush('help', { kind: 'collection-detail', collectionId, title })
       }
     })
   })

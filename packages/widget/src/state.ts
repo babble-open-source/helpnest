@@ -69,6 +69,16 @@ export function pushView(view: ViewType) {
   notify()
 }
 
+export function switchTabAndPush(tab: TabId, view: ViewType) {
+  lastTransition = 'push'
+  state = {
+    ...state,
+    activeTab: tab,
+    viewStack: [{ kind: tab } as ViewType, view],
+  }
+  notify()
+}
+
 export function popView(): ViewType | null {
   if (state.viewStack.length <= 1) return null
   lastTransition = 'pop'
