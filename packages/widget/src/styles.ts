@@ -1472,8 +1472,8 @@ export const widgetStyles = `
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   }
 
-  .hn-msg-ai .hn-msg-bubble a,
-  .hn-msg-agent .hn-msg-bubble a {
+  .hn-msg-ai .hn-msg-bubble a:not(.hn-cite),
+  .hn-msg-agent .hn-msg-bubble a:not(.hn-cite) {
     color: var(--hn-accent);
     text-decoration: underline;
   }

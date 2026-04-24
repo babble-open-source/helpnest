@@ -37,6 +37,8 @@ export function renderMarkdown(md: string): string {
   // Ordered lists
   html = html.replace(/^\d+\. (.+)$/gm, '<li class="hn-md-oli">$1</li>')
   html = html.replace(/((?:<li class="hn-md-oli">.*<\/li>\n?)+)/g, '<ol class="hn-md-ol">$1</ol>')
+  // Merge consecutive <ol> blocks separated only by whitespace (blank lines between items)
+  html = html.replace(/<\/ol>\s*<ol class="hn-md-ol">/g, '')
 
   // Horizontal rule
   html = html.replace(/^---+$/gm, '<hr class="hn-md-hr" />')
