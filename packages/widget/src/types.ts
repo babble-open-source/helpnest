@@ -6,6 +6,7 @@ export interface WidgetConfig {
   aiEnabled: boolean
   aiGreeting: string
   widgetResponseTime: string | null
+  helpCenterUrl: string
   theme: {
     vars: Record<string, string>
     fontUrls: string[]

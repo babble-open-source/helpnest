@@ -14,10 +14,15 @@ export function renderMarkdown(md: string): string {
     '<img class="hn-md-img" src="$2" alt="$1" loading="lazy" />'
   )
 
-  // Links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer" class="hn-md-a">$1</a>'
-  )
+  // Links — only render as anchor if href is a proper external URL (not '#', relative, or fragment-only)
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, href) => {
+    const isExternal = /^https?:\/\//i.test(href) && href !== '#' && !href.endsWith('#')
+    if (isExternal) {
+      return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="hn-md-a">${text}</a>`
+    }
+    // Bad/relative/fragment-only hrefs: render as styled text to avoid navigating the host page
+    return `<span class="hn-md-a">${text}</span>`
+  })
 
   // Headings (h1-h4)
   html = html.replace(/^#### (.+)$/gm, '<h4 class="hn-md-h4">$1</h4>')

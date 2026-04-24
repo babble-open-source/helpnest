@@ -1,7 +1,7 @@
 import type { ConversationMessage } from '../types'
 import { renderMarkdown } from './markdown'
 
-export function renderMessage(msg: ConversationMessage, workspaceSlug: string, baseUrl: string): string {
+export function renderMessage(msg: ConversationMessage, helpCenterUrl: string, baseUrl: string): string {
   const roleClass = `hn-msg-${msg.role.toLowerCase()}`
   const alignment = msg.role === 'CUSTOMER' ? 'hn-msg-right' : 'hn-msg-left'
 
@@ -19,7 +19,7 @@ export function renderMessage(msg: ConversationMessage, workspaceSlug: string, b
   const contentWithCites = sources.length
     ? (() => {
         const badges = sources.map((s, i) =>
-          `<a href="${baseUrl}/${workspaceSlug}/help/${s.collection.slug}/${s.slug}" target="_blank" class="hn-cite" data-cite-title="${escapeHtml(s.title)}">${i + 1}</a>`
+          `<a href="${helpCenterUrl}/${s.collection.slug}/${s.slug}" target="_blank" class="hn-cite" data-cite-title="${escapeHtml(s.title)}">${i + 1}</a>`
         ).join('')
         const group = `<span class="hn-cite-group">${badges}</span>`
         const lastP = contentHtml.lastIndexOf('</p>')

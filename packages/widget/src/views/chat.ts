@@ -89,9 +89,10 @@ export function renderChat(): string {
 
   const workspaceName = escapeHtml(config.name)
   const baseUrl = getBaseUrl()
+  const helpCenterUrl = config.helpCenterUrl ?? baseUrl
 
   const messagesHtml = messages
-    .map((msg) => renderMessage(msg, config.slug, baseUrl))
+    .map((msg) => renderMessage(msg, helpCenterUrl, baseUrl))
     .join('')
 
   const showTyping = isStreaming && streamingContent === ''

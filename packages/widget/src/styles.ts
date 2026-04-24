@@ -1515,7 +1515,7 @@ export const widgetStyles = `
 
   /* Floating tooltip — child of shadow root, not panel, so it escapes overflow:hidden */
   .hn-floating-tooltip {
-    position: absolute;
+    position: fixed;
     background: var(--hn-ink);
     color: var(--hn-cream);
     font-family: var(--hn-font-body);

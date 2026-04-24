@@ -79,6 +79,7 @@ export async function GET(request: Request) {
       ...(columns.has('customBodyFontUrl') ? { customBodyFontUrl: true } : {}),
       ...(columns.has('customBrandFontFamily') ? { customBrandFontFamily: true } : {}),
       ...(columns.has('customBrandFontUrl') ? { customBrandFontUrl: true } : {}),
+      ...(columns.has('customDomain') ? { customDomain: true } : {}),
     },
   })
 
@@ -111,6 +112,12 @@ export async function GET(request: Request) {
   const vars = cssToVars(getWorkspaceThemeCSS(workspace.themeId, overrides))
   const fontUrls = getWorkspaceFontUrls(workspace.themeId, overrides)
 
+  // Determine help center base URL: custom domain takes priority over the default subdomain
+  const customDomain = (workspace as unknown as Record<string, unknown>).customDomain as string | null ?? null
+  const helpCenterUrl = customDomain
+    ? `https://${customDomain}`
+    : `https://${workspace.slug}.helpnest.cloud`
+
   return NextResponse.json(
     {
       workspaceId: workspace.id,
@@ -120,6 +127,7 @@ export async function GET(request: Request) {
       aiEnabled: workspace.aiEnabled,
       aiGreeting: workspace.aiGreeting?.trim() || 'Hi there! How can we help?',
       widgetResponseTime: workspace.widgetResponseTime ?? null,
+      helpCenterUrl,
       theme: {
         vars,
         fontUrls,

@@ -73,11 +73,10 @@ export class HelpNestWidget {
       this.floatingTooltip.textContent = title
       this.floatingTooltip.classList.add('hn-floating-tooltip-visible')
       const rect = cite.getBoundingClientRect()
-      const hostRect = (this.shadow.host as HTMLElement).getBoundingClientRect()
-      const cx = rect.left - hostRect.left + rect.width / 2
-      const ty = rect.top - hostRect.top
-      // Clamp so tooltip (max 220px) stays within host width
-      const clamped = Math.max(114, Math.min(cx, hostRect.width - 114))
+      const cx = rect.left + rect.width / 2
+      const ty = rect.top
+      // Clamp so tooltip (max 220px) stays within the viewport width
+      const clamped = Math.max(114, Math.min(cx, window.innerWidth - 114))
       this.floatingTooltip.style.left = `${clamped}px`
       this.floatingTooltip.style.top = `${ty}px`
       this.floatingTooltip.style.transform = 'translate(-50%, calc(-100% - 8px))'
