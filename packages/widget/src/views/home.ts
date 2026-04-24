@@ -1,5 +1,4 @@
 import { getState, switchTab, pushView, switchTabAndPush } from '../state'
-import { renderTabBar } from '../components/tab-bar'
 import type { CollectionNode } from '../types'
 
 function escapeHtml(str: string): string {
@@ -68,7 +67,6 @@ export function renderHome(): string {
         <span class="hn-powered-by">Powered by <a href="https://helpnest.cloud" target="_blank" rel="noopener">HelpNest</a></span>
       </div>
 
-      ${renderTabBar(getState().activeTab, config.aiEnabled)}
     </div>
   `
 }

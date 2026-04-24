@@ -2,7 +2,7 @@ import { getState, pushView, setSearchQuery, setSearchResults, switchTab } from 
 import { searchArticles } from '../api'
 import { renderHeader } from '../components/header'
 import { renderSearchBar } from '../components/search-bar'
-import { renderTabBar } from '../components/tab-bar'
+
 import type { CollectionNode } from '../types'
 
 function escapeHtml(str: string): string {
@@ -51,7 +51,6 @@ export function renderHelp(): string {
       <div class="hn-view-body hn-view-body-flush">
         ${renderBodyContent()}
       </div>
-      ${renderTabBar(getState().activeTab, config.aiEnabled)}
     </div>
   `
 }

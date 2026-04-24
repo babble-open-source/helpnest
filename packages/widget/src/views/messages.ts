@@ -1,6 +1,6 @@
 import { getState, pushView, switchTab } from '../state'
 import { renderHeader } from '../components/header'
-import { renderTabBar } from '../components/tab-bar'
+
 import type { ConversationSummary } from '../types'
 
 function escapeHtml(str: string): string {
@@ -98,7 +98,6 @@ export function renderMessages(): string {
           Send us a message
         </button>
       </div>
-      ${renderTabBar(getState().activeTab, config.aiEnabled)}
     </div>
   `
 }

@@ -7,6 +7,7 @@ import { renderHelp, bindHelpEvents } from './views/help'
 import { renderChat, bindChatEvents, initChatView, setChatRerender } from './views/chat'
 import { renderCollectionDetail, bindCollectionDetailEvents, loadCollectionDetail } from './views/collection-detail'
 import { renderArticle, bindArticleEvents, loadArticle } from './views/article'
+import { renderTabBar } from './components/tab-bar'
 import { widgetStyles } from './styles'
 
 const STORAGE_SESSION_KEY = 'helpnest:session:'
@@ -195,6 +196,7 @@ export class HelpNestWidget {
 
       if (direction !== 'none' && this.viewContainer && viewKey !== this.currentViewKind) {
         await this.transitionView(viewHtml, view, direction)
+        this.updateTabBar(view)
       } else {
         this.swapView(viewHtml, view)
       }
@@ -243,7 +245,12 @@ export class HelpNestWidget {
 
   private swapView(html: string, view: ViewType) {
     if (!this.panel) return
-    this.panel.innerHTML = `<div class="hn-view-stack"><div class="hn-view-layer">${html}</div></div>`
+    const state = getState()
+    const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help'
+    const tabBarHtml = showTabBar && state.config
+      ? renderTabBar(state.activeTab, state.config.aiEnabled)
+      : ''
+    this.panel.innerHTML = `<div class="hn-view-stack"><div class="hn-view-layer">${html}</div></div>${tabBarHtml}`
     this.viewContainer = this.panel.querySelector('.hn-view-stack')
     this.bindViewEvents(view)
   }
@@ -290,6 +297,23 @@ export class HelpNestWidget {
         resolve()
       }, TRANSITION_MS)
     })
+  }
+
+  private updateTabBar(view: ViewType) {
+    if (!this.panel) return
+    const state = getState()
+    const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help'
+    const existing = this.panel.querySelector('.hn-tab-bar')
+    if (showTabBar && state.config) {
+      if (!existing) {
+        const tabBarDiv = document.createElement('div')
+        tabBarDiv.innerHTML = renderTabBar(state.activeTab, state.config.aiEnabled)
+        const tabBar = tabBarDiv.firstElementChild
+        if (tabBar) this.panel.appendChild(tabBar)
+      }
+    } else if (existing) {
+      existing.remove()
+    }
   }
 
   private bindViewEvents(view: ViewType) {
