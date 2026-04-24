@@ -274,12 +274,35 @@ export class HelpNestWidget {
     if (!this.panel) return
     const state = getState()
     const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help'
+
+    // Preserve textarea value + focus across chat in-place re-renders (streaming)
+    let savedInputValue = ''
+    let inputWasFocused = false
+    if (view.kind === 'chat') {
+      const existingInput = this.panel.querySelector('#hn-chat-input') as HTMLTextAreaElement | null
+      if (existingInput) {
+        savedInputValue = existingInput.value
+        inputWasFocused = this.shadow?.activeElement === existingInput
+      }
+    }
+
     const tabBarHtml = showTabBar && state.config
       ? renderTabBar(state.activeTab, state.config.aiEnabled)
       : ''
     this.panel.innerHTML = `<div class="hn-view-stack"><div class="hn-view-layer">${html}</div></div>${tabBarHtml}`
     this.viewContainer = this.panel.querySelector('.hn-view-stack')
     this.bindViewEvents(view)
+
+    // Restore textarea value + focus after DOM replace
+    if (view.kind === 'chat' && savedInputValue) {
+      const newInput = this.panel.querySelector('#hn-chat-input') as HTMLTextAreaElement | null
+      if (newInput) {
+        newInput.value = savedInputValue
+        newInput.style.height = 'auto'
+        newInput.style.height = Math.min(newInput.scrollHeight, 96) + 'px'
+        if (inputWasFocused) newInput.focus()
+      }
+    }
   }
 
   private transitionView(html: string, view: ViewType, direction: string): Promise<void> {

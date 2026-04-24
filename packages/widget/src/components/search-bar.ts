@@ -1,4 +1,9 @@
-export function renderSearchBar(placeholder?: string): string {
+function escapeAttr(str: string): string {
+  return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;')
+}
+
+export function renderSearchBar(placeholder?: string, value?: string): string {
+  const safeValue = value ? escapeAttr(value) : ''
   return `
     <div class="hn-search-bar">
       <svg class="hn-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -8,6 +13,7 @@ export function renderSearchBar(placeholder?: string): string {
         class="hn-search-input"
         type="text"
         placeholder="${placeholder ?? 'Search for help'}"
+        ${safeValue ? `value="${safeValue}"` : ''}
         autocomplete="off"
         spellcheck="false"
       />

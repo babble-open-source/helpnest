@@ -1584,7 +1584,7 @@ export const widgetStyles = `
 
   /* Escalate */
   .hn-chat-escalate-wrap {
-    padding: 0 14px 10px;
+    padding: 8px 14px 0;
     flex-shrink: 0;
   }
 

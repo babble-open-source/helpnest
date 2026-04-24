@@ -41,7 +41,7 @@ export function renderHelp(): string {
     <div class="hn-view hn-view-help">
       ${renderHeader({ title: 'Help', showClose: true })}
       <div class="hn-help-search-wrap">
-        ${renderSearchBar('Search articles…')}
+        ${renderSearchBar('Search articles…', searchQuery)}
         <button class="hn-search-clear" type="button" aria-label="Clear search" ${searchQuery ? '' : 'style="display:none"'}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -114,11 +114,15 @@ export function bindHelpEvents(container: HTMLElement, _rerenderFn: () => void):
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
   const searchWrap = container.querySelector('.hn-help-search-wrap')
+  const clearBtn = container.querySelector('.hn-search-clear') as HTMLElement | null
+
   searchWrap?.addEventListener('input', (e) => {
     const input = e.target as HTMLInputElement
     if (!input.classList.contains('hn-search-input')) return
     const query = input.value.trim()
     setSearchQuery(query)
+
+    if (clearBtn) clearBtn.style.display = query ? '' : 'none'
 
     if (debounceTimer) clearTimeout(debounceTimer)
 
@@ -135,11 +139,12 @@ export function bindHelpEvents(container: HTMLElement, _rerenderFn: () => void):
     }, 300)
   })
 
-  container.querySelector('.hn-search-clear')?.addEventListener('click', () => {
+  clearBtn?.addEventListener('click', () => {
     setSearchQuery('')
     setSearchResults([])
     const searchInput = container.querySelector('.hn-search-input') as HTMLInputElement | null
     if (searchInput) searchInput.value = ''
+    if (clearBtn) clearBtn.style.display = 'none'
     updateBody(container)
   })
 
