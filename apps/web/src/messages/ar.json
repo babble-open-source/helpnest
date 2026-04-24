@@ -249,6 +249,7 @@
     "actions": "الإجراءات",
     "ai": "AI",
     "aiUpdate": "تحديث AI",
+    "draftChanges": "تعديلات غير منشورة",
     "noVotes": "لا أصوات",
     "percentHelpful": "{rate}% مفيدة",
     "votes": "{count, plural, zero {# أصوات} one {# صوت} two {# صوتان} few {# أصوات} many {# صوت} other {# أصوات}}",

@@ -249,6 +249,7 @@
     "actions": "Ações",
     "ai": "IA",
     "aiUpdate": "Atualização IA",
+    "draftChanges": "Alterações em rascunho",
     "noVotes": "Sem votos",
     "percentHelpful": "{rate}% útil",
     "votes": "{count, plural, one {# voto} other {# votos}}",

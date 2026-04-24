@@ -249,6 +249,7 @@
     "actions": "क्रियाएँ",
     "ai": "AI",
     "aiUpdate": "AI अपडेट",
+    "draftChanges": "ड्राफ़्ट परिवर्तन",
     "noVotes": "कोई वोट नहीं",
     "percentHelpful": "{rate}% उपयोगी",
     "votes": "{count, plural, one {# वोट} other {# वोट}}",

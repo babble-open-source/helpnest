@@ -188,9 +188,14 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                     <span className="text-sm text-muted truncate block">{article.collection.title}</span>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${STATUS_STYLES[article.status]}`}>
-                      {{ PUBLISHED: tc('published'), DRAFT: tc('draft'), ARCHIVED: tc('archived') }[article.status] ?? article.status}
-                    </span>
+                    <div className="flex flex-col gap-0.5">
+                      <span className={`text-xs px-2 py-0.5 rounded-full self-start ${STATUS_STYLES[article.status]}`}>
+                        {{ PUBLISHED: tc('published'), DRAFT: tc('draft'), ARCHIVED: tc('archived') }[article.status] ?? article.status}
+                      </span>
+                      {article.status === 'PUBLISHED' && article.draftContent && (
+                        <span className="text-xs text-amber-600 px-0.5">{t('draftChanges')}</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-end hidden md:table-cell">
                     <span className="text-sm text-muted">{format.number(article.views)}</span>

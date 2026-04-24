@@ -249,6 +249,7 @@
     "actions": "操作",
     "ai": "AI",
     "aiUpdate": "AI 更新",
+    "draftChanges": "待发布修改",
     "noVotes": "暂无投票",
     "percentHelpful": "{rate}% 有用",
     "votes": "{count, plural, other {# 票}}",
