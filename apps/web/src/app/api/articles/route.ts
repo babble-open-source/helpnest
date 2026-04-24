@@ -3,6 +3,7 @@ import { Prisma } from '@helpnest/db'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { htmlToMarkdown } from '@/lib/html-to-markdown'
+import { markdownToHtml } from '@/lib/markdown-to-html'
 import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
 import { slugify } from '@/lib/slugify'
 
@@ -146,7 +147,7 @@ export async function POST(request: Request) {
           authorId,
           title,
           slug,
-          content: body.content ?? '',
+          content: markdownToHtml(body.content ?? ''),
           excerpt: body.excerpt ?? null,
           status,
           ...(status === 'PUBLISHED' ? { publishedAt: new Date() } : {}),

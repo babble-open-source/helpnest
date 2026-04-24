@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { isDemoMode } from '@/lib/demo'
 import { htmlToMarkdown } from '@/lib/html-to-markdown'
+import { markdownToHtml } from '@/lib/markdown-to-html'
 import { slugify } from '@/lib/slugify'
 
 export async function GET(
@@ -92,16 +93,17 @@ export async function PATCH(
   if (slug !== undefined) data.slug = slug
 
   if (body.content !== undefined) {
+    const htmlContent = markdownToHtml(body.content)
     if (body.publishDraft) {
       // Publishing: push draftContent (or the submitted content) to live content, clear draft
-      data.content = existing.draftContent ?? body.content
+      data.content = existing.draftContent ?? htmlContent
       data.draftContent = null
     } else if (existing.status === 'PUBLISHED') {
       // Saving draft on a published article: store in draftContent, leave live content alone
-      data.draftContent = body.content
+      data.draftContent = htmlContent
     } else {
       // Saving a draft article: content goes straight to content
-      data.content = body.content
+      data.content = htmlContent
     }
   }
 
