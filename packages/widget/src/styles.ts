@@ -140,14 +140,15 @@ export const widgetStyles = `
 
   /* ─── Expand overlay ────────────────────────────────────────────────────── */
 
+  /* Covers the full host (which expands to full-viewport when expanded).
+     position:absolute so it fills the host without creating a new fixed context. */
   .hn-expand-overlay {
-    position: fixed;
+    position: absolute;
     inset: 0;
     background: rgba(0, 0, 0, 0.4);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.25s ease;
-    z-index: 0;
   }
 
   :host(.hn-expanded) .hn-expand-overlay {
@@ -156,19 +157,28 @@ export const widgetStyles = `
     cursor: default;
   }
 
-  /* ─── Expanded panel ────────────────────────────────────────────────────── */
+  /* ─── Expanded host + panel ─────────────────────────────────────────────── */
+
+  /* Expand the host to cover the full viewport and act as a flex centering container.
+     This avoids using position:fixed on the panel, which can be mis-contained by the
+     host's own fixed positioning in some browsers. */
+  :host(.hn-expanded) {
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
   :host(.hn-expanded) .hn-panel {
-    position: fixed;
-    top: 50%;
-    left: 50%;
+    position: relative;
     bottom: auto;
     right: auto;
-    transform: translate(-50%, -50%);
+    transform: none;
     width: min(720px, calc(100vw - 48px));
     height: min(85vh, 780px);
     border-radius: 16px;
     z-index: 1;
+    flex-shrink: 0;
   }
 
   :host(.hn-expanded) .hn-launcher {
@@ -176,8 +186,8 @@ export const widgetStyles = `
   }
 
   @keyframes hn-panel-expand-in {
-    from { opacity: 0.6; transform: translate(-50%, -50%) scale(0.96); }
-    to   { opacity: 1;   transform: translate(-50%, -50%) scale(1); }
+    from { opacity: 0.6; transform: scale(0.96); }
+    to   { opacity: 1;   transform: scale(1); }
   }
 
   :host(.hn-expanded) .hn-panel.hn-panel-expanding {
