@@ -254,6 +254,10 @@ export const widgetStyles = `
     padding: 12px;
   }
 
+  .hn-view-body-flush {
+    padding: 0;
+  }
+
   /* ─── Header ─────────────────────────────────────────────────────────────── */
 
   .hn-header {
@@ -819,16 +823,16 @@ export const widgetStyles = `
   }
 
   .hn-help-count {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--hn-muted);
-    margin: 0 0 10px;
-    font-weight: 500;
+    margin: 0;
+    padding: 12px 16px 8px;
+    font-weight: 600;
   }
 
   .hn-help-collections {
     display: flex;
     flex-direction: column;
-    gap: 8px;
   }
 
   .hn-help-results {
@@ -853,24 +857,28 @@ export const widgetStyles = `
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 12px 14px;
-    background: var(--hn-white);
-    border: 1px solid var(--hn-border);
-    border-radius: var(--hn-radius);
+    padding: 14px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--hn-border);
     cursor: pointer;
     text-align: left;
     width: 100%;
     font-family: inherit;
-    transition: border-color 0.15s ease, transform 0.1s ease, background 0.15s ease;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+
+  .hn-col-card:first-child {
+    border-top: 1px solid var(--hn-border);
   }
 
   .hn-col-card:hover {
-    border-color: var(--hn-ink);
+    background: var(--hn-white);
   }
 
   .hn-col-card:active {
-    transform: scale(0.98);
-    background: var(--hn-cream);
+    transform: scale(0.99);
+    background: var(--hn-border);
   }
 
   .hn-col-card-body {
@@ -913,7 +921,7 @@ export const widgetStyles = `
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 10px 14px;
+    padding: 12px 16px;
     background: transparent;
     border: none;
     border-bottom: 1px solid var(--hn-border);
@@ -975,7 +983,8 @@ export const widgetStyles = `
     display: flex;
     flex-direction: column;
     gap: 8px;
-    margin-bottom: 16px;
+    padding: 12px;
+    margin-bottom: 4px;
   }
 
   .hn-col-detail-articles {

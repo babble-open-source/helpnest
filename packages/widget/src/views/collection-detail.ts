@@ -82,7 +82,7 @@ export function renderCollectionDetail(data: CollectionDetailData): string {
         <h3 class="hn-col-detail-title">${escapeHtml(data.collectionTitle)}</h3>
         ${data.collectionDescription ? `<p class="hn-col-detail-desc">${escapeHtml(data.collectionDescription)}</p>` : ''}
       </div>
-      <div class="hn-view-body">
+      <div class="hn-view-body hn-view-body-flush">
         ${subCollectionsHtml}
         ${articlesHtml}
       </div>

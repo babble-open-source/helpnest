@@ -70,7 +70,7 @@ export function renderHelp(): string {
           </svg>
         </button>` : ''}
       </div>
-      <div class="hn-view-body">
+      <div class="hn-view-body hn-view-body-flush">
         ${bodyHtml}
       </div>
       ${renderTabBar(getState().activeTab, config.aiEnabled)}
