@@ -1157,6 +1157,10 @@ export const widgetStyles = `
     margin: 0 0 4px;
   }
 
+  .hn-article-content li > p {
+    margin: 0;
+  }
+
   .hn-article-content a {
     color: var(--hn-accent);
     text-decoration: underline;

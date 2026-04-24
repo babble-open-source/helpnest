@@ -13,6 +13,10 @@ function escapeHtml(str: string): string {
     .replace(/"/g, '&quot;')
 }
 
+function sanitizeHtml(html: string): string {
+  return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+}
+
 function formatRelativeDate(dateStr: string): string {
   const date = new Date(dateStr)
   const now = new Date()
@@ -60,7 +64,7 @@ export function renderArticle(article: ArticleDetail): string {
           </div>
         </div>
         <div class="hn-article-content">
-          ${renderMarkdown(article.content)}
+          ${article.content.trimStart().startsWith('<') ? sanitizeHtml(article.content) : renderMarkdown(article.content)}
         </div>
         ${renderArticleFeedback(article.id)}
         <a class="hn-article-open-link" href="${escapeHtml(helpCenterUrl)}" target="_blank" rel="noopener">
