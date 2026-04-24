@@ -1384,6 +1384,14 @@ export const widgetStyles = `
     overflow-wrap: anywhere;
   }
 
+  .hn-msg-bubble p {
+    margin: 0;
+  }
+
+  .hn-msg-bubble p + p {
+    margin-top: 4px;
+  }
+
   .hn-msg-customer .hn-msg-bubble {
     background: var(--hn-ink);
     color: var(--hn-cream);
