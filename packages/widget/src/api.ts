@@ -41,9 +41,10 @@ export async function searchArticles(query: string): Promise<ArticleSummary[]> {
   return data.results ?? []
 }
 
-export async function fetchConversations(sessionToken: string): Promise<ConversationSummary[]> {
+export async function fetchConversations(sessionTokens: string[]): Promise<ConversationSummary[]> {
+  if (sessionTokens.length === 0) return []
   const res = await fetch(`${baseUrl}/api/widget/conversations`, {
-    headers: { 'X-Session-Token': sessionToken },
+    headers: { 'X-Session-Token': sessionTokens.join(',') },
   })
   if (!res.ok) return []
   const data = await res.json() as { conversations: ConversationSummary[] }

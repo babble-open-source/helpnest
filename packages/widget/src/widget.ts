@@ -200,21 +200,30 @@ export class HelpNestWidget {
   }
 
   private async refreshConversations() {
-    const sessionToken = this.getSessionToken()
-    if (!sessionToken) return
-    const conversations = await fetchConversations(sessionToken)
+    const tokens = this.getAllSessionTokens()
+    if (tokens.length === 0) return
+    const conversations = await fetchConversations(tokens)
     setConversations(conversations)
   }
 
-  private getSessionToken(): string | null {
+  private getAllSessionTokens(): string[] {
+    // Read from the accumulated sessions key written by ChatManager
+    const stored = localStorage.getItem('helpnest:sessions:' + this.initConfig.workspace)
+    if (stored) {
+      try {
+        const tokens = JSON.parse(stored) as string[]
+        if (Array.isArray(tokens) && tokens.length > 0) return tokens
+      } catch { /* ignore */ }
+    }
+    // Fall back to single current session token for backwards compat
     const chatData = localStorage.getItem('helpnest:chat:' + this.initConfig.workspace)
     if (chatData) {
       try {
         const parsed = JSON.parse(chatData) as { sessionToken?: string }
-        if (parsed.sessionToken) return parsed.sessionToken
+        if (parsed.sessionToken) return [parsed.sessionToken]
       } catch { /* ignore */ }
     }
-    return null
+    return []
   }
 
   private async render() {

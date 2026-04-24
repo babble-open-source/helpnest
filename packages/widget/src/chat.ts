@@ -1,6 +1,7 @@
 import type { ConversationMessage, Source } from './types'
 
 const STORAGE_KEY_PREFIX = 'helpnest:chat:'
+const SESSIONS_KEY_PREFIX = 'helpnest:sessions:'
 const POLL_INTERVAL = 5000
 const POLL_TIMEOUT = 10 * 60 * 1000 // 10 minutes
 
@@ -228,7 +229,19 @@ export class ChatManager {
         STORAGE_KEY_PREFIX + this.config.workspace,
         JSON.stringify(this.session)
       )
+      // Accumulate all tokens so the conversations list can show all past chats
+      const key = SESSIONS_KEY_PREFIX + this.config.workspace
+      const existing = JSON.parse(localStorage.getItem(key) ?? '[]') as string[]
+      if (!existing.includes(this.session.sessionToken)) {
+        existing.push(this.session.sessionToken)
+        localStorage.setItem(key, JSON.stringify(existing))
+      }
     }
+  }
+
+  getAllSessionTokens(): string[] {
+    const key = SESSIONS_KEY_PREFIX + this.config.workspace
+    return JSON.parse(localStorage.getItem(key) ?? '[]') as string[]
   }
 
   private updateState(status: string) {

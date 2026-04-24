@@ -12,18 +12,19 @@ export async function OPTIONS() {
 }
 
 export async function GET(request: Request) {
-  const sessionToken = request.headers.get('X-Session-Token')?.trim() ?? ''
+  const rawHeader = request.headers.get('X-Session-Token')?.trim() ?? ''
 
-  if (sessionToken.length === 0) {
+  if (rawHeader.length === 0) {
     return NextResponse.json(
       { error: 'Missing X-Session-Token header' },
       { status: 400, headers: CORS_HEADERS },
     )
   }
 
-  // Validate token maps to a real conversation before querying all conversations
+  const sessionTokens = rawHeader.split(',').map((t) => t.trim()).filter(Boolean)
+
   const conversations = await prisma.conversation.findMany({
-    where: { sessionToken },
+    where: { sessionToken: { in: sessionTokens } },
     select: {
       id: true,
       status: true,
