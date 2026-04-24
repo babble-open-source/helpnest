@@ -84,20 +84,24 @@ export function renderMessages(): string {
         <p class="hn-conv-empty-text">No messages yet</p>
       </div>`
 
-  return `
-    <div class="hn-view hn-view-messages">
-      ${renderHeader({ title: 'Messages', showClose: true })}
-      <div class="hn-view-body hn-view-body-flush">
-        ${bodyHtml}
-      </div>
-      <div class="hn-messages-cta-wrap">
+  const ctaHtml = config.aiEnabled
+    ? `<div class="hn-messages-cta-wrap">
         <button class="hn-messages-cta" type="button" data-action="new-message">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
           </svg>
           Send us a message
         </button>
+      </div>`
+    : ''
+
+  return `
+    <div class="hn-view hn-view-messages">
+      ${renderHeader({ title: 'Messages', showClose: true })}
+      <div class="hn-view-body hn-view-body-flush">
+        ${bodyHtml}
       </div>
+      ${ctaHtml}
     </div>
   `
 }

@@ -38,10 +38,12 @@ export function getChatManager(): ChatManager | null {
 }
 
 export function resetChatView(): void {
+  chatManager?.stopPolling()
   chatManager = null
   messages = []
   isStreaming = false
   streamingContent = ''
+  rerender = null
   _initializedForConvId = undefined
 }
 
@@ -242,7 +244,9 @@ function scrollToBottom(container: HTMLElement): void {
 }
 
 async function sendMessage(text: string, input: HTMLTextAreaElement | null): Promise<void> {
-  if (!chatManager) return
+  // Capture manager instance — module var may be nulled by resetChatView while async
+  const manager = chatManager
+  if (!manager) return
 
   if (input) {
     input.value = ''
@@ -252,7 +256,6 @@ async function sendMessage(text: string, input: HTMLTextAreaElement | null): Pro
   isStreaming = true
   streamingContent = ''
 
-  // Add customer message to local list immediately
   const customerMsg: ConversationMessage = {
     id: `local_${Date.now()}`,
     role: 'CUSTOMER',
@@ -263,28 +266,27 @@ async function sendMessage(text: string, input: HTMLTextAreaElement | null): Pro
   rerender?.()
 
   try {
-    if (!chatManager.getSession()) {
-      await chatManager.createConversation()
+    if (!manager.getSession()) {
+      await manager.createConversation()
     }
 
-    for await (const event of chatManager.sendMessage(text)) {
+    for await (const event of manager.sendMessage(text)) {
+      // User navigated away — abort cleanly
+      if (chatManager === null) return
+
       if (event.type === 'text') {
         streamingContent += event.text
         rerender?.()
       } else if (event.type === 'sources') {
-        // sources will be included when we reload messages after done
+        // sources included when reloading after done
       } else if (event.type === 'done') {
-        chatManager.advanceLastMessageAt()
-        // Reload full messages from server to get proper IDs and sources
-        const loaded = await chatManager.loadMessages()
+        manager.advanceLastMessageAt()
+        const loaded = await manager.loadMessages()
+        if (chatManager === null) return  // navigated away during load
         messages = loaded
         isStreaming = false
         streamingContent = ''
         rerender?.()
-
-        if (event.shouldEscalate) {
-          rerender?.()
-        }
         return
       } else if (event.type === 'error') {
         const errorMsg: ConversationMessage = {
@@ -301,6 +303,7 @@ async function sendMessage(text: string, input: HTMLTextAreaElement | null): Pro
       }
     }
   } catch (err) {
+    if (chatManager === null) return
     const errorMsg: ConversationMessage = {
       id: `error_${Date.now()}`,
       role: 'SYSTEM',
@@ -315,11 +318,12 @@ async function sendMessage(text: string, input: HTMLTextAreaElement | null): Pro
 }
 
 async function handleEscalate(rerenderFn: () => void): Promise<void> {
-  if (!chatManager) return
+  const manager = chatManager
+  if (!manager) return
 
-  if (!chatManager.getSession()) {
+  if (!manager.getSession()) {
     try {
-      await chatManager.createConversation()
+      await manager.createConversation()
     } catch {
       const errorMsg: ConversationMessage = {
         id: `error_${Date.now()}`,
@@ -343,9 +347,10 @@ async function handleEscalate(rerenderFn: () => void): Promise<void> {
   rerenderFn()
 
   try {
-    await chatManager.escalate()
+    await manager.escalate()
     rerenderFn()
   } catch {
+    if (chatManager === null) return
     const errorMsg: ConversationMessage = {
       id: `error_${Date.now()}`,
       role: 'SYSTEM',

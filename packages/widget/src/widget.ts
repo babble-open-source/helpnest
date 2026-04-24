@@ -20,6 +20,7 @@ export class HelpNestWidget {
   private launcher: HTMLElement | null = null
   private unsubscribe: (() => void) | null = null
   private rendering = false
+  private pendingRender = false
   private currentViewKind: string = ''
   private viewContainer: HTMLElement | null = null
 
@@ -187,11 +188,16 @@ export class HelpNestWidget {
   }
 
   private async render() {
-    if (this.rendering || !this.panel || !this.shadow) return
+    if (this.rendering) {
+      this.pendingRender = true
+      return
+    }
+    if (!this.panel || !this.shadow) return
     const state = getState()
     if (!state.config) return
 
     this.rendering = true
+    this.pendingRender = false
     const direction = getTransitionDirection()
     clearTransitionDirection()
 
@@ -223,6 +229,10 @@ export class HelpNestWidget {
       this.bindTabBarEvents()
     } finally {
       this.rendering = false
+      if (this.pendingRender) {
+        this.pendingRender = false
+        void this.render()
+      }
     }
   }
 
