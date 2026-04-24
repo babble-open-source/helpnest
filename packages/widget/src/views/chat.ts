@@ -120,7 +120,8 @@ export function renderChat(): string {
 
   // isReadOnly takes priority over RESOLVED: a tokenless session can't send
   // messages even if the conversation happens to also be resolved.
-  const isReadOnly = !chatManager?.getSession()?.sessionToken
+  // null session = new chat not yet created (editable); '' token = old conv with no stored token (read-only)
+  const isReadOnly = chatManager?.getSession()?.sessionToken === ''
   const composerDisabled = isStreaming || chatManager?.getState() === 'RESOLVED' || isReadOnly ? 'disabled' : ''
   const composerPlaceholder = isReadOnly
     ? 'This conversation is view-only.'
@@ -156,8 +157,8 @@ export function renderChat(): string {
         </button>
       </div>
       <div class="hn-chat-messages" id="hn-chat-messages-area">
-        <div class="hn-chat-spacer"></div>
         ${greetingHtml}
+        <div class="hn-chat-spacer"></div>
         ${messagesHtml}
         ${showTyping ? renderTypingIndicator() : ''}
         ${streamingBubble}
@@ -194,7 +195,7 @@ export function bindChatEvents(container: HTMLElement, rerenderFn: () => void): 
 
   const submit = () => {
     const text = input?.value.trim() ?? ''
-    if (!text || isStreaming || !chatManager?.getSession()?.sessionToken) return
+    if (!text || isStreaming || chatManager?.getSession()?.sessionToken === '') return
     void sendMessage(text, input)
   }
 

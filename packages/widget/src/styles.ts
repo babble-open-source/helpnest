@@ -1356,8 +1356,7 @@ export const widgetStyles = `
   .hn-chat-greeting {
     font-size: 13px;
     color: var(--hn-muted);
-    text-align: center;
-    padding: 16px 24px 8px;
+    padding: 8px 4px 0;
   }
 
   /* Messages */
