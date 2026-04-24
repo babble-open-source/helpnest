@@ -1559,23 +1559,37 @@ export const widgetStyles = `
     flex-shrink: 0;
     display: flex;
     align-items: flex-end;
-    gap: 8px;
+    gap: 0;
     padding: 10px 12px;
-    border-top: 1px solid var(--hn-border);
     background: var(--hn-cream);
+  }
+
+  .hn-chat-composer-card {
+    display: flex;
+    align-items: flex-end;
+    flex: 1;
+    border: 1px solid var(--hn-border);
+    border-radius: 16px;
+    background: var(--hn-white);
+    padding: 4px 4px 4px 14px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .hn-chat-composer-card:focus-within {
+    border-color: var(--hn-muted);
+    box-shadow: 0 0 0 2px rgba(0,0,0,0.04);
   }
 
   .hn-chat-input {
     flex: 1;
     resize: none;
-    border: 1px solid var(--hn-border);
-    border-radius: var(--hn-radius);
-    background: var(--hn-white);
+    border: none;
+    background: transparent;
     color: var(--hn-ink);
     font-family: inherit;
     font-size: 13px;
     line-height: 1.45;
-    padding: 8px 10px;
+    padding: 8px 0;
     outline: none;
     min-height: 36px;
     max-height: 96px;
@@ -1587,11 +1601,6 @@ export const widgetStyles = `
     color: var(--hn-muted);
   }
 
-  .hn-chat-input:focus {
-    border-color: var(--hn-green);
-    box-shadow: 0 0 0 2px rgba(45,106,79,0.15);
-  }
-
   .hn-chat-input:disabled {
     opacity: 0.6;
     cursor: not-allowed;
@@ -1601,24 +1610,25 @@ export const widgetStyles = `
     flex-shrink: 0;
     width: 34px;
     height: 34px;
-    border-radius: var(--hn-radius);
+    border-radius: 50%;
     border: none;
-    background: var(--hn-green);
+    background: var(--hn-muted);
     color: var(--hn-white);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: opacity 0.15s ease, transform 0.1s ease;
+    transition: opacity 0.15s ease, transform 0.1s ease, background 0.15s ease;
     padding: 0;
   }
 
-  .hn-chat-send:hover { opacity: 0.9; }
+  .hn-chat-send:hover { background: var(--hn-ink); }
   .hn-chat-send:active { transform: scale(0.9); }
 
   .hn-chat-send:disabled {
-    opacity: 0.45;
+    opacity: 0.35;
     cursor: not-allowed;
+    background: var(--hn-border);
   }
 
   /* ─── Markdown ───────────────────────────────────────────────────────────── */

@@ -135,21 +135,23 @@ export function renderChat(): string {
       </div>
       ${escalateBtn}
       <div class="hn-chat-composer">
-        <textarea
-          class="hn-chat-input"
-          id="hn-chat-input"
-          rows="1"
-          maxlength="1000"
-          placeholder="${escapeHtml(composerPlaceholder)}"
-          autocomplete="off"
-          spellcheck="false"
-          ${composerDisabled}
-        ></textarea>
-        <button class="hn-chat-send" id="hn-chat-send" type="button" aria-label="Send" ${composerDisabled}>
-          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="18" height="18">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
-          </svg>
-        </button>
+        <div class="hn-chat-composer-card">
+          <textarea
+            class="hn-chat-input"
+            id="hn-chat-input"
+            rows="1"
+            maxlength="1000"
+            placeholder="${escapeHtml(composerPlaceholder)}"
+            autocomplete="off"
+            spellcheck="false"
+            ${composerDisabled}
+          ></textarea>
+          <button class="hn-chat-send" id="hn-chat-send" type="button" aria-label="Send" ${composerDisabled}>
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" width="16" height="16">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7"/>
+            </svg>
+          </button>
+        </div>
       </div>
     </div>
   `

@@ -107,9 +107,34 @@ export class HelpNestWidget {
       this.shadow.appendChild(link)
     }
 
+    const colorMap: Record<string, string> = {
+      '--color-cream': '--hn-cream',
+      '--color-ink': '--hn-ink',
+      '--color-muted': '--hn-muted',
+      '--color-border': '--hn-border',
+      '--color-accent': '--hn-accent',
+      '--color-green': '--hn-green',
+      '--color-white': '--hn-white',
+    }
+
+    const fontMap: Record<string, string> = {
+      '--font-heading': '--hn-font-heading',
+      '--font-body': '--hn-font-body',
+    }
+
+    const radiusMap: Record<string, string> = {
+      '--radius': '--hn-radius',
+    }
+
     const host = this.shadow.host as HTMLElement
     for (const [key, value] of Object.entries(theme.vars)) {
-      host.style.setProperty(key, value)
+      if (colorMap[key]) {
+        host.style.setProperty(colorMap[key], `rgb(${value})`)
+      } else if (fontMap[key]) {
+        host.style.setProperty(fontMap[key], value)
+      } else if (radiusMap[key]) {
+        host.style.setProperty(radiusMap[key], value)
+      }
     }
   }
 
