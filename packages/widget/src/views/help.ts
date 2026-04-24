@@ -113,8 +113,10 @@ function bindResultEvents(container: HTMLElement) {
 export function bindHelpEvents(container: HTMLElement, _rerenderFn: () => void): void {
   let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-  const input = container.querySelector('.hn-search-input') as HTMLInputElement | null
-  input?.addEventListener('input', () => {
+  const searchWrap = container.querySelector('.hn-help-search-wrap')
+  searchWrap?.addEventListener('input', (e) => {
+    const input = e.target as HTMLInputElement
+    if (!input.classList.contains('hn-search-input')) return
     const query = input.value.trim()
     setSearchQuery(query)
 
@@ -136,7 +138,8 @@ export function bindHelpEvents(container: HTMLElement, _rerenderFn: () => void):
   container.querySelector('.hn-search-clear')?.addEventListener('click', () => {
     setSearchQuery('')
     setSearchResults([])
-    if (input) input.value = ''
+    const searchInput = container.querySelector('.hn-search-input') as HTMLInputElement | null
+    if (searchInput) searchInput.value = ''
     updateBody(container)
   })
 
