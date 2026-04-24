@@ -90,18 +90,19 @@ export async function POST(request: Request) {
     )
   }
 
-  let body: { workspaceSlug?: string; customerName?: string; customerEmail?: string }
+  let body: { workspaceSlug?: string; customerName?: string; customerEmail?: string; visitorId?: string }
   try {
     body = (await request.json()) as {
       workspaceSlug?: string
       customerName?: string
       customerEmail?: string
+      visitorId?: string
     }
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: WIDGET_CORS_HEADERS })
   }
 
-  const { workspaceSlug, customerName, customerEmail } = body
+  const { workspaceSlug, customerName, customerEmail, visitorId } = body
   if (!workspaceSlug) {
     return NextResponse.json(
       { error: 'workspaceSlug is required' },
@@ -139,6 +140,7 @@ export async function POST(request: Request) {
       workspaceId: workspace.id,
       customerName: customerName?.slice(0, 200) || null,
       customerEmail: customerEmail?.slice(0, 320) || null,
+      visitorId: visitorId?.slice(0, 128) || null,
     },
     select: {
       id: true,

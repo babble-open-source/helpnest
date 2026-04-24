@@ -41,11 +41,12 @@ export async function searchArticles(query: string): Promise<ArticleSummary[]> {
   return data.results ?? []
 }
 
-export async function fetchConversations(sessionTokens: string[]): Promise<ConversationSummary[]> {
-  if (sessionTokens.length === 0) return []
-  const res = await fetch(`${baseUrl}/api/widget/conversations`, {
-    headers: { 'X-Session-Token': sessionTokens.join(',') },
-  })
+export async function fetchConversations(visitorId: string, sessionTokens: string[]): Promise<ConversationSummary[]> {
+  if (!visitorId && sessionTokens.length === 0) return []
+  const headers: Record<string, string> = {}
+  if (visitorId) headers['X-Visitor-Id'] = visitorId
+  if (sessionTokens.length > 0) headers['X-Session-Token'] = sessionTokens.join(',')
+  const res = await fetch(`${baseUrl}/api/widget/conversations`, { headers })
   if (!res.ok) return []
   const data = await res.json() as { conversations: ConversationSummary[] }
   return data.conversations ?? []

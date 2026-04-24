@@ -1786,6 +1786,22 @@ export const widgetStyles = `
     margin: 16px 0;
   }
 
+  .hn-md-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 0 0 10px;
+  }
+  .hn-md-th, .hn-md-td {
+    border: 1px solid var(--hn-border);
+    padding: 5px 8px;
+    text-align: left;
+  }
+  .hn-md-th {
+    background: var(--hn-cream);
+    font-weight: 600;
+  }
+
   .hn-md-code-block {
     background: var(--hn-white);
     border: 1px solid var(--hn-border);

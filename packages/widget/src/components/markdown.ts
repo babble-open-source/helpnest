@@ -40,6 +40,27 @@ export function renderMarkdown(md: string): string {
   // Merge consecutive <ol> blocks separated only by whitespace (blank lines between items)
   html = html.replace(/<\/ol>\s*<ol class="hn-md-ol">/g, '')
 
+  // GFM tables
+  html = html.replace(
+    /^(\|.+\|)\n\|[-| :]+\|\n((?:\|.+\|\n?)*)/gm,
+    (_m, headerRow, bodyRows) => {
+      const parseRow = (row: string) =>
+        row.trim().replace(/^\||\|$/g, '').split('|').map((c) => c.trim())
+      const headers = parseRow(headerRow)
+        .map((h) => `<th class="hn-md-th">${h}</th>`)
+        .join('')
+      const rows = bodyRows
+        .trim()
+        .split('\n')
+        .filter(Boolean)
+        .map((row: string) =>
+          `<tr>${parseRow(row).map((c) => `<td class="hn-md-td">${c}</td>`).join('')}</tr>`
+        )
+        .join('')
+      return `<table class="hn-md-table"><thead><tr>${headers}</tr></thead><tbody>${rows}</tbody></table>`
+    }
+  )
+
   // Horizontal rule
   html = html.replace(/^---+$/gm, '<hr class="hn-md-hr" />')
 

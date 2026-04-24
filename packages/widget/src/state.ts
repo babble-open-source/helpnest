@@ -108,5 +108,4 @@ export function setSearchQuery(query: string) {
 
 export function setSearchResults(results: ArticleSummary[]) {
   state = { ...state, searchResults: results }
-  notify()
 }

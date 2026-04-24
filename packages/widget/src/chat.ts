@@ -2,6 +2,7 @@ import type { ConversationMessage, Source } from './types'
 
 const STORAGE_KEY_PREFIX = 'helpnest:chat:'
 const SESSIONS_KEY_PREFIX = 'helpnest:sessions:'
+const VISITOR_KEY_PREFIX = 'helpnest:visitor:'
 const POLL_INTERVAL = 5000
 const POLL_TIMEOUT = 10 * 60 * 1000 // 10 minutes
 
@@ -84,11 +85,22 @@ export class ChatManager {
     }
   }
 
+  getVisitorId(): string {
+    const key = VISITOR_KEY_PREFIX + this.config.workspace
+    let id = localStorage.getItem(key)
+    if (!id) {
+      id = crypto.randomUUID()
+      localStorage.setItem(key, id)
+    }
+    return id
+  }
+
   async createConversation(): Promise<{ greeting: string }> {
+    const visitorId = this.getVisitorId()
     const res = await fetch(`${this.config.baseUrl}/api/conversations`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ workspaceSlug: this.config.workspace }),
+      body: JSON.stringify({ workspaceSlug: this.config.workspace, visitorId }),
     })
     if (!res.ok) throw new Error('Failed to create conversation')
     const data = await res.json() as { id: string; sessionToken: string; greeting?: string }
