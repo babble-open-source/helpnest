@@ -112,11 +112,14 @@ export async function GET(request: Request) {
   const vars = cssToVars(getWorkspaceThemeCSS(workspace.themeId, overrides))
   const fontUrls = getWorkspaceFontUrls(workspace.themeId, overrides)
 
-  // Determine help center base URL: custom domain takes priority over the default subdomain
+  // Determine help center base URL: custom domain takes priority; otherwise derive from
+  // the request host so that local dev (http://localhost:3000) and production both work correctly
   const customDomain = (workspace as unknown as Record<string, unknown>).customDomain as string | null ?? null
+  const requestUrl = new URL(request.url)
+  const appBase = `${requestUrl.protocol}//${requestUrl.host}`
   const helpCenterUrl = customDomain
     ? `https://${customDomain}`
-    : `https://${workspace.slug}.helpnest.cloud`
+    : appBase
 
   return NextResponse.json(
     {

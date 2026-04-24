@@ -46,7 +46,7 @@ export async function fetchConversations(visitorId: string, sessionTokens: strin
   const headers: Record<string, string> = {}
   if (visitorId) headers['X-Visitor-Id'] = visitorId
   if (sessionTokens.length > 0) headers['X-Session-Token'] = sessionTokens.join(',')
-  const res = await fetch(`${baseUrl}/api/widget/conversations`, { headers })
+  const res = await fetch(`${baseUrl}/api/widget/conversations?workspace=${encodeURIComponent(workspaceSlug)}`, { headers })
   if (!res.ok) return []
   const data = await res.json() as { conversations: ConversationSummary[] }
   return data.conversations ?? []

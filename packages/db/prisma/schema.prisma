@@ -344,7 +344,7 @@ model Conversation {
   @@index([workspaceId, status])
   @@index([workspaceId, createdAt])
   @@index([assignedToId])
-  @@index([visitorId])
+  @@index([workspaceId, visitorId])
 }
 
 model Message {

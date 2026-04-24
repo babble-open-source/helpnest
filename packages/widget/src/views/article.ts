@@ -14,7 +14,12 @@ function escapeHtml(str: string): string {
 }
 
 function sanitizeHtml(html: string): string {
-  return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/<\/?(iframe|object|embed|base)\b[^>]*>/gi, '')
+    .replace(/\bon\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
+    .replace(/\bhref\s*=\s*["']?\s*javascript:[^"'\s>]*/gi, '')
+    .replace(/\bsrc\s*=\s*["']?\s*javascript:[^"'\s>]*/gi, '')
 }
 
 function formatRelativeDate(dateStr: string): string {

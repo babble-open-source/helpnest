@@ -89,6 +89,7 @@ export function renderChat(): string {
 
   const workspaceName = escapeHtml(config.name)
   const baseUrl = getBaseUrl()
+  // config.helpCenterUrl is set by the server; baseUrl is a last-resort fallback (same host)
   const helpCenterUrl = config.helpCenterUrl ?? baseUrl
 
   const messagesHtml = messages

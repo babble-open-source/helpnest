@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server'
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, X-Session-Token, X-Visitor-Id',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Session-Token, X-Visitor-Id, X-Workspace-Slug',
 }
 
 export async function OPTIONS() {
@@ -23,9 +23,29 @@ export async function GET(request: Request) {
     )
   }
 
-  const where = visitorId
-    ? { visitorId }
-    : { sessionToken: { in: sessionTokens } }
+  // Resolve workspace ID from slug to scope queries and prevent cross-workspace data leakage
+  const workspaceSlug =
+    request.headers.get('X-Workspace-Slug')?.trim() ??
+    new URL(request.url).searchParams.get('workspace')?.trim() ??
+    ''
+
+  let workspaceId: string | null = null
+  if (workspaceSlug) {
+    const ws = await prisma.workspace.findFirst({
+      where: { slug: workspaceSlug },
+      select: { id: true },
+    })
+    workspaceId = ws?.id ?? null
+  }
+
+  // Always scope by workspaceId when available; fall back to unscoped only if workspace cannot be resolved
+  const where = workspaceId
+    ? visitorId
+      ? { visitorId, workspaceId }
+      : { sessionToken: { in: sessionTokens }, workspaceId }
+    : visitorId
+      ? { visitorId }
+      : { sessionToken: { in: sessionTokens } }
 
   const conversations = await prisma.conversation.findMany({
     where,

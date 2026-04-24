@@ -14,13 +14,15 @@ export function renderMarkdown(md: string): string {
     '<img class="hn-md-img" src="$2" alt="$1" loading="lazy" />'
   )
 
-  // Links — only render as anchor if href is a proper external URL (not '#', relative, or fragment-only)
+  // Links — only render as anchor if href is a proper external URL (not bare '#' or relative)
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, href) => {
-    const isExternal = /^https?:\/\//i.test(href) && href !== '#' && !href.endsWith('#')
+    const isExternal = /^https?:\/\//i.test(href) && href !== '#'
     if (isExternal) {
-      return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="hn-md-a">${text}</a>`
+      // Encode quote chars to prevent attribute injection; escapeHtml already ran on the raw markdown
+      const safeHref = href.replace(/"/g, '%22').replace(/'/g, '%27')
+      return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="hn-md-a">${text}</a>`
     }
-    // Bad/relative/fragment-only hrefs: render as styled text to avoid navigating the host page
+    // Relative/fragment-only hrefs: render as styled text to avoid navigating the host page
     return `<span class="hn-md-a">${text}</span>`
   })
 
