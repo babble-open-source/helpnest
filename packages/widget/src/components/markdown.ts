@@ -1,4 +1,4 @@
-export function renderMarkdown(md: string): string {
+export function renderMarkdown(md: string, baseUrl?: string): string {
   let html = escapeHtml(md)
 
   // Code blocks (``` ... ```)
@@ -14,15 +14,16 @@ export function renderMarkdown(md: string): string {
     '<img class="hn-md-img" src="$2" alt="$1" loading="lazy" />'
   )
 
-  // Links — only render as anchor if href is a proper external URL (not bare '#' or relative)
+  // Links — render as anchor for absolute URLs and path-relative URLs (resolved against baseUrl)
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, href) => {
-    const isExternal = /^https?:\/\//i.test(href) && href !== '#'
-    if (isExternal) {
-      // Encode quote chars to prevent attribute injection; escapeHtml already ran on the raw markdown
-      const safeHref = href.replace(/"/g, '%22').replace(/'/g, '%27')
+    const isAbsolute = /^https?:\/\//i.test(href)
+    const isRelativePath = href.startsWith('/') && baseUrl
+    if (isAbsolute || isRelativePath) {
+      const resolved = isAbsolute ? href : `${baseUrl}${href}`
+      const safeHref = resolved.replace(/"/g, '%22').replace(/'/g, '%27')
       return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="hn-md-a">${text}</a>`
     }
-    // Relative/fragment-only hrefs: render as styled text to avoid navigating the host page
+    // Fragment-only or unsupported scheme — styled text only
     return `<span class="hn-md-a">${text}</span>`
   })
 

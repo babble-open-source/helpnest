@@ -2031,6 +2031,7 @@ export const widgetStyles = `
   .hn-md-a {
     color: var(--hn-accent);
     text-decoration: underline;
+    cursor: pointer;
   }
 
   .hn-md-a:hover { opacity: 0.85; }

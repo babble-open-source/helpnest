@@ -13,7 +13,7 @@ export function renderMessage(msg: ConversationMessage, helpCenterUrl: string, b
 
   const contentHtml = msg.role === 'CUSTOMER'
     ? `<p>${escapeHtml(msg.content)}</p>`
-    : renderMarkdown(msg.content)
+    : renderMarkdown(msg.content, baseUrl)
 
   // Inject cite badges inline inside the last paragraph so they flow with the text
   const contentWithCites = sources.length
