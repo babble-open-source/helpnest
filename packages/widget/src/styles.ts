@@ -766,7 +766,6 @@ export const widgetStyles = `
 
   .hn-messages-cta-wrap {
     padding: 12px 16px;
-    border-top: 1px solid var(--hn-border);
     flex-shrink: 0;
   }
 
@@ -1376,8 +1375,8 @@ export const widgetStyles = `
   }
 
   .hn-msg-bubble {
-    padding: 8px 12px;
-    border-radius: var(--hn-radius);
+    padding: 10px 14px;
+    border-radius: 18px;
     font-size: 13px;
     line-height: 1.5;
     overflow-wrap: anywhere;
@@ -1386,21 +1385,21 @@ export const widgetStyles = `
   .hn-msg-customer .hn-msg-bubble {
     background: var(--hn-ink);
     color: var(--hn-cream);
-    border-bottom-right-radius: calc(var(--hn-radius) - 4px);
+    border-bottom-right-radius: 4px;
   }
 
   .hn-msg-ai .hn-msg-bubble {
     background: var(--hn-white);
     color: var(--hn-ink);
     border: 1px solid var(--hn-border);
-    border-bottom-left-radius: calc(var(--hn-radius) - 4px);
+    border-bottom-left-radius: 4px;
   }
 
   .hn-msg-agent .hn-msg-bubble {
     background: rgba(45,106,79,0.08);
     color: var(--hn-ink);
     border: 1px solid rgba(45,106,79,0.25);
-    border-bottom-left-radius: calc(var(--hn-radius) - 4px);
+    border-bottom-left-radius: 4px;
   }
 
   .hn-msg-system .hn-msg-bubble {
