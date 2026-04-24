@@ -388,6 +388,13 @@ export class HelpNestWidget {
 
       this.viewContainer.appendChild(newLayer)
 
+      // Scroll chat messages to bottom while the layer is still invisible (opacity:0),
+      // so the user sees it already at the bottom when it fades in.
+      if (view.kind === 'chat') {
+        const msgArea = newLayer.querySelector('#hn-chat-messages-area') as HTMLElement | null
+        if (msgArea) msgArea.scrollTop = msgArea.scrollHeight
+      }
+
       // Tab bar is position:absolute so it never affects the view-stack's height.
       // Fade it out/in in sync with the view transition for a smooth visual.
       let preAddedTabBar: HTMLElement | null = null
