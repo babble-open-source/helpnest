@@ -52,6 +52,9 @@ export function renderHome(): string {
   return `
     <div class="hn-view hn-view-home">
       <div class="hn-home-hero">
+        <button class="hn-home-close" type="button" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
         ${logoHtml}
         <h2 class="hn-home-greeting">${escapeHtml(config.aiGreeting)}</h2>
       </div>
@@ -90,6 +93,10 @@ function renderCollectionCard(col: CollectionNode): string {
 }
 
 export function bindHomeEvents(container: HTMLElement): void {
+  container.querySelector('.hn-home-close')?.addEventListener('click', () => {
+    container.dispatchEvent(new CustomEvent('hn:close', { bubbles: true }))
+  })
+
   container.querySelector('[data-action="send-message"]')?.addEventListener('click', () => {
     switchTab('messages')
     pushView({ kind: 'chat' })

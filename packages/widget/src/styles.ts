@@ -417,6 +417,27 @@ export const widgetStyles = `
     flex-direction: column;
     gap: 12px;
     flex-shrink: 0;
+    position: relative;
+  }
+
+  .hn-home-close {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: rgba(255,255,255,0.6);
+    padding: 4px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s ease;
+  }
+
+  .hn-home-close:hover {
+    color: rgba(255,255,255,0.9);
   }
 
   .hn-home-logo {
