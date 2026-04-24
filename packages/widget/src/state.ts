@@ -70,7 +70,7 @@ export function pushView(view: ViewType) {
 }
 
 export function switchTabAndPush(tab: TabId, view: ViewType) {
-  lastTransition = 'push'
+  lastTransition = 'fade'
   state = {
     ...state,
     activeTab: tab,
