@@ -408,6 +408,8 @@ export const widgetStyles = `
   .hn-view-home {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
   .hn-home-hero {
@@ -658,6 +660,8 @@ export const widgetStyles = `
   .hn-view-messages {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
   .hn-conv-list {
@@ -797,6 +801,8 @@ export const widgetStyles = `
   .hn-view-help {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
   .hn-help-search-wrap {
@@ -995,6 +1001,8 @@ export const widgetStyles = `
   .hn-view-collection-detail {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
   .hn-col-detail-header {
@@ -1266,6 +1274,8 @@ export const widgetStyles = `
   .hn-view-chat {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
   /* Chat header — Intercom style with logo + name + status */
