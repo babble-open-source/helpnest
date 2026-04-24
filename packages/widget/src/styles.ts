@@ -78,6 +78,13 @@ export const widgetStyles = `
     transform: rotate(0deg) scale(1);
   }
 
+  .hn-launcher-logo {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
   .hn-launcher-left {
     right: auto;
     left: 0;
@@ -1228,6 +1235,60 @@ export const widgetStyles = `
     flex-direction: column;
   }
 
+  /* Chat header — Intercom style with logo + name + status */
+  .hn-chat-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--hn-border);
+    flex-shrink: 0;
+    background: var(--hn-cream);
+  }
+
+  .hn-chat-header-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .hn-chat-header-logo-fallback {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--hn-ink);
+    color: var(--hn-cream);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .hn-chat-header-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .hn-chat-header-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--hn-ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hn-chat-header-status {
+    font-size: 11px;
+    color: var(--hn-muted);
+  }
+
   .hn-chat-messages {
     flex: 1;
     overflow-y: auto;
@@ -1243,7 +1304,7 @@ export const widgetStyles = `
     font-size: 13px;
     color: var(--hn-muted);
     text-align: center;
-    padding: 8px 0;
+    padding: 16px 24px 8px;
   }
 
   /* Messages */
@@ -1279,8 +1340,8 @@ export const widgetStyles = `
   }
 
   .hn-msg-customer .hn-msg-bubble {
-    background: var(--hn-green);
-    color: var(--hn-white);
+    background: var(--hn-ink);
+    color: var(--hn-cream);
     border-bottom-right-radius: calc(var(--hn-radius) - 4px);
   }
 
@@ -1562,7 +1623,7 @@ export const widgetStyles = `
 
   /* ─── Markdown ───────────────────────────────────────────────────────────── */
 
-  .hn-md-p { margin: 0 0 10px; }
+  .hn-md-p { margin: 0 0 6px; }
   .hn-md-p:last-child { margin-bottom: 0; }
 
   .hn-md-h1 {
@@ -1593,11 +1654,11 @@ export const widgetStyles = `
 
   .hn-md-ul,
   .hn-md-ol {
-    margin: 0 0 10px 18px;
+    margin: 0 0 6px 18px;
     padding: 0;
   }
 
-  .hn-md-li { margin: 0 0 4px; }
+  .hn-md-li { margin: 0 0 2px; }
 
   .hn-md-a {
     color: var(--hn-accent);

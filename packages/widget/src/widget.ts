@@ -80,6 +80,16 @@ export class HelpNestWidget {
       this.applyTheme(config.theme)
 
       if (this.launcher) {
+        if (config.logo) {
+          const openIcon = this.launcher.querySelector('.hn-launcher-open') as HTMLElement | null
+          if (openIcon) {
+            const img = document.createElement('img')
+            img.className = 'hn-launcher-icon hn-launcher-open hn-launcher-logo'
+            img.src = config.logo
+            img.alt = config.name
+            openIcon.replaceWith(img)
+          }
+        }
         this.launcher.style.opacity = '1'
       }
     } catch (err) {

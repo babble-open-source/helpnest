@@ -100,10 +100,35 @@ export function renderChat(): string {
     ? 'This conversation is resolved.'
     : 'Type a message…'
 
+  const logoHtml = config.logo
+    ? `<img class="hn-chat-header-logo" src="${config.logo}" alt="" />`
+    : `<span class="hn-chat-header-logo-fallback">${workspaceName.charAt(0)}</span>`
+
+  const responseTime = config.widgetResponseTime
+    ? `<span class="hn-chat-header-status">${escapeHtml(config.widgetResponseTime)}</span>`
+    : ''
+
+  const greetingHtml = messages.length === 0
+    ? `<div class="hn-chat-greeting">${escapeHtml(config.aiGreeting || 'Ask us anything, or share your feedback.')}</div>`
+    : ''
+
   return `
     <div class="hn-view hn-view-chat">
-      ${renderHeader({ title: workspaceName, showBack: true, showClose: true })}
+      <div class="hn-chat-header">
+        <button class="hn-header-back" type="button" aria-label="Go back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        ${logoHtml}
+        <div class="hn-chat-header-info">
+          <span class="hn-chat-header-name">${workspaceName}</span>
+          ${responseTime}
+        </div>
+        <button class="hn-header-close" type="button" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
       <div class="hn-chat-messages" id="hn-chat-messages-area">
+        ${greetingHtml}
         ${messagesHtml}
         ${showTyping ? renderTypingIndicator() : ''}
         ${streamingBubble}

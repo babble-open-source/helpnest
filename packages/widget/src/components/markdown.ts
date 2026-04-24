@@ -43,14 +43,15 @@ export function renderMarkdown(md: string): string {
 
   // Paragraphs
   html = html
-    .split('\n\n')
+    .split(/\n{2,}/)
     .map((block) => {
       const trimmed = block.trim()
       if (!trimmed) return ''
       if (trimmed.startsWith('<')) return trimmed
       return `<p class="hn-md-p">${trimmed.replace(/\n/g, '<br />')}</p>`
     })
-    .join('\n')
+    .filter(Boolean)
+    .join('')
 
   return html
 }
