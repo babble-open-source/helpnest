@@ -277,6 +277,18 @@ export const widgetStyles = `
     background: var(--hn-cream);
   }
 
+  .hn-header-left {
+    display: flex;
+    align-items: center;
+  }
+
+  .hn-header-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+  }
+
   .hn-header-back {
     display: flex;
     align-items: center;
