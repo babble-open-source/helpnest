@@ -4,7 +4,7 @@ import { initApi, fetchConfig, fetchCollections, fetchConversations } from './ap
 import { renderHome, bindHomeEvents } from './views/home'
 import { renderMessages, bindMessagesEvents } from './views/messages'
 import { renderHelp, bindHelpEvents } from './views/help'
-import { renderChat, bindChatEvents, initChatView, setChatRerender } from './views/chat'
+import { renderChat, bindChatEvents, initChatView, setChatRerender, resetChatView } from './views/chat'
 import { renderCollectionDetail, bindCollectionDetailEvents, loadCollectionDetail } from './views/collection-detail'
 import { renderArticle, bindArticleEvents, loadArticle } from './views/article'
 import { renderTabBar } from './components/tab-bar'
@@ -197,10 +197,22 @@ export class HelpNestWidget {
 
     try {
       const view = state.viewStack[state.viewStack.length - 1] ?? { kind: state.activeTab }
-      const viewHtml = await this.renderView(view, state.config.slug)
       const viewKey = this.viewKey(view)
+      const isViewChange = viewKey !== this.currentViewKind
 
-      if (direction !== 'none' && this.viewContainer && viewKey !== this.currentViewKind) {
+      // Reset chat state when navigating away from a chat view
+      if (isViewChange && this.currentViewKind.startsWith('chat:') && !viewKey.startsWith('chat:')) {
+        resetChatView()
+      }
+
+      // Init chat only on actual view transition, not on re-renders within the same chat
+      if (view.kind === 'chat' && isViewChange) {
+        await initChatView(view.conversationId)
+      }
+
+      const viewHtml = await this.renderView(view, state.config.slug)
+
+      if (direction !== 'none' && this.viewContainer && isViewChange) {
         await this.transitionView(viewHtml, view, direction)
         this.updateTabBar(view)
       } else {
@@ -209,10 +221,6 @@ export class HelpNestWidget {
 
       this.currentViewKind = viewKey
       this.bindTabBarEvents()
-
-      if (view.kind === 'messages') {
-        void this.refreshConversations()
-      }
     } finally {
       this.rendering = false
     }
@@ -227,7 +235,6 @@ export class HelpNestWidget {
       case 'help':
         return renderHelp()
       case 'chat':
-        await initChatView(view.conversationId)
         return renderChat()
       case 'collection-detail': {
         const data = await loadCollectionDetail(view.collectionId, getState().collections)
@@ -315,11 +322,16 @@ export class HelpNestWidget {
     const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help'
     const existing = this.panel.querySelector('.hn-tab-bar')
     if (showTabBar && state.config) {
-      if (!existing) {
-        const tabBarDiv = document.createElement('div')
-        tabBarDiv.innerHTML = renderTabBar(state.activeTab, state.config.aiEnabled)
-        const tabBar = tabBarDiv.firstElementChild
-        if (tabBar) this.panel.appendChild(tabBar)
+      // Always replace tab bar to get fresh elements with no stale listeners
+      const tabBarDiv = document.createElement('div')
+      tabBarDiv.innerHTML = renderTabBar(state.activeTab, state.config.aiEnabled)
+      const newTabBar = tabBarDiv.firstElementChild
+      if (newTabBar) {
+        if (existing) {
+          existing.replaceWith(newTabBar)
+        } else {
+          this.panel.appendChild(newTabBar)
+        }
       }
     } else if (existing) {
       existing.remove()

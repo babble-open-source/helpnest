@@ -6,7 +6,7 @@ export function renderMessage(msg: ConversationMessage, workspaceSlug: string, b
   const alignment = msg.role === 'CUSTOMER' ? 'hn-msg-right' : 'hn-msg-left'
 
   if (msg.role === 'SYSTEM') {
-    return `<div class="hn-msg hn-msg-system"><p>${escapeHtml(msg.content)}</p></div>`
+    return `<div class="hn-msg hn-msg-system hn-msg-center"><div class="hn-msg-bubble">${escapeHtml(msg.content)}</div></div>`
   }
 
   const contentHtml = msg.role === 'CUSTOMER'
@@ -43,11 +43,11 @@ export function renderMessage(msg: ConversationMessage, workspaceSlug: string, b
 
 export function renderTypingIndicator(): string {
   return `
-    <div class="hn-msg hn-msg-left hn-msg-typing">
-      <div class="hn-msg-bubble">
-        <div class="hn-typing-dots">
-          <span></span><span></span><span></span>
-        </div>
+    <div class="hn-msg hn-msg-left">
+      <div class="hn-typing-indicator">
+        <span class="hn-typing-dot"></span>
+        <span class="hn-typing-dot"></span>
+        <span class="hn-typing-dot"></span>
       </div>
     </div>
   `

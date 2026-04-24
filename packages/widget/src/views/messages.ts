@@ -1,4 +1,4 @@
-import { getState, pushView, switchTab } from '../state'
+import { getState, pushView } from '../state'
 import { renderHeader } from '../components/header'
 
 import type { ConversationSummary } from '../types'
@@ -113,13 +113,6 @@ export function bindMessagesEvents(container: HTMLElement): void {
       if (conversationId) {
         pushView({ kind: 'chat', conversationId })
       }
-    })
-  })
-
-  container.querySelectorAll('.hn-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const tabId = (tab as HTMLElement).dataset.tab as 'home' | 'messages' | 'help' | undefined
-      if (tabId) switchTab(tabId)
     })
   })
 

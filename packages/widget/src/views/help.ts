@@ -1,4 +1,4 @@
-import { getState, pushView, setSearchQuery, setSearchResults, switchTab } from '../state'
+import { getState, pushView, setSearchQuery, setSearchResults } from '../state'
 import { searchArticles } from '../api'
 import { renderHeader } from '../components/header'
 import { renderSearchBar } from '../components/search-bar'
@@ -144,13 +144,6 @@ export function bindHelpEvents(container: HTMLElement, _rerenderFn: () => void):
   })
 
   bindResultEvents(container)
-
-  container.querySelectorAll('.hn-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const tabId = (tab as HTMLElement).dataset.tab as 'home' | 'messages' | 'help' | undefined
-      if (tabId) switchTab(tabId)
-    })
-  })
 
   container.querySelector('.hn-header-close')?.addEventListener('click', () => {
     container.dispatchEvent(new CustomEvent('hn:close', { bubbles: true }))

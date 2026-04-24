@@ -1053,6 +1053,8 @@ export const widgetStyles = `
   .hn-view-article {
     display: flex;
     flex-direction: column;
+    flex: 1;
+    min-height: 0;
   }
 
   .hn-article-body {

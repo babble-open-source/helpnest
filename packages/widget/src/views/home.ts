@@ -1,4 +1,4 @@
-import { getState, switchTab, pushView, switchTabAndPush } from '../state'
+import { getState, switchTabAndPush, switchTab } from '../state'
 import type { CollectionNode } from '../types'
 
 function escapeHtml(str: string): string {
@@ -110,13 +110,6 @@ export function bindHomeEvents(container: HTMLElement): void {
       if (collectionId && title) {
         switchTabAndPush('help', { kind: 'collection-detail', collectionId, title })
       }
-    })
-  })
-
-  container.querySelectorAll('.hn-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const tabId = (tab as HTMLElement).dataset.tab as 'home' | 'messages' | 'help' | undefined
-      if (tabId) switchTab(tabId)
     })
   })
 }

@@ -3,11 +3,11 @@ export function renderMarkdown(md: string): string {
 
   // Code blocks (``` ... ```)
   html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_m, _lang, code) =>
-    `<pre class="hn-code-block"><code>${code.trim()}</code></pre>`
+    `<pre class="hn-md-code-block"><code>${code.trim()}</code></pre>`
   )
 
   // Inline code
-  html = html.replace(/`([^`]+)`/g, '<code class="hn-inline-code">$1</code>')
+  html = html.replace(/`([^`]+)`/g, '<code class="hn-md-code">$1</code>')
 
   // Images
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,
@@ -16,7 +16,7 @@ export function renderMarkdown(md: string): string {
 
   // Links
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" target="_blank" rel="noopener noreferrer" class="hn-md-link">$1</a>'
+    '<a href="$2" target="_blank" rel="noopener noreferrer" class="hn-md-a">$1</a>'
   )
 
   // Headings (h1-h4)

@@ -27,6 +27,7 @@ let messages: ConversationMessage[] = []
 let isStreaming = false
 let streamingContent = ''
 let rerender: (() => void) | null = null
+let _initializedForConvId: string | null | undefined = undefined // undefined = never initialized
 
 export function setChatRerender(fn: () => void): void {
   rerender = fn
@@ -36,7 +37,25 @@ export function getChatManager(): ChatManager | null {
   return chatManager
 }
 
+export function resetChatView(): void {
+  chatManager = null
+  messages = []
+  isStreaming = false
+  streamingContent = ''
+  _initializedForConvId = undefined
+}
+
 export async function initChatView(conversationId?: string): Promise<void> {
+  const targetId = conversationId ?? null
+
+  // Skip re-init if already initialized for the same conversation
+  if (chatManager !== null && _initializedForConvId === targetId) return
+
+  _initializedForConvId = targetId
+  messages = []
+  isStreaming = false
+  streamingContent = ''
+
   const { config } = getState()
   if (!config) return
 
