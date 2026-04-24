@@ -367,6 +367,9 @@ export class HelpNestWidget {
         return
       }
 
+      const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help'
+      const existingTabBar = this.panel.querySelector('.hn-tab-bar') as HTMLElement | null
+
       const oldLayer = this.viewContainer.querySelector('.hn-view-layer') as HTMLElement | null
       const newLayer = document.createElement('div')
       newLayer.className = 'hn-view-layer'
@@ -385,10 +388,38 @@ export class HelpNestWidget {
 
       this.viewContainer.appendChild(newLayer)
 
+      // Pre-add tab bar before animation if the incoming view needs one and none exists,
+      // so it fades/slides in with the new view rather than popping in after.
+      let preAddedTabBar: Element | null = null
+      if (showTabBar && !existingTabBar) {
+        const state = getState()
+        if (state.config) {
+          const wrapper = document.createElement('div')
+          wrapper.innerHTML = renderTabBar(state.activeTab, state.config.aiEnabled)
+          const tabBar = wrapper.firstElementChild as HTMLElement | null
+          if (tabBar) {
+            tabBar.style.opacity = '0'
+            tabBar.style.transition = `opacity ${TRANSITION_MS}ms ease`
+            this.panel.appendChild(tabBar)
+            preAddedTabBar = tabBar
+          }
+        }
+      }
+
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           newLayer.classList.add('hn-view-active')
           if (oldLayer) oldLayer.classList.add('hn-view-leaving')
+
+          // Fade tab bar out when moving to a view that doesn't show it
+          if (!showTabBar && existingTabBar) {
+            existingTabBar.style.transition = `opacity ${TRANSITION_MS}ms ease`
+            existingTabBar.style.opacity = '0'
+          }
+          // Fade pre-added tab bar in
+          if (preAddedTabBar) {
+            (preAddedTabBar as HTMLElement).style.opacity = '1'
+          }
         })
       })
 
