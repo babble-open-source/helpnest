@@ -257,5 +257,13 @@ export function markdownToHtml(content: string): string {
     }
   }
 
-  return blocks.join('')
+  let output = blocks.join('')
+
+  // Consecutive same-type lists created by blank lines between items (common in
+  // "formatted" Markdown) produce separate <ul>/<ol> elements. Merge them so
+  // they render as one list instead of creating large gaps between items.
+  output = output.replace(/<\/ul><ul>/g, '')
+  output = output.replace(/<\/ol><ol>/g, '')
+
+  return output
 }

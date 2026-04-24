@@ -1165,6 +1165,17 @@ export const widgetStyles = `
   .hn-article-content ul { list-style-type: disc; }
   .hn-article-content ol { list-style-type: decimal; }
 
+  /* Blank lines between Markdown list items can produce consecutive <ul>/<ol>
+     elements. Collapse the gap so they look like a single list. */
+  .hn-article-content ul + ul,
+  .hn-article-content ol + ol {
+    margin-top: 0;
+  }
+  .hn-article-content ul:has(+ ul),
+  .hn-article-content ol:has(+ ol) {
+    margin-bottom: 0;
+  }
+
   .hn-article-content li {
     margin: 0.3rem 0;
     line-height: 1.65;

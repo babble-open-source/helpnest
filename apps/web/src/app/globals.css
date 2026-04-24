@@ -101,6 +101,16 @@
   list-style-type: decimal;
 }
 
+/* Consecutive same-type lists from blank lines between Markdown items */
+.hn-prose ul + ul,
+.hn-prose ol + ol {
+  margin-top: 0;
+}
+.hn-prose ul:has(+ ul),
+.hn-prose ol:has(+ ol) {
+  margin-bottom: 0;
+}
+
 .hn-prose li {
   margin: 0.3rem 0;
   color: rgb(var(--color-ink) / 0.9);
