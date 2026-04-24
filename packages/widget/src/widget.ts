@@ -222,8 +222,10 @@ export class HelpNestWidget {
     const stored = localStorage.getItem('helpnest:sessions:' + this.initConfig.workspace)
     if (stored) {
       try {
-        const arr = JSON.parse(stored) as string[]
-        if (Array.isArray(arr)) arr.forEach((t) => tokens.add(t))
+        const arr = JSON.parse(stored) as Array<{ sessionToken: string } | string>
+        if (Array.isArray(arr)) {
+          arr.forEach((e) => tokens.add(typeof e === 'string' ? e : e.sessionToken))
+        }
       } catch { /* ignore */ }
     }
 

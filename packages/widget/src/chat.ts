@@ -40,16 +40,33 @@ export class ChatManager {
   }
 
   setSession(conversationId: string) {
-    const stored = localStorage.getItem(STORAGE_KEY_PREFIX + this.config.workspace)
-    if (stored) {
+    // Check sessions map first (covers all past conversations)
+    const mapKey = SESSIONS_KEY_PREFIX + this.config.workspace
+    const mapRaw = localStorage.getItem(mapKey)
+    if (mapRaw) {
       try {
-        const session = JSON.parse(stored) as ChatSession
+        const arr = JSON.parse(mapRaw) as Array<{ sessionToken: string; conversationId: string } | string>
+        for (const entry of arr) {
+          if (typeof entry === 'object' && entry.conversationId === conversationId) {
+            this.session = { sessionToken: entry.sessionToken, conversationId, lastMessageAt: Date.now() }
+            return
+          }
+        }
+      } catch { /* ignore */ }
+    }
+    // Fallback: check single-chat storage (current session)
+    const chatRaw = localStorage.getItem(STORAGE_KEY_PREFIX + this.config.workspace)
+    if (chatRaw) {
+      try {
+        const session = JSON.parse(chatRaw) as ChatSession
         if (session.conversationId === conversationId) {
           this.session = session
           return
         }
       } catch { /* ignore */ }
     }
+    // No token found — set partial session; loadMessages will auth via X-Visitor-Id
+    this.session = { sessionToken: '', conversationId, lastMessageAt: Date.now() }
   }
 
   setOnNewMessages(cb: (msgs: ConversationMessage[]) => void) {
@@ -181,10 +198,15 @@ export class ChatManager {
       `${this.config.baseUrl}/api/conversations/${this.session.conversationId}/messages`
     )
     if (since) url.searchParams.set('since', since)
+    const headers: Record<string, string> = {}
+    if (this.session.sessionToken) {
+      headers['X-Session-Token'] = this.session.sessionToken
+    } else {
+      // No stored session token (old conversation) — auth via stable visitorId
+      headers['X-Visitor-Id'] = this.getVisitorId()
+    }
     try {
-      const res = await fetch(url.toString(), {
-        headers: { 'X-Session-Token': this.session.sessionToken },
-      })
+      const res = await fetch(url.toString(), { headers })
       if (!res.ok) return []
       const data = await res.json() as { messages?: ConversationMessage[] }
       return data.messages ?? []
@@ -241,11 +263,15 @@ export class ChatManager {
         STORAGE_KEY_PREFIX + this.config.workspace,
         JSON.stringify(this.session)
       )
-      // Accumulate all tokens so the conversations list can show all past chats
+      // Accumulate {sessionToken, conversationId} pairs so any past conversation can be loaded
       const key = SESSIONS_KEY_PREFIX + this.config.workspace
-      const existing = JSON.parse(localStorage.getItem(key) ?? '[]') as string[]
-      if (!existing.includes(this.session.sessionToken)) {
-        existing.push(this.session.sessionToken)
+      const raw = localStorage.getItem(key)
+      const existing = raw ? JSON.parse(raw) as Array<{ sessionToken: string; conversationId: string } | string> : []
+      const alreadyStored = existing.some((e) =>
+        typeof e === 'object' ? e.sessionToken === this.session!.sessionToken : e === this.session!.sessionToken
+      )
+      if (!alreadyStored && this.session.sessionToken) {
+        existing.push({ sessionToken: this.session.sessionToken, conversationId: this.session.conversationId })
         localStorage.setItem(key, JSON.stringify(existing))
       }
     }
@@ -253,7 +279,10 @@ export class ChatManager {
 
   getAllSessionTokens(): string[] {
     const key = SESSIONS_KEY_PREFIX + this.config.workspace
-    return JSON.parse(localStorage.getItem(key) ?? '[]') as string[]
+    const raw = localStorage.getItem(key)
+    if (!raw) return []
+    const arr = JSON.parse(raw) as Array<{ sessionToken: string; conversationId: string } | string>
+    return arr.map((e) => (typeof e === 'string' ? e : e.sessionToken))
   }
 
   private updateState(status: string) {

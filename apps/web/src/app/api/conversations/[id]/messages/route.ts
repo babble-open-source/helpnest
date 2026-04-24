@@ -12,7 +12,7 @@ import type { ChatMessage } from '@/lib/ai/types'
 const WIDGET_CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Session-Token',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Session-Token, X-Visitor-Id',
 }
 
 // Message rate limiting: 30 messages per minute per session token.
@@ -57,6 +57,7 @@ export async function GET(
 ) {
   const { id } = await params
   const sessionToken = request.headers.get('x-session-token')
+  const visitorId = request.headers.get('x-visitor-id')
   const url = new URL(request.url)
   const since = url.searchParams.get('since')
 
@@ -64,6 +65,9 @@ export async function GET(
 
   if (sessionToken) {
     conversationWhere = { id, sessionToken }
+  } else if (visitorId) {
+    // Widget read-only auth via stable visitorId (no sessionToken stored for older conversations)
+    conversationWhere = { id, visitorId }
   } else {
     const authResult = await requireAuth(request)
     if (!authResult) {

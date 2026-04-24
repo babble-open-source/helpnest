@@ -118,10 +118,13 @@ export function renderChat(): string {
       </div>`
     : ''
 
-  const composerDisabled = isStreaming || chatManager?.getState() === 'RESOLVED' ? 'disabled' : ''
-  const composerPlaceholder = chatManager?.getState() === 'RESOLVED'
-    ? 'This conversation is resolved.'
-    : 'Type a message…'
+  const isReadOnly = !chatManager?.getSession()?.sessionToken
+  const composerDisabled = isStreaming || chatManager?.getState() === 'RESOLVED' || isReadOnly ? 'disabled' : ''
+  const composerPlaceholder = isReadOnly
+    ? 'This conversation is view-only.'
+    : chatManager?.getState() === 'RESOLVED'
+      ? 'This conversation is resolved.'
+      : 'Type a message…'
 
   const logoHtml = config.logo
     ? `<img class="hn-chat-header-logo" src="${config.logo}" alt="" />`
@@ -189,7 +192,7 @@ export function bindChatEvents(container: HTMLElement, rerenderFn: () => void): 
 
   const submit = () => {
     const text = input?.value.trim() ?? ''
-    if (!text || isStreaming) return
+    if (!text || isStreaming || !chatManager?.getSession()?.sessionToken) return
     void sendMessage(text, input)
   }
 
