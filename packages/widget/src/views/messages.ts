@@ -87,7 +87,7 @@ export function renderMessages(): string {
   return `
     <div class="hn-view hn-view-messages">
       ${renderHeader({ title: 'Messages', showClose: true })}
-      <div class="hn-view-body">
+      <div class="hn-view-body hn-view-body-flush">
         ${bodyHtml}
       </div>
       <div class="hn-messages-cta-wrap">
