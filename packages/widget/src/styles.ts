@@ -1362,6 +1362,7 @@ export const widgetStyles = `
     flex-direction: column;
     gap: 4px;
     max-width: 85%;
+    overflow: visible;
   }
 
   .hn-msg-right {
@@ -1477,39 +1478,72 @@ export const widgetStyles = `
     text-decoration: underline;
   }
 
-  /* Sources */
-  .hn-msg-sources {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    max-width: 88%;
-    align-self: flex-start;
+  /* Inline citation badges */
+  .hn-cite-group {
+    display: inline;
+    margin-left: 3px;
   }
 
-  .hn-msg-source-chip {
+  .hn-cite {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
-    padding: 3px 8px;
-    border: 1px solid var(--hn-border);
-    border-radius: 999px;
-    background: var(--hn-white);
-    color: var(--hn-ink);
-    font-size: 11px;
-    font-weight: 500;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--hn-muted);
+    color: var(--hn-white);
+    font-size: 9px;
+    font-weight: 700;
     text-decoration: none;
     cursor: pointer;
-    transition: border-color 0.1s, background 0.1s;
-    white-space: nowrap;
-    max-width: 160px;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    position: relative;
+    margin-left: 2px;
+    vertical-align: middle;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: background 0.15s;
   }
 
-  .hn-msg-source-chip:hover {
-    border-color: var(--hn-accent);
-    background: rgba(200,98,42,0.06);
-    color: var(--hn-accent);
+  .hn-cite:hover {
+    background: var(--hn-accent);
+  }
+
+  .hn-cite-tooltip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--hn-ink);
+    color: var(--hn-cream);
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.4;
+    padding: 5px 9px;
+    border-radius: 6px;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  }
+
+  .hn-cite-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--hn-ink);
+  }
+
+  .hn-cite:hover .hn-cite-tooltip {
+    opacity: 1;
   }
 
   /* Feedback on messages */

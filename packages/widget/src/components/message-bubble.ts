@@ -9,17 +9,20 @@ export function renderMessage(msg: ConversationMessage, workspaceSlug: string, b
     return `<div class="hn-msg hn-msg-system hn-msg-center"><div class="hn-msg-bubble">${escapeHtml(msg.content)}</div></div>`
   }
 
+  const sources = msg.sources ?? []
+  const citeBadges = sources.length
+    ? `<span class="hn-cite-group">${sources.map((s, i) =>
+        `<a href="${baseUrl}/${workspaceSlug}/help/${s.collection.slug}/${s.slug}"
+            target="_blank"
+            class="hn-cite"
+            aria-label="${escapeHtml(s.title)}"
+          >${i + 1}<span class="hn-cite-tooltip">${escapeHtml(s.title)}</span></a>`
+      ).join('')}</span>`
+    : ''
+
   const contentHtml = msg.role === 'CUSTOMER'
     ? `<p>${escapeHtml(msg.content)}</p>`
     : renderMarkdown(msg.content)
-
-  const sourcesHtml = msg.sources?.length
-    ? `<div class="hn-msg-sources">
-        ${msg.sources.map((s) =>
-          `<a href="${baseUrl}/${workspaceSlug}/help/${s.collection.slug}/${s.slug}" target="_blank" class="hn-msg-source-chip">${escapeHtml(s.title)}</a>`
-        ).join('')}
-      </div>`
-    : ''
 
   const feedbackHtml = msg.role === 'AI'
     ? `<div class="hn-msg-feedback" data-message-id="${msg.id}">
@@ -34,8 +37,7 @@ export function renderMessage(msg: ConversationMessage, workspaceSlug: string, b
 
   return `
     <div class="hn-msg ${roleClass} ${alignment}">
-      <div class="hn-msg-bubble">${contentHtml}</div>
-      ${sourcesHtml}
+      <div class="hn-msg-bubble">${contentHtml}${citeBadges}</div>
       ${feedbackHtml}
     </div>
   `
