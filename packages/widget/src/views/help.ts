@@ -34,79 +34,63 @@ function renderCollectionCard(col: CollectionNode): string {
 }
 
 export function renderHelp(): string {
-  const { config, collections, searchQuery, searchResults } = getState()
+  const { config, searchQuery } = getState()
   if (!config) return ''
-
-  const isSearching = searchQuery.length >= 2
-
-  const bodyHtml = isSearching
-    ? (searchResults.length > 0
-        ? `<div class="hn-help-results">
-            ${searchResults.map((article) => `
-              <button class="hn-article-row" type="button" data-action="open-article" data-article-id="${escapeHtml(article.id)}">
-                <span class="hn-article-row-title">${escapeHtml(article.title)}</span>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="9 18 15 12 9 6"/>
-                </svg>
-              </button>
-            `).join('')}
-          </div>`
-        : `<div class="hn-help-no-results">
-            <p>No results for "<strong>${escapeHtml(searchQuery)}</strong>"</p>
-          </div>`)
-    : `<div class="hn-help-collections">
-        <p class="hn-help-count">${collections.length} collection${collections.length !== 1 ? 's' : ''}</p>
-        ${collections.map(renderCollectionCard).join('')}
-      </div>`
 
   return `
     <div class="hn-view hn-view-help">
       ${renderHeader({ title: 'Help', showClose: true })}
       <div class="hn-help-search-wrap">
         ${renderSearchBar('Search articles…')}
-        ${searchQuery ? `<button class="hn-search-clear" type="button" aria-label="Clear search">
+        <button class="hn-search-clear" type="button" aria-label="Clear search" ${searchQuery ? '' : 'style="display:none"'}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
           </svg>
-        </button>` : ''}
+        </button>
       </div>
       <div class="hn-view-body hn-view-body-flush">
-        ${bodyHtml}
+        ${renderBodyContent()}
       </div>
       ${renderTabBar(getState().activeTab, config.aiEnabled)}
     </div>
   `
 }
 
-export function bindHelpEvents(container: HTMLElement, rerenderFn: () => void): void {
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null
+function renderBodyContent(): string {
+  const { collections, searchQuery, searchResults } = getState()
+  const isSearching = searchQuery.length >= 2
 
-  const input = container.querySelector('.hn-search-input') as HTMLInputElement | null
-  input?.addEventListener('input', () => {
-    const query = input.value.trim()
-    setSearchQuery(query)
+  if (isSearching) {
+    return searchResults.length > 0
+      ? `<div class="hn-help-results">
+          ${searchResults.map((article) => `
+            <button class="hn-article-row" type="button" data-action="open-article" data-article-id="${escapeHtml(article.id)}">
+              <span class="hn-article-row-title">${escapeHtml(article.title)}</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 18 15 12 9 6"/>
+              </svg>
+            </button>
+          `).join('')}
+        </div>`
+      : `<div class="hn-help-no-results">
+          <p>No results for "<strong>${escapeHtml(searchQuery)}</strong>"</p>
+        </div>`
+  }
 
-    if (debounceTimer) clearTimeout(debounceTimer)
+  return `<div class="hn-help-collections">
+    <p class="hn-help-count">${collections.length} collection${collections.length !== 1 ? 's' : ''}</p>
+    ${collections.map(renderCollectionCard).join('')}
+  </div>`
+}
 
-    if (query.length < 2) {
-      setSearchResults([])
-      rerenderFn()
-      return
-    }
+function updateBody(container: HTMLElement) {
+  const body = container.querySelector('.hn-view-body') as HTMLElement | null
+  if (!body) return
+  body.innerHTML = renderBodyContent()
+  bindResultEvents(container)
+}
 
-    debounceTimer = setTimeout(async () => {
-      const results = await searchArticles(query)
-      setSearchResults(results)
-      rerenderFn()
-    }, 300)
-  })
-
-  container.querySelector('.hn-search-clear')?.addEventListener('click', () => {
-    setSearchQuery('')
-    setSearchResults([])
-    rerenderFn()
-  })
-
+function bindResultEvents(container: HTMLElement) {
   container.querySelectorAll('[data-action="open-collection"]').forEach((btn) => {
     btn.addEventListener('click', () => {
       const collectionId = (btn as HTMLElement).dataset.collectionId
@@ -125,6 +109,39 @@ export function bindHelpEvents(container: HTMLElement, rerenderFn: () => void): 
       }
     })
   })
+}
+
+export function bindHelpEvents(container: HTMLElement, _rerenderFn: () => void): void {
+  let debounceTimer: ReturnType<typeof setTimeout> | null = null
+
+  const input = container.querySelector('.hn-search-input') as HTMLInputElement | null
+  input?.addEventListener('input', () => {
+    const query = input.value.trim()
+    setSearchQuery(query)
+
+    if (debounceTimer) clearTimeout(debounceTimer)
+
+    if (query.length < 2) {
+      setSearchResults([])
+      updateBody(container)
+      return
+    }
+
+    debounceTimer = setTimeout(async () => {
+      const results = await searchArticles(query)
+      setSearchResults(results)
+      updateBody(container)
+    }, 300)
+  })
+
+  container.querySelector('.hn-search-clear')?.addEventListener('click', () => {
+    setSearchQuery('')
+    setSearchResults([])
+    if (input) input.value = ''
+    updateBody(container)
+  })
+
+  bindResultEvents(container)
 
   container.querySelectorAll('.hn-tab').forEach((tab) => {
     tab.addEventListener('click', () => {
