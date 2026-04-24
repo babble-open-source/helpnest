@@ -128,6 +128,7 @@ export function renderChat(): string {
         </button>
       </div>
       <div class="hn-chat-messages" id="hn-chat-messages-area">
+        <div class="hn-chat-spacer"></div>
         ${greetingHtml}
         ${messagesHtml}
         ${showTyping ? renderTypingIndicator() : ''}

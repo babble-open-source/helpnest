@@ -10,7 +10,6 @@ import { renderArticle, bindArticleEvents, loadArticle } from './views/article'
 import { renderTabBar } from './components/tab-bar'
 import { widgetStyles } from './styles'
 
-const STORAGE_SESSION_KEY = 'helpnest:session:'
 const TRANSITION_MS = 200
 
 export class HelpNestWidget {
@@ -177,7 +176,14 @@ export class HelpNestWidget {
   }
 
   private getSessionToken(): string | null {
-    return localStorage.getItem(STORAGE_SESSION_KEY + this.initConfig.workspace) ?? null
+    const chatData = localStorage.getItem('helpnest:chat:' + this.initConfig.workspace)
+    if (chatData) {
+      try {
+        const parsed = JSON.parse(chatData) as { sessionToken?: string }
+        if (parsed.sessionToken) return parsed.sessionToken
+      } catch { /* ignore */ }
+    }
+    return null
   }
 
   private async render() {
@@ -203,6 +209,10 @@ export class HelpNestWidget {
 
       this.currentViewKind = viewKey
       this.bindTabBarEvents()
+
+      if (view.kind === 'messages') {
+        void this.refreshConversations()
+      }
     } finally {
       this.rendering = false
     }

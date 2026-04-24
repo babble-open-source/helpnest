@@ -1341,7 +1341,10 @@ export const widgetStyles = `
     flex-direction: column;
     gap: 8px;
     min-height: 0;
-    justify-content: flex-end;
+  }
+
+  .hn-chat-spacer {
+    flex: 1;
   }
 
   .hn-chat-greeting {
