@@ -93,7 +93,8 @@ export function DashboardSidebar({
           'transition-transform duration-200',
           mobileOpen ? 'translate-x-0 rtl:-translate-x-0' : '-translate-x-full rtl:translate-x-full',
           // Desktop: static, width-based collapse
-          'lg:static lg:translate-x-0 lg:transition-[width] lg:duration-200',
+          // lg:rtl:translate-x-0 overrides rtl:translate-x-full ([dir=rtl] has higher specificity than plain class)
+          'lg:static lg:translate-x-0 lg:rtl:translate-x-0 lg:transition-[width] lg:duration-200',
           open ? 'lg:w-60' : 'lg:w-12',
         ].join(' ')}
       >

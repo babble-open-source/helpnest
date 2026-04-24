@@ -193,7 +193,7 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                         {{ PUBLISHED: tc('published'), DRAFT: tc('draft'), ARCHIVED: tc('archived') }[article.status] ?? article.status}
                       </span>
                       {article.status === 'PUBLISHED' && article.draftContent && (
-                        <span className="text-xs text-amber-600 px-0.5">{t('draftChanges')}</span>
+                        <span className="text-xs text-amber-600 px-2">{t('draftChanges')}</span>
                       )}
                     </div>
                   </td>
