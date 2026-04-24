@@ -53,6 +53,8 @@ export function renderMarkdown(md: string): string {
     .filter(Boolean)
     .join('')
 
+  html = html.replace(/(<br\s*\/?>){2,}/g, '<br />')
+
   return html
 }
 

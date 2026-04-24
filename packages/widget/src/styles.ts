@@ -1666,8 +1666,14 @@ export const widgetStyles = `
 
   /* ─── Markdown ───────────────────────────────────────────────────────────── */
 
-  .hn-md-p { margin: 0 0 6px; }
+  .hn-msg-bubble .hn-md-p,
+  .hn-md-p { margin: 0 0 4px; }
   .hn-md-p:last-child { margin-bottom: 0; }
+
+  .hn-msg-bubble .hn-md-ul,
+  .hn-msg-bubble .hn-md-ol {
+    margin-bottom: 4px;
+  }
 
   .hn-md-h1 {
     font-family: var(--hn-font-heading);
