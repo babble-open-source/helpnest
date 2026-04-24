@@ -97,7 +97,7 @@ export const widgetStyles = `
     bottom: 68px;
     right: 0;
     width: 400px;
-    max-height: min(600px, calc(100vh - 120px));
+    height: min(600px, calc(100vh - 120px));
     background: var(--hn-cream);
     border-radius: var(--hn-radius);
     box-shadow: 0 8px 40px rgba(0,0,0,0.18);
