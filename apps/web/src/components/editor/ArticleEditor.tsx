@@ -508,7 +508,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
                 versions.map((v) => (
                   <div key={v.id} className="flex items-center justify-between p-4 hover:bg-cream">
                     <div>
-                      <p className="text-sm font-medium text-ink">{t('version')} {v.version}</p>
+                      <p className="text-sm font-medium text-ink">{t('version', { number: v.version })}</p>
                       <p className="text-xs text-muted mt-0.5">
                         {format.dateTime(new Date(v.createdAt), { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} &middot; {v.author.name ?? v.author.email}
                       </p>
