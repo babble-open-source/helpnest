@@ -234,7 +234,7 @@ async function listCollections(client: HelpNest): Promise<ToolResult> {
   const lines = collections.map((c) => {
     const desc = c.description ? `: ${c.description}` : ''
     const archived = c.isArchived ? ' [archived]' : ''
-    return `- **${c.title}** (slug: \`${c.slug}\`)${desc}${archived}`
+    return `- **${c.title}** (id: \`${c.id}\`, slug: \`${c.slug}\`)${desc}${archived}`
   })
 
   return textResult(`${collections.length} collection(s):\n\n${lines.join('\n')}`)
