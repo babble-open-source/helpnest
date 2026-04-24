@@ -60,8 +60,8 @@ export function switchTab(tab: TabId) {
   notify()
 }
 
-export function pushView(view: ViewType) {
-  lastTransition = 'push'
+export function pushView(view: ViewType, transition: TransitionDirection = 'push') {
+  lastTransition = transition
   state = {
     ...state,
     viewStack: [...state.viewStack, view],

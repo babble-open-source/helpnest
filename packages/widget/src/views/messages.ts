@@ -121,14 +121,14 @@ export function renderMessages(): string {
 
 export function bindMessagesEvents(container: HTMLElement): void {
   container.querySelector('[data-action="new-message"]')?.addEventListener('click', () => {
-    pushView({ kind: 'chat', forceNew: true })
+    pushView({ kind: 'chat', forceNew: true }, 'fade')
   })
 
   container.querySelectorAll('.hn-conv-row').forEach((row) => {
     row.addEventListener('click', () => {
       const conversationId = (row as HTMLElement).dataset.conversationId
       if (conversationId) {
-        pushView({ kind: 'chat', conversationId })
+        pushView({ kind: 'chat', conversationId }, 'fade')
       }
     })
   })
