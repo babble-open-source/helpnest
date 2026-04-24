@@ -14,17 +14,19 @@ export function renderMarkdown(md: string, baseUrl?: string): string {
     '<img class="hn-md-img" src="$2" alt="$1" loading="lazy" />'
   )
 
-  // Links — render as anchor for absolute URLs and path-relative URLs (resolved against baseUrl)
+  // Links — resolve against baseUrl so both absolute and any relative format work
   html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_m, text, href) => {
-    const isAbsolute = /^https?:\/\//i.test(href)
-    const isRelativePath = href.startsWith('/') && baseUrl
-    if (isAbsolute || isRelativePath) {
-      const resolved = isAbsolute ? href : `${baseUrl}${href}`
-      const safeHref = resolved.replace(/"/g, '%22').replace(/'/g, '%27')
+    try {
+      const base = baseUrl ?? (typeof window !== 'undefined' ? window.location.origin : '')
+      const url = new URL(href, base || undefined)
+      if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+        return `<span class="hn-md-a">${text}</span>`
+      }
+      const safeHref = url.href.replace(/"/g, '%22').replace(/'/g, '%27')
       return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="hn-md-a">${text}</a>`
+    } catch {
+      return `<span class="hn-md-a">${text}</span>`
     }
-    // Fragment-only or unsupported scheme — styled text only
-    return `<span class="hn-md-a">${text}</span>`
   })
 
   // Headings (h1-h4)
