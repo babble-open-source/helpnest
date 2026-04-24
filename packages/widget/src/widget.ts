@@ -61,6 +61,8 @@ export class HelpNestWidget {
       if (e.key === 'Escape' && getState().isOpen) this.close()
     })
 
+    this.panel.addEventListener('hn:close', () => this.close())
+
     this.unsubscribe = subscribe(() => void this.render())
 
     void this.initialize()
@@ -199,7 +201,6 @@ export class HelpNestWidget {
 
       this.currentViewKind = viewKey
       this.bindTabBarEvents()
-      this.bindHeaderEvents()
     } finally {
       this.rendering = false
     }
@@ -327,12 +328,4 @@ export class HelpNestWidget {
     })
   }
 
-  private bindHeaderEvents() {
-    if (!this.panel) return
-    const backBtn = this.panel.querySelector('.hn-header-back')
-    backBtn?.addEventListener('click', () => popView())
-
-    const closeBtn = this.panel.querySelector('.hn-header-close')
-    closeBtn?.addEventListener('click', () => this.close())
-  }
 }
