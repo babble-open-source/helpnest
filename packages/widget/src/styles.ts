@@ -107,7 +107,7 @@ export const widgetStyles = `
     overflow: hidden;
     opacity: 1;
     transform: translateY(0) scale(1);
-    transition: opacity 0.2s ease, transform 0.2s ease;
+    transition: opacity 0.2s ease, transform 0.2s ease, width 0.25s cubic-bezier(0.16,1,0.3,1), height 0.25s cubic-bezier(0.16,1,0.3,1);
   }
 
   .hn-panel-enter {
@@ -138,60 +138,11 @@ export const widgetStyles = `
     to   { opacity: 0; transform: translateY(12px) scale(0.97); }
   }
 
-  /* ─── Expand overlay ────────────────────────────────────────────────────── */
-
-  /* Covers the full host (which expands to full-viewport when expanded).
-     position:absolute so it fills the host without creating a new fixed context. */
-  .hn-expand-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(0, 0, 0, 0.4);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s ease;
-  }
-
-  :host(.hn-expanded) .hn-expand-overlay {
-    opacity: 1;
-    pointer-events: all;
-    cursor: default;
-  }
-
-  /* ─── Expanded host + panel ─────────────────────────────────────────────── */
-
-  /* Expand the host to cover the full viewport and act as a flex centering container.
-     This avoids using position:fixed on the panel, which can be mis-contained by the
-     host's own fixed positioning in some browsers. */
-  :host(.hn-expanded) {
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
+  /* ─── Expanded panel (grows in-place, stays anchored bottom-right) ──────── */
 
   :host(.hn-expanded) .hn-panel {
-    position: relative;
-    bottom: auto;
-    right: auto;
-    transform: none;
-    width: min(720px, calc(100vw - 48px));
-    height: min(85vh, 780px);
-    border-radius: 16px;
-    z-index: 1;
-    flex-shrink: 0;
-  }
-
-  :host(.hn-expanded) .hn-launcher {
-    display: none;
-  }
-
-  @keyframes hn-panel-expand-in {
-    from { opacity: 0.6; transform: scale(0.96); }
-    to   { opacity: 1;   transform: scale(1); }
-  }
-
-  :host(.hn-expanded) .hn-panel.hn-panel-expanding {
-    animation: hn-panel-expand-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    width: min(480px, calc(100vw - 48px));
+    height: min(85vh, 820px);
   }
 
   @media (max-width: 480px) {

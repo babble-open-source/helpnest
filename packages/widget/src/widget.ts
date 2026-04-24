@@ -19,7 +19,6 @@ export class HelpNestWidget {
   private shadow: ShadowRoot | null = null
   private panel: HTMLElement | null = null
   private launcher: HTMLElement | null = null
-  private expandOverlay: HTMLElement | null = null
   private isExpanded = false
   private unsubscribe: (() => void) | null = null
   private rendering = false
@@ -53,10 +52,6 @@ export class HelpNestWidget {
       </svg>
     `
     this.shadow.appendChild(this.launcher)
-
-    this.expandOverlay = document.createElement('div')
-    this.expandOverlay.className = 'hn-expand-overlay'
-    this.shadow.appendChild(this.expandOverlay)
 
     this.panel = document.createElement('div')
     this.panel.className = 'hn-panel hn-panel-hidden'
@@ -96,11 +91,9 @@ export class HelpNestWidget {
 
     document.addEventListener('keydown', (e) => {
       if (e.key !== 'Escape') return
-      if (this.isExpanded) this.toggleExpand()
-      else if (getState().isOpen) this.close()
+      if (getState().isOpen) this.close()
     })
 
-    this.expandOverlay.addEventListener('click', () => this.toggleExpand())
     this.panel.addEventListener('hn:expand', () => this.toggleExpand())
     this.panel.addEventListener('hn:close', () => this.close())
 
@@ -219,8 +212,6 @@ export class HelpNestWidget {
     this.isExpanded = !this.isExpanded
     if (this.isExpanded) {
       this.root.classList.add('hn-expanded')
-      this.panel.classList.add('hn-panel-expanding')
-      setTimeout(() => this.panel?.classList.remove('hn-panel-expanding'), 300)
     } else {
       this.root.classList.remove('hn-expanded')
     }
