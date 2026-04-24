@@ -367,7 +367,11 @@ export const widgetStyles = `
     display: flex;
     border-top: 1px solid var(--hn-border);
     background: var(--hn-cream);
-    flex-shrink: 0;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
   }
 
   .hn-tab {
@@ -411,6 +415,7 @@ export const widgetStyles = `
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    padding-bottom: 57px;
   }
 
   .hn-home-hero {
@@ -663,6 +668,7 @@ export const widgetStyles = `
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    padding-bottom: 57px;
   }
 
   .hn-conv-list {
@@ -803,6 +809,7 @@ export const widgetStyles = `
     flex-direction: column;
     flex: 1;
     min-height: 0;
+    padding-bottom: 57px;
   }
 
   .hn-help-search-wrap {

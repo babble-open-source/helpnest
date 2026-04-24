@@ -388,9 +388,9 @@ export class HelpNestWidget {
 
       this.viewContainer.appendChild(newLayer)
 
-      // Pre-add tab bar before animation if the incoming view needs one and none exists,
-      // so it fades/slides in with the new view rather than popping in after.
-      let preAddedTabBar: Element | null = null
+      // Tab bar is position:absolute so it never affects the view-stack's height.
+      // Fade it out/in in sync with the view transition for a smooth visual.
+      let preAddedTabBar: HTMLElement | null = null
       if (showTabBar && !existingTabBar) {
         const state = getState()
         if (state.config) {
@@ -411,14 +411,12 @@ export class HelpNestWidget {
           newLayer.classList.add('hn-view-active')
           if (oldLayer) oldLayer.classList.add('hn-view-leaving')
 
-          // Fade tab bar out when moving to a view that doesn't show it
           if (!showTabBar && existingTabBar) {
             existingTabBar.style.transition = `opacity ${TRANSITION_MS}ms ease`
             existingTabBar.style.opacity = '0'
           }
-          // Fade pre-added tab bar in
           if (preAddedTabBar) {
-            (preAddedTabBar as HTMLElement).style.opacity = '1'
+            preAddedTabBar.style.opacity = '1'
           }
         })
       })
