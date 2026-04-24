@@ -23,6 +23,7 @@ export class HelpNestWidget {
   private pendingRender = false
   private currentViewKind: string = ''
   private viewContainer: HTMLElement | null = null
+  private floatingTooltip: HTMLElement | null = null
 
   constructor(config: InitConfig) {
     this.initConfig = config
@@ -54,9 +55,38 @@ export class HelpNestWidget {
     this.panel.className = 'hn-panel hn-panel-hidden'
     this.shadow.appendChild(this.panel)
 
+    // Floating tooltip — lives outside the panel to escape overflow:hidden clipping
+    this.floatingTooltip = document.createElement('div')
+    this.floatingTooltip.className = 'hn-floating-tooltip'
+    this.shadow.appendChild(this.floatingTooltip)
+
     document.body.appendChild(this.root)
 
     this.launcher.addEventListener('click', () => this.toggle())
+
+    // Citation badge tooltip delegation
+    this.panel.addEventListener('mouseover', (e) => {
+      const cite = (e.target as HTMLElement).closest('.hn-cite') as HTMLElement | null
+      if (!cite || !this.floatingTooltip || !this.shadow) return
+      const title = cite.dataset.citeTitle
+      if (!title) return
+      this.floatingTooltip.textContent = title
+      this.floatingTooltip.classList.add('hn-floating-tooltip-visible')
+      const rect = cite.getBoundingClientRect()
+      const hostRect = (this.shadow.host as HTMLElement).getBoundingClientRect()
+      const cx = rect.left - hostRect.left + rect.width / 2
+      const ty = rect.top - hostRect.top
+      // Clamp so tooltip (max 220px) stays within host width
+      const clamped = Math.max(114, Math.min(cx, hostRect.width - 114))
+      this.floatingTooltip.style.left = `${clamped}px`
+      this.floatingTooltip.style.top = `${ty}px`
+      this.floatingTooltip.style.transform = 'translate(-50%, calc(-100% - 8px))'
+    })
+    this.panel.addEventListener('mouseout', (e) => {
+      const rel = (e as MouseEvent).relatedTarget as HTMLElement | null
+      if (rel?.closest('.hn-cite')) return
+      this.floatingTooltip?.classList.remove('hn-floating-tooltip-visible')
+    })
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && getState().isOpen) this.close()

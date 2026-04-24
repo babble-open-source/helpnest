@@ -10,19 +10,24 @@ export function renderMessage(msg: ConversationMessage, workspaceSlug: string, b
   }
 
   const sources = msg.sources ?? []
-  const citeBadges = sources.length
-    ? `<span class="hn-cite-group">${sources.map((s, i) =>
-        `<a href="${baseUrl}/${workspaceSlug}/help/${s.collection.slug}/${s.slug}"
-            target="_blank"
-            class="hn-cite"
-            aria-label="${escapeHtml(s.title)}"
-          >${i + 1}<span class="hn-cite-tooltip">${escapeHtml(s.title)}</span></a>`
-      ).join('')}</span>`
-    : ''
 
   const contentHtml = msg.role === 'CUSTOMER'
     ? `<p>${escapeHtml(msg.content)}</p>`
     : renderMarkdown(msg.content)
+
+  // Inject cite badges inline inside the last paragraph so they flow with the text
+  const contentWithCites = sources.length
+    ? (() => {
+        const badges = sources.map((s, i) =>
+          `<a href="${baseUrl}/${workspaceSlug}/help/${s.collection.slug}/${s.slug}" target="_blank" class="hn-cite" data-cite-title="${escapeHtml(s.title)}">${i + 1}</a>`
+        ).join('')
+        const group = `<span class="hn-cite-group">${badges}</span>`
+        const lastP = contentHtml.lastIndexOf('</p>')
+        return lastP !== -1
+          ? contentHtml.slice(0, lastP) + group + contentHtml.slice(lastP)
+          : contentHtml + group
+      })()
+    : contentHtml
 
   const feedbackHtml = msg.role === 'AI'
     ? `<div class="hn-msg-feedback" data-message-id="${msg.id}">
@@ -37,7 +42,7 @@ export function renderMessage(msg: ConversationMessage, workspaceSlug: string, b
 
   return `
     <div class="hn-msg ${roleClass} ${alignment}">
-      <div class="hn-msg-bubble">${contentHtml}${citeBadges}</div>
+      <div class="hn-msg-bubble">${contentWithCites}</div>
       ${feedbackHtml}
     </div>
   `

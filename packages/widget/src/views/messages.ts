@@ -41,10 +41,23 @@ function getStatusColor(status: string): string {
   }
 }
 
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*\*(.+?)\*\*\*/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/\*(.+?)\*/g, '$1')
+    .replace(/_(.+?)_/g, '$1')
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/!\[([^\]]*)\]\([^)]+\)/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/^#{1,4} /gm, '')
+}
+
 function renderConversationRow(conv: ConversationSummary): string {
   const statusColor = getStatusColor(conv.status)
+  const rawContent = conv.lastMessage ? stripMarkdown(conv.lastMessage.content) : ''
   const preview = conv.lastMessage
-    ? escapeHtml(conv.lastMessage.content.slice(0, 80) + (conv.lastMessage.content.length > 80 ? '…' : ''))
+    ? escapeHtml(rawContent.slice(0, 80) + (rawContent.length > 80 ? '…' : ''))
     : 'No messages yet'
   const time = conv.lastMessage
     ? formatRelativeTime(conv.lastMessage.createdAt)

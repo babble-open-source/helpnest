@@ -99,7 +99,7 @@ export const widgetStyles = `
     width: 400px;
     height: min(600px, calc(100vh - 120px));
     background: var(--hn-cream);
-    border-radius: var(--hn-radius);
+    border-radius: 20px;
     box-shadow: 0 8px 40px rgba(0,0,0,0.18);
     border: 1px solid var(--hn-border);
     display: flex;
@@ -1509,30 +1509,29 @@ export const widgetStyles = `
     background: var(--hn-accent);
   }
 
-  .hn-cite-tooltip {
+  /* Floating tooltip — child of shadow root, not panel, so it escapes overflow:hidden */
+  .hn-floating-tooltip {
     position: absolute;
-    bottom: calc(100% + 6px);
-    left: 50%;
-    transform: translateX(-50%);
     background: var(--hn-ink);
     color: var(--hn-cream);
+    font-family: var(--hn-font-body);
     font-size: 11px;
     font-weight: 400;
     line-height: 1.4;
     padding: 5px 9px;
     border-radius: 6px;
     white-space: nowrap;
-    max-width: 200px;
+    max-width: 220px;
     overflow: hidden;
     text-overflow: ellipsis;
     pointer-events: none;
     opacity: 0;
     transition: opacity 0.15s ease;
-    z-index: 10;
+    z-index: 99999;
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   }
 
-  .hn-cite-tooltip::after {
+  .hn-floating-tooltip::after {
     content: '';
     position: absolute;
     top: 100%;
@@ -1542,7 +1541,7 @@ export const widgetStyles = `
     border-top-color: var(--hn-ink);
   }
 
-  .hn-cite:hover .hn-cite-tooltip {
+  .hn-floating-tooltip-visible {
     opacity: 1;
   }
 
