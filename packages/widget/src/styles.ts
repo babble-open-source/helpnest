@@ -1377,8 +1377,8 @@ export const widgetStyles = `
   }
 
   .hn-msg-bubble {
-    padding: 10px 14px;
-    border-radius: 18px;
+    padding: 8px 14px;
+    border-radius: 16px;
     font-size: 13px;
     line-height: 1.5;
     overflow-wrap: anywhere;
