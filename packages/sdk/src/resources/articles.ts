@@ -28,7 +28,7 @@ export class ArticlesResource {
    * Get a single article by its ID or slug.
    */
   async get(idOrSlug: string): Promise<Article> {
-    return this.http.get<Article>(`/articles/${idOrSlug}`)
+    return this.http.get<Article>(`/articles/${idOrSlug}?format=markdown`)
   }
 
   /**
