@@ -153,6 +153,7 @@ export class HelpNestWidget {
     const fontMap: Record<string, string> = {
       '--font-heading': '--hn-font-heading',
       '--font-body': '--hn-font-body',
+      '--font-brand': '--hn-font-brand',
     }
 
     const radiusMap: Record<string, string> = {

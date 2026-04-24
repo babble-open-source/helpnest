@@ -1135,6 +1135,7 @@ export const widgetStyles = `
   .hn-article-content p {
     margin: 0.875rem 0;
     line-height: 1.75;
+    color: color-mix(in srgb, var(--hn-ink) 90%, transparent);
   }
 
   .hn-article-content p:last-child {
@@ -1167,6 +1168,7 @@ export const widgetStyles = `
   .hn-article-content li {
     margin: 0.3rem 0;
     line-height: 1.65;
+    color: color-mix(in srgb, var(--hn-ink) 90%, transparent);
   }
 
   .hn-article-content li > p {
@@ -1234,7 +1236,7 @@ export const widgetStyles = `
     font-size: 0.875em;
     background: var(--hn-cream);
     border: 1px solid var(--hn-border);
-    border-radius: 4px;
+    border-radius: max(calc(var(--hn-radius) - 4px), 0px);
     padding: 0.1em 0.4em;
     color: var(--hn-accent);
   }
@@ -1268,6 +1270,7 @@ export const widgetStyles = `
     padding: 0.5rem 0.75rem;
     text-align: start;
     vertical-align: top;
+    font-family: var(--hn-font-body);
     word-break: break-word;
   }
 
@@ -1277,15 +1280,64 @@ export const widgetStyles = `
   }
 
   .hn-article-content th {
-    background: var(--hn-cream);
-    font-family: var(--hn-font-body);
+    background: color-mix(in srgb, var(--hn-border) 50%, transparent);
     font-weight: 600;
     font-size: 0.8125rem;
     color: var(--hn-ink);
   }
 
   .hn-article-content tr:nth-child(even) td {
-    background: var(--hn-cream);
+    background: color-mix(in srgb, var(--hn-cream) 50%, transparent);
+  }
+
+  /* ── Task lists ─────────────────────────────────────────────── */
+
+  .hn-article-content ul[data-type='taskList'] {
+    list-style: none;
+    padding-inline-start: 0;
+    margin: 0.875rem 0;
+  }
+
+  .hn-article-content ul[data-type='taskList'] li {
+    display: flex;
+    gap: 0.625rem;
+    align-items: center;
+    margin: 0.375rem 0;
+  }
+
+  .hn-article-content ul[data-type='taskList'] li > label {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    cursor: default;
+  }
+
+  .hn-article-content ul[data-type='taskList'] li > div p {
+    margin: 0;
+  }
+
+  .hn-article-content ul[data-type='taskList'] li > label input[type='checkbox'] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 1rem;
+    height: 1rem;
+    border: 1.5px solid var(--hn-border);
+    border-radius: 4px;
+    background: transparent;
+    flex-shrink: 0;
+    pointer-events: none;
+  }
+
+  .hn-article-content ul[data-type='taskList'] li > label input[type='checkbox']:checked {
+    background: var(--hn-accent);
+    border-color: var(--hn-accent);
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M3 8.5l3 3L13 5' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-size: 100% 100%;
+  }
+
+  .hn-article-content ul[data-type='taskList'] li[data-checked='true'] > div {
+    text-decoration: line-through;
+    opacity: 0.5;
   }
 
   .hn-article-open-link {

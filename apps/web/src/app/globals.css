@@ -79,6 +79,15 @@
   color: rgb(var(--color-ink));
 }
 
+.hn-prose h4 {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.4;
+  margin: 1.5rem 0 0.5rem;
+  color: rgb(var(--color-ink));
+}
+
 .hn-prose ul,
 .hn-prose ol {
   padding-inline-start: 1.5rem;
@@ -149,6 +158,8 @@
   padding: 0;
   font-size: 0.875rem;
   font-family: ui-monospace, monospace;
+  white-space: pre;
+  display: block;
 }
 
 .hn-prose hr {
