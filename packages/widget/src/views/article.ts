@@ -42,9 +42,8 @@ export async function loadArticle(articleId: string): Promise<ArticleDetail | nu
 
 export function renderArticle(article: ArticleDetail): string {
   const { config } = getState()
-  const baseUrl = (config as unknown as Record<string, unknown>)._baseUrl as string | undefined
-    ?? window.location.origin
-  const helpCenterUrl = `${baseUrl}/${article.workspaceSlug}/help/${article.collection.slug}/${article.slug}`
+  const helpCenterBase = config?.helpCenterUrl ?? window.location.origin
+  const helpCenterUrl = `${helpCenterBase}/${article.collection.slug}/${article.slug}`
 
   const avatarHtml = article.author.avatar
     ? `<img class="hn-article-author-avatar" src="${escapeHtml(article.author.avatar)}" alt="${escapeHtml(article.author.name ?? '')}" />`
