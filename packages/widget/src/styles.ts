@@ -1326,11 +1326,12 @@ export const widgetStyles = `
     flex: 1;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    padding: 14px;
+    padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
     min-height: 0;
+    justify-content: flex-end;
   }
 
   .hn-chat-greeting {
