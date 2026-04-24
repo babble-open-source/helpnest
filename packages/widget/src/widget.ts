@@ -213,7 +213,7 @@ export class HelpNestWidget {
 
       // Init chat only on actual view transition, not on re-renders within the same chat
       if (view.kind === 'chat' && isViewChange) {
-        await initChatView(view.conversationId)
+        await initChatView(view.conversationId, view.forceNew)
       }
 
       const viewHtml = await this.renderView(view, state.config.slug)

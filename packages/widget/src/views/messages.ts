@@ -108,7 +108,7 @@ export function renderMessages(): string {
 
 export function bindMessagesEvents(container: HTMLElement): void {
   container.querySelector('[data-action="new-message"]')?.addEventListener('click', () => {
-    pushView({ kind: 'chat' })
+    pushView({ kind: 'chat', forceNew: true })
   })
 
   container.querySelectorAll('.hn-conv-row').forEach((row) => {

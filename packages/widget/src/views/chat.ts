@@ -47,11 +47,11 @@ export function resetChatView(): void {
   _initializedForConvId = undefined
 }
 
-export async function initChatView(conversationId?: string): Promise<void> {
+export async function initChatView(conversationId?: string, forceNew?: boolean): Promise<void> {
   const targetId = conversationId ?? null
 
-  // Skip re-init if already initialized for the same conversation
-  if (chatManager !== null && _initializedForConvId === targetId) return
+  // Skip re-init only for same-conversation re-renders, never when forceNew
+  if (!forceNew && chatManager !== null && _initializedForConvId === targetId) return
 
   _initializedForConvId = targetId
   messages = []
@@ -69,7 +69,7 @@ export async function initChatView(conversationId?: string): Promise<void> {
     chatManager.setSession(conversationId)
     const loaded = await chatManager.loadMessages()
     messages = loaded
-  } else {
+  } else if (!forceNew) {
     const resumed = await chatManager.resumeSession()
     if (resumed) {
       const loaded = await chatManager.loadMessages()

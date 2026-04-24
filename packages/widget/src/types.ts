@@ -90,7 +90,7 @@ export type ViewType =
   | { kind: 'home' }
   | { kind: 'messages' }
   | { kind: 'help' }
-  | { kind: 'chat'; conversationId?: string }
+  | { kind: 'chat'; conversationId?: string; forceNew?: boolean }
   | { kind: 'collection-detail'; collectionId: string; title: string }
   | { kind: 'article'; articleId: string }
 

@@ -96,7 +96,7 @@ export function bindHomeEvents(container: HTMLElement): void {
   })
 
   container.querySelector('[data-action="send-message"]')?.addEventListener('click', () => {
-    switchTabAndPush('messages', { kind: 'chat' })
+    switchTabAndPush('messages', { kind: 'chat', forceNew: true })
   })
 
   container.querySelector('[data-action="view-all"]')?.addEventListener('click', () => {
