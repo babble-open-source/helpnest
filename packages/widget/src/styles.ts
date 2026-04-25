@@ -1702,8 +1702,8 @@ export const widgetStyles = `
   .hn-msg-ai .hn-msg-bubble ol,
   .hn-msg-agent .hn-msg-bubble ul,
   .hn-msg-agent .hn-msg-bubble ol {
-    margin: 0 0 8px 16px;
-    padding: 0;
+    margin: 0 0 8px 0;
+    padding-left: 20px;
   }
 
   .hn-msg-ai .hn-msg-bubble li,
