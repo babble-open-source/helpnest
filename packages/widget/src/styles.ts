@@ -177,6 +177,10 @@ export const widgetStyles = `
       bottom: 0;
       right: 0;
     }
+
+    .hn-expand-btn {
+      display: none;
+    }
   }
 
   /* ─── View stack ─────────────────────────────────────────────────────────── */

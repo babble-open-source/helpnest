@@ -97,6 +97,13 @@ export class HelpNestWidget {
     this.panel.addEventListener('hn:expand', () => this.toggleExpand())
     this.panel.addEventListener('hn:close', () => this.close())
 
+    window.addEventListener('resize', () => {
+      if (this.isExpanded && window.innerWidth <= 480) {
+        this.isExpanded = false
+        this.root?.classList.remove('hn-expanded')
+      }
+    })
+
     this.unsubscribe = subscribe(() => void this.render())
 
     void this.initialize()
