@@ -1570,6 +1570,7 @@ export const widgetStyles = `
 
   .hn-chat-spacer {
     flex: 1;
+    min-height: 8px;
   }
 
   .hn-chat-greeting {
