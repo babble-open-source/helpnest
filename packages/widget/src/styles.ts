@@ -145,6 +145,10 @@ export const widgetStyles = `
     height: min(85vh, 820px);
   }
 
+  :host(.hn-expanded) .hn-chat-messages {
+    padding-top: 16px;
+  }
+
   @media (max-width: 480px) {
     :host {
       bottom: 0;
