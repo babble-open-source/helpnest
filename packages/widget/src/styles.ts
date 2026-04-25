@@ -1989,7 +1989,8 @@ export const widgetStyles = `
 
   .hn-msg-bubble .hn-md-ul,
   .hn-msg-bubble .hn-md-ol {
-    margin-bottom: 4px;
+    margin: 4px 0 4px 0;
+    padding-left: 20px;
   }
 
   .hn-md-h1 {
