@@ -48,9 +48,14 @@ export function renderMarkdown(md: string, baseUrl?: string): string {
   html = html.replace(/^[-*] (.+)$/gm, '<li class="hn-md-li">$1</li>')
   html = html.replace(/((?:<li class="hn-md-li">.*<\/li>\n?)+)/g, '<ul class="hn-md-ul">$1</ul>')
 
-  // Ordered lists
-  html = html.replace(/^\d+\. (.+)$/gm, '<li class="hn-md-oli">$1</li>')
-  html = html.replace(/((?:<li class="hn-md-oli">.*<\/li>\n?)+)/g, '<ol class="hn-md-ol">$1</ol>')
+  // Ordered lists — preserve original number for correct start="" attribute
+  html = html.replace(/^(\d+)\. (.+)$/gm, '<li class="hn-md-oli" data-n="$1">$2</li>')
+  html = html.replace(/((?:<li class="hn-md-oli"[^>]*>.*<\/li>\n?)+)/g, (_m, group: string) => {
+    const firstNum = group.match(/data-n="(\d+)"/)
+    const start = firstNum && firstNum[1] !== '1' ? ` start="${firstNum[1]}"` : ''
+    const clean = group.replace(/ data-n="\d+"/g, '')
+    return `<ol class="hn-md-ol"${start}>${clean}</ol>`
+  })
   // Merge consecutive <ol> blocks separated only by whitespace (blank lines between items)
   html = html.replace(/<\/ol>\s*<ol class="hn-md-ol">/g, '')
 
