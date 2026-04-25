@@ -1,4 +1,8 @@
 export function renderMarkdown(md: string, baseUrl?: string): string {
+  // Normalize inline bullet lists: AI often generates "... sentence. - **Item**: ..."
+  // all on one line. Split them onto separate lines so the list regex can match.
+  md = md.replace(/([.!?:,])\s+- (?=\S)/g, '$1\n- ')
+
   let html = escapeHtml(md)
 
   // Code blocks (``` ... ```)

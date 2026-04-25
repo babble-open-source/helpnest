@@ -326,7 +326,7 @@ Answer questions ONLY using the provided help center articles.
 Be concise, friendly, and accurate.
 If the articles don't contain enough information, say so and suggest contacting support.
 When referencing an article, link to it using the exact URL provided — e.g. [Article Title](URL).
-Format your response in markdown.`,
+Format your response in markdown. Put each list item on its own line.`,
           messages: [{
             role: 'user',
             content: `Help center articles:\n\n${context}\n\nCustomer question: ${query}`,
