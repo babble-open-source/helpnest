@@ -1706,6 +1706,12 @@ export const widgetStyles = `
     padding-left: 20px;
   }
 
+  .hn-msg-ai .hn-msg-bubble ol + ul,
+  .hn-msg-agent .hn-msg-bubble ol + ul {
+    padding-left: 36px;
+    margin-top: -4px;
+  }
+
   .hn-msg-ai .hn-msg-bubble li,
   .hn-msg-agent .hn-msg-bubble li {
     margin: 0 0 3px;
