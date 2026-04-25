@@ -1,7 +1,13 @@
-import type { ConversationMessage } from '../types'
+import type { ConversationMessage, WidgetConfig } from '../types'
 import { renderMarkdown } from './markdown'
 
-export function renderMessage(msg: ConversationMessage, helpCenterUrl: string, baseUrl: string): string {
+export function renderMessage(
+  msg: ConversationMessage,
+  helpCenterUrl: string,
+  baseUrl: string,
+  config: WidgetConfig,
+  isGroupContinuation: boolean,
+): string {
   const roleClass = `hn-msg-${msg.role.toLowerCase()}`
   const alignment = msg.role === 'CUSTOMER' ? 'hn-msg-right' : 'hn-msg-left'
 
@@ -15,7 +21,6 @@ export function renderMessage(msg: ConversationMessage, helpCenterUrl: string, b
     ? `<p>${escapeHtml(msg.content)}</p>`
     : renderMarkdown(msg.content, baseUrl)
 
-  // Inject cite badges inline inside the last paragraph so they flow with the text
   const contentWithCites = sources.length
     ? (() => {
         const badges = sources.map((s, i) =>
@@ -28,6 +33,8 @@ export function renderMessage(msg: ConversationMessage, helpCenterUrl: string, b
           : contentHtml + group
       })()
     : contentHtml
+
+  const senderHtml = isGroupContinuation ? '' : renderSenderRow(msg.role, config)
 
   const feedbackHtml = msg.role === 'AI'
     ? `<div class="hn-msg-feedback" data-message-id="${msg.id}">
@@ -42,10 +49,24 @@ export function renderMessage(msg: ConversationMessage, helpCenterUrl: string, b
 
   return `
     <div class="hn-msg ${roleClass} ${alignment}">
+      ${senderHtml}
       <div class="hn-msg-bubble">${contentWithCites}</div>
       ${feedbackHtml}
     </div>
   `
+}
+
+function renderSenderRow(role: 'CUSTOMER' | 'AI' | 'AGENT', config: WidgetConfig): string {
+  if (role === 'CUSTOMER') {
+    return `<div class="hn-msg-sender"><span class="hn-msg-sender-name">You</span></div>`
+  }
+
+  const name = escapeHtml(config.name)
+  const avatarHtml = config.logo
+    ? `<img class="hn-msg-avatar" src="${config.logo}" alt="" />`
+    : `<span class="hn-msg-avatar-fallback">${name.charAt(0)}</span>`
+
+  return `<div class="hn-msg-sender">${avatarHtml}<span class="hn-msg-sender-name">${name}</span></div>`
 }
 
 export function renderTypingIndicator(): string {

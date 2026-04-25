@@ -2,7 +2,7 @@ import { getState, popView } from '../state'
 import { renderHeader } from '../components/header'
 import { renderMessage, renderTypingIndicator } from '../components/message-bubble'
 import { ChatManager } from '../chat'
-import type { ConversationMessage } from '../types'
+import type { ConversationMessage, WidgetConfig } from '../types'
 
 function escapeHtml(str: string): string {
   return str
@@ -93,12 +93,21 @@ export function renderChat(): string {
   const helpCenterUrl = config.helpCenterUrl ?? baseUrl
 
   const messagesHtml = messages
-    .map((msg) => renderMessage(msg, helpCenterUrl, baseUrl))
+    .map((msg, i) => {
+      const isGroupContinuation = i > 0 && messages[i - 1].role === msg.role
+      return renderMessage(msg, helpCenterUrl, baseUrl, config, isGroupContinuation)
+    })
     .join('')
 
   const showTyping = isStreaming && streamingContent === ''
+  const lastRole = messages.length > 0 ? messages[messages.length - 1].role : null
+  const streamingIsGroupCont = lastRole === 'AI'
+  const streamingSenderHtml = isStreaming && streamingContent !== '' && !streamingIsGroupCont
+    ? renderStreamingSender(config)
+    : ''
   const streamingBubble = isStreaming && streamingContent !== ''
     ? `<div class="hn-msg hn-msg-ai hn-msg-left">
+        ${streamingSenderHtml}
         <div class="hn-msg-bubble">${escapeHtml(streamingContent)}</div>
       </div>`
     : ''
@@ -395,4 +404,12 @@ async function handleEscalate(rerenderFn: () => void): Promise<void> {
     messages = [...messages, errorMsg]
     rerenderFn()
   }
+}
+
+function renderStreamingSender(config: WidgetConfig): string {
+  const name = escapeHtml(config.name)
+  const avatarHtml = config.logo
+    ? `<img class="hn-msg-avatar" src="${config.logo}" alt="" />`
+    : `<span class="hn-msg-avatar-fallback">${name.charAt(0)}</span>`
+  return `<div class="hn-msg-sender">${avatarHtml}<span class="hn-msg-sender-name">${name}</span></div>`
 }

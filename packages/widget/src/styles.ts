@@ -1578,6 +1578,43 @@ export const widgetStyles = `
     padding: 8px 4px 0;
   }
 
+  /* Sender labels + avatars */
+  .hn-msg-sender {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 2px;
+  }
+
+  .hn-msg-avatar {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+
+  .hn-msg-avatar-fallback {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--hn-ink);
+    color: var(--hn-cream);
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .hn-msg-sender-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--hn-muted);
+    line-height: 1;
+  }
+
   /* Messages */
   .hn-msg {
     display: flex;
