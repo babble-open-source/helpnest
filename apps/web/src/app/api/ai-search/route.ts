@@ -140,7 +140,7 @@ export async function POST(request: Request) {
 
   const workspace = await prisma.workspace.findFirst({
     where: { slug: workspaceSlug },
-    select: { id: true, name: true, aiEnabled: true, aiProvider: true, aiApiKey: true, aiModel: true },
+    select: { id: true, slug: true, name: true, customDomain: true, aiEnabled: true, aiProvider: true, aiApiKey: true, aiModel: true },
   })
   if (!workspace) {
     return NextResponse.json({ error: 'Workspace not found' }, { status: 404, headers: CORS_HEADERS })
@@ -289,13 +289,18 @@ export async function POST(request: Request) {
     )
   }
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://helpnest.cloud'
+  const helpCenterBase = workspace.customDomain
+    ? `https://${workspace.customDomain}`
+    : `${appUrl}/${workspace.slug}/help`
+
   const context = articles.map((a, i) => {
     const raw = a.contextChunk ?? a.content.slice(0, 1500)
-    // Strip HTML tags — article content may be stored as Tiptap HTML
     const content = raw.trimStart().startsWith('<')
       ? raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
       : raw
-    return `[Article ${i + 1}]: ${a.title}\n${content}`
+    const articleUrl = `${helpCenterBase}/${a.collection.slug}/${a.slug}`
+    return `[Article ${i + 1}]: ${a.title}\nURL: ${articleUrl}\n${content}`
   }).join('\n\n---\n\n')
 
   const sources = articles.map((a) => ({
@@ -320,7 +325,8 @@ export async function POST(request: Request) {
 Answer questions ONLY using the provided help center articles.
 Be concise, friendly, and accurate.
 If the articles don't contain enough information, say so and suggest contacting support.
-Format your response in plain text (no markdown).`,
+When referencing an article, link to it using the exact URL provided — e.g. [Article Title](URL).
+Format your response in markdown.`,
           messages: [{
             role: 'user',
             content: `Help center articles:\n\n${context}\n\nCustomer question: ${query}`,
