@@ -143,6 +143,49 @@ export function getToolDefinitions(): ToolDefinition[] {
         required: ['slug_or_id'],
       },
     },
+    {
+      name: 'list_knowledge_gaps',
+      description:
+        'List knowledge gaps — questions customers asked the AI agent that the knowledge base ' +
+        'could not answer. Each gap has an occurrence count (how many times the same question was ' +
+        'asked) so you can prioritise. Use this to discover what articles are missing, then write ' +
+        'targeted articles to close the gaps. By default returns unresolved gaps only.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          resolved: {
+            type: 'boolean',
+            description: 'Filter by resolved status. false (default) = open gaps; true = already resolved gaps.',
+          },
+          limit: {
+            type: 'number',
+            description: 'Maximum number of gaps to return (default 20, max 100).',
+          },
+          page: {
+            type: 'number',
+            description: 'Page number for pagination (default 1).',
+          },
+        },
+      },
+    },
+    {
+      name: 'resolve_knowledge_gap',
+      description:
+        'Mark a knowledge gap as resolved, optionally linking it to the article that answers it. ' +
+        'Use after creating a new article that addresses the question. Pass article_id to record ' +
+        'which article closed the gap; omit to mark resolved without a linked article.',
+      inputSchema: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', description: 'Knowledge gap ID returned by list_knowledge_gaps' },
+          article_id: {
+            type: 'string',
+            description: 'Optional ID of the article that answers this question',
+          },
+        },
+        required: ['id'],
+      },
+    },
   ]
 }
 
@@ -171,6 +214,10 @@ export async function handleToolCall(
         return await updateArticle(client, args)
       case 'delete_article':
         return await deleteArticle(client, args)
+      case 'list_knowledge_gaps':
+        return await listKnowledgeGaps(client, args)
+      case 'resolve_knowledge_gap':
+        return await resolveKnowledgeGap(client, args)
       default:
         return errorResult(`Unknown tool: ${toolName}`)
     }
@@ -348,6 +395,51 @@ async function deleteArticle(client: HelpNest, args: Record<string, unknown>): P
   await client.articles.delete(article.id)
 
   return textResult(`Article "${article.title}" (${article.id}) deleted.`)
+}
+
+async function listKnowledgeGaps(client: HelpNest, args: Record<string, unknown>): Promise<ToolResult> {
+  const params: { resolved?: boolean; limit?: number; page?: number } = {}
+  if (typeof args.resolved === 'boolean') params.resolved = args.resolved
+  if (typeof args.limit === 'number' && args.limit > 0) params.limit = Math.min(args.limit, 100)
+  if (typeof args.page === 'number' && args.page > 0) params.page = args.page
+
+  const result = await client.knowledgeGaps.list(params)
+  const gaps = result.data
+
+  if (gaps.length === 0) {
+    const filter = params.resolved === true ? 'resolved' : 'open'
+    return textResult(`No ${filter} knowledge gaps found.`)
+  }
+
+  const lines = gaps.map((g, i) => {
+    const status = g.resolvedAt
+      ? ` [resolved${g.resolvedArticle ? ` → "${g.resolvedArticle.title}"` : ''}]`
+      : ''
+    return `${i + 1}. **${g.query}** (id: \`${g.id}\`, asked ${g.occurrences}x)${status}`
+  })
+
+  const totalPages = result.limit > 0 ? Math.ceil(result.total / result.limit) : 1
+  const meta = `\n\nPage ${result.page} of ${totalPages} (${result.total} total).`
+
+  return textResult(`${gaps.length} knowledge gap(s):\n\n${lines.join('\n')}${meta}`)
+}
+
+async function resolveKnowledgeGap(client: HelpNest, args: Record<string, unknown>): Promise<ToolResult> {
+  const id = args.id
+  if (typeof id !== 'string' || id.trim() === '') return errorResult('id must be a non-empty string')
+
+  const articleId =
+    typeof args.article_id === 'string' && args.article_id.trim() !== '' ? args.article_id.trim() : undefined
+
+  const resolved = await client.knowledgeGaps.resolve({
+    id: id.trim(),
+    ...(articleId ? { articleId } : {}),
+  })
+
+  const link = resolved.resolvedArticle
+    ? ` Linked to article "${resolved.resolvedArticle.title}" (${resolved.resolvedArticle.id}).`
+    : ''
+  return textResult(`Knowledge gap "${resolved.query}" resolved.${link}`)
 }
 
 // ── Result helpers ────────────────────────────────────────────────────────────
