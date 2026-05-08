@@ -3,6 +3,18 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { WorkspacePlan } from '@/lib/cloud'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 
 interface Props {
   workspaceId: string
@@ -47,18 +59,16 @@ function UsageMeter({ label, current, limit }: { label: string; current: number;
   return (
     <div className="space-y-1.5">
       <div className="flex justify-between text-sm">
-        <span className="text-muted">{label}</span>
-        <span className={warn ? 'text-accent font-medium' : 'text-ink'}>
+        <span className="text-muted-foreground">{label}</span>
+        <span className={warn ? 'text-orange-600 font-medium' : 'text-foreground'}>
           {current.toLocaleString()}
-          {unlimited ? ' / \u221E' : ` / ${limit.toLocaleString()}`}
+          {unlimited ? ' / ∞' : ` / ${limit.toLocaleString()}`}
         </span>
       </div>
-      <div className="h-1.5 bg-border rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full transition-all ${warn ? 'bg-accent' : 'bg-green'}`}
-          style={{ width: unlimited ? '0%' : `${pct}%` }}
-        />
-      </div>
+      <Progress
+        value={unlimited ? 0 : pct}
+        className={warn ? '[&>div]:bg-orange-500' : '[&>div]:bg-emerald-600'}
+      />
     </div>
   )
 }
@@ -124,30 +134,34 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
     <div className="space-y-10">
       {/* Usage meters */}
       {plan && (
-        <section className="bg-white rounded-xl border border-border p-6 space-y-5">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-medium text-ink">{t('currentUsage')}</h2>
-              <p className="text-sm text-muted mt-0.5">
-                {t('planResets', { plan: tier.charAt(0) + tier.slice(1).toLowerCase() })}
-              </p>
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base font-medium">{t('currentUsage')}</CardTitle>
+                <CardDescription>
+                  {t('planResets', { plan: tier.charAt(0) + tier.slice(1).toLowerCase() })}
+                </CardDescription>
+              </div>
+              <Badge variant="secondary" className="uppercase tracking-wide">
+                {tier}
+              </Badge>
             </div>
-            <span className="text-xs font-medium uppercase tracking-wide bg-border text-ink px-2.5 py-1 rounded-full">
-              {tier}
-            </span>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <UsageMeter label={t('articles')}   current={liveArticleCount}  limit={(limits?.articles as number) ?? 25} />
-            <UsageMeter label={t('members')}    current={liveMemberCount}   limit={(limits?.members as number) ?? 3} />
-            <UsageMeter label={t('aiCredits')} current={usage?.aiCredits ?? 0} limit={(limits?.aiCredits as number) ?? 100} />
-            <UsageMeter label={t('apiCalls')}  current={usage?.apiCalls ?? 0}  limit={(limits?.apiCalls as number) ?? 1000} />
-          </div>
-        </section>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <UsageMeter label={t('articles')}   current={liveArticleCount}  limit={(limits?.articles as number) ?? 25} />
+              <UsageMeter label={t('members')}    current={liveMemberCount}   limit={(limits?.members as number) ?? 3} />
+              <UsageMeter label={t('aiCredits')} current={usage?.aiCredits ?? 0} limit={(limits?.aiCredits as number) ?? 100} />
+              <UsageMeter label={t('apiCalls')}  current={usage?.apiCalls ?? 0}  limit={(limits?.apiCalls as number) ?? 1000} />
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Plan cards */}
       <section>
-        <h2 className="font-serif text-xl text-ink mb-6">{t('choosePlan')}</h2>
+        <h2 className="text-xl font-semibold text-foreground mb-6">{t('choosePlan')}</h2>
         <div className="grid gap-5 grid-cols-1 md:grid-cols-3">
           {PLANS.map((p, idx) => {
             const isCurrent = p.key === tier
@@ -157,75 +171,71 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
             const canChange = isOwner && !isCurrent && p.key !== 'FREE'
 
             return (
-              <div
+              <Card
                 key={p.key}
-                className={`rounded-xl border p-6 flex flex-col relative bg-white ${
+                className={`relative flex flex-col ${
                   p.featured
-                    ? 'border-accent shadow-sm ring-1 ring-accent/20'
-                    : 'border-border'
+                    ? 'border-primary/50 shadow-sm ring-1 ring-primary/20'
+                    : ''
                 }`}
               >
                 {p.featured && !isCurrent && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-accent text-white text-xs font-semibold px-3 py-1 rounded-full">
+                    <Badge className="bg-primary text-primary-foreground text-xs font-semibold px-3 py-1">
                       {t('mostPopular')}
-                    </span>
+                    </Badge>
                   </div>
                 )}
                 {isCurrent && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-green text-white text-xs font-semibold px-3 py-1 rounded-full">
+                    <Badge className="bg-emerald-600 text-white text-xs font-semibold px-3 py-1">
                       {t('currentPlan')}
-                    </span>
+                    </Badge>
                   </div>
                 )}
 
-                <div className="mb-6">
-                  <h3 className="font-serif text-xl text-ink">{p.name}</h3>
+                <CardHeader className="pb-0">
+                  <CardTitle className="text-xl font-semibold">{p.name}</CardTitle>
                   <div className="mt-2 flex items-baseline gap-1">
-                    <span className="text-3xl font-semibold text-ink">{p.price}</span>
-                    <span className="text-muted text-sm">/{p.period}</span>
+                    <span className="text-3xl font-semibold text-foreground">{p.price}</span>
+                    <span className="text-muted-foreground text-sm">/{p.period}</span>
                   </div>
-                  <p className="text-sm text-muted mt-2">{p.description}</p>
-                </div>
+                  <CardDescription className="mt-2">{p.description}</CardDescription>
+                </CardHeader>
 
-                <ul className="space-y-3 flex-1 mb-8">
-                  {FEATURES.map((f) => (
-                    <li key={f.key} className="flex items-center gap-2 text-sm">
-                      <svg className="w-4 h-4 text-green flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-muted">{f.label}:</span>
-                      <span className="text-ink font-medium">{PLAN_DISPLAY[p.key][f.key]}</span>
-                    </li>
-                  ))}
-                </ul>
+                <CardContent className="flex-1 flex flex-col pt-4">
+                  <ul className="space-y-3 flex-1 mb-8">
+                    {FEATURES.map((f) => (
+                      <li key={f.key} className="flex items-center gap-2 text-sm">
+                        <svg className="w-4 h-4 text-emerald-600 dark:text-emerald-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="text-muted-foreground">{f.label}:</span>
+                        <span className="text-foreground font-medium">{PLAN_DISPLAY[p.key][f.key]}</span>
+                      </li>
+                    ))}
+                  </ul>
 
-                {isCurrent ? (
-                  <button
-                    disabled
-                    className="w-full text-center py-2.5 px-4 rounded-lg text-sm font-medium bg-cream text-muted border border-border cursor-not-allowed"
-                  >
-                    {t('currentPlan')}
-                  </button>
-                ) : canChange && isUpgrade ? (
-                  <button
-                    onClick={() => handleUpgrade(p.key as 'PRO' | 'BUSINESS')}
-                    disabled={loading !== null}
-                    className={`w-full text-center py-2.5 px-4 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
-                      p.featured
-                        ? 'bg-accent text-white hover:bg-accent/90'
-                        : 'border border-border text-ink hover:bg-cream'
-                    }`}
-                  >
-                    {loading === p.key ? t('redirecting') : t('upgradeToName', { name: p.name })}
-                  </button>
-                ) : isDowngrade ? (
-                  <p className="w-full text-center text-xs text-muted py-2.5">
-                    {t('manageViaPortal')}
-                  </p>
-                ) : null}
-              </div>
+                  {isCurrent ? (
+                    <Button variant="secondary" disabled className="w-full">
+                      {t('currentPlan')}
+                    </Button>
+                  ) : canChange && isUpgrade ? (
+                    <Button
+                      onClick={() => handleUpgrade(p.key as 'PRO' | 'BUSINESS')}
+                      disabled={loading !== null}
+                      variant={p.featured ? 'default' : 'outline'}
+                      className="w-full"
+                    >
+                      {loading === p.key ? t('redirecting') : t('upgradeToName', { name: p.name })}
+                    </Button>
+                  ) : isDowngrade ? (
+                    <p className="w-full text-center text-xs text-muted-foreground py-2.5">
+                      {t('manageViaPortal')}
+                    </p>
+                  ) : null}
+                </CardContent>
+              </Card>
             )
           })}
         </div>
@@ -233,46 +243,38 @@ export function BillingContent({ workspaceId, userEmail, role, plan, customDomai
 
       {/* Manage subscription */}
       {tier !== 'FREE' && isOwner && (
-        <section className="bg-white rounded-xl border border-border p-6">
-          <h2 className="font-medium text-ink mb-2">{t('manageSubscription')}</h2>
-          <p className="text-sm text-muted mb-4">
-            {t('manageSubscriptionDescription')}
-          </p>
-          <button
-            onClick={handlePortal}
-            disabled={loading !== null}
-            className="text-sm font-medium border border-border text-ink px-4 py-2 rounded-lg hover:bg-cream transition-colors disabled:opacity-50"
-          >
-            {loading === 'portal' ? t('opening') : t('openBillingPortal')}
-          </button>
-        </section>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-medium">{t('manageSubscription')}</CardTitle>
+            <CardDescription>{t('manageSubscriptionDescription')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button
+              variant="outline"
+              onClick={handlePortal}
+              disabled={loading !== null}
+            >
+              {loading === 'portal' ? t('opening') : t('openBillingPortal')}
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
-      {/* Custom domain downgrade warning modal */}
-      {showDomainWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40">
-          <div className="bg-white rounded-xl border border-border shadow-lg p-6 max-w-md mx-4">
-            <h3 className="font-serif text-lg text-ink mb-2">{t('domainWarningTitle')}</h3>
-            <p className="text-sm text-muted mb-4">
+      {/* Custom domain downgrade warning dialog */}
+      <Dialog open={showDomainWarning} onOpenChange={(open) => { if (!open) setShowDomainWarning(false) }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('domainWarningTitle')}</DialogTitle>
+            <DialogDescription>
               {t('domainWarningMessage', { domain: customDomain ?? '' })}
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowDomainWarning(false)}
-                className="text-sm font-medium px-4 py-2 rounded-lg border border-border text-ink hover:bg-cream transition-colors"
-              >
-                {tc('cancel')}
-              </button>
-              <button
-                onClick={handlePortal}
-                className="text-sm font-medium px-4 py-2 rounded-lg bg-accent text-white hover:bg-accent/90 transition-colors"
-              >
-                {t('continueToBilling')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDomainWarning(false)}>{tc('cancel')}</Button>
+            <Button onClick={handlePortal}>{t('continueToBilling')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

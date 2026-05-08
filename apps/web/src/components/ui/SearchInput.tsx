@@ -3,6 +3,10 @@
 import { useRouter, usePathname } from '@/i18n/navigation'
 import { useSearchParams } from 'next/navigation'
 import { Suspense, useEffect, useRef, useState } from 'react'
+import { Search, X } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
 interface Props {
   placeholder?: string
@@ -39,24 +43,24 @@ function SearchInputInner({ placeholder = 'Search...', paramName = 'q', classNam
   }, [value, paramName, pathname, router])
 
   return (
-    <div className={`flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2 ${className ?? 'w-full sm:w-auto'}`}>
-      <svg className="w-4 h-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-      <input
+    <div className={cn('relative', className ?? 'w-full sm:w-auto')}>
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={placeholder}
-        className="text-sm outline-none text-ink placeholder:text-muted bg-transparent flex-1 sm:w-48"
+        className="pl-9 pr-8 sm:w-64"
       />
       {value && (
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => setValue('')}
-          className="text-muted hover:text-ink transition-colors text-xs"
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:text-foreground"
           aria-label="Clear search"
         >
-          ✕
-        </button>
+          <X className="h-3 w-3" />
+        </Button>
       )}
     </div>
   )
@@ -64,14 +68,12 @@ function SearchInputInner({ placeholder = 'Search...', paramName = 'q', classNam
 
 function SearchInputFallback({ placeholder = 'Search...', className }: Pick<Props, 'placeholder' | 'className'>) {
   return (
-    <div className={`flex items-center gap-2 bg-white border border-border rounded-lg px-3 py-2 ${className ?? 'w-full sm:w-auto'}`}>
-      <svg className="w-4 h-4 text-muted shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-      </svg>
-      <input
+    <div className={cn('relative', className ?? 'w-full sm:w-auto')}>
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
         disabled
         placeholder={placeholder}
-        className="text-sm outline-none text-ink placeholder:text-muted bg-transparent flex-1 sm:w-48"
+        className="pl-9 sm:w-64"
       />
     </div>
   )

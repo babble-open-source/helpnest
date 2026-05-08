@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
 
 export interface GeneratedTheme {
   themeId: string
@@ -67,40 +69,38 @@ export function AIThemeGenerator({ onApply }: Props) {
   const radiusPx = result ? (RADIUS_PX[result.customRadius] ?? '8px') : '8px'
 
   return (
-    <div className="rounded-xl border border-border bg-cream/50 p-4 mb-6">
+    <div className="rounded-xl border bg-muted/30 p-4 mb-6">
       {/* Header */}
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-sm font-medium text-ink">
+        <span className="text-sm font-medium text-foreground">
           <span aria-hidden="true">✦</span> {t('title')}
         </span>
-        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-accent/10 text-accent">
+        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
           {t('beta')}
         </span>
       </div>
-      <p className="text-xs text-muted mb-3">
-        {t('description')}
-      </p>
+      <p className="text-xs text-muted-foreground mb-3">{t('description')}</p>
 
       {/* Textarea + controls */}
-      <textarea
+      <Textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         placeholder={t('placeholder')}
         maxLength={500}
         rows={3}
-        className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none mb-2"
+        className="resize-none mb-2"
       />
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs text-muted">{prompt.length}/500</span>
-        <button
+        <span className="text-xs text-muted-foreground">{prompt.length}/500</span>
+        <Button
           onClick={generate}
           disabled={!prompt.trim() || generating}
-          className="flex items-center gap-1.5 bg-ink text-cream px-3 py-1.5 rounded-lg text-sm disabled:opacity-50 transition-opacity"
+          size="sm"
         >
           {generating ? (
             <>
               <svg
-                className="animate-spin h-3.5 w-3.5 shrink-0"
+                className="animate-spin h-3.5 w-3.5 shrink-0 mr-1.5"
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
@@ -118,7 +118,7 @@ export function AIThemeGenerator({ onApply }: Props) {
           ) : (
             <>
               <svg
-                className="h-3.5 w-3.5 shrink-0"
+                className="h-3.5 w-3.5 shrink-0 mr-1.5"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -133,17 +133,15 @@ export function AIThemeGenerator({ onApply }: Props) {
               {t('generate')}
             </>
           )}
-        </button>
+        </Button>
       </div>
 
       {/* Error */}
-      {error && (
-        <p className="text-xs text-red-500 mb-2">{error}</p>
-      )}
+      {error && <p className="text-xs text-destructive mb-2">{error}</p>}
 
-      {/* Result card */}
+      {/* Result card — keep all inline styles for the preview mockup */}
       {result && (
-        <div className="rounded-xl border border-border bg-white p-4 mt-2">
+        <div className="rounded-xl border bg-card p-4 mt-2">
           {/* Color swatches */}
           <div className="flex gap-1 mb-3">
             {[
@@ -164,30 +162,21 @@ export function AIThemeGenerator({ onApply }: Props) {
             ))}
           </div>
 
-          {/* Mini mockup */}
+          {/* Mini mockup — inline styles intentional (help center preview) */}
           <div
             className="overflow-hidden rounded-lg border text-xs mb-3"
-            style={{
-              borderColor: result.customBorderColor,
-            }}
+            style={{ borderColor: result.customBorderColor }}
           >
-            {/* Nav bar */}
             <div
               className="px-3 py-2 font-medium"
-              style={{
-                backgroundColor: result.customInkColor,
-                color: result.customCreamColor,
-              }}
+              style={{ backgroundColor: result.customInkColor, color: result.customCreamColor }}
             >
               {t('yourHelpCenter')}
             </div>
-
-            {/* Body */}
             <div
               className="grid grid-cols-2 gap-2 p-3"
               style={{ backgroundColor: result.customCreamColor }}
             >
-              {/* Article card */}
               <div
                 className="border p-2"
                 style={{
@@ -201,8 +190,6 @@ export function AIThemeGenerator({ onApply }: Props) {
                 </p>
                 <p style={{ color: result.customMutedColor }}>{t('articlePreview')}</p>
               </div>
-
-              {/* CTA button */}
               <div className="flex items-center">
                 <button
                   type="button"
@@ -221,16 +208,16 @@ export function AIThemeGenerator({ onApply }: Props) {
 
           {/* Reasoning */}
           {result.reasoning && (
-            <p className="text-xs text-muted italic mb-3">{result.reasoning}</p>
+            <p className="text-xs text-muted-foreground italic mb-3">{result.reasoning}</p>
           )}
 
           {/* Apply button */}
-          <button
+          <Button
             onClick={() => onApply(result)}
-            className="w-full bg-accent text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-accent/90 transition-colors"
+            className="w-full"
           >
             {t('applyToDesigner')}
-          </button>
+          </Button>
         </div>
       )}
     </div>

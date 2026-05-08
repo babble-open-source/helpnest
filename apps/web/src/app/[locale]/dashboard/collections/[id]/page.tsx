@@ -6,6 +6,9 @@ import { redirect, notFound } from 'next/navigation'
 import { Link } from '@/i18n/navigation'
 import { getTranslations } from 'next-intl/server'
 import { SimpleTooltip as Tooltip } from '@/components/ui/simple-tooltip'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 import { ArticlesTable } from '../../articles/ArticlesTable'
 import { NewCollectionModal } from '../NewCollectionModal'
 import { CollectionActions } from '../CollectionActions'
@@ -58,15 +61,15 @@ export default async function CollectionDetailPage(props: {
   return (
     <div className="p-4 sm:p-8">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted mb-6">
-        <Link href="/dashboard/collections" className="hover:text-ink transition-colors">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <Link href="/dashboard/collections" className="hover:text-foreground transition-colors">
           {t('collections')}
         </Link>
         {collection.parent?.parent && (
           <>
             <span className="shrink-0">/</span>
             <Tooltip content={collection.parent.parent.title}>
-              <Link href={`/dashboard/collections/${collection.parent.parent.id}`} className="hover:text-ink transition-colors truncate max-w-[80px] sm:max-w-[150px] lg:max-w-[220px] block">
+              <Link href={`/dashboard/collections/${collection.parent.parent.id}`} className="hover:text-foreground transition-colors truncate max-w-[80px] sm:max-w-[150px] lg:max-w-[220px] block">
                 {collection.parent.parent.title}
               </Link>
             </Tooltip>
@@ -76,7 +79,7 @@ export default async function CollectionDetailPage(props: {
           <>
             <span className="shrink-0">/</span>
             <Tooltip content={collection.parent.title}>
-              <Link href={`/dashboard/collections/${collection.parent.id}`} className="hover:text-ink transition-colors truncate max-w-[80px] sm:max-w-[150px] lg:max-w-[220px] block">
+              <Link href={`/dashboard/collections/${collection.parent.id}`} className="hover:text-foreground transition-colors truncate max-w-[80px] sm:max-w-[150px] lg:max-w-[220px] block">
                 {collection.parent.title}
               </Link>
             </Tooltip>
@@ -84,32 +87,32 @@ export default async function CollectionDetailPage(props: {
         )}
         <span className="shrink-0">/</span>
         <Tooltip content={collection.title}>
-          <span className="text-ink truncate max-w-[100px] sm:max-w-[180px] lg:max-w-[260px] block">{collection.title}</span>
+          <span className="text-foreground truncate max-w-[100px] sm:max-w-[180px] lg:max-w-[260px] block">{collection.title}</span>
         </Tooltip>
       </div>
 
       <div className="flex items-start justify-between gap-4 mb-6">
         <div className="min-w-0 flex-1">
           <div className="flex items-start gap-3 min-w-0">
-            <span className="font-serif text-2xl sm:text-3xl mt-1 shrink-0">{collection.emoji ?? '📁'}</span>
+            <span className="text-2xl sm:text-3xl mt-1 shrink-0">{collection.emoji ?? '📁'}</span>
             <div className="min-w-0 flex-1">
-              <h1 className="font-serif text-2xl sm:text-3xl text-ink flex items-center gap-3">
+              <h1 className="text-2xl sm:text-3xl font-semibold text-foreground flex items-center gap-3">
                 <Tooltip content={collection.title} wrapperClassName="flex-1 min-w-0">
                   <span className="truncate block">{collection.title}</span>
                 </Tooltip>
                 {articles.length > 0 && (
-                  <span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-0.5 text-sm font-sans font-medium text-accent">
+                  <Badge variant="secondary" className="shrink-0 bg-orange-500/10 text-orange-500 hover:bg-orange-500/10">
                     {tc('articles', { count: articles.length })}
-                  </span>
+                  </Badge>
                 )}
                 {collection.subCollections.length > 0 && (
-                  <span className="shrink-0 rounded-full bg-accent/10 px-2.5 py-0.5 text-sm font-sans font-medium text-accent">
+                  <Badge variant="secondary" className="shrink-0 bg-orange-500/10 text-orange-500 hover:bg-orange-500/10">
                     {tc('subCollections', { count: collection.subCollections.length })}
-                  </span>
+                  </Badge>
                 )}
               </h1>
               {collection.description && (
-                <p className="text-muted text-sm mt-1">{collection.description}</p>
+                <p className="text-muted-foreground text-sm mt-1">{collection.description}</p>
               )}
             </div>
           </div>
@@ -120,12 +123,9 @@ export default async function CollectionDetailPage(props: {
           )}
           <form action={createArticle}>
             <input type="hidden" name="collectionId" value={collection.id} />
-            <button
-              type="submit"
-              className="bg-ink text-cream px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium"
-            >
+            <Button type="submit">
               {t('newArticle')}
-            </button>
+            </Button>
           </form>
         </div>
       </div>
@@ -138,19 +138,19 @@ export default async function CollectionDetailPage(props: {
               <div
                 key={sub.id}
                 className={`rounded-lg border p-4 flex items-center justify-between gap-3 ${
-                  sub.isArchived ? 'bg-stone-50 border-border/80' : 'bg-white border-border'
+                  sub.isArchived ? 'bg-muted/30 border-border/80' : 'bg-card border'
                 }`}
               >
                 <Link href={`/dashboard/collections/${sub.id}`} className="flex items-center gap-2 min-w-0 flex-1 group">
                   <span className="text-xl">{sub.emoji ?? '📂'}</span>
                   <div className="flex items-center gap-2 min-w-0">
                     <Tooltip content={sub.title} wrapperClassName="min-w-0 overflow-hidden">
-                      <p className="text-sm font-medium text-ink group-hover:text-accent transition-colors truncate">{sub.title}</p>
+                      <p className="text-sm font-medium text-foreground group-hover:text-orange-500 transition-colors truncate">{sub.title}</p>
                     </Tooltip>
                     {sub._count.articles > 0 && (
-                      <span className="shrink-0 rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">
+                      <Badge variant="secondary" className="shrink-0 text-[11px] bg-orange-500/10 text-orange-500 hover:bg-orange-500/10">
                         {tc('articles', { count: sub._count.articles })}
-                      </span>
+                      </Badge>
                     )}
                   </div>
                 </Link>
@@ -175,20 +175,21 @@ export default async function CollectionDetailPage(props: {
 
       {/* Articles */}
       {articles.length === 0 && collection.subCollections.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-12 text-center">
+        <Card className="p-12 text-center">
           <p className="text-4xl mb-3">📝</p>
-          <p className="font-medium text-ink mb-1">{t('noArticlesYet')}</p>
-          <p className="text-muted text-sm mb-4">{t('createFirstArticle')}</p>
+          <p className="font-medium text-foreground mb-1">{t('noArticlesYet')}</p>
+          <p className="text-muted-foreground text-sm mb-4">{t('createFirstArticle')}</p>
           <form action={createArticle}>
             <input type="hidden" name="collectionId" value={collection.id} />
-            <button type="submit" className="text-accent hover:underline text-sm">
+            <button type="submit" className="text-orange-500 hover:underline text-sm">
               {t('createArticle')}
             </button>
           </form>
-        </div>
+        </Card>
       ) : articles.length > 0 ? (
         <ArticlesTable articles={articles} demoMode={demoMode} />
       ) : null}
     </div>
   )
 }
+

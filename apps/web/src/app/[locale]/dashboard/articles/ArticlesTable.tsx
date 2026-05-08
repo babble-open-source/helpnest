@@ -5,6 +5,28 @@ import { useRouter } from '@/i18n/navigation'
 import { Link } from '@/i18n/navigation'
 import { useTranslations, useFormatter, useNow } from 'next-intl'
 import { ArticleActions } from './ArticleActions'
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from '@/components/ui/table'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { X } from 'lucide-react'
 
 type ArticleStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED'
 
@@ -26,12 +48,6 @@ interface Article {
 interface Props {
   articles: Article[]
   demoMode: boolean
-}
-
-const STATUS_STYLES: Record<ArticleStatus, string> = {
-  PUBLISHED: 'bg-green/10 text-green',
-  DRAFT: 'bg-cream text-muted border border-border',
-  ARCHIVED: 'bg-border/50 text-muted',
 }
 
 function feedbackSummary(helpful: number, notHelpful: number) {
@@ -105,131 +121,120 @@ export function ArticlesTable({ articles, demoMode }: Props) {
 
   return (
     <div className="relative">
-      <div className="bg-white rounded-xl border border-border">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-border">
-              <th className="sticky top-0 bg-white z-10 px-4 py-3 w-10 rounded-tl-xl">
-                <input
-                  type="checkbox"
+      <div className="rounded-xl border bg-card overflow-hidden">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
                   checked={allSelected}
-                  ref={(el) => { if (el) el.indeterminate = someSelected && !allSelected }}
-                  onChange={toggleAll}
-                  className="rounded border-border accent-ink cursor-pointer"
+                  ref={(el) => { if (el) (el as HTMLButtonElement & { indeterminate?: boolean }).indeterminate = someSelected && !allSelected }}
+                  onCheckedChange={toggleAll}
                   aria-label={t('selectAll')}
                 />
-              </th>
-              <th className="sticky top-0 bg-white z-10 text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide w-[25%]">
-                {t('title')}
-              </th>
-              <th className="sticky top-0 bg-white z-10 text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden sm:table-cell w-[22%]">
-                {t('collection')}
-              </th>
-              <th className="sticky top-0 bg-white z-10 text-start px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide">
-                {t('status')}
-              </th>
-              <th className="sticky top-0 bg-white z-10 text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden md:table-cell">
-                {t('views')}
-              </th>
-              <th className="sticky top-0 bg-white z-10 text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
-                {t('feedbackCol')}
-              </th>
-              <th className="sticky top-0 bg-white z-10 text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide hidden lg:table-cell">
-                {t('updated')}
-              </th>
-              <th className="sticky top-0 bg-white z-10 text-end px-4 py-3 text-xs font-medium text-muted uppercase tracking-wide rounded-tr-xl">
-                {t('actions')}
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
+              </TableHead>
+              <TableHead className="w-[25%]">{t('title')}</TableHead>
+              <TableHead className="hidden sm:table-cell w-[22%]">{t('collection')}</TableHead>
+              <TableHead>{t('status')}</TableHead>
+              <TableHead className="text-right hidden md:table-cell">{t('views')}</TableHead>
+              <TableHead className="text-right hidden lg:table-cell">{t('feedbackCol')}</TableHead>
+              <TableHead className="text-right hidden lg:table-cell">{t('updated')}</TableHead>
+              <TableHead className="text-right">{t('actions')}</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {articles.map((article) => {
               const isChecked = selected.has(article.id)
               return (
-                <tr
+                <TableRow
                   key={article.id}
-                  className={`hover:bg-cream/30 transition-colors ${isChecked ? 'bg-cream/50' : ''}`}
+                  data-state={isChecked ? 'selected' : undefined}
                 >
-                  <td className="px-4 py-3 w-10">
-                    <input
-                      type="checkbox"
+                  <TableCell>
+                    <Checkbox
                       checked={isChecked}
-                      onChange={() => toggleOne(article.id)}
-                      className="rounded border-border accent-ink cursor-pointer"
+                      onCheckedChange={() => toggleOne(article.id)}
                       aria-label={`Select ${article.title}`}
                     />
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <div className="flex items-center gap-2">
                       <Link
                         href={`/dashboard/articles/${article.id}/edit`}
-                        className="font-medium text-ink text-sm truncate max-w-xs hover:text-accent transition-colors"
+                        className="font-medium text-foreground text-sm truncate max-w-xs hover:text-orange-500 transition-colors"
                       >
                         {article.title}
                       </Link>
                       {article.aiGenerated && article.status === 'DRAFT' && (
-                        <span className="shrink-0 text-xs px-1.5 py-0.5 rounded bg-accent/10 text-accent font-medium">
+                        <Badge variant="outline" className="shrink-0 bg-orange-500/10 text-orange-500 border-transparent text-xs">
                           {t('ai')}
-                        </span>
+                        </Badge>
                       )}
                       {article.aiGenerated && article.status === 'PUBLISHED' && article.draftContent && (
-                        <span className="shrink-0 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 font-medium">
+                        <Badge variant="outline" className="shrink-0 bg-amber-100 text-amber-700 border-transparent text-xs">
                           {t('aiUpdate')}
-                        </span>
+                        </Badge>
                       )}
                     </div>
                     {article.excerpt && (
-                      <p className="text-xs text-muted mt-0.5 truncate max-w-xs">
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate max-w-xs">
                         {article.excerpt}
                       </p>
                     )}
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell max-w-0">
-                    <span className="text-sm text-muted truncate block">{article.collection.title}</span>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="hidden sm:table-cell max-w-0">
+                    <span className="text-sm text-muted-foreground truncate block">{article.collection.title}</span>
+                  </TableCell>
+                  <TableCell>
                     <div className="flex flex-col gap-0.5">
-                      <span className={`text-xs px-2 py-0.5 rounded-full self-start ${STATUS_STYLES[article.status]}`}>
+                      <Badge
+                        variant={article.status === 'PUBLISHED' ? 'default' : 'secondary'}
+                        className={
+                          article.status === 'PUBLISHED'
+                            ? 'self-start bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-transparent'
+                            : 'self-start'
+                        }
+                      >
                         {{ PUBLISHED: tc('published'), DRAFT: tc('draft'), ARCHIVED: tc('archived') }[article.status] ?? article.status}
-                      </span>
+                      </Badge>
                       {article.status === 'PUBLISHED' && article.draftContent && (
                         <span className="text-xs text-amber-600 px-2">{t('draftChanges')}</span>
                       )}
                     </div>
-                  </td>
-                  <td className="px-4 py-3 text-end hidden md:table-cell">
-                    <span className="text-sm text-muted">{format.number(article.views)}</span>
-                  </td>
-                  <td className="px-4 py-3 text-end hidden lg:table-cell">
+                  </TableCell>
+                  <TableCell className="text-right hidden md:table-cell">
+                    <span className="text-sm text-muted-foreground">{format.number(article.views)}</span>
+                  </TableCell>
+                  <TableCell className="text-right hidden lg:table-cell">
                     {(() => {
                       const summary = feedbackSummary(article.helpful, article.notHelpful)
                       if (summary.total === 0) {
-                        return <span className="text-sm text-muted">{t('noVotes')}</span>
+                        return <span className="text-sm text-muted-foreground">{t('noVotes')}</span>
                       }
                       const rateTone =
                         (summary.helpfulRate ?? 0) >= 80
-                          ? 'text-green'
+                          ? 'text-emerald-600 dark:text-emerald-400'
                           : (summary.helpfulRate ?? 0) >= 60
-                            ? 'text-ink'
-                            : 'text-accent'
+                            ? 'text-foreground'
+                            : 'text-orange-500'
                       return (
                         <div className="space-y-0.5">
                           <p className={`text-sm font-medium ${rateTone}`}>
                             {t('percentHelpful', { rate: summary.helpfulRate ?? 0 })}
                           </p>
-                          <p className="text-xs text-muted">
+                          <p className="text-xs text-muted-foreground">
                             {t('votes', { count: summary.total })}
                           </p>
                         </div>
                       )
                     })()}
-                  </td>
-                  <td className="px-4 py-3 text-end hidden lg:table-cell whitespace-nowrap">
-                    <span className="text-sm text-muted">
+                  </TableCell>
+                  <TableCell className="text-right hidden lg:table-cell whitespace-nowrap">
+                    <span className="text-sm text-muted-foreground">
                       {format.relativeTime(article.updatedAt, now)}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell>
                     <ArticleActions
                       articleId={article.id}
                       articleTitle={article.title}
@@ -237,83 +242,76 @@ export function ArticlesTable({ articles, demoMode }: Props) {
                       demoMode={demoMode}
                       isSeeded={article.isSeeded}
                     />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               )
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Bulk action toolbar */}
       {someSelected && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-ink text-cream px-4 py-3 rounded-2xl shadow-2xl shadow-ink/20 border border-white/10">
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-primary text-primary-foreground px-4 py-3 rounded-2xl shadow-2xl shadow-black/20 border border-white/10">
           <span className="text-sm font-medium whitespace-nowrap">
             {t('selected', { count: selected.size })}
           </span>
           <div className="w-px h-4 bg-white/20" />
           {BULK_ACTIONS.map(({ action, label, danger }) => (
-            <button
+            <Button
               key={action}
+              variant="ghost"
+              size="sm"
               onClick={() => action === 'delete' ? setConfirmDelete(true) : runBulkAction(action)}
               disabled={busy}
-              className={`text-sm px-3 py-1 rounded-lg transition-colors disabled:opacity-50 ${
+              className={
                 danger
-                  ? 'hover:bg-red-500 hover:text-white text-red-400'
-                  : 'hover:bg-white/10 text-cream'
-              }`}
+                  ? 'hover:bg-destructive hover:text-destructive-foreground text-red-400 h-auto py-1'
+                  : 'hover:bg-white/10 text-primary-foreground h-auto py-1'
+              }
             >
               {label}
-            </button>
+            </Button>
           ))}
           <div className="w-px h-4 bg-white/20" />
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={clearSelection}
-            className="text-sm text-white/50 hover:text-cream transition-colors"
+            className="text-white/50 hover:text-primary-foreground hover:bg-white/10 h-6 w-6"
             aria-label="Clear selection"
           >
-            ✕
-          </button>
+            <X className="h-3 w-3" />
+          </Button>
         </div>
       )}
 
-      {/* Bulk delete confirmation modal */}
-      {confirmDelete && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
-          onClick={() => setConfirmDelete(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <h2 className="font-medium text-ink mb-2">
-                {t('deleteConfirmTitle', { count: selected.size })}
-              </h2>
-              <p className="text-sm text-muted">
-                {t('deleteConfirmMessage', { count: selected.size })}
-              </p>
-              {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
-              <div className="flex items-center justify-end gap-3 mt-6">
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-ink transition-colors"
-                >
-                  {tc('cancel')}
-                </button>
-                <button
-                  onClick={() => runBulkAction('delete')}
-                  disabled={busy}
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors font-medium disabled:opacity-50"
-                >
-                  {busy ? tc('deleting') : `${tc('delete')} ${selected.size}`}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Bulk delete confirmation */}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t('deleteConfirmTitle', { count: selected.size })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t('deleteConfirmMessage', { count: selected.size })}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmDelete(false)}>
+              {tc('cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => runBulkAction('delete')}
+              disabled={busy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {busy ? tc('deleting') : `${tc('delete')} ${selected.size}`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -7,6 +7,7 @@ import { getTranslations } from 'next-intl/server'
 import { NewCollectionModal } from './NewCollectionModal'
 import { CollectionRow } from './CollectionRow'
 import { SearchInput } from '@/components/ui/SearchInput'
+import { Card } from '@/components/ui/card'
 
 export default async function CollectionsPage(props: {
   searchParams: Promise<{ q?: string }>
@@ -60,8 +61,8 @@ export default async function CollectionsPage(props: {
     <div className="p-4 sm:p-8">
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-serif text-2xl sm:text-3xl text-ink">{t('collections')}</h1>
-          <p className="text-muted text-sm mt-1">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">{t('collections')}</h1>
+          <p className="text-muted-foreground text-sm mt-1">
             {tc('collections', { count: collections.length })}
           </p>
         </div>
@@ -71,11 +72,11 @@ export default async function CollectionsPage(props: {
       <SearchInput placeholder={t('searchCollections')} className="w-full sm:w-64 mb-6" />
 
       {collections.length === 0 ? (
-        <div className="bg-white rounded-xl border border-border p-12 text-center">
+        <Card className="p-12 text-center">
           <p className="text-4xl mb-3">📁</p>
-          <p className="font-medium text-ink mb-1">{t('noCollectionsYet')}</p>
-          <p className="text-muted text-sm">{t('collectionsDescription')}</p>
-        </div>
+          <p className="font-medium text-foreground mb-1">{t('noCollectionsYet')}</p>
+          <p className="text-muted-foreground text-sm">{t('collectionsDescription')}</p>
+        </Card>
       ) : (
         <div className="grid gap-4">
           {collections.map((col) => (

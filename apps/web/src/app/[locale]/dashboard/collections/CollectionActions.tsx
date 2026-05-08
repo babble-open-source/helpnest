@@ -3,6 +3,29 @@
 import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Globe, Lock } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const EMOJI_OPTIONS = ['📁', '📄', '🚀', '⚡', '🛠️', '💡', '🎯', '📚', '🔧', '✨', '🌟', '🔑']
 
@@ -120,186 +143,168 @@ export function CollectionActions({ collection, demoMode = false }: Props) {
     <>
       <div className="flex flex-col items-end gap-1">
         <div className="flex items-center gap-3">
-          <button
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={openEdit}
-            className="text-xs text-muted hover:text-accent transition-colors"
+            className="h-auto py-0 px-0 text-xs text-muted-foreground hover:text-orange-500 hover:bg-transparent"
           >
             {t('edit')}
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleArchive}
             disabled={archiving}
-            className="text-xs text-muted hover:text-ink transition-colors disabled:opacity-50"
+            className="h-auto py-0 px-0 text-xs text-muted-foreground hover:text-foreground hover:bg-transparent"
           >
             {archiving ? '…' : collection.isArchived ? t('unarchive') : tc('archive')}
-          </button>
+          </Button>
           {!demoMode && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => { setDeleteError(''); setDeleteOpen(true) }}
-              className="text-xs text-muted hover:text-red-500 transition-colors"
+              className="h-auto py-0 px-0 text-xs text-muted-foreground hover:text-destructive hover:bg-transparent"
             >
               {tc('delete')}
-            </button>
+            </Button>
           )}
         </div>
-        {archiveError && <p className="text-xs text-red-500">{archiveError}</p>}
+        {archiveError && <p className="text-xs text-destructive">{archiveError}</p>}
       </div>
 
-      {/* Edit modal */}
-      {editOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
-          onClick={() => setEditOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="font-medium text-ink">{t('editCollection')}</h2>
-              <button onClick={() => setEditOpen(false)} className="text-muted hover:text-ink transition-colors">
-                &#x2715;
-              </button>
+      {/* Edit dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('editCollection')}</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={saveEdit} className="space-y-4">
+            {/* Emoji picker */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                {t('icon')}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {EMOJI_OPTIONS.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setEmoji(e)}
+                    className={cn(
+                      'w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors',
+                      emoji === e ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+                    )}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
             </div>
-            <form onSubmit={saveEdit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-2">{t('icon')}</label>
-                <div className="flex flex-wrap gap-2">
-                  {EMOJI_OPTIONS.map((e) => (
-                    <button
-                      key={e}
-                      type="button"
-                      onClick={() => setEmoji(e)}
-                      className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${
-                        emoji === e ? 'bg-ink text-cream' : 'bg-cream hover:bg-border'
-                      }`}
-                    >
-                      {e}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-                  {t('title')} <span className="text-accent">*</span>
-                </label>
-                <input
-                  autoFocus
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white text-ink"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">{t('description')}</label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none bg-white text-ink"
-                />
-              </div>
-              {/* Visibility */}
-              <div>
-                <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-2">{t('visibility')}</label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setVisibility('PUBLIC')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${
-                      visibility === 'PUBLIC'
-                        ? 'border-accent bg-accent/5 text-ink'
-                        : 'border-border text-muted hover:border-ink'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    {t('visibilityPublic')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVisibility('INTERNAL')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${
-                      visibility === 'INTERNAL'
-                        ? 'border-accent bg-accent/5 text-ink'
-                        : 'border-border text-muted hover:border-ink'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                    {t('visibilityInternal')}
-                  </button>
-                </div>
-                {visibility !== collection.visibility && (
-                  <p className="text-xs text-accent mt-1.5">
-                    {visibility === 'PUBLIC'
-                      ? t('visibilityChangeToPublic')
-                      : t('visibilityChangeToInternal')}
-                  </p>
-                )}
-              </div>
-              {editError && <p className="text-sm text-red-500">{editError}</p>}
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setEditOpen(false)} className="px-4 py-2 text-sm text-muted hover:text-ink transition-colors">
-                  {tc('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !title.trim()}
-                  className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium disabled:opacity-50"
-                >
-                  {saving ? tc('saving') : t('saveChanges')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+            {/* Title */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                {t('title')} <span className="text-orange-500">*</span>
+              </label>
+              <Input
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                required
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                {t('description')}
+              </label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={2}
+                className="resize-none"
+              />
+            </div>
+
+            {/* Visibility */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                {t('visibility')}
+              </label>
+              <ToggleGroup
+                type="single"
+                value={visibility}
+                onValueChange={(value) => { if (value) setVisibility(value) }}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="PUBLIC" className="gap-2">
+                  <Globe className="w-4 h-4" />
+                  {t('visibilityPublic')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="INTERNAL" className="gap-2">
+                  <Lock className="w-4 h-4" />
+                  {t('visibilityInternal')}
+                </ToggleGroupItem>
+              </ToggleGroup>
+              {visibility !== collection.visibility && (
+                <p className="text-xs text-orange-500 mt-1.5">
+                  {visibility === 'PUBLIC'
+                    ? t('visibilityChangeToPublic')
+                    : t('visibilityChangeToInternal')}
+                </p>
+              )}
+            </div>
+
+            {editError && <p className="text-sm text-destructive">{editError}</p>}
+
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setEditOpen(false)}>
+                {tc('cancel')}
+              </Button>
+              <Button type="submit" disabled={saving || !title.trim()}>
+                {saving ? tc('saving') : t('saveChanges')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Delete confirmation */}
-      {deleteOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
-          onClick={() => setDeleteOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <h2 className="font-medium text-ink mb-2">{t('deleteCollection')}</h2>
-              <p className="text-sm text-muted">
-                <strong className="text-ink">{collection.title}</strong>{t('willBeDeleted')}
-                {collection.subCollectionCount > 0 && (
-                  <span className="block mt-1 text-red-500">
-                    {t('hasSubCollections', { count: collection.subCollectionCount })}
-                  </span>
-                )}
-                {collection.articleCount > 0 && (
-                  <span className="block mt-1 text-red-500">
-                    {t('hasArticles', { count: collection.articleCount })}
-                  </span>
-                )}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteCollection')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong className="text-foreground">{collection.title}</strong>
+              {t('willBeDeleted')}
+            </AlertDialogDescription>
+            {collection.subCollectionCount > 0 && (
+              <p className="text-sm text-destructive">
+                {t('hasSubCollections', { count: collection.subCollectionCount })}
               </p>
-              {deleteError && <p className="text-sm text-red-500 mt-3">{deleteError}</p>}
-              <div className="flex items-center justify-end gap-3 mt-6">
-                <button
-                  onClick={() => setDeleteOpen(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-ink transition-colors"
-                >
-                  {tc('cancel')}
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  disabled={deleting || collection.articleCount > 0 || collection.subCollectionCount > 0}
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors font-medium disabled:opacity-50"
-                >
-                  {deleting ? tc('deleting') : tc('delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+            )}
+            {collection.articleCount > 0 && (
+              <p className="text-sm text-destructive">
+                {t('hasArticles', { count: collection.articleCount })}
+              </p>
+            )}
+            {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleting || collection.articleCount > 0 || collection.subCollectionCount > 0}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? tc('deleting') : tc('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

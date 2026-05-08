@@ -3,6 +3,17 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslations, useFormatter } from 'next-intl'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 
 interface ApiKey {
   id: string
@@ -102,116 +113,125 @@ export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
-      <h2 className="font-medium text-ink mb-1">{t('title')}</h2>
-      <p className="text-sm text-muted mb-4">
-        {t('description')}
-      </p>
-
-      {demoMode && (
-        <p className="text-xs text-muted border border-border rounded-lg px-3 py-2 bg-cream mb-4">
-          {t('demoDisabled')}
-        </p>
-      )}
-
-      {error && (
-        <div className="mb-4 rounded-lg bg-cream border border-border px-4 py-3 text-sm text-red-500">
-          {error}
-        </div>
-      )}
-
-      {/* New raw key reveal — shown once immediately after creation */}
-      {newRawKey && (
-        <div className="mb-6 rounded-lg border border-accent/30 bg-accent/5 p-4">
-          <p className="text-sm font-medium text-ink mb-2">
-            {t('storeKey')}
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base font-medium">{t('title')}</CardTitle>
+        <CardDescription>{t('description')}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {demoMode && (
+          <p className="text-xs text-muted-foreground border rounded-lg px-3 py-2 bg-muted mb-4">
+            {t('demoDisabled')}
           </p>
-          <div className="flex items-center gap-2">
-            <code className="flex-1 block rounded bg-white border border-border px-3 py-2 text-sm font-mono text-ink break-all">
-              {newRawKey}
-            </code>
+        )}
+
+        {error && (
+          <div className="mb-4 rounded-lg bg-muted border px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
+
+        {/* New raw key reveal — shown once immediately after creation */}
+        {newRawKey && (
+          <div className="mb-6 rounded-lg border border-primary/30 bg-primary/5 p-4">
+            <p className="text-sm font-medium text-foreground mb-2">{t('storeKey')}</p>
+            <div className="flex items-center gap-2">
+              <code className="flex-1 block rounded bg-card border px-3 py-2 text-sm font-mono text-foreground break-all">
+                {newRawKey}
+              </code>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => void handleCopy()}
+                className="shrink-0"
+              >
+                {copied ? tm('copied') : tm('copy')}
+              </Button>
+            </div>
             <button
               type="button"
-              onClick={() => void handleCopy()}
-              className="shrink-0 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-cream transition-colors"
+              onClick={() => setNewRawKey(null)}
+              className="mt-3 text-xs text-muted-foreground underline hover:no-underline"
             >
-              {copied ? tm('copied') : tm('copy')}
+              {t('dismiss')}
             </button>
           </div>
-          <button
-            type="button"
-            onClick={() => setNewRawKey(null)}
-            className="mt-3 text-xs text-muted underline hover:no-underline"
-          >
-            {t('dismiss')}
-          </button>
-        </div>
-      )}
+        )}
 
-      {/* Create form */}
-      {!demoMode && (
-        <form onSubmit={(e) => void handleCreate(e)} className="flex gap-2 mb-6">
-          <input
-            type="text"
-            value={newKeyName}
-            onChange={(e) => setNewKeyName(e.target.value)}
-            placeholder={t('keyPlaceholder')}
-            maxLength={100}
-            className="flex-1 rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/40"
-            disabled={creating}
-          />
-          <button
-            type="submit"
-            disabled={creating || !newKeyName.trim()}
-            className="rounded-lg bg-ink text-cream px-4 py-2 text-sm font-medium hover:bg-ink/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {creating ? tca('creating') : tc('create')}
-          </button>
-        </form>
-      )}
+        {/* Create form */}
+        {!demoMode && (
+          <form onSubmit={(e) => void handleCreate(e)} className="flex gap-2 mb-6">
+            <Input
+              type="text"
+              value={newKeyName}
+              onChange={(e) => setNewKeyName(e.target.value)}
+              placeholder={t('keyPlaceholder')}
+              maxLength={100}
+              className="flex-1"
+              disabled={creating}
+            />
+            <Button
+              type="submit"
+              disabled={creating || !newKeyName.trim()}
+            >
+              {creating ? tca('creating') : tc('create')}
+            </Button>
+          </form>
+        )}
 
-      {/* Key list */}
-      {loading ? (
-        <p className="text-sm text-muted">{tc('loading')}</p>
-      ) : keys.length === 0 ? (
-        <p className="text-sm text-muted">{t('noKeys')}</p>
-      ) : (
-        <ul className="divide-y divide-border">
-          {keys.map((key) => (
-            <li key={key.id} className="flex items-center justify-between py-3">
-              <div>
-                <p className="text-sm font-medium text-ink">{key.name}</p>
-                <p className="text-xs text-muted mt-0.5">
-                  {t('created')} {formatDate(key.createdAt)}
-                  {' · '}
-                  {t('lastUsed')} {formatDate(key.lastUsedAt)}
-                </p>
-              </div>
-              {!demoMode && (
-                <button
-                  type="button"
-                  disabled={deletingId === key.id}
-                  onClick={() => setKeyToDelete({ id: key.id, name: key.name })}
-                  className="ms-4 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-red-500 hover:bg-cream disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {deletingId === key.id ? t('revoking') : t('revoke')}
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
+        {/* Key list */}
+        {loading ? (
+          <p className="text-sm text-muted-foreground">{tc('loading')}</p>
+        ) : keys.length === 0 ? (
+          <p className="text-sm text-muted-foreground">{t('noKeys')}</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Name</TableHead>
+                <TableHead>{t('created')}</TableHead>
+                <TableHead>{t('lastUsed')}</TableHead>
+                {!demoMode && <TableHead className="w-[80px]" />}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {keys.map((key) => (
+                <TableRow key={key.id}>
+                  <TableCell className="font-medium text-foreground">{key.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDate(key.createdAt)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDate(key.lastUsedAt)}</TableCell>
+                  {!demoMode && (
+                    <TableCell>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={deletingId === key.id}
+                        onClick={() => setKeyToDelete({ id: key.id, name: key.name })}
+                        className="border-destructive/40 text-destructive hover:bg-destructive/10"
+                      >
+                        {deletingId === key.id ? t('revoking') : t('revoke')}
+                      </Button>
+                    </TableCell>
+                  )}
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
 
-      <ConfirmDialog
-        open={!!keyToDelete}
-        title={t('revoke')}
-        message={keyToDelete ? t('confirmDelete', { name: keyToDelete.name }) : ''}
-        confirmLabel={t('revoke')}
-        cancelLabel={tc('cancel')}
-        destructive
-        onConfirm={() => { if (keyToDelete) void handleDelete(keyToDelete.id) }}
-        onCancel={() => setKeyToDelete(null)}
-      />
-    </div>
+        <ConfirmDialog
+          open={!!keyToDelete}
+          title={t('revoke')}
+          message={keyToDelete ? t('confirmDelete', { name: keyToDelete.name }) : ''}
+          confirmLabel={t('revoke')}
+          cancelLabel={tc('cancel')}
+          destructive
+          onConfirm={() => { if (keyToDelete) void handleDelete(keyToDelete.id) }}
+          onCancel={() => setKeyToDelete(null)}
+        />
+      </CardContent>
+    </Card>
   )
 }

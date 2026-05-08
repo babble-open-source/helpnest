@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useTranslations } from 'next-intl'
 import Link from 'next/link'
 import { SensitiveDataWarnings } from './CrawlModal'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,7 +65,7 @@ function PageStatusIcon({ status }: { status: PageStatus }) {
   if (status === 'GENERATED') {
     return (
       <svg
-        className="text-green shrink-0"
+        className="text-emerald-600 dark:text-emerald-400 shrink-0"
         width="14"
         height="14"
         viewBox="0 0 16 16"
@@ -83,7 +85,7 @@ function PageStatusIcon({ status }: { status: PageStatus }) {
   if (status === 'FAILED') {
     return (
       <svg
-        className="text-red-500 shrink-0"
+        className="text-destructive shrink-0"
         width="14"
         height="14"
         viewBox="0 0 16 16"
@@ -102,7 +104,7 @@ function PageStatusIcon({ status }: { status: PageStatus }) {
   if (status === 'SKIPPED') {
     return (
       <svg
-        className="text-muted shrink-0"
+        className="text-muted-foreground shrink-0"
         width="14"
         height="14"
         viewBox="0 0 16 16"
@@ -130,27 +132,6 @@ function PageStatusIcon({ status }: { status: PageStatus }) {
     >
       <circle cx="8" cy="8" r="5" stroke="currentColor" strokeWidth="1.5" />
     </svg>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Progress bar
-// ---------------------------------------------------------------------------
-
-function ProgressBar({ value, total }: { value: number; total: number }) {
-  const percent = total > 0 ? Math.min(100, Math.round((value / total) * 100)) : 0
-  return (
-    <div className="w-full bg-border rounded-full h-2 overflow-hidden">
-      <div
-        className="bg-accent h-2 rounded-full transition-all duration-500"
-        style={{ width: `${percent}%` }}
-        role="progressbar"
-        aria-valuenow={value}
-        aria-valuemin={0}
-        aria-valuemax={total}
-        aria-label={`${percent}% complete`}
-      />
-    </div>
   )
 }
 
@@ -228,20 +209,16 @@ export function CrawlProgress({
   if (fetchError && !data) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex items-start gap-3 bg-white border border-red-200 rounded-lg px-4 py-3">
-          <span className="text-red-500 text-base mt-0.5" aria-hidden="true">
+        <div className="flex items-start gap-3 bg-card border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
+          <span className="text-destructive text-base mt-0.5" aria-hidden="true">
             &#x2715;
           </span>
-          <p className="text-sm text-muted">{fetchError}</p>
+          <p className="text-sm text-muted-foreground">{fetchError}</p>
         </div>
         <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-          >
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
             {t('cancel')}
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -251,15 +228,16 @@ export function CrawlProgress({
     return (
       <div className="flex flex-col items-center gap-4 py-8">
         <div
-          className="w-8 h-8 border-2 border-border border-t-accent rounded-full animate-spin"
+          className="w-8 h-8 border-2 border-muted border-t-orange-500 rounded-full animate-spin"
           aria-hidden="true"
         />
-        <p className="text-sm text-muted">{t('loading')}</p>
+        <p className="text-sm text-muted-foreground">{t('loading')}</p>
       </div>
     )
   }
 
   const { totalPages, processedPages, summary } = data
+  const progressPercent = totalPages > 0 ? Math.min(100, Math.round((processedPages / totalPages) * 100)) : 0
   const progressLabel = isTerminal ? t('progressComplete') : t('progressTitle')
 
   return (
@@ -267,26 +245,29 @@ export function CrawlProgress({
       {/* Header */}
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-ink">{progressLabel}</p>
+          <p className="text-sm font-medium text-foreground">{progressLabel}</p>
           {!isTerminal && (
             <div
-              className="w-4 h-4 border-2 border-border border-t-accent rounded-full animate-spin"
+              className="w-4 h-4 border-2 border-muted border-t-orange-500 rounded-full animate-spin"
               aria-hidden="true"
             />
           )}
         </div>
-        <p className="text-xs text-muted">
+        <p className="text-xs text-muted-foreground">
           {t('progressDescription', { processed: processedPages, total: totalPages })}
         </p>
       </div>
 
       {/* Progress bar */}
-      <ProgressBar value={processedPages} total={totalPages} />
+      <Progress
+        value={progressPercent}
+        aria-label={`${progressPercent}% complete`}
+      />
 
       {/* Pages list */}
-      <div className="bg-white border border-border rounded-lg divide-y divide-border max-h-64 overflow-y-auto">
+      <div className="bg-card border rounded-lg divide-y max-h-64 overflow-y-auto">
         {data.pages.length === 0 ? (
-          <p className="px-4 py-6 text-xs text-muted text-center">Waiting for pages...</p>
+          <p className="px-4 py-6 text-xs text-muted-foreground text-center">Waiting for pages...</p>
         ) : (
           data.pages.map((page) => (
             <div key={page.id} className="flex items-start gap-3 px-4 py-3">
@@ -297,21 +278,21 @@ export function CrawlProgress({
                 {page.article ? (
                   <a
                     href={`/dashboard/articles/${page.article.id}/edit`}
-                    className="text-sm text-accent hover:underline truncate block"
+                    className="text-sm text-orange-500 hover:underline truncate block"
                   >
                     {page.article.title}
                   </a>
                 ) : (
-                  <p className="text-sm text-ink truncate">{page.url}</p>
+                  <p className="text-sm text-foreground truncate">{page.url}</p>
                 )}
                 {page.status === 'SKIPPED' && page.skipReason && (
-                  <p className="text-xs text-muted mt-0.5 truncate">{page.skipReason}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{page.skipReason}</p>
                 )}
                 {page.status === 'FAILED' && page.skipReason && (
-                  <p className="text-xs text-red-500 mt-0.5 truncate">{page.skipReason}</p>
+                  <p className="text-xs text-destructive mt-0.5 truncate">{page.skipReason}</p>
                 )}
                 {page.article?.excerpt && (
-                  <p className="text-xs text-muted mt-0.5 truncate">{page.article.excerpt}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{page.article.excerpt}</p>
                 )}
               </div>
               <StatusLabel status={page.status} />
@@ -325,18 +306,18 @@ export function CrawlProgress({
 
       {/* Job-level error */}
       {data.error && (
-        <div className="flex items-start gap-3 bg-white border border-red-200 rounded-lg px-4 py-3">
-          <span className="text-red-500 text-base mt-0.5" aria-hidden="true">
+        <div className="flex items-start gap-3 bg-card border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
+          <span className="text-destructive text-base mt-0.5" aria-hidden="true">
             &#x2715;
           </span>
-          <p className="text-xs text-muted break-words">{data.error}</p>
+          <p className="text-xs text-muted-foreground break-words">{data.error}</p>
         </div>
       )}
 
       {/* Completion summary */}
       {isTerminal && (
-        <div className="bg-white border border-border rounded-lg px-4 py-3">
-          <p className="text-xs text-muted">
+        <div className="bg-card border rounded-lg px-4 py-3">
+          <p className="text-xs text-muted-foreground">
             {t('progressCompleteDescription', {
               generated: summary.generated,
               skipped: summary.skipped,
@@ -350,28 +331,19 @@ export function CrawlProgress({
       <div className="flex items-center justify-end gap-2 pt-1">
         {isTerminal ? (
           <>
-            <button
-              type="button"
-              onClick={onImportAnother}
-              className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-            >
+            <Button type="button" variant="outline" size="sm" onClick={onImportAnother}>
               {t('importAnotherUrl')}
-            </button>
-            <Link
-              href="/dashboard/articles"
-              className="bg-ink text-cream text-sm font-medium px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors"
-            >
-              {t('viewAllArticles')}
-            </Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link href="/dashboard/articles">
+                {t('viewAllArticles')}
+              </Link>
+            </Button>
           </>
         ) : (
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-          >
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
             {t('done')} — {t('progressTitle').toLowerCase()}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -385,10 +357,10 @@ export function CrawlProgress({
 function StatusLabel({ status }: { status: PageStatus }) {
   const t = useTranslations('crawl')
   const map: Record<PageStatus, { label: string; className: string }> = {
-    GENERATED: { label: t('statusGenerated'), className: 'text-green' },
-    PENDING: { label: t('statusPending'), className: 'text-muted' },
-    FAILED: { label: t('statusFailed'), className: 'text-red-500' },
-    SKIPPED: { label: t('statusSkipped'), className: 'text-muted' },
+    GENERATED: { label: t('statusGenerated'), className: 'text-emerald-600 dark:text-emerald-400' },
+    PENDING: { label: t('statusPending'), className: 'text-muted-foreground' },
+    FAILED: { label: t('statusFailed'), className: 'text-destructive' },
+    SKIPPED: { label: t('statusSkipped'), className: 'text-muted-foreground' },
   }
   const item = map[status]
   return (

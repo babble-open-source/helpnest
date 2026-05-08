@@ -54,6 +54,7 @@ interface Props {
   collections: Collection[]
   workspaceSlug: string
   autoOpenCollectionPicker?: boolean
+  editorThemeCSS?: string
 }
 
 interface ArticleVersion {
@@ -67,7 +68,7 @@ interface ArticleVersion {
 
 type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'error'
 
-export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCollectionPicker }: Props) {
+export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCollectionPicker, editorThemeCSS }: Props) {
   const t = useTranslations('editor')
   const tCommon = useTranslations('common')
   const format = useFormatter()
@@ -261,6 +262,10 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
   const readTime = Math.max(1, Math.round(wordCount / 200))
 
   return (
+    <>
+    {editorThemeCSS && (
+      <style dangerouslySetInnerHTML={{ __html: `.hn-prose-scope { ${editorThemeCSS} }` }} />
+    )}
     <div className="flex h-screen bg-cream overflow-hidden">
       {/* Left outline panel */}
       {showOutline && editor && <EditorOutline editor={editor} />}
@@ -447,7 +452,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
             {/* Editor body */}
             <EditorContent
               editor={editor}
-              className="prose-editor hn-prose min-h-[400px] focus:outline-none"
+              className="prose-editor hn-prose hn-prose-scope min-h-[400px] focus:outline-none"
             />
           </div>
         </div>
@@ -527,5 +532,6 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
         </div>
       )}
     </div>
+    </>
   )
 }

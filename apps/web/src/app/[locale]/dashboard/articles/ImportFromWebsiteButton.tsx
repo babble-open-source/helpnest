@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { CrawlModal, type Collection } from './CrawlModal'
+import { Button } from '@/components/ui/button'
 
 export function ImportFromWebsiteButton() {
   const t = useTranslations('crawl')
@@ -34,14 +35,16 @@ export function ImportFromWebsiteButton() {
 
   return (
     <>
-      <button
+      <Button
         type="button"
+        variant="outline"
+        size="sm"
         onClick={handleOpen}
         disabled={loading}
-        className="border border-border text-ink px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-cream transition-colors font-medium shrink-0 disabled:opacity-50"
+        className="shrink-0"
       >
         {loading ? t('loading') : t('importFromWebsite')}
-      </button>
+      </Button>
 
       {open && (
         <CrawlModal

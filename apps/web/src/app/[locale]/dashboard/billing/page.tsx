@@ -37,8 +37,8 @@ export default async function BillingPage() {
   return (
     <div className="p-6 md:p-8 max-w-4xl">
       <div className="mb-8">
-        <h1 className="font-serif text-3xl text-ink">{t('title')}</h1>
-        <p className="text-muted mt-1">{t('subtitle')}</p>
+        <h1 className="text-2xl font-semibold tracking-tight">{t('title')}</h1>
+        <p className="text-muted-foreground mt-1">{t('subtitle')}</p>
       </div>
 
       <BillingContent

@@ -1,8 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { Card } from '@/components/ui/card'
+import { cn } from '@/lib/utils'
 
 interface ConversationSummary {
   id: string
@@ -25,8 +28,6 @@ interface Props {
   resolved: ConversationSummary[]
 }
 
-type TabKey = 'escalated' | 'active' | 'resolved'
-
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const mins = Math.floor(diff / 60000)
@@ -38,114 +39,121 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`
 }
 
-export function InboxList({ escalated, active, resolved }: Props) {
-  const [activeTab, setActiveTab] = useState<TabKey>('escalated')
-  const t = useTranslations('inboxPage')
-
-  const tabs = [
-    { key: 'escalated' as const, label: t('escalated') },
-    { key: 'active' as const, label: t('active') },
-    { key: 'resolved' as const, label: t('resolved') },
-  ]
-
-  const conversations =
-    activeTab === 'escalated' ? escalated : activeTab === 'active' ? active : resolved
-
-  function tabCount(key: TabKey): number {
-    return key === 'escalated' ? escalated.length : key === 'active' ? active.length : resolved.length
+function ConversationList({ conversations, activeTabKey, t }: {
+  conversations: ConversationSummary[]
+  activeTabKey: 'escalated' | 'active' | 'resolved'
+  t: ReturnType<typeof useTranslations<'inboxPage'>>
+}) {
+  if (conversations.length === 0) {
+    return (
+      <div className="p-8 text-center">
+        <p className="text-muted-foreground text-sm">
+          {activeTabKey === 'escalated'
+            ? t('noEscalated')
+            : activeTabKey === 'active'
+            ? t('noActive')
+            : t('noResolved')}
+        </p>
+      </div>
+    )
   }
 
   return (
-    <div>
-      {/* Tabs */}
-      <div className="flex gap-1 mb-4 border-b border-border">
-        {tabs.map((tab) => {
-          const count = tabCount(tab.key)
-          return (
-            <button
-              key={tab.key}
-              onClick={() => setActiveTab(tab.key)}
-              className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === tab.key
-                  ? 'border-ink text-ink'
-                  : 'border-transparent text-muted hover:text-ink'
-              }`}
-            >
-              {tab.label}
-              {count > 0 && (
-                <span
-                  className={`ms-2 text-xs px-1.5 py-0.5 rounded-full ${
-                    tab.key === 'escalated'
-                      ? 'bg-accent/10 text-accent'
-                      : 'bg-border text-muted'
-                  }`}
+    <div className="divide-y">
+      {conversations.map((conv) => (
+        <Link
+          key={conv.id}
+          href={`/dashboard/inbox/${conv.id}`}
+          className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+        >
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="font-medium text-foreground truncate text-sm">
+                {conv.customerName ?? conv.customerEmail ?? t('anonymous')}
+              </p>
+              {conv.aiConfidence !== null && (
+                <Badge
+                  variant="secondary"
+                  className={cn(
+                    'text-xs shrink-0',
+                    conv.aiConfidence >= 0.7
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
+                      : conv.aiConfidence >= 0.3
+                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
+                      : 'bg-orange-500/10 text-orange-500 hover:bg-orange-500/10'
+                  )}
                 >
-                  {count}
-                </span>
+                  {Math.round(conv.aiConfidence * 100)}%
+                </Badge>
               )}
-            </button>
-          )
-        })}
-      </div>
-
-      {/* Conversation list */}
-      <div className="bg-white rounded-xl border border-border overflow-hidden">
-        {conversations.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-muted text-sm">
-              {activeTab === 'escalated'
-                ? t('noEscalated')
-                : activeTab === 'active'
-                ? t('noActive')
-                : t('noResolved')}
+            </div>
+            <p className="text-sm text-foreground/80 truncate">
+              {conv.subject ?? conv.firstMessage ?? t('noMessages')}
             </p>
+            {conv.escalationReason && activeTabKey === 'escalated' && (
+              <p className="text-xs text-orange-500 mt-1 truncate">{conv.escalationReason}</p>
+            )}
           </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {conversations.map((conv) => (
-              <Link
-                key={conv.id}
-                href={`/dashboard/inbox/${conv.id}`}
-                className="flex items-center gap-4 p-4 hover:bg-cream/50 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <p className="font-medium text-ink truncate text-sm">
-                      {conv.customerName ?? conv.customerEmail ?? t('anonymous')}
-                    </p>
-                    {conv.aiConfidence !== null && (
-                      <span
-                        className={`text-xs px-1.5 py-0.5 rounded shrink-0 ${
-                          conv.aiConfidence >= 0.7
-                            ? 'bg-green/10 text-green'
-                            : conv.aiConfidence >= 0.3
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-accent/10 text-accent'
-                        }`}
-                      >
-                        {Math.round(conv.aiConfidence * 100)}%
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-sm text-ink/80 truncate">
-                    {conv.subject ?? conv.firstMessage ?? t('noMessages')}
-                  </p>
-                  {conv.escalationReason && activeTab === 'escalated' && (
-                    <p className="text-xs text-accent mt-1 truncate">{conv.escalationReason}</p>
-                  )}
-                </div>
-                <div className="text-end shrink-0">
-                  <p className="text-xs text-muted">{timeAgo(conv.updatedAt)}</p>
-                  <p className="text-xs text-muted mt-1">{t('msgs', { count: conv.messageCount })}</p>
-                  {conv.assignedTo && (
-                    <p className="text-xs text-green mt-1">{conv.assignedTo}</p>
-                  )}
-                </div>
-              </Link>
-            ))}
+          <div className="text-end shrink-0">
+            <p className="text-xs text-muted-foreground">{timeAgo(conv.updatedAt)}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('msgs', { count: conv.messageCount })}</p>
+            {conv.assignedTo && (
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{conv.assignedTo}</p>
+            )}
           </div>
-        )}
-      </div>
+        </Link>
+      ))}
     </div>
+  )
+}
+
+export function InboxList({ escalated, active, resolved }: Props) {
+  const t = useTranslations('inboxPage')
+
+  return (
+    <Tabs defaultValue="escalated">
+      <TabsList className="mb-4">
+        <TabsTrigger value="escalated" className="gap-2">
+          {t('escalated')}
+          {escalated.length > 0 && (
+            <Badge variant="secondary" className="text-xs bg-orange-500/10 text-orange-500 hover:bg-orange-500/10">
+              {escalated.length}
+            </Badge>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="active" className="gap-2">
+          {t('active')}
+          {active.length > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {active.length}
+            </Badge>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="resolved" className="gap-2">
+          {t('resolved')}
+          {resolved.length > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {resolved.length}
+            </Badge>
+          )}
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="escalated">
+        <Card className="overflow-hidden">
+          <ConversationList conversations={escalated} activeTabKey="escalated" t={t} />
+        </Card>
+      </TabsContent>
+      <TabsContent value="active">
+        <Card className="overflow-hidden">
+          <ConversationList conversations={active} activeTabKey="active" t={t} />
+        </Card>
+      </TabsContent>
+      <TabsContent value="resolved">
+        <Card className="overflow-hidden">
+          <ConversationList conversations={resolved} activeTabKey="resolved" t={t} />
+        </Card>
+      </TabsContent>
+    </Tabs>
   )
 }

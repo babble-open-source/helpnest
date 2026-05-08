@@ -3,6 +3,14 @@
 import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 
 export function GenerateTopicButton() {
   const router = useRouter()
@@ -61,71 +69,79 @@ export function GenerateTopicButton() {
     setResult(null)
   }
 
-  if (!open) {
-    return (
-      <button
+  return (
+    <>
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => setOpen(true)}
-        className="border border-border text-ink px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-cream transition-colors font-medium shrink-0"
+        className="shrink-0"
       >
         {t('generate')}
-      </button>
-    )
-  }
+      </Button>
 
-  return (
-    <div className="flex flex-col gap-2 bg-cream border border-border rounded-xl p-4 w-full sm:w-auto sm:min-w-80">
-      <p className="text-xs font-medium text-muted">{t('dialogTitle')}</p>
+      <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose() }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t('dialogTitle')}</DialogTitle>
+          </DialogHeader>
 
-      {result ? (
-        <div className="flex flex-col gap-2">
-          <p className="text-sm text-green font-medium">{t('draftCreated')}</p>
-          <a
-            href={`/dashboard/articles/${result.articleId}/edit`}
-            className="text-sm text-accent hover:underline truncate"
-          >
-            {result.title} →
-          </a>
-          <button
-            onClick={handleClose}
-            className="text-xs text-muted hover:text-ink transition-colors text-start"
-          >
-            {t('generateAnother')}
-          </button>
-        </div>
-      ) : (
-        <>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={topic}
-              onChange={(e) => setTopic(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && !loading && handleGenerate()}
-              placeholder={t('placeholder')}
-              className="flex-1 text-sm bg-white border border-border rounded-lg px-3 py-1.5 outline-none focus:border-ink text-ink placeholder:text-muted"
-              autoFocus
-              disabled={loading}
-            />
-            <button
-              onClick={handleGenerate}
-              disabled={loading || !topic.trim()}
-              className="bg-ink text-cream px-3 py-1.5 rounded-lg text-sm font-medium disabled:opacity-40 hover:bg-ink/90 transition-colors shrink-0"
-            >
-              {loading ? t('generating') : t('generateButton')}
-            </button>
-          </div>
+          {result ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">{t('draftCreated')}</p>
+              <a
+                href={`/dashboard/articles/${result.articleId}/edit`}
+                className="text-sm text-orange-500 hover:underline truncate"
+              >
+                {result.title} →
+              </a>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setResult(null); setTopic('') }}
+                className="self-start h-auto p-0 text-muted-foreground hover:text-foreground"
+              >
+                {t('generateAnother')}
+              </Button>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  value={topic}
+                  onChange={(e) => setTopic(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !loading && handleGenerate()}
+                  placeholder={t('placeholder')}
+                  autoFocus
+                  disabled={loading}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleGenerate}
+                  disabled={loading || !topic.trim()}
+                  size="sm"
+                  className="shrink-0"
+                >
+                  {loading ? t('generating') : t('generateButton')}
+                </Button>
+              </div>
 
-          {error && (
-            <p className="text-xs text-red-500">{error}</p>
+              {error && (
+                <p className="text-xs text-destructive">{error}</p>
+              )}
+
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleClose}
+                className="self-start h-auto p-0 text-muted-foreground hover:text-foreground"
+              >
+                {t('cancel')}
+              </Button>
+            </div>
           )}
-
-          <button
-            onClick={handleClose}
-            className="text-xs text-muted hover:text-ink transition-colors text-start"
-          >
-            {t('cancel')}
-          </button>
-        </>
-      )}
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

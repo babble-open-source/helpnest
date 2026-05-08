@@ -2,6 +2,10 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Separator } from '@/components/ui/separator'
 
 interface Props {
   name: string
@@ -76,56 +80,58 @@ export function ProfileForm({ name: initialName, demoMode }: Props) {
 
   return (
     <form onSubmit={handleSave} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-ink mb-1">{t('name')}</label>
-        <input
+      <div className="space-y-1.5">
+        <Label htmlFor="profile-name">{t('name')}</Label>
+        <Input
+          id="profile-name"
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
           disabled={demoMode}
-          className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent disabled:opacity-50 disabled:cursor-not-allowed"
           placeholder={t('namePlaceholder')}
         />
       </div>
 
       {demoMode ? (
-        <div className="pt-2 border-t border-border">
-          <p className="text-sm text-muted">{t('demoDisabled')}</p>
+        <div className="pt-2">
+          <Separator className="mb-3" />
+          <p className="text-sm text-muted-foreground">{t('demoDisabled')}</p>
         </div>
       ) : (
-        <div className="pt-2 border-t border-border">
-          <p className="text-sm font-medium text-ink mb-3">{t('changePassword')}</p>
+        <div className="pt-2">
+          <Separator className="mb-3" />
+          <p className="text-sm font-medium text-foreground mb-3">{t('changePassword')}</p>
           <div className="space-y-3">
-            <div suppressHydrationWarning>
-              <label className="block text-sm text-ink mb-1">{t('currentPassword')}</label>
-              <input
+            <div suppressHydrationWarning className="space-y-1.5">
+              <Label htmlFor="profile-current-password">{t('currentPassword')}</Label>
+              <Input
+                id="profile-current-password"
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 autoComplete="current-password"
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder={t('currentPasswordPlaceholder')}
               />
             </div>
-            <div suppressHydrationWarning>
-              <label className="block text-sm text-ink mb-1">{t('newPassword')}</label>
-              <input
+            <div suppressHydrationWarning className="space-y-1.5">
+              <Label htmlFor="profile-new-password">{t('newPassword')}</Label>
+              <Input
+                id="profile-new-password"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 autoComplete="new-password"
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder={t('newPasswordPlaceholder')}
               />
             </div>
-            <div suppressHydrationWarning>
-              <label className="block text-sm text-ink mb-1">{t('confirmNewPassword')}</label>
-              <input
+            <div suppressHydrationWarning className="space-y-1.5">
+              <Label htmlFor="profile-confirm-password">{t('confirmNewPassword')}</Label>
+              <Input
+                id="profile-confirm-password"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 autoComplete="new-password"
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
                 placeholder={t('confirmNewPasswordPlaceholder')}
               />
             </div>
@@ -133,20 +139,16 @@ export function ProfileForm({ name: initialName, demoMode }: Props) {
         </div>
       )}
 
-      {errorMessage && <p className="text-sm text-red-500">{errorMessage}</p>}
+      {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
 
       {!demoMode && (
         <div className="flex items-center gap-3 pt-1">
-          <button
-            type="submit"
-            disabled={status === 'saving'}
-            className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
-          >
+          <Button type="submit" disabled={status === 'saving'}>
             {status === 'saving' ? tc('saving') : t('saveChanges')}
-          </button>
-          {status === 'saved' && <span className="text-sm text-green">{t('saved')}</span>}
+          </Button>
+          {status === 'saved' && <span className="text-sm text-emerald-600 dark:text-emerald-400">{t('saved')}</span>}
           {status === 'error' && !errorMessage && (
-            <span className="text-sm text-red-500">{t('saveFailed')}</span>
+            <span className="text-sm text-destructive">{t('saveFailed')}</span>
           )}
         </div>
       )}

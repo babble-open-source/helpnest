@@ -7,6 +7,7 @@ import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { themes } from '@/lib/themes'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { AiSettingsSection } from './AiSettingsSection'
 import { ApiKeysSection } from './ApiKeysSection'
 import { MembersSection } from './MembersSection'
@@ -109,41 +110,49 @@ export default async function SettingsPage() {
 
   return (
     <div className="p-4 sm:p-8 max-w-2xl mx-auto">
-      <h1 className="font-serif text-3xl text-ink mb-8">{t('title')}</h1>
+      <h1 className="text-2xl font-semibold tracking-tight mb-8">{t('title')}</h1>
 
       <div className="space-y-6">
         {/* Profile — visible to all roles */}
-        <div className="bg-white rounded-xl border border-border p-6">
-          <h2 className="font-medium text-ink mb-4">{t('yourProfile')}</h2>
-          <ProfileForm name={member.user.name ?? ''} demoMode={demoMode} />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base font-medium">{t('yourProfile')}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ProfileForm name={member.user.name ?? ''} demoMode={demoMode} />
+          </CardContent>
+        </Card>
 
         {/* Workspace settings — OWNER and ADMIN only */}
         {isAdmin && (
           <>
-            <div className="bg-white rounded-xl border border-border p-6">
-              <h2 className="font-medium text-ink mb-4">{t('workspace')}</h2>
-              <WorkspaceForm
-                name={workspace?.name ?? ''}
-                slug={workspace?.slug ?? ''}
-                customDomain={workspace?.customDomain ?? ''}
-                logo={workspace?.logo ?? ''}
-                brandText={workspace?.brandText ?? ''}
-                customBrandFontFamily={workspace?.customBrandFontFamily ?? ''}
-                customBrandFontUrl={workspace?.customBrandFontUrl ?? ''}
-                favicon={workspace?.favicon ?? ''}
-                metaTitle={workspace?.metaTitle ?? ''}
-                metaDescription={workspace?.metaDescription ?? ''}
-                appUrl={appUrl}
-                helpCenterDomain={process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''}
-                cloudMode={isCloudMode()}
-                planTier={planTier}
-                cnameTarget={process.env.CLOUDFLARE_FALLBACK_ORIGIN ?? 'proxy.helpnest.cloud'}
-                demoMode={demoMode}
-                isOwner={member.role === 'OWNER'}
-                workspaceId={workspaceId}
-              />
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-medium">{t('workspace')}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <WorkspaceForm
+                  name={workspace?.name ?? ''}
+                  slug={workspace?.slug ?? ''}
+                  customDomain={workspace?.customDomain ?? ''}
+                  logo={workspace?.logo ?? ''}
+                  brandText={workspace?.brandText ?? ''}
+                  customBrandFontFamily={workspace?.customBrandFontFamily ?? ''}
+                  customBrandFontUrl={workspace?.customBrandFontUrl ?? ''}
+                  favicon={workspace?.favicon ?? ''}
+                  metaTitle={workspace?.metaTitle ?? ''}
+                  metaDescription={workspace?.metaDescription ?? ''}
+                  appUrl={appUrl}
+                  helpCenterDomain={process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''}
+                  cloudMode={isCloudMode()}
+                  planTier={planTier}
+                  cnameTarget={process.env.CLOUDFLARE_FALLBACK_ORIGIN ?? 'proxy.helpnest.cloud'}
+                  demoMode={demoMode}
+                  isOwner={member.role === 'OWNER'}
+                  workspaceId={workspaceId}
+                />
+              </CardContent>
+            </Card>
 
             {/* Members */}
             <MembersSection
@@ -154,33 +163,35 @@ export default async function SettingsPage() {
             />
 
             {/* Theme */}
-            <div className="bg-white rounded-xl border border-border p-6">
-              <h2 className="font-medium text-ink mb-1">{t('branding')}</h2>
-              <p className="text-sm text-muted mb-4">
-                {t('brandingDescription')}
-              </p>
-              <ThemePicker
-                themes={themes}
-                fontPresets={fontPresets}
-                radiusOptions={radiusOptions}
-                currentThemeId={workspace?.themeId ?? ''}
-                currentFontPresetId={workspace?.fontPresetId ?? null}
-                currentCustomCreamColor={workspace?.customCreamColor ?? ''}
-                currentCustomInkColor={workspace?.customInkColor ?? ''}
-                currentCustomMutedColor={workspace?.customMutedColor ?? ''}
-                currentCustomBorderColor={workspace?.customBorderColor ?? ''}
-                currentCustomAccentColor={workspace?.customAccentColor ?? ''}
-                currentCustomGreenColor={workspace?.customGreenColor ?? ''}
-                currentCustomWhiteColor={workspace?.customWhiteColor ?? ''}
-                currentCustomRadius={workspace?.customRadius ?? ''}
-                currentCustomHeadingFontFamily={workspace?.customHeadingFontFamily ?? ''}
-                currentCustomHeadingFontUrl={workspace?.customHeadingFontUrl ?? ''}
-                currentCustomBodyFontFamily={workspace?.customBodyFontFamily ?? ''}
-                currentCustomBodyFontUrl={workspace?.customBodyFontUrl ?? ''}
-                workspaceSlug={workspace?.slug ?? ''}
-                demoMode={demoMode}
-              />
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-medium">{t('branding')}</CardTitle>
+                <CardDescription>{t('brandingDescription')}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ThemePicker
+                  themes={themes}
+                  fontPresets={fontPresets}
+                  radiusOptions={radiusOptions}
+                  currentThemeId={workspace?.themeId ?? ''}
+                  currentFontPresetId={workspace?.fontPresetId ?? null}
+                  currentCustomCreamColor={workspace?.customCreamColor ?? ''}
+                  currentCustomInkColor={workspace?.customInkColor ?? ''}
+                  currentCustomMutedColor={workspace?.customMutedColor ?? ''}
+                  currentCustomBorderColor={workspace?.customBorderColor ?? ''}
+                  currentCustomAccentColor={workspace?.customAccentColor ?? ''}
+                  currentCustomGreenColor={workspace?.customGreenColor ?? ''}
+                  currentCustomWhiteColor={workspace?.customWhiteColor ?? ''}
+                  currentCustomRadius={workspace?.customRadius ?? ''}
+                  currentCustomHeadingFontFamily={workspace?.customHeadingFontFamily ?? ''}
+                  currentCustomHeadingFontUrl={workspace?.customHeadingFontUrl ?? ''}
+                  currentCustomBodyFontFamily={workspace?.customBodyFontFamily ?? ''}
+                  currentCustomBodyFontUrl={workspace?.customBodyFontUrl ?? ''}
+                  workspaceSlug={workspace?.slug ?? ''}
+                  demoMode={demoMode}
+                />
+              </CardContent>
+            </Card>
 
             {/* AI Agent */}
             <AiSettingsSection
@@ -203,15 +214,19 @@ export default async function SettingsPage() {
             />
 
             {/* AI Search */}
-            <div className="bg-white rounded-xl border border-border p-6">
-              <h2 className="font-medium text-ink mb-1">{t('aiSearch')}</h2>
-              <p className="text-sm text-muted mb-4">
-                {isCloudMode()
-                  ? 'Index your articles for AI-powered search. Run after publishing or updating articles.'
-                  : t('aiSearchDescription')}
-              </p>
-              <SyncEmbeddingsButton workspaceId={workspaceId} />
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base font-medium">{t('aiSearch')}</CardTitle>
+                <CardDescription>
+                  {isCloudMode()
+                    ? 'Index your articles for AI-powered search. Run after publishing or updating articles.'
+                    : t('aiSearchDescription')}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SyncEmbeddingsButton workspaceId={workspaceId} />
+              </CardContent>
+            </Card>
 
             {/* API Keys */}
             <ApiKeysSection demoMode={demoMode} />

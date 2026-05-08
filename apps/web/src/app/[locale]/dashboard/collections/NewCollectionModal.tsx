@@ -3,6 +3,19 @@
 import { useState } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Globe, Lock } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 const EMOJI_OPTIONS = ['📁', '📄', '🚀', '⚡', '🛠️', '💡', '🎯', '📚', '🔧', '✨', '🌟', '🔑']
 
@@ -71,158 +84,112 @@ export function NewCollectionModal({ parentId, parentTitle }: Props = {}) {
 
   return (
     <>
-      {isSubCollection ? (
-        <button
-          onClick={() => setOpen(true)}
-          className="bg-ink text-cream px-3 sm:px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium"
-        >
-          {t('newSubCollection')}
-        </button>
-      ) : (
-        <button
-          onClick={() => setOpen(true)}
-          className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium"
-        >
-          {t('newCollection')}
-        </button>
-      )}
+      <Button onClick={() => setOpen(true)}>
+        {isSubCollection ? t('newSubCollection') : t('newCollection')}
+      </Button>
 
-      {open && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
-          onClick={close}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <div>
-                <h2 className="font-medium text-ink">
-                  {isSubCollection ? t('createSubCollection') : t('createCollection')}
-                </h2>
-                {isSubCollection && parentTitle && (
-                  <p className="text-xs text-muted mt-0.5">{t('inCollection', { title: parentTitle })}</p>
-                )}
+      <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) close() }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {isSubCollection ? t('createSubCollection') : t('createCollection')}
+            </DialogTitle>
+            {isSubCollection && parentTitle && (
+              <p className="text-xs text-muted-foreground mt-0.5">{t('inCollection', { title: parentTitle })}</p>
+            )}
+          </DialogHeader>
+
+          <form onSubmit={submit} className="space-y-4">
+            {/* Emoji picker */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                {t('icon')}
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {EMOJI_OPTIONS.map((e) => (
+                  <button
+                    key={e}
+                    type="button"
+                    onClick={() => setEmoji(e)}
+                    className={cn(
+                      'w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors',
+                      emoji === e ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+                    )}
+                  >
+                    {e}
+                  </button>
+                ))}
               </div>
-              <button onClick={close} className="text-muted hover:text-ink transition-colors">
-                &#x2715;
-              </button>
             </div>
 
-            <form onSubmit={submit} className="p-6 space-y-4">
-              {/* Emoji picker */}
-              <div>
-                <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-2">
-                  {t('icon')}
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {EMOJI_OPTIONS.map((e) => (
-                    <button
-                      key={e}
-                      type="button"
-                      onClick={() => setEmoji(e)}
-                      className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${
-                        emoji === e
-                          ? 'bg-ink text-cream'
-                          : 'bg-cream hover:bg-border'
-                      }`}
-                    >
-                      {e}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {/* Title */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                {t('title')} <span className="text-orange-500">*</span>
+              </label>
+              <Input
+                autoFocus
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={t('placeholder')}
+                required
+              />
+            </div>
 
-              {/* Title */}
-              <div>
-                <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-                  {t('title')} <span className="text-accent">*</span>
-                </label>
-                <input
-                  autoFocus
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder={t('placeholder')}
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white text-ink"
-                  required
-                />
-              </div>
+            {/* Description */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
+                {t('description')}
+              </label>
+              <Textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder={t('descriptionPlaceholder')}
+                rows={2}
+                className="resize-none"
+              />
+            </div>
 
-              {/* Description */}
-              <div>
-                <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-                  {t('description')}
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t('descriptionPlaceholder')}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none bg-white text-ink"
-                />
-              </div>
+            {/* Visibility */}
+            <div>
+              <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">
+                {t('visibility')}
+              </label>
+              <ToggleGroup
+                type="single"
+                value={visibility}
+                onValueChange={(value) => { if (value) setVisibility(value as 'PUBLIC' | 'INTERNAL') }}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="PUBLIC" className="gap-2">
+                  <Globe className="w-4 h-4" />
+                  {t('visibilityPublic')}
+                </ToggleGroupItem>
+                <ToggleGroupItem value="INTERNAL" className="gap-2">
+                  <Lock className="w-4 h-4" />
+                  {t('visibilityInternal')}
+                </ToggleGroupItem>
+              </ToggleGroup>
+              <p className="text-xs text-muted-foreground mt-1.5">
+                {visibility === 'PUBLIC'
+                  ? t('visibilityPublicDescription')
+                  : t('visibilityInternalDescription')}
+              </p>
+            </div>
 
-              {/* Visibility */}
-              <div>
-                <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-2">
-                  {t('visibility')}
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setVisibility('PUBLIC')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${
-                      visibility === 'PUBLIC'
-                        ? 'border-accent bg-accent/5 text-ink'
-                        : 'border-border text-muted hover:border-ink'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    {t('visibilityPublic')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setVisibility('INTERNAL')}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${
-                      visibility === 'INTERNAL'
-                        ? 'border-accent bg-accent/5 text-ink'
-                        : 'border-border text-muted hover:border-ink'
-                    }`}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                    {t('visibilityInternal')}
-                  </button>
-                </div>
-                <p className="text-xs text-muted mt-1.5">
-                  {visibility === 'PUBLIC'
-                    ? t('visibilityPublicDescription')
-                    : t('visibilityInternalDescription')}
-                </p>
-              </div>
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-              {error && <p className="text-sm text-red-500">{error}</p>}
-
-              <div className="flex items-center justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={close}
-                  className="px-4 py-2 text-sm text-muted hover:text-ink transition-colors"
-                >
-                  {tc('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  disabled={saving || !title.trim()}
-                  className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors font-medium disabled:opacity-50"
-                >
-                  {saving ? t('creating') : isSubCollection ? t('createSubCollection') : t('createCollection')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={close}>
+                {tc('cancel')}
+              </Button>
+              <Button type="submit" disabled={saving || !title.trim()}>
+                {saving ? t('creating') : isSubCollection ? t('createSubCollection') : t('createCollection')}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

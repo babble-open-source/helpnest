@@ -43,10 +43,10 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@helpnest/sdk": "workspace:*",
     "@modelcontextprotocol/sdk": "^1.0.0"
   },
   "devDependencies": {
-    "@helpnest/sdk": "workspace:*",
     "@types/node": "^20.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.4.0"

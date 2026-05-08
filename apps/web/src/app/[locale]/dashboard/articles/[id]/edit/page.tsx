@@ -2,6 +2,8 @@ import { auth } from '@/lib/auth'
 import { notFound } from 'next/navigation'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
+import { getWorkspaceColumnSet } from '@/lib/db'
+import { getWorkspaceThemeCSS } from '@/lib/branding'
 import { ArticleEditor } from '@/components/editor/ArticleEditor'
 import { isHtml, mdToHtml } from '@/lib/content'
 
@@ -16,9 +18,26 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
   })
   if (!article) notFound()
 
+  const columns = await getWorkspaceColumnSet()
   const workspace = await prisma.workspace.findUnique({
     where: { id: article.workspaceId },
-    select: { slug: true },
+    select: {
+      slug: true,
+      themeId: true,
+      ...(columns.has('customCreamColor') ? { customCreamColor: true } : {}),
+      ...(columns.has('customInkColor') ? { customInkColor: true } : {}),
+      ...(columns.has('customMutedColor') ? { customMutedColor: true } : {}),
+      ...(columns.has('customBorderColor') ? { customBorderColor: true } : {}),
+      ...(columns.has('customAccentColor') ? { customAccentColor: true } : {}),
+      ...(columns.has('customGreenColor') ? { customGreenColor: true } : {}),
+      ...(columns.has('customWhiteColor') ? { customWhiteColor: true } : {}),
+      ...(columns.has('customRadius') ? { customRadius: true } : {}),
+      ...(columns.has('fontPresetId') ? { fontPresetId: true } : {}),
+      ...(columns.has('customHeadingFontFamily') ? { customHeadingFontFamily: true } : {}),
+      ...(columns.has('customHeadingFontUrl') ? { customHeadingFontUrl: true } : {}),
+      ...(columns.has('customBodyFontFamily') ? { customBodyFontFamily: true } : {}),
+      ...(columns.has('customBodyFontUrl') ? { customBodyFontUrl: true } : {}),
+    },
   })
 
   const rawCollections = await prisma.collection.findMany({
@@ -57,8 +76,29 @@ export default async function EditArticlePage(props: { params: Promise<{ id: str
   const content = isHtml(raw) ? raw : mdToHtml(raw)
   const hasDraft = article.status === 'PUBLISHED' && !!article.draftContent
 
+  const themeOverrides = {
+    fontPresetId: workspace?.fontPresetId ?? null,
+    customCreamColor: workspace?.customCreamColor ?? null,
+    customInkColor: workspace?.customInkColor ?? null,
+    customMutedColor: workspace?.customMutedColor ?? null,
+    customBorderColor: workspace?.customBorderColor ?? null,
+    customAccentColor: workspace?.customAccentColor ?? null,
+    customGreenColor: workspace?.customGreenColor ?? null,
+    customWhiteColor: workspace?.customWhiteColor ?? null,
+    customRadius: (workspace?.customRadius as 'none' | 'sm' | 'md' | 'lg' | 'xl' | null) ?? null,
+    customHeadingFontFamily: workspace?.customHeadingFontFamily ?? null,
+    customHeadingFontUrl: workspace?.customHeadingFontUrl ?? null,
+    customBodyFontFamily: workspace?.customBodyFontFamily ?? null,
+    customBodyFontUrl: workspace?.customBodyFontUrl ?? null,
+    brandText: null,
+    customBrandFontFamily: null,
+    customBrandFontUrl: null,
+  }
+  const editorThemeCSS = getWorkspaceThemeCSS(workspace?.themeId ?? 'default', themeOverrides)
+
   return (
     <ArticleEditor
+      editorThemeCSS={editorThemeCSS}
       article={{
         id: article.id,
         title: article.title,

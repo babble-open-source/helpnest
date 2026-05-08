@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
 
 interface Props {
   workspaceId: string
@@ -32,23 +33,23 @@ export function SyncEmbeddingsButton({ workspaceId }: Props) {
   return (
     <div>
       <div className="flex items-center gap-3">
-        <button
+        <Button
           onClick={sync}
           disabled={status === 'syncing'}
-          className="bg-green text-white px-4 py-2 rounded-lg text-sm hover:bg-green/90 transition-colors disabled:opacity-50"
+          variant="default"
         >
           {status === 'syncing' ? t('syncing') : t('syncButton')}
-        </button>
+        </Button>
         {status === 'done' && result && (
-          <span className="text-sm text-green-700">
+          <span className="text-sm text-emerald-600 dark:text-emerald-400">
             {t('syncResult', { articles: result.articles, chunks: result.points })}
           </span>
         )}
         {status === 'error' && (
-          <span className="text-sm text-red-600">{t('syncFailed')}</span>
+          <span className="text-sm text-destructive">{t('syncFailed')}</span>
         )}
       </div>
-      <p className="text-xs text-muted mt-1">
+      <p className="text-xs text-muted-foreground mt-1">
         {t('syncHelp')}
       </p>
     </div>

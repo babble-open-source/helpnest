@@ -3,6 +3,17 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 interface ImportResult {
   collectionsCreated: number
@@ -63,47 +74,35 @@ export function NotionImportModal({ onClose }: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 bg-ink/40 z-50 flex items-center justify-center p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-xl shadow-lg w-full max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h2 className="font-medium text-ink">{t('importFrom', { source: 'Notion' })}</h2>
-          <button
-            onClick={onClose}
-            className="text-muted hover:text-ink transition-colors text-lg leading-none"
-            aria-label={tc('close')}
-          >
-            &#x2715;
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t('importFrom', { source: 'Notion' })}</DialogTitle>
+          <DialogDescription className="sr-only">{t('importFrom', { source: 'Notion' })}</DialogDescription>
+        </DialogHeader>
 
         {step === 'form' && (
-          <form onSubmit={handleSubmit} className="p-6 space-y-4">
-            <div>
-              <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-                {t('integrationToken')} <span className="text-accent">*</span>
-              </label>
-              <input
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="notion-token">
+                {t('integrationToken')} <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="notion-token"
                 type="password"
                 value={token}
                 onChange={(e) => setToken(e.target.value)}
                 placeholder="ntn_xxx or secret_xxx"
                 autoComplete="off"
                 required
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white text-ink"
               />
-              <p className="text-xs text-muted mt-1.5">
+              <p className="text-xs text-muted-foreground">
                 Create an integration at{' '}
                 <a
                   href="https://www.notion.so/profile/integrations/internal"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-accent underline underline-offset-2"
+                  className="underline underline-offset-2"
                 >
                   notion.so/profile/integrations/internal
                 </a>{' '}
@@ -111,23 +110,19 @@ export function NotionImportModal({ onClose }: Props) {
               </p>
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-                {t('databaseId')}
-              </label>
-              <input
+            <div className="space-y-1.5">
+              <Label htmlFor="notion-database">{t('databaseId')}</Label>
+              <Input
+                id="notion-database"
                 type="text"
                 value={databaseId}
                 onChange={(e) => setDatabaseId(e.target.value)}
                 placeholder="Leave blank to import all accessible pages"
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-accent bg-white text-ink"
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-muted uppercase tracking-wide mb-1.5">
-                {t('importAs')}
-              </label>
+            <div className="space-y-1.5">
+              <Label>{t('importAs')}</Label>
               <div className="flex gap-4">
                 {(['DRAFT', 'PUBLISHED'] as const).map((s) => (
                   <label key={s} className="flex items-center gap-2 cursor-pointer">
@@ -137,9 +132,9 @@ export function NotionImportModal({ onClose }: Props) {
                       value={s}
                       checked={status === s}
                       onChange={() => setStatus(s)}
-                      className="accent-accent"
+                      className="accent-primary"
                     />
-                    <span className="text-sm text-ink">
+                    <span className="text-sm text-foreground">
                       {s === 'DRAFT' ? tc('draft') : tc('published')}
                     </span>
                   </label>
@@ -147,100 +142,64 @@ export function NotionImportModal({ onClose }: Props) {
               </div>
             </div>
 
-            {error && <p className="text-sm text-red-500">{error}</p>}
+            {error && <p className="text-sm text-destructive">{error}</p>}
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm text-muted hover:text-ink transition-colors"
-              >
-                {tc('cancel')}
-              </button>
-              <button
-                type="submit"
-                disabled={!token.trim()}
-                className="bg-ink text-cream px-4 py-2 rounded-lg text-sm font-medium hover:bg-ink/90 transition-colors disabled:opacity-50"
-              >
-                {t('startImport')}
-              </button>
-            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={onClose}>{tc('cancel')}</Button>
+              <Button type="submit" disabled={!token.trim()}>{t('startImport')}</Button>
+            </DialogFooter>
           </form>
         )}
 
         {step === 'importing' && (
-          <div className="p-6 flex flex-col items-center gap-4 py-10">
-            <div className="w-8 h-8 border-2 border-ink/20 border-t-ink rounded-full animate-spin" />
-            <p className="text-sm text-ink font-medium">{t('importing', { source: 'Notion' })}</p>
-            <p className="text-xs text-muted text-center">
-              {t('importingHelp')}
-            </p>
+          <div className="flex flex-col items-center gap-4 py-8">
+            <div className="w-8 h-8 border-2 border-muted border-t-foreground rounded-full animate-spin" />
+            <p className="text-sm font-medium text-foreground">{t('importing', { source: 'Notion' })}</p>
+            <p className="text-xs text-muted-foreground text-center">{t('importingHelp')}</p>
           </div>
         )}
 
         {step === 'done' && result && (
-          <div className="p-6 space-y-4">
-            <div className="flex items-center gap-3 p-3 bg-green/10 rounded-lg border border-green/20">
-              <svg
-                className="w-5 h-5 text-green shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-3 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+              <svg className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              <p className="text-sm font-medium text-ink">{t('importComplete')}</p>
+              <p className="text-sm font-medium text-foreground">{t('importComplete')}</p>
             </div>
 
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="bg-cream rounded-lg p-3">
-                <p className="text-2xl font-serif text-ink">{result.collectionsCreated}</p>
-                <p className="text-xs text-muted mt-0.5">{tc('collections', { count: result.collectionsCreated })}</p>
+              <div className="bg-muted rounded-lg p-3">
+                <p className="text-2xl font-semibold text-foreground">{result.collectionsCreated}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{tc('collections', { count: result.collectionsCreated })}</p>
               </div>
-              <div className="bg-cream rounded-lg p-3">
-                <p className="text-2xl font-serif text-ink">{result.articlesCreated}</p>
-                <p className="text-xs text-muted mt-0.5">{tc('articles', { count: result.articlesCreated })}</p>
+              <div className="bg-muted rounded-lg p-3">
+                <p className="text-2xl font-semibold text-foreground">{result.articlesCreated}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{tc('articles', { count: result.articlesCreated })}</p>
               </div>
-              <div className="bg-cream rounded-lg p-3">
-                <p className="text-2xl font-serif text-ink">{result.errors.length}</p>
-                <p className="text-xs text-muted mt-0.5">{t('errors')}</p>
+              <div className="bg-muted rounded-lg p-3">
+                <p className="text-2xl font-semibold text-foreground">{result.errors.length}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t('errors')}</p>
               </div>
             </div>
 
             {result.errors.length > 0 && (
-              <div className="bg-red-50 border border-red-100 rounded-lg p-3 space-y-1 max-h-32 overflow-y-auto">
+              <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3 space-y-1 max-h-32 overflow-y-auto">
                 {result.errors.map((err, i) => (
-                  <p key={i} className="text-xs text-red-600">
-                    {err}
-                  </p>
+                  <p key={i} className="text-xs text-destructive">{err}</p>
                 ))}
               </div>
             )}
 
-            <div className="flex items-center justify-end gap-3 pt-2">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-sm text-muted hover:text-ink transition-colors"
-              >
-                {tc('close')}
-              </button>
-              <Link
-                href="/dashboard/articles"
-                className="bg-ink text-cream px-4 py-2 rounded-lg text-sm font-medium hover:bg-ink/90 transition-colors"
-                onClick={onClose}
-              >
-                {t('viewArticles')}
-              </Link>
-            </div>
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={onClose}>{tc('close')}</Button>
+              <Button asChild>
+                <Link href="/dashboard/articles" onClick={onClose}>{t('viewArticles')}</Link>
+              </Button>
+            </DialogFooter>
           </div>
         )}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

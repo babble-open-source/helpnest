@@ -3,6 +3,25 @@
 import { useState } from 'react'
 import { useRouter, Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
+import { MoreHorizontal } from 'lucide-react'
 
 interface Props {
   articleId: string
@@ -64,64 +83,64 @@ export function ArticleActions({ articleId, articleTitle, articleStatus, demoMod
 
   return (
     <>
-      <div className="flex items-center justify-end gap-3">
-        <Link
-          href={`/dashboard/articles/${articleId}/edit`}
-          className="text-xs text-muted hover:text-accent transition-colors"
-        >
-          {tc('edit')}
-        </Link>
-        <button
-          onClick={handleArchive}
-          disabled={archiving}
-          className="text-xs text-muted hover:text-ink transition-colors disabled:opacity-50"
-        >
-          {archiving ? '…' : articleStatus === 'ARCHIVED' ? tc('draft') : tc('archive')}
-        </button>
-        {(!demoMode || !isSeeded) && (
-          <button
-            onClick={() => { setError(''); setConfirmOpen(true) }}
-            className="text-xs text-muted hover:text-red-500 transition-colors"
-          >
-            {tc('delete')}
-          </button>
-        )}
+      <div className="flex justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8">
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem asChild>
+              <Link href={`/dashboard/articles/${articleId}/edit`}>
+                {tc('edit')}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleArchive}
+              disabled={archiving}
+            >
+              {archiving ? '…' : articleStatus === 'ARCHIVED' ? tc('draft') : tc('archive')}
+            </DropdownMenuItem>
+            {(!demoMode || !isSeeded) && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => { setError(''); setConfirmOpen(true) }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  {tc('delete')}
+                </DropdownMenuItem>
+              </>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {confirmOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
-          onClick={() => setConfirmOpen(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <h2 className="font-medium text-ink mb-2">{tc('delete')}</h2>
-              <p className="text-sm text-muted">
-                <strong className="text-ink">&ldquo;{articleTitle}&rdquo;</strong>
-              </p>
-              {error && <p className="text-sm text-red-500 mt-3">{error}</p>}
-              <div className="flex items-center justify-end gap-3 mt-6">
-                <button
-                  onClick={() => setConfirmOpen(false)}
-                  className="px-4 py-2 text-sm text-muted hover:text-ink transition-colors"
-                >
-                  {tc('cancel')}
-                </button>
-                <button
-                  onClick={handleDelete}
-                  disabled={deleting}
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors font-medium disabled:opacity-50"
-                >
-                  {deleting ? tc('deleting') : tc('delete')}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tc('delete')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong className="text-foreground">&ldquo;{articleTitle}&rdquo;</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setConfirmOpen(false)}>
+              {tc('cancel')}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? tc('deleting') : tc('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

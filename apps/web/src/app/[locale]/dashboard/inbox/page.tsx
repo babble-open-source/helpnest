@@ -87,8 +87,8 @@ export default async function InboxPage() {
   return (
     <div className="p-4 sm:p-8">
       <div className="mb-6">
-        <h1 className="font-serif text-2xl sm:text-3xl text-ink">{t('title')}</h1>
-        <p className="text-muted mt-1">{t('description')}</p>
+        <h1 className="text-2xl sm:text-3xl font-semibold text-foreground">{t('title')}</h1>
+        <p className="text-muted-foreground mt-1">{t('description')}</p>
       </div>
       <InboxList
         escalated={serialize(escalated)}

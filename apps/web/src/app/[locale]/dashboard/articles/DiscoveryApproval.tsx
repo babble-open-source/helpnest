@@ -3,6 +3,10 @@
 import { useState, useMemo } from 'react'
 import { useTranslations } from 'next-intl'
 import type { DiscoveryPage } from './CrawlModal'
+import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 // ---------------------------------------------------------------------------
 // Types
@@ -27,12 +31,6 @@ interface ConfirmResponse {
 // Priority badge
 // ---------------------------------------------------------------------------
 
-const PRIORITY_COLORS: Record<string, string> = {
-  high: 'bg-accent/10 text-accent',
-  medium: 'bg-amber-100 text-amber-700',
-  low: 'bg-border text-muted',
-}
-
 function PriorityBadge({ priority }: { priority: string }) {
   const t = useTranslations('crawl')
   const label =
@@ -42,12 +40,17 @@ function PriorityBadge({ priority }: { priority: string }) {
         ? t('priorityMedium')
         : t('priorityLow')
 
+  const className =
+    priority === 'high'
+      ? 'bg-orange-500/10 text-orange-500 border-transparent'
+      : priority === 'medium'
+        ? 'bg-amber-100 text-amber-700 border-transparent'
+        : 'bg-secondary text-secondary-foreground border-transparent'
+
   return (
-    <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium capitalize shrink-0 ${PRIORITY_COLORS[priority] ?? PRIORITY_COLORS.low}`}
-    >
+    <Badge variant="outline" className={cn('text-xs capitalize shrink-0', className)}>
       {label}
-    </span>
+    </Badge>
   )
 }
 
@@ -131,9 +134,9 @@ function DomainVerification({
 
   if (step === 'verified') {
     return (
-      <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg px-4 py-3">
+      <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-200 dark:border-emerald-800 rounded-lg px-4 py-3">
         <svg
-          className="text-green-600 shrink-0"
+          className="text-emerald-600 dark:text-emerald-400 shrink-0"
           width="16"
           height="16"
           viewBox="0 0 16 16"
@@ -148,54 +151,59 @@ function DomainVerification({
             strokeLinejoin="round"
           />
         </svg>
-        <p className="text-sm font-medium text-green-800">{t('verifyDomainSuccess')}</p>
+        <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">{t('verifyDomainSuccess')}</p>
       </div>
     )
   }
 
   if (step === 'idle') {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex flex-col gap-2">
-        <p className="text-sm font-medium text-ink">{t('verifyDomainHeading')}</p>
-        <p className="text-xs text-muted">{t('verifyDomainDescription', { domain })}</p>
-        <button
+      <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 flex flex-col gap-2">
+        <p className="text-sm font-medium text-foreground">{t('verifyDomainHeading')}</p>
+        <p className="text-xs text-muted-foreground">{t('verifyDomainDescription', { domain })}</p>
+        <Button
           type="button"
+          variant="link"
+          size="sm"
           onClick={initiateVerification}
-          className="self-start text-xs font-medium text-accent hover:underline"
+          className="self-start h-auto p-0 text-orange-500"
         >
           Get verification code
-        </button>
+        </Button>
       </div>
     )
   }
 
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 flex flex-col gap-3">
-      <p className="text-sm font-medium text-ink">{t('verifyDomainHeading')}</p>
-      {instructions && <p className="text-xs text-muted">{instructions}</p>}
+    <div className="bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3 flex flex-col gap-3">
+      <p className="text-sm font-medium text-foreground">{t('verifyDomainHeading')}</p>
+      {instructions && <p className="text-xs text-muted-foreground">{instructions}</p>}
       {metaTag && (
         <div className="flex items-stretch gap-2">
-          <code className="flex-1 text-xs bg-white border border-border rounded px-3 py-2 font-mono text-ink break-all">
+          <code className="flex-1 text-xs bg-card border rounded px-3 py-2 font-mono text-foreground break-all">
             {metaTag}
           </code>
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={() => copyToClipboard(metaTag)}
-            className="shrink-0 text-xs font-medium px-3 py-2 rounded border border-border bg-white hover:bg-cream text-ink transition-colors"
+            className="shrink-0"
           >
             {copied ? t('verifyDomainCopied') : t('verifyDomainCopy')}
-          </button>
+          </Button>
         </div>
       )}
-      {checkError && <p className="text-xs text-red-600">{checkError}</p>}
-      <button
+      {checkError && <p className="text-xs text-destructive">{checkError}</p>}
+      <Button
         type="button"
+        size="sm"
         onClick={checkVerification}
         disabled={step === 'checking'}
-        className="self-start text-xs font-medium bg-accent text-white px-3 py-1.5 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50"
+        className="self-start bg-orange-500 text-white hover:bg-orange-500/90"
       >
         {step === 'checking' ? t('verifyDomainChecking') : t('verifyDomainCheck')}
-      </button>
+      </Button>
     </div>
   )
 }
@@ -296,8 +304,8 @@ export function DiscoveryApproval({
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <p className="text-sm font-medium text-ink">{t('discoveryTitle')}</p>
-        <p className="text-xs text-muted mt-0.5">{t('discoveryDescription')}</p>
+        <p className="text-sm font-medium text-foreground">{t('discoveryTitle')}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{t('discoveryDescription')}</p>
       </div>
 
       {requiresVerification && (
@@ -306,56 +314,60 @@ export function DiscoveryApproval({
 
       {/* Select/deselect controls */}
       <div className="flex items-center justify-between">
-        <p className="text-xs text-muted">
+        <p className="text-xs text-muted-foreground">
           {checked.size} of {pages.length} pages selected
         </p>
         <div className="flex items-center gap-3">
           {!allChecked && (
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="sm"
               onClick={selectAll}
-              className="text-xs text-accent hover:underline"
+              className="h-auto p-0 text-orange-500"
             >
               {t('selectAll')}
-            </button>
+            </Button>
           )}
           {!noneChecked && (
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="sm"
               onClick={deselectAll}
-              className="text-xs text-muted hover:text-ink"
+              className="h-auto p-0 text-muted-foreground hover:text-foreground"
             >
               {t('deselectAll')}
-            </button>
+            </Button>
           )}
         </div>
       </div>
 
       {/* Page list */}
-      <div className="bg-white border border-border rounded-lg divide-y divide-border max-h-72 overflow-y-auto">
+      <div className="bg-card border rounded-lg divide-y max-h-72 overflow-y-auto">
         {sortedPages.map((page) => {
           const isChecked = checked.has(page.url)
           return (
             <label
               key={page.url}
-              className={`flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-cream transition-colors ${
-                isChecked ? '' : 'opacity-50'
-              }`}
+              className={cn(
+                'flex items-start gap-3 px-4 py-3 cursor-pointer hover:bg-muted transition-colors',
+                !isChecked && 'opacity-50'
+              )}
             >
-              <input
-                type="checkbox"
+              <Checkbox
                 checked={isChecked}
-                onChange={() => togglePage(page.url)}
-                className="mt-0.5 accent-accent shrink-0"
+                onCheckedChange={() => togglePage(page.url)}
+                className="mt-0.5 shrink-0"
               />
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="text-sm text-ink truncate">{page.anchorText || page.url}</span>
+                  <span className="text-sm text-foreground truncate">{page.anchorText || page.url}</span>
                   <PriorityBadge priority={page.priority} />
                 </div>
-                <p className="text-xs text-muted truncate mt-0.5">{page.url}</p>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{page.url}</p>
                 {page.reason && (
-                  <p className="text-xs text-muted/80 mt-0.5 italic">{page.reason}</p>
+                  <p className="text-xs text-muted-foreground/80 mt-0.5 italic">{page.reason}</p>
                 )}
               </div>
             </label>
@@ -364,27 +376,24 @@ export function DiscoveryApproval({
       </div>
 
       {confirmError && (
-        <div className="flex items-start gap-2 bg-white border border-red-200 rounded-lg px-4 py-3">
-          <span className="text-red-500 text-base mt-0.5" aria-hidden="true">
+        <div className="flex items-start gap-2 bg-card border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
+          <span className="text-destructive text-base mt-0.5" aria-hidden="true">
             &#x2715;
           </span>
-          <p className="text-xs text-muted break-words">{confirmError}</p>
+          <p className="text-xs text-muted-foreground break-words">{confirmError}</p>
         </div>
       )}
 
       <div className="flex items-center justify-end gap-2 pt-1">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onCancel}>
           {t('cancel')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          size="sm"
           onClick={handleConfirm}
           disabled={!canStart}
-          className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+          className="bg-orange-500 text-white hover:bg-orange-500/90 disabled:opacity-40"
         >
           {confirming && (
             <span
@@ -395,7 +404,7 @@ export function DiscoveryApproval({
           {checked.size > 0
             ? t('startDeepCrawlSelected', { count: checked.size })
             : t('startDeepCrawl')}
-        </button>
+        </Button>
       </div>
     </div>
   )

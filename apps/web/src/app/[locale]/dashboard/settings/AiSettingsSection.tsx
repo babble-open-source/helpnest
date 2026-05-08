@@ -3,6 +3,21 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Link } from '@/i18n/navigation'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Switch } from '@/components/ui/switch'
+import { Slider } from '@/components/ui/slider'
+import { Separator } from '@/components/ui/separator'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface Props {
   aiEnabled: boolean
@@ -112,311 +127,285 @@ export function AiSettingsSection({
   ]
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h2 className="font-medium text-ink">{t('title')}</h2>
-          <p className="text-sm text-muted mt-0.5">
-            {t('description')}
-          </p>
-        </div>
-        <button
-          onClick={() => setEnabled(!enabled)}
-          disabled={demoMode}
-          aria-checked={enabled}
-          role="switch"
-          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${
-            enabled ? 'bg-green' : 'bg-border'
-          }`}
-        >
-          <span
-            className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${
-              enabled ? 'translate-x-6' : 'translate-x-1'
-            }`}
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-medium">{t('title')}</CardTitle>
+            <CardDescription className="mt-0.5">{t('description')}</CardDescription>
+          </div>
+          <Switch
+            checked={enabled}
+            onCheckedChange={setEnabled}
+            disabled={demoMode}
+            aria-label={t('title')}
           />
-        </button>
-      </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <Separator />
 
-      <div className="space-y-4 border-t border-border pt-4">
-      {enabled && (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1">{t('provider')}</label>
-            <div className="relative">
-              <select
-                value={provider}
-                onChange={(e) => { setProvider(e.target.value); setModel('') }}
-                disabled={demoMode}
-                className="w-full appearance-none px-3 py-2 pe-8 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50 cursor-pointer"
-              >
-                {providers.map((p) => (
-                  <option key={p.value} value={p.value}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
-              <svg className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1">{t('model')}</label>
-            <input
-              type="text"
-              value={model}
-              onChange={(e) => setModel(e.target.value)}
-              disabled={demoMode}
-              placeholder={
-                provider === 'anthropic'
-                  ? 'claude-haiku-4-5-20251001'
-                  : provider === 'openai'
-                    ? 'gpt-4o-mini'
-                    : provider === 'google'
-                      ? 'gemini-1.5-flash'
-                      : 'mistral-small-latest'
-              }
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
-            />
-            <p className="text-xs text-muted mt-1">{t('modelHelp')}</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1">
-              {t('apiKey')}
-              {cloudMode && planTier === 'FREE' && (
-                <span className="ms-2 text-xs font-normal text-muted bg-border px-1.5 py-0.5 rounded">PRO</span>
-              )}
-            </label>
-            {cloudMode && planTier === 'FREE' ? (
-              <div className="rounded-lg border border-border bg-cream/50 p-4 text-center">
-                <p className="text-sm text-ink mb-1">Bring your own API key is a Pro feature</p>
-                <p className="text-xs text-muted mb-2">Upgrade to use your own API key for unlimited AI — search, agent, and drafts.</p>
-                <Link href="/dashboard/billing" className="text-xs font-medium text-accent hover:underline">Upgrade to Pro →</Link>
+          {enabled && (
+            <>
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-provider">{t('provider')}</Label>
+                <Select
+                  value={provider}
+                  onValueChange={(v) => { setProvider(v); setModel('') }}
+                  disabled={demoMode}
+                >
+                  <SelectTrigger id="ai-provider">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {providers.map((p) => (
+                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ) : (
-              <>
-                {removeApiKey ? (
-                  <div className="flex items-center gap-2 px-3 py-2 border border-red-200 rounded-lg bg-red-50 text-sm text-red-600">
-                    <span className="flex-1">{t('keyRemoved')}</span>
-                    <button type="button" onClick={() => setRemoveApiKey(false)} className="underline hover:no-underline shrink-0">{t('undo')}</button>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-model">{t('model')}</Label>
+                <Input
+                  id="ai-model"
+                  type="text"
+                  value={model}
+                  onChange={(e) => setModel(e.target.value)}
+                  disabled={demoMode}
+                  placeholder={
+                    provider === 'anthropic'
+                      ? 'claude-haiku-4-5-20251001'
+                      : provider === 'openai'
+                        ? 'gpt-4o-mini'
+                        : provider === 'google'
+                          ? 'gemini-1.5-flash'
+                          : 'mistral-small-latest'
+                  }
+                />
+                <p className="text-xs text-muted-foreground">{t('modelHelp')}</p>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-api-key">
+                  {t('apiKey')}
+                  {cloudMode && planTier === 'FREE' && (
+                    <span className="ms-2 text-xs font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">PRO</span>
+                  )}
+                </Label>
+                {cloudMode && planTier === 'FREE' ? (
+                  <div className="rounded-lg border bg-muted/50 p-4 text-center">
+                    <p className="text-sm text-foreground mb-1">Bring your own API key is a Pro feature</p>
+                    <p className="text-xs text-muted-foreground mb-2">Upgrade to use your own API key for unlimited AI — search, agent, and drafts.</p>
+                    <Link href="/dashboard/billing" className="text-xs font-medium text-primary hover:underline">Upgrade to Pro →</Link>
                   </div>
                 ) : (
-                  <input
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    disabled={demoMode}
-                    placeholder={hasApiKey ? t('apiKeyConfigured') : t('apiKeyEnter')}
-                    className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
-                  />
+                  <>
+                    {removeApiKey ? (
+                      <div className="flex items-center gap-2 px-3 py-2 border border-destructive/30 rounded-md bg-destructive/5 text-sm text-destructive">
+                        <span className="flex-1">{t('keyRemoved')}</span>
+                        <button type="button" onClick={() => setRemoveApiKey(false)} className="underline hover:no-underline shrink-0">{t('undo')}</button>
+                      </div>
+                    ) : (
+                      <Input
+                        id="ai-api-key"
+                        type="password"
+                        value={apiKey}
+                        onChange={(e) => setApiKey(e.target.value)}
+                        disabled={demoMode}
+                        placeholder={hasApiKey ? t('apiKeyConfigured') : t('apiKeyEnter')}
+                      />
+                    )}
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground">
+                        {hasApiKey && !removeApiKey
+                          ? 'Powers all AI features (search, agent, drafts). Unlimited usage with your own key.'
+                          : !hasApiKey
+                            ? 'Add your API key for unlimited AI. Leave empty to use included AI credits.'
+                            : ''}
+                      </p>
+                      {hasApiKey && !removeApiKey && (
+                        <button
+                          type="button"
+                          onClick={() => { setRemoveApiKey(true); setApiKey('') }}
+                          disabled={demoMode}
+                          className="text-xs text-destructive hover:underline disabled:opacity-50"
+                        >
+                          {t('removeKey')}
+                        </button>
+                      )}
+                    </div>
+                  </>
                 )}
-                <div className="flex items-center justify-between mt-1">
-                  <p className="text-xs text-muted">
-                    {hasApiKey && !removeApiKey
-                      ? 'Powers all AI features (search, agent, drafts). Unlimited usage with your own key.'
-                      : !hasApiKey
-                        ? 'Add your API key for unlimited AI. Leave empty to use included AI credits.'
-                        : ''}
-                  </p>
-                  {hasApiKey && !removeApiKey && (
-                    <button
-                      type="button"
-                      onClick={() => { setRemoveApiKey(true); setApiKey('') }}
-                      disabled={demoMode}
-                      className="text-xs text-red-500 hover:underline disabled:opacity-50"
-                    >
-                      {t('removeKey')}
-                    </button>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1">{t('greeting')}</label>
-            <input
-              type="text"
-              value={greeting}
-              onChange={(e) => setGreeting(e.target.value)}
-              disabled={demoMode}
-              placeholder={t('greetingPlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-ink mb-1">{t('instructions')}</label>
-            <textarea
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              disabled={demoMode}
-              rows={4}
-              placeholder={t('instructionsPlaceholder')}
-              className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink resize-none focus:outline-none focus:border-green disabled:opacity-50"
-            />
-            <p className="text-xs text-muted mt-1">{t('instructionsHelp')}</p>
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-sm font-medium text-ink">{t('escalationThreshold')}</label>
-              <span className="text-sm text-muted">{t('confidenceRequired', { value: Math.round(threshold * 100) })}</span>
-            </div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={threshold}
-              onChange={(e) => setThreshold(parseFloat(e.target.value))}
-              disabled={demoMode}
-              className="w-full accent-green disabled:opacity-50"
-            />
-            <div className="flex justify-between text-xs text-muted mt-0.5">
-              <span>{t('handleEverything')}</span>
-              <span>{t('alwaysEscalate')}</span>
-            </div>
-            <p className="text-xs text-muted mt-1">
-              {t('escalationHelp')}
-            </p>
-          </div>
-
-          <div className="border-t border-border pt-4 space-y-4">
-            <h3 className="text-sm font-medium text-ink">{t('productContext')}</h3>
-            <div>
-              <label className="block text-sm text-muted mb-1">
-                {t('productContextLabel')}
-              </label>
-              <textarea
-                value={productContext}
-                onChange={(e) => setProductContext(e.target.value)}
-                disabled={demoMode}
-                rows={4}
-                maxLength={4000}
-                placeholder={t('productContextPlaceholder')}
-                className="w-full px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink resize-none focus:outline-none focus:border-green disabled:opacity-50"
-              />
-              <p className="text-xs text-muted mt-1">
-                {t('productContextHelp')}
-              </p>
-            </div>
-          </div>
-
-          <div className="border-t border-border pt-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-ink">{t('autoDraftQuestions')}</h3>
-                <p className="text-xs text-muted mt-0.5">
-                  {t('autoDraftQuestionsHelp')}
-                </p>
               </div>
-              <button
-                onClick={() => setAutoDraftGapsEnabled(!autoDraftGapsEnabled)}
-                disabled={demoMode}
-                aria-checked={autoDraftGapsEnabled}
-                role="switch"
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${autoDraftGapsEnabled ? 'bg-green' : 'bg-border'}`}
-              >
-                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${autoDraftGapsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-            {autoDraftGapsEnabled && (
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">
-                  {t('draftAfter')} <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={autoDraftGapThreshold}
-                    onChange={(e) => setAutoDraftGapThreshold(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                    disabled={demoMode}
-                    className="inline-block w-16 mx-1 px-2 py-0.5 border border-border rounded text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
-                  /> {t('orMoreOccurrences')}
-                </label>
-                <p className="text-xs text-muted mt-1">
-                  {t('autoDraftThresholdHelp')}
-                </p>
-              </div>
-            )}
-          </div>
 
-          <div className="border-t border-border pt-4 space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium text-ink">{t('autoDraftCode')}</h3>
-                <p className="text-xs text-muted mt-0.5">
-                  {t('autoDraftCodeHelp')}
-                </p>
-              </div>
-              <button
-                onClick={() => setAutoDraftExternalEnabled(!autoDraftExternalEnabled)}
-                disabled={demoMode}
-                aria-checked={autoDraftExternalEnabled}
-                role="switch"
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 ${autoDraftExternalEnabled ? 'bg-green' : 'bg-border'}`}
-              >
-                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${autoDraftExternalEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-            {autoDraftExternalEnabled && (
-              <div>
-                <label className="block text-sm font-medium text-ink mb-1">
-                  {t('batchWindow')} <input
-                    type="number"
-                    min={1}
-                    max={1440}
-                    value={batchWindowMinutes}
-                    onChange={(e) => setBatchWindowMinutes(Math.max(1, parseInt(e.target.value, 10) || 60))}
-                    disabled={demoMode}
-                    className="inline-block w-20 mx-1 px-2 py-0.5 border border-border rounded text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
-                  /> {t('minutes')}
-                </label>
-                <p className="text-xs text-muted mt-1">
-                  {t('batchWindowHelp')}
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="border-t border-border pt-4 space-y-4">
-            <div>
-              <h3 className="text-sm font-medium text-ink">{t('draftRateLimit')}</h3>
-              <p className="text-xs text-muted mt-0.5">
-                {t('draftRateLimitHelp')}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-ink mb-1">
-                <input
-                  type="number"
-                  min={1}
-                  max={500}
-                  value={aiDraftRateLimit}
-                  onChange={(e) => setAiDraftRateLimit(Math.max(1, Math.min(500, parseInt(e.target.value, 10) || 50)))}
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-greeting">{t('greeting')}</Label>
+                <Input
+                  id="ai-greeting"
+                  type="text"
+                  value={greeting}
+                  onChange={(e) => setGreeting(e.target.value)}
                   disabled={demoMode}
-                  className="inline-block w-20 me-1 px-2 py-0.5 border border-border rounded text-sm bg-white text-ink focus:outline-none focus:border-green disabled:opacity-50"
-                /> {t('perHour')}
-              </label>
-            </div>
-          </div>
+                  placeholder={t('greetingPlaceholder')}
+                />
+              </div>
 
-        </>
-      )}
+              <div className="space-y-1.5">
+                <Label htmlFor="ai-instructions">{t('instructions')}</Label>
+                <Textarea
+                  id="ai-instructions"
+                  value={instructions}
+                  onChange={(e) => setInstructions(e.target.value)}
+                  disabled={demoMode}
+                  rows={4}
+                  placeholder={t('instructionsPlaceholder')}
+                  className="resize-none"
+                />
+                <p className="text-xs text-muted-foreground">{t('instructionsHelp')}</p>
+              </div>
 
-      {saveError && (
-        <p className="text-sm text-red-500">{saveError}</p>
-      )}
-      <button
-        onClick={handleSave}
-        disabled={saving || demoMode}
-        className="px-4 py-2 bg-green text-white rounded-lg text-sm font-medium hover:bg-green/90 disabled:opacity-50 transition-colors"
-      >
-        {saving ? tc('saving') : saved ? t('saved') : t('saveAiSettings')}
-      </button>
-      </div>
-    </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>{t('escalationThreshold')}</Label>
+                  <span className="text-sm text-muted-foreground">{t('confidenceRequired', { value: Math.round(threshold * 100) })}</span>
+                </div>
+                <Slider
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={[threshold]}
+                  onValueChange={([v]) => setThreshold(v!)}
+                  disabled={demoMode}
+                />
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>{t('handleEverything')}</span>
+                  <span>{t('alwaysEscalate')}</span>
+                </div>
+                <p className="text-xs text-muted-foreground">{t('escalationHelp')}</p>
+              </div>
+
+              <Separator />
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-foreground">{t('productContext')}</h3>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ai-product-context" className="text-sm text-muted-foreground font-normal">
+                    {t('productContextLabel')}
+                  </Label>
+                  <Textarea
+                    id="ai-product-context"
+                    value={productContext}
+                    onChange={(e) => setProductContext(e.target.value)}
+                    disabled={demoMode}
+                    rows={4}
+                    maxLength={4000}
+                    placeholder={t('productContextPlaceholder')}
+                    className="resize-none"
+                  />
+                  <p className="text-xs text-muted-foreground">{t('productContextHelp')}</p>
+                </div>
+              </div>
+
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground">{t('autoDraftQuestions')}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t('autoDraftQuestionsHelp')}</p>
+                  </div>
+                  <Switch
+                    checked={autoDraftGapsEnabled}
+                    onCheckedChange={setAutoDraftGapsEnabled}
+                    disabled={demoMode}
+                  />
+                </div>
+                {autoDraftGapsEnabled && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium text-foreground">
+                      {t('draftAfter')}{' '}
+                      <input
+                        type="number"
+                        min={1}
+                        max={100}
+                        value={autoDraftGapThreshold}
+                        onChange={(e) => setAutoDraftGapThreshold(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                        disabled={demoMode}
+                        className="inline-block w-16 mx-1 px-2 py-0.5 border border-input rounded text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                      />{' '}
+                      {t('orMoreOccurrences')}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">{t('autoDraftThresholdHelp')}</p>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-medium text-foreground">{t('autoDraftCode')}</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t('autoDraftCodeHelp')}</p>
+                  </div>
+                  <Switch
+                    checked={autoDraftExternalEnabled}
+                    onCheckedChange={setAutoDraftExternalEnabled}
+                    disabled={demoMode}
+                  />
+                </div>
+                {autoDraftExternalEnabled && (
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium text-foreground">
+                      {t('batchWindow')}{' '}
+                      <input
+                        type="number"
+                        min={1}
+                        max={1440}
+                        value={batchWindowMinutes}
+                        onChange={(e) => setBatchWindowMinutes(Math.max(1, parseInt(e.target.value, 10) || 60))}
+                        disabled={demoMode}
+                        className="inline-block w-20 mx-1 px-2 py-0.5 border border-input rounded text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                      />{' '}
+                      {t('minutes')}
+                    </Label>
+                    <p className="text-xs text-muted-foreground">{t('batchWindowHelp')}</p>
+                  </div>
+                )}
+              </div>
+
+              <Separator />
+              <div className="space-y-3">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">{t('draftRateLimit')}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t('draftRateLimitHelp')}</p>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-sm font-medium text-foreground">
+                    <input
+                      type="number"
+                      min={1}
+                      max={500}
+                      value={aiDraftRateLimit}
+                      onChange={(e) => setAiDraftRateLimit(Math.max(1, Math.min(500, parseInt(e.target.value, 10) || 50)))}
+                      disabled={demoMode}
+                      className="inline-block w-20 me-1 px-2 py-0.5 border border-input rounded text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                    />{' '}
+                    {t('perHour')}
+                  </Label>
+                </div>
+              </div>
+            </>
+          )}
+
+          {saveError && <p className="text-sm text-destructive">{saveError}</p>}
+          <Button
+            onClick={handleSave}
+            disabled={saving || demoMode}
+          >
+            {saving ? tc('saving') : saved ? t('saved') : t('saveAiSettings')}
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   )
 }

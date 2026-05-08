@@ -4,6 +4,10 @@ import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
 import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
 
 function helpfulRate(helpful: number, notHelpful: number): number | null {
   const total = helpful + notHelpful
@@ -163,8 +167,8 @@ export default async function DashboardPage() {
   return (
     <div className="p-4 sm:p-8">
       <div className="mb-8">
-        <h1 className="font-serif text-2xl sm:text-3xl text-ink">{t('overview')}</h1>
-        <p className="text-muted mt-1">{workspace?.name}</p>
+        <h1 className="font-serif text-2xl sm:text-3xl text-foreground">{t('overview')}</h1>
+        <p className="text-muted-foreground mt-1">{workspace?.name}</p>
       </div>
 
       {/* AI Support Stats */}
@@ -172,15 +176,17 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
           {[
             { label: t('conversations'), value: totalConversations },
-            { label: t('aiResolutionRate'), value: aiResolutionRate !== null ? `${aiResolutionRate}%` : '—', color: 'text-green' },
-            { label: t('escalationRate'), value: escalationRate !== null ? `${escalationRate}%` : '—', color: 'text-accent' },
+            { label: t('aiResolutionRate'), value: aiResolutionRate !== null ? `${aiResolutionRate}%` : '—', color: 'text-emerald-600 dark:text-emerald-400' },
+            { label: t('escalationRate'), value: escalationRate !== null ? `${escalationRate}%` : '—', color: 'text-orange-500' },
             { label: t('conversations7d'), value: weekConversations },
             { label: t('knowledgeGaps'), value: unresolvedGaps },
           ].map((s) => (
-            <div key={s.label} className="bg-white rounded-xl border border-border p-5">
-              <p className={`text-2xl font-semibold ${'color' in s ? s.color : 'text-ink'}`}>{s.value}</p>
-              <p className="text-sm text-muted mt-1">{s.label}</p>
-            </div>
+            <Card key={s.label}>
+              <CardContent className="p-5">
+                <p className={`text-2xl font-semibold ${'color' in s ? s.color : 'text-foreground'}`}>{s.value}</p>
+                <p className="text-sm text-muted-foreground mt-1">{s.label}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
@@ -189,21 +195,23 @@ export default async function DashboardPage() {
       {(aiNewDraftCount > 0 || aiUpdateCount > 0) && (
         <div className="flex flex-wrap gap-4 mb-10">
           {aiNewDraftCount > 0 && (
-            <Link
-              href="/dashboard/articles?filter=ai-drafts"
-              className="bg-white rounded-xl border border-border p-5 hover:border-accent transition-colors"
-            >
-              <p className="text-2xl font-semibold text-ink">{aiNewDraftCount}</p>
-              <p className="text-sm text-muted mt-1">{t('aiDraftsToReview')}</p>
+            <Link href="/dashboard/articles?filter=ai-drafts">
+              <Card className="hover:border-orange-500 transition-colors cursor-pointer">
+                <CardContent className="p-5">
+                  <p className="text-2xl font-semibold text-foreground">{aiNewDraftCount}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t('aiDraftsToReview')}</p>
+                </CardContent>
+              </Card>
             </Link>
           )}
           {aiUpdateCount > 0 && (
-            <Link
-              href="/dashboard/articles?filter=ai-updates"
-              className="bg-white rounded-xl border border-border p-5 hover:border-accent transition-colors"
-            >
-              <p className="text-2xl font-semibold text-ink">{aiUpdateCount}</p>
-              <p className="text-sm text-muted mt-1">{t('aiArticleUpdates')}</p>
+            <Link href="/dashboard/articles?filter=ai-updates">
+              <Card className="hover:border-orange-500 transition-colors cursor-pointer">
+                <CardContent className="p-5">
+                  <p className="text-2xl font-semibold text-foreground">{aiUpdateCount}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{t('aiArticleUpdates')}</p>
+                </CardContent>
+              </Card>
             </Link>
           )}
         </div>
@@ -212,79 +220,94 @@ export default async function DashboardPage() {
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
         {stats.map((stat) => (
-          <div key={stat.label} className="bg-white rounded-xl border border-border p-5">
-            <p className="text-2xl font-semibold text-ink">{stat.value}</p>
-            <p className="text-sm text-muted mt-1">{stat.label}</p>
-          </div>
+          <Card key={stat.label}>
+            <CardContent className="p-5">
+              <p className="text-2xl font-semibold text-foreground">{stat.value}</p>
+              <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
       <div className="mb-10">
-        <h2 className="font-serif text-xl text-ink mb-4">{t('needsAttention')}</h2>
-        <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <h2 className="font-serif text-xl text-foreground mb-4">{t('needsAttention')}</h2>
+        <Card>
           {needsAttention.length === 0 ? (
-            <div className="p-6">
-              <p className="text-sm text-muted">
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">
                 {t('noFeedbackYet')}
               </p>
-            </div>
+            </CardContent>
           ) : (
-            <div className="divide-y divide-border">
-              {needsAttention.map((article) => (
-                <div key={article.id} className="flex items-center gap-4 p-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-ink truncate">{article.title}</p>
-                    <p className="text-sm text-muted mt-0.5">{article.collection.title}</p>
-                  </div>
-                  <div className="text-end shrink-0">
-                    <p className={`text-sm font-medium ${(article.helpfulRate ?? 0) >= 70 ? 'text-ink' : 'text-accent'}`}>
-                      {t('percentHelpful', { rate: article.helpfulRate ?? 0 })}
-                    </p>
-                    <p className="text-xs text-muted">
-                      {t('negativeOfTotal', { negative: article.notHelpful, total: article.totalVotes })}
-                    </p>
+            <CardContent className="p-0">
+              {needsAttention.map((article, index) => (
+                <div key={article.id}>
+                  {index > 0 && <Separator />}
+                  <div className="flex items-center gap-4 p-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">{article.title}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{article.collection.title}</p>
+                    </div>
+                    <div className="text-end shrink-0">
+                      <p className={`text-sm font-medium ${(article.helpfulRate ?? 0) >= 70 ? 'text-foreground' : 'text-orange-500'}`}>
+                        {t('percentHelpful', { rate: article.helpfulRate ?? 0 })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t('negativeOfTotal', { negative: article.notHelpful, total: article.totalVotes })}
+                      </p>
+                    </div>
                   </div>
                 </div>
               ))}
-            </div>
+            </CardContent>
           )}
-        </div>
+        </Card>
       </div>
 
       {/* Recent articles */}
       <div>
-        <h2 className="font-serif text-xl text-ink mb-4">{t('recentArticles')}</h2>
-        <div className="bg-white rounded-xl border border-border overflow-hidden">
+        <h2 className="font-serif text-xl text-foreground mb-4">{t('recentArticles')}</h2>
+        <Card>
           {recentArticles.length === 0 ? (
-            <div className="p-6 text-center">
-              <p className="text-sm font-medium text-ink">{t('noArticlesYet')}</p>
-              <p className="text-sm text-muted mt-1">{t('createFirstArticle')}</p>
-              <Link href="/dashboard/articles/new" className="inline-block mt-3 text-sm text-accent hover:underline">
-                {t('createArticle')}
-              </Link>
-            </div>
+            <CardContent className="p-6 text-center">
+              <p className="text-sm font-medium text-foreground">{t('noArticlesYet')}</p>
+              <p className="text-sm text-muted-foreground mt-1">{t('createFirstArticle')}</p>
+              <Button variant="link" asChild className="mt-3 h-auto p-0 text-orange-500">
+                <Link href="/dashboard/articles/new">
+                  {t('createArticle')}
+                </Link>
+              </Button>
+            </CardContent>
           ) : (
-            <div className="divide-y divide-border">
-              {recentArticles.map((article) => (
-                <div key={article.id} className="flex items-center gap-4 p-4">
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-ink truncate">{article.title}</p>
-                    <p className="text-sm text-muted mt-0.5">{article.collection.title}</p>
+            <CardContent className="p-0">
+              {recentArticles.map((article, index) => (
+                <div key={article.id}>
+                  {index > 0 && <Separator />}
+                  <div className="flex items-center gap-4 p-4">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-foreground truncate">{article.title}</p>
+                      <p className="text-sm text-muted-foreground mt-0.5">{article.collection.title}</p>
+                    </div>
+                    <Badge
+                      variant={
+                        article.status === 'PUBLISHED'
+                          ? 'default'
+                          : 'secondary'
+                      }
+                      className={
+                        article.status === 'PUBLISHED'
+                          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-transparent'
+                          : ''
+                      }
+                    >
+                      {{ PUBLISHED: tc('published'), DRAFT: tc('draft'), ARCHIVED: tc('archived') }[article.status] ?? article.status}
+                    </Badge>
                   </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${
-                    article.status === 'PUBLISHED'
-                      ? 'bg-green/10 text-green'
-                      : article.status === 'DRAFT'
-                      ? 'bg-cream text-muted border border-border'
-                      : 'bg-border text-muted'
-                  }`}>
-                    {{ PUBLISHED: tc('published'), DRAFT: tc('draft'), ARCHIVED: tc('archived') }[article.status] ?? article.status}
-                  </span>
                 </div>
               ))}
-            </div>
+            </CardContent>
           )}
-        </div>
+        </Card>
       </div>
     </div>
   )

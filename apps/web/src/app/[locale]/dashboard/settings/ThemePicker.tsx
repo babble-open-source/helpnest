@@ -6,6 +6,16 @@ import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import type { HelpNestTheme } from '@/lib/themes'
 import { AIThemeGenerator } from './AIThemeGenerator'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 interface Props {
   themes: HelpNestTheme[]
@@ -203,6 +213,7 @@ export function ThemePicker({
         }}
       />
       <p className="text-sm font-medium text-ink mb-3">{t('theme')}</p>
+      {/* Theme grid — keep with original inline styles (help center preview) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {themes.map((theme) => (
           <button
@@ -274,6 +285,7 @@ export function ThemePicker({
           </span>
         </span>
       </div>
+      {/* Font preset grid — keep with original inline styles (help center preview) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-4">
         <button
           onClick={() => {
@@ -329,13 +341,12 @@ export function ThemePicker({
         ))}
       </div>
 
-      <div className="rounded-xl border border-border bg-cream/50 p-4 mb-4">
+      {/* Color overrides section */}
+      <div className="rounded-xl border bg-muted/30 p-4 mb-4">
         <div className="flex items-start justify-between gap-4 mb-3">
           <div>
-            <p className="text-sm font-medium text-ink">{t('companyColors')}</p>
-            <p className="text-xs text-muted mt-1">
-              {t('companyColorsHelp')}
-            </p>
+            <p className="text-sm font-medium text-foreground">{t('companyColors')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('companyColorsHelp')}</p>
           </div>
           {(customCreamColor.length > 0 ||
             customInkColor.length > 0 ||
@@ -345,7 +356,9 @@ export function ThemePicker({
             customGreenColor.length > 0 ||
             customWhiteColor.length > 0 ||
             customRadius.length > 0) && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 setSaved(false)
                 setCustomCreamColor('')
@@ -357,61 +370,60 @@ export function ThemePicker({
                 setCustomWhiteColor('')
                 setCustomRadius('')
               }}
-              className="shrink-0 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-cream transition-colors"
             >
               {t('clearColors')}
-            </button>
+            </Button>
           )}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           {colorFields.map((field) => (
             <div key={field.label}>
-              <label className="block text-xs font-medium text-ink mb-1">{field.label}</label>
+              <Label className="text-xs mb-1">{field.label}</Label>
               <div className="flex items-center gap-2">
-                <input
+                <Input
                   value={field.value}
                   onChange={(event) => {
                     setSaved(false)
                     field.setValue(event.target.value)
                   }}
                   placeholder={field.placeholder}
-                  className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full"
                 />
                 <span
-                  className="h-9 w-9 shrink-0 rounded-lg border border-border bg-white"
+                  className="h-9 w-9 shrink-0 rounded-lg border"
                   style={{ backgroundColor: (field.value.trim() || field.placeholder) }}
                 />
               </div>
             </div>
           ))}
           <div>
-            <label className="block text-xs font-medium text-ink mb-1">{t('cornerRadius')}</label>
-            <div className="relative">
-            <select
+            <Label className="text-xs mb-1">{t('cornerRadius')}</Label>
+            <Select
               value={customRadius}
-              onChange={(event) => {
+              onValueChange={(value) => {
                 setSaved(false)
-                setCustomRadius(event.target.value)
+                setCustomRadius(value)
               }}
-              className="w-full appearance-none rounded-lg border border-border bg-white px-3 py-2 pe-8 text-sm text-ink focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
             >
-              <option value="">{t('useThemeRadius')}</option>
-              {radiusOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option.toUpperCase()}
-                </option>
-              ))}
-            </select>
-            <svg className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-            </div>
+              <SelectTrigger>
+                <SelectValue placeholder={t('useThemeRadius')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">{t('useThemeRadius')}</SelectItem>
+                {radiusOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <div className="mt-3 rounded-xl border border-border bg-white p-4">
-          <p className="text-xs text-muted mb-2">{t('colorPreview')}</p>
+        {/* Color preview — keep all inline styles intact (help center preview) */}
+        <div className="mt-3 rounded-xl border bg-card p-4">
+          <p className="text-xs text-muted-foreground mb-2">{t('colorPreview')}</p>
           <div
             className="overflow-hidden border"
             style={{ backgroundColor: previewColors.cream, borderColor: previewColors.border, borderRadius: previewRadiusClass }}
@@ -451,19 +463,20 @@ export function ThemePicker({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-cream/50 p-4 mb-4">
+      {/* Custom font overrides */}
+      <div className="rounded-xl border bg-muted/30 p-4 mb-4">
         <div className="flex items-start justify-between gap-4 mb-3">
           <div>
-            <p className="text-sm font-medium text-ink">{t('customFontOverride')}</p>
-            <p className="text-xs text-muted mt-1">
-              {t('customFontOverrideHelp')}
-            </p>
+            <p className="text-sm font-medium text-foreground">{t('customFontOverride')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('customFontOverrideHelp')}</p>
           </div>
           {(customHeadingFontFamily.length > 0 ||
             customHeadingFontUrl.length > 0 ||
             customBodyFontFamily.length > 0 ||
             customBodyFontUrl.length > 0) && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 setSaved(false)
                 setCustomHeadingFontFamily('')
@@ -471,68 +484,64 @@ export function ThemePicker({
                 setCustomBodyFontFamily('')
                 setCustomBodyFontUrl('')
               }}
-              className="shrink-0 rounded-lg border border-border bg-white px-3 py-1.5 text-xs font-medium text-ink hover:bg-cream transition-colors"
             >
               {t('clearCustomFont')}
-            </button>
+            </Button>
           )}
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 mt-3">
           <div>
-            <label className="block text-xs font-medium text-ink mb-1">{t('headingFontFamily')}</label>
-            <input
+            <Label className="text-xs mb-1">{t('headingFontFamily')}</Label>
+            <Input
               value={customHeadingFontFamily}
               onChange={(event) => {
                 setSaved(false)
                 setCustomHeadingFontFamily(event.target.value)
               }}
               placeholder={'e.g. "Sohne", "Helvetica Neue", sans-serif'}
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink mb-1">{t('headingStylesheetUrl')}</label>
-            <input
+            <Label className="text-xs mb-1">{t('headingStylesheetUrl')}</Label>
+            <Input
               value={customHeadingFontUrl}
               onChange={(event) => {
                 setSaved(false)
                 setCustomHeadingFontUrl(event.target.value)
               }}
               placeholder="https://fonts.googleapis.com/css2?family=Heading+Font"
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink mb-1">{t('bodyFontFamily')}</label>
-            <input
+            <Label className="text-xs mb-1">{t('bodyFontFamily')}</Label>
+            <Input
               value={customBodyFontFamily}
               onChange={(event) => {
                 setSaved(false)
                 setCustomBodyFontFamily(event.target.value)
               }}
               placeholder={'e.g. "Inter", system-ui, sans-serif'}
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-ink mb-1">{t('bodyStylesheetUrl')}</label>
-            <input
+            <Label className="text-xs mb-1">{t('bodyStylesheetUrl')}</Label>
+            <Input
               value={customBodyFontUrl}
               onChange={(event) => {
                 setSaved(false)
                 setCustomBodyFontUrl(event.target.value)
               }}
               placeholder="https://fonts.googleapis.com/css2?family=Body+Font"
-              className="w-full rounded-lg border border-border bg-white px-3 py-2 text-sm text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
         </div>
 
+        {/* Custom font preview — keep with inline styles (help center preview) */}
         {(customHeadingFontFamily.trim().length > 0 ||
           customBodyFontFamily.trim().length > 0) && (
-          <div className="mt-3 rounded-xl border border-border bg-white px-4 py-3">
-            <p className="text-xs text-muted mb-1">{t('customFontPreview')}</p>
+          <div className="mt-3 rounded-xl border bg-card px-4 py-3">
+            <p className="text-xs text-muted-foreground mb-1">{t('customFontPreview')}</p>
             <p
               className="text-xl text-ink"
               style={{ fontFamily: customHeadingFontFamily || undefined }}
@@ -550,17 +559,16 @@ export function ThemePicker({
       </div>
 
       {demoMode ? (
-        <p className="text-sm text-muted">{t('demoBranding')}</p>
+        <p className="text-sm text-muted-foreground">{t('demoBranding')}</p>
       ) : (
         <div className="flex items-center gap-3">
-          <button
+          <Button
             onClick={save}
             disabled={saving || !isDirty}
-            className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
           >
             {saving ? tc('saving') : saved ? tc('saved') : t('applyBranding')}
-          </button>
-          {error && <span className="text-sm text-red-500">{error}</span>}
+          </Button>
+          {error && <span className="text-sm text-destructive">{error}</span>}
         </div>
       )}
     </div>

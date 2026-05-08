@@ -3,6 +3,10 @@
 import { useState } from 'react'
 import { Link, useRouter } from '@/i18n/navigation'
 import { useTranslations, useLocale } from 'next-intl'
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
 
 interface KnowledgeGap {
   id: string
@@ -24,14 +28,11 @@ interface Props {
 export function KnowledgeGapsList({ unresolved, resolved, workspaceSlug }: Props) {
   const t = useTranslations('knowledgeGaps')
   const locale = useLocale()
-  const [activeTab, setActiveTab] = useState<'unresolved' | 'resolved'>('unresolved')
   const [resolving, setResolving] = useState<string | null>(null)
   const router = useRouter()
 
   // workspaceSlug is available for future use (e.g. linking to the help center)
   void workspaceSlug
-
-  const gaps = activeTab === 'unresolved' ? unresolved : resolved
 
   async function handleResolve(gapId: string) {
     setResolving(gapId)
@@ -60,91 +61,106 @@ export function KnowledgeGapsList({ unresolved, resolved, workspaceSlug }: Props
   }
 
   return (
-    <div>
-      {/* Tabs */}
-      <div className="flex gap-1 mb-4 border-b border-border">
-        <button
-          onClick={() => setActiveTab('unresolved')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'unresolved'
-              ? 'border-ink text-ink'
-              : 'border-transparent text-muted hover:text-ink'
-          }`}
-        >
+    <Tabs defaultValue="unresolved">
+      <TabsList className="mb-4">
+        <TabsTrigger value="unresolved" className="gap-2">
           {t('unresolved')}
           {unresolved.length > 0 && (
-            <span className="ms-2 text-xs px-1.5 py-0.5 rounded-full bg-accent/10 text-accent">
+            <Badge variant="secondary" className="text-xs bg-orange-500/10 text-orange-500 hover:bg-orange-500/10">
               {unresolved.length}
-            </span>
+            </Badge>
           )}
-        </button>
-        <button
-          onClick={() => setActiveTab('resolved')}
-          className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'resolved'
-              ? 'border-ink text-ink'
-              : 'border-transparent text-muted hover:text-ink'
-          }`}
-        >
+        </TabsTrigger>
+        <TabsTrigger value="resolved" className="gap-2">
           {t('resolved')}
-        </button>
-      </div>
+          {resolved.length > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {resolved.length}
+            </Badge>
+          )}
+        </TabsTrigger>
+      </TabsList>
 
-      {/* List */}
-      <div className="bg-white rounded-xl border border-border overflow-hidden">
-        {gaps.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-muted text-sm">
-              {activeTab === 'unresolved' ? t('noGaps') : t('noResolved')}
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-border">
-            {gaps.map((gap) => (
-              <div key={gap.id} className="flex items-center gap-4 p-4">
-                <div className="flex-1 min-w-0">
-                  <p className="font-medium text-ink text-sm">{gap.query}</p>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-muted">
-                      {t('askedTimes', { count: gap.occurrences })}
-                    </span>
-                    <span className="text-xs text-muted">
-                      {t('lastSeen', { time: timeAgo(gap.lastSeenAt) })}
-                    </span>
-                    {gap.resolvedArticle && (
-                      <span className="text-xs text-green">
-                        {t('resolvedWith', { title: gap.resolvedArticle.title })}
+      <TabsContent value="unresolved">
+        <Card className="overflow-hidden">
+          {unresolved.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground text-sm">{t('noGaps')}</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {unresolved.map((gap) => (
+                <div key={gap.id} className="flex items-center gap-4 p-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm">{gap.query}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {t('askedTimes', { count: gap.occurrences })}
                       </span>
+                      <span className="text-xs text-muted-foreground">
+                        {t('lastSeen', { time: timeAgo(gap.lastSeenAt) })}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button asChild size="sm" className="bg-emerald-600 hover:bg-emerald-600/90 text-white">
+                      <Link href={`/dashboard/articles/new?title=${encodeURIComponent(gap.query)}`}>
+                        {t('writeArticle')}
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleResolve(gap.id)}
+                      disabled={resolving === gap.id}
+                    >
+                      {resolving === gap.id ? t('resolving') : t('markResolved')}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </TabsContent>
+
+      <TabsContent value="resolved">
+        <Card className="overflow-hidden">
+          {resolved.length === 0 ? (
+            <div className="p-8 text-center">
+              <p className="text-muted-foreground text-sm">{t('noResolved')}</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {resolved.map((gap) => (
+                <div key={gap.id} className="flex items-center gap-4 p-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-foreground text-sm">{gap.query}</p>
+                    <div className="flex items-center gap-3 mt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {t('askedTimes', { count: gap.occurrences })}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {t('lastSeen', { time: timeAgo(gap.lastSeenAt) })}
+                      </span>
+                      {gap.resolvedArticle && (
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                          {t('resolvedWith', { title: gap.resolvedArticle.title })}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {gap.resolvedBy && (
+                      <span className="text-xs text-muted-foreground">{t('resolvedBy', { name: gap.resolvedBy })}</span>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {activeTab === 'unresolved' && (
-                    <>
-                      <Link
-                        href={`/dashboard/articles/new?title=${encodeURIComponent(gap.query)}`}
-                        className="px-3 py-1.5 text-xs font-medium bg-green text-white rounded-lg hover:bg-green/90"
-                      >
-                        {t('writeArticle')}
-                      </Link>
-                      <button
-                        onClick={() => handleResolve(gap.id)}
-                        disabled={resolving === gap.id}
-                        className="px-3 py-1.5 text-xs font-medium border border-border text-muted rounded-lg hover:bg-border/30 disabled:opacity-50"
-                      >
-                        {resolving === gap.id ? t('resolving') : t('markResolved')}
-                      </button>
-                    </>
-                  )}
-                  {activeTab === 'resolved' && gap.resolvedBy && (
-                    <span className="text-xs text-muted">{t('resolvedBy', { name: gap.resolvedBy })}</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      </TabsContent>
+    </Tabs>
   )
 }

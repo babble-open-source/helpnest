@@ -3,6 +3,17 @@
 import { useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 type MemberRole = 'OWNER' | 'ADMIN' | 'EDITOR' | 'VIEWER'
 
@@ -28,16 +39,16 @@ const ROLE_ORDER: MemberRole[] = ['OWNER', 'ADMIN', 'EDITOR', 'VIEWER']
 const ROLE_RANK: Record<MemberRole, number> = { OWNER: 0, ADMIN: 1, EDITOR: 2, VIEWER: 3 }
 
 function RoleBadge({ role, tRoles }: { role: MemberRole; tRoles: (key: string) => string }) {
-  const colors: Record<MemberRole, string> = {
-    OWNER: 'bg-accent/10 text-accent',
-    ADMIN: 'bg-ink/10 text-ink',
-    EDITOR: 'bg-green/10 text-green',
-    VIEWER: 'bg-muted/10 text-muted',
+  const variantMap: Record<MemberRole, 'default' | 'secondary' | 'outline'> = {
+    OWNER: 'default',
+    ADMIN: 'secondary',
+    EDITOR: 'outline',
+    VIEWER: 'outline',
   }
   return (
-    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colors[role]}`}>
+    <Badge variant={variantMap[role]} className="text-xs">
       {tRoles(role)}
-    </span>
+    </Badge>
   )
 }
 
@@ -168,175 +179,177 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
   }
 
   return (
-    <div className="bg-white rounded-xl border border-border p-6">
-      <div className="flex items-center justify-between mb-1">
-        <h2 className="font-medium text-ink">{t('title')}</h2>
-        {canManage && (
-          <button
-            type="button"
-            onClick={() => {
-              setShowInviteForm((v) => !v)
-              setInviteUrl(null)
-              setInviteError('')
-            }}
-            className="text-sm bg-ink text-cream px-3 py-1.5 rounded-lg hover:bg-ink/90 transition-colors"
-          >
-            {showInviteForm ? tc('cancel') : t('inviteMember')}
-          </button>
-        )}
-      </div>
-      <p className="text-sm text-muted mb-4">{t('description')}</p>
-      {demoMode && (
-        <p className="text-xs text-muted border border-border rounded-lg px-3 py-2 bg-cream mb-4">
-          {t('demoDisabled')}
-        </p>
-      )}
-
-      {/* Invite form */}
-      {showInviteForm && (
-        <div className="mb-6 rounded-lg border border-border p-4 bg-cream space-y-3">
-          {inviteUrl ? (
-            <>
-              <p className="text-sm font-medium text-ink">{t('shareInviteLink')}</p>
-              <div className="flex items-center gap-2">
-                <code className="flex-1 block rounded bg-white border border-border px-3 py-2 text-sm font-mono text-ink break-all">
-                  {inviteUrl}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => void handleCopyInviteUrl()}
-                  className="shrink-0 rounded-lg border border-border bg-white px-3 py-2 text-sm font-medium text-ink hover:bg-cream transition-colors"
-                >
-                  {inviteCopied ? t('copied') : t('copy')}
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => { setInviteUrl(null); setShowInviteForm(false) }}
-                className="text-xs text-muted underline hover:no-underline"
-              >
-                {t('done')}
-              </button>
-            </>
-          ) : (
-            <form onSubmit={(e) => void handleInvite(e)} className="space-y-3">
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  required
-                  placeholder={t('emailPlaceholder')}
-                  className="flex-1 px-3 py-2 border border-border rounded-lg text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent"
-                />
-                <div className="relative shrink-0">
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                    className="appearance-none ps-3 pe-8 py-2 border border-border rounded-lg text-sm bg-white text-ink focus:outline-none focus:ring-2 focus:ring-accent cursor-pointer"
-                  >
-                    {ROLE_ORDER.filter((r) => ROLE_RANK[r] > ROLE_RANK[callerRole]).map((r) => (
-                      <option key={r} value={r}>{tRoles(r)}</option>
-                    ))}
-                  </select>
-                  <svg className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-              {inviteError && <p className="text-sm text-red-500">{inviteError}</p>}
-              <button
-                type="submit"
-                disabled={inviting}
-                className="bg-ink text-cream px-4 py-2 rounded-lg text-sm hover:bg-ink/90 transition-colors disabled:opacity-50"
-              >
-                {inviting ? t('sending') : t('sendInvite')}
-              </button>
-            </form>
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle className="text-base font-medium">{t('title')}</CardTitle>
+            <CardDescription className="mt-0.5">{t('description')}</CardDescription>
+          </div>
+          {canManage && (
+            <Button
+              type="button"
+              size="sm"
+              variant={showInviteForm ? 'outline' : 'default'}
+              onClick={() => {
+                setShowInviteForm((v) => !v)
+                setInviteUrl(null)
+                setInviteError('')
+              }}
+            >
+              {showInviteForm ? tc('cancel') : t('inviteMember')}
+            </Button>
           )}
         </div>
-      )}
+      </CardHeader>
+      <CardContent>
+        {demoMode && (
+          <p className="text-xs text-muted-foreground border rounded-lg px-3 py-2 bg-muted mb-4">
+            {t('demoDisabled')}
+          </p>
+        )}
 
-      {actionError && (
-        <div className="mb-4 rounded-lg bg-cream border border-border px-4 py-3 text-sm text-red-500">
-          {actionError}
-        </div>
-      )}
+        {/* Invite form */}
+        {showInviteForm && (
+          <div className="mb-6 rounded-lg border p-4 bg-muted space-y-3">
+            {inviteUrl ? (
+              <>
+                <p className="text-sm font-medium text-foreground">{t('shareInviteLink')}</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 block rounded bg-card border px-3 py-2 text-sm font-mono text-foreground break-all">
+                    {inviteUrl}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => void handleCopyInviteUrl()}
+                    className="shrink-0"
+                  >
+                    {inviteCopied ? t('copied') : t('copy')}
+                  </Button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setInviteUrl(null); setShowInviteForm(false) }}
+                  className="text-xs text-muted-foreground underline hover:no-underline"
+                >
+                  {t('done')}
+                </button>
+              </>
+            ) : (
+              <form onSubmit={(e) => void handleInvite(e)} className="space-y-3">
+                <div className="flex gap-2">
+                  <Input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    required
+                    placeholder={t('emailPlaceholder')}
+                    className="flex-1"
+                  />
+                  <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as MemberRole)}>
+                    <SelectTrigger className="w-[120px] shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ROLE_ORDER.filter((r) => ROLE_RANK[r] > ROLE_RANK[callerRole]).map((r) => (
+                        <SelectItem key={r} value={r}>{tRoles(r)}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {inviteError && <p className="text-sm text-destructive">{inviteError}</p>}
+                <Button type="submit" disabled={inviting}>
+                  {inviting ? t('sending') : t('sendInvite')}
+                </Button>
+              </form>
+            )}
+          </div>
+        )}
 
-      {/* Members list */}
-      <ul className="divide-y divide-border">
-        {members.map((member) => {
-          const isSelf = member.user.id === currentUserId
-          const isDeactivated = member.deactivatedAt !== null
-          const displayName = member.user.name ?? member.user.email
+        {actionError && (
+          <div className="mb-4 rounded-lg bg-muted border px-4 py-3 text-sm text-destructive">
+            {actionError}
+          </div>
+        )}
 
-          return (
-            <li key={member.id} className={`flex items-center justify-between py-3 ${isDeactivated ? 'opacity-60' : ''}`}>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={`text-sm font-medium truncate ${isDeactivated ? 'text-muted' : 'text-ink'}`}>
-                    {displayName}
-                    {isSelf && <span className="ms-1 text-xs text-muted">{t('you')}</span>}
-                  </span>
-                  <RoleBadge role={member.role} tRoles={tRoles} />
-                  {isDeactivated && (
-                    <span className="text-xs text-muted border border-border rounded-full px-2 py-0.5">
-                      {t('deactivated')}
+        {/* Members list */}
+        <ul className="divide-y">
+          {members.map((member) => {
+            const isSelf = member.user.id === currentUserId
+            const isDeactivated = member.deactivatedAt !== null
+            const displayName = member.user.name ?? member.user.email
+
+            return (
+              <li key={member.id} className={`flex items-center justify-between py-3 ${isDeactivated ? 'opacity-60' : ''}`}>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-sm font-medium truncate ${isDeactivated ? 'text-muted-foreground' : 'text-foreground'}`}>
+                      {displayName}
+                      {isSelf && <span className="ms-1 text-xs text-muted-foreground">{t('you')}</span>}
                     </span>
-                  )}
+                    <RoleBadge role={member.role} tRoles={tRoles} />
+                    {isDeactivated && (
+                      <Badge variant="outline" className="text-xs">{t('deactivated')}</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{member.user.email}</p>
                 </div>
-                <p className="text-xs text-muted mt-0.5 truncate">{member.user.email}</p>
-              </div>
 
-              {canManage && !isSelf && ROLE_RANK[callerRole] < ROLE_RANK[member.role] && (
-                <div className="flex items-center gap-2 ms-4 shrink-0">
-                  {!isDeactivated && (
-                    <div className="relative">
-                      <select
+                {canManage && !isSelf && ROLE_RANK[callerRole] < ROLE_RANK[member.role] && (
+                  <div className="flex items-center gap-2 ms-4 shrink-0">
+                    {!isDeactivated && (
+                      <Select
                         value={member.role}
-                        onChange={(e) => void handleRoleChange(member.id, e.target.value as MemberRole)}
-                        className="appearance-none ps-2 pe-6 py-1 border border-border rounded text-xs bg-white text-ink focus:outline-none focus:ring-1 focus:ring-accent cursor-pointer"
+                        onValueChange={(v) => void handleRoleChange(member.id, v as MemberRole)}
                       >
-                        {ROLE_ORDER.filter((r) => ROLE_RANK[r] > ROLE_RANK[callerRole]).map((r) => (
-                          <option key={r} value={r}>{tRoles(r)}</option>
-                        ))}
-                      </select>
-                      <svg className="pointer-events-none absolute end-1.5 top-1/2 -translate-y-1/2 w-3 h-3 text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => void handleToggleDeactivation(member)}
-                    className="text-xs border border-border px-2 py-1 rounded hover:bg-cream transition-colors text-muted hover:text-ink"
-                  >
-                    {isDeactivated ? t('reactivate') : t('deactivate')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMemberToRemove(member)}
-                    className="text-xs border border-border px-2 py-1 rounded text-red-500 hover:bg-cream transition-colors"
-                  >
-                    {t('remove')}
-                  </button>
-                </div>
-              )}
-            </li>
-          )
-        })}
-      </ul>
+                        <SelectTrigger className="h-7 text-xs w-[100px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ROLE_ORDER.filter((r) => ROLE_RANK[r] > ROLE_RANK[callerRole]).map((r) => (
+                            <SelectItem key={r} value={r}>{tRoles(r)}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => void handleToggleDeactivation(member)}
+                    >
+                      {isDeactivated ? t('reactivate') : t('deactivate')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs border-destructive/40 text-destructive hover:bg-destructive/10"
+                      onClick={() => setMemberToRemove(member)}
+                    >
+                      {t('remove')}
+                    </Button>
+                  </div>
+                )}
+              </li>
+            )
+          })}
+        </ul>
 
-      <ConfirmDialog
-        open={!!memberToRemove}
-        title={t('remove')}
-        message={memberToRemove ? t('confirmRemove', { name: memberToRemove.user.name ?? memberToRemove.user.email }) : ''}
-        confirmLabel={t('remove')}
-        cancelLabel={tc('cancel')}
-        destructive
-        onConfirm={() => { if (memberToRemove) void handleRemove(memberToRemove) }}
-        onCancel={() => setMemberToRemove(null)}
-      />
-    </div>
+        <ConfirmDialog
+          open={!!memberToRemove}
+          title={t('remove')}
+          message={memberToRemove ? t('confirmRemove', { name: memberToRemove.user.name ?? memberToRemove.user.email }) : ''}
+          confirmLabel={t('remove')}
+          cancelLabel={tc('cancel')}
+          destructive
+          onConfirm={() => { if (memberToRemove) void handleRemove(memberToRemove) }}
+          onCancel={() => setMemberToRemove(null)}
+        />
+      </CardContent>
+    </Card>
   )
 }

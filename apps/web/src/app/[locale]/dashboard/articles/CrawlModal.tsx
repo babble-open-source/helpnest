@@ -6,6 +6,15 @@ import { useTranslations } from 'next-intl'
 import { DiscoveryApproval } from './DiscoveryApproval'
 import { CrawlProgress } from './CrawlProgress'
 import { AiCreditsIndicator } from '@/components/AiCreditsIndicator'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Search } from 'lucide-react'
 
 // ---------------------------------------------------------------------------
 // Shared types
@@ -104,7 +113,6 @@ export function CrawlModal({
   const [errorMessage, setErrorMessage] = useState('')
   const [credits, setCredits] = useState<CreditsInfo | null>(null)
   const goalInputRef = useRef<HTMLInputElement>(null)
-  const backdropRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     goalInputRef.current?.focus()
@@ -113,18 +121,6 @@ export function CrawlModal({
       .then((data: CreditsInfo | null) => { if (data) setCredits(data) })
       .catch(() => {/* credits display is non-critical */})
   }, [])
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose()
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose])
-
-  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target === backdropRef.current) onClose()
-  }
 
   async function handleCrawl() {
     const trimmedUrl = url.trim()
@@ -202,40 +198,20 @@ export function CrawlModal({
     setTimeout(() => goalInputRef.current?.focus(), 0)
   }
 
-  // Determine modal width — progress view benefits from more width
+  // Determine modal size — progress view benefits from more width
   const isWide = state === 'progress' || state === 'discoveryApproval'
 
   return (
-    <div
-      ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40"
-      onClick={handleBackdropClick}
-      role="dialog"
-      aria-modal="true"
-      aria-label={t('title')}
-    >
-      <div
-        className={`bg-cream border border-border rounded-xl shadow-xl w-full ${isWide ? 'max-w-2xl' : 'max-w-lg'} max-h-[90vh] flex flex-col`}
+    <Dialog open onOpenChange={(isOpen) => { if (!isOpen) onClose() }}>
+      <DialogContent
+        className={isWide ? 'sm:max-w-2xl max-h-[90vh] flex flex-col' : 'sm:max-w-lg max-h-[90vh] flex flex-col'}
+        aria-label={t('title')}
       >
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border shrink-0">
-          <h2 className="font-serif text-xl text-ink">{t('title')}</h2>
-          <button
-            onClick={onClose}
-            className="text-muted hover:text-ink transition-colors p-1 rounded-md hover:bg-border/50"
-            aria-label={t('cancel')}
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path
-                d="M2 2l12 12M14 2L2 14"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-        </div>
+        <DialogHeader className="shrink-0">
+          <DialogTitle className="font-serif text-xl">{t('title')}</DialogTitle>
+        </DialogHeader>
 
-        <div className="px-6 py-5 overflow-y-auto">
+        <div className="overflow-y-auto flex-1 py-2">
           {state === 'idle' && (
             <IdleState
               url={url}
@@ -281,8 +257,8 @@ export function CrawlModal({
             />
           )}
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
 
@@ -355,9 +331,9 @@ function CollectionPicker({
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label className="text-xs font-medium text-ink">
+      <label className="text-xs font-medium text-foreground">
         {t('collection')}{' '}
-        <span className="text-muted font-normal">({t('collectionOptional')})</span>
+        <span className="text-muted-foreground font-normal">({t('collectionOptional')})</span>
       </label>
       <div ref={containerRef} className="relative">
         {selectedId && !isOpen ? (
@@ -367,12 +343,12 @@ function CollectionPicker({
               setIsOpen(true)
               setTimeout(() => inputRef.current?.focus(), 0)
             }}
-            className="w-full text-left text-sm bg-white border border-border rounded-lg px-3 py-2 text-ink flex items-center justify-between hover:border-ink/30 transition-colors"
+            className="w-full text-left text-sm bg-card border border-input rounded-lg px-3 py-2 text-foreground flex items-center justify-between hover:border-foreground/30 transition-colors"
           >
             <div className="min-w-0">
               <span className="block truncate">{selectedCollection?.title}</span>
               {selectedPath && selectedPath !== selectedCollection?.title && (
-                <span className="block text-xs text-muted truncate">{selectedPath}</span>
+                <span className="block text-xs text-muted-foreground truncate">{selectedPath}</span>
               )}
             </div>
             <span
@@ -380,7 +356,7 @@ function CollectionPicker({
                 e.stopPropagation()
                 handleClear()
               }}
-              className="ml-2 text-muted hover:text-ink shrink-0 cursor-pointer"
+              className="ml-2 text-muted-foreground hover:text-foreground shrink-0 cursor-pointer"
               aria-label={t('autoOrganize')}
             >
               &times;
@@ -388,7 +364,7 @@ function CollectionPicker({
           </button>
         ) : (
           <div className="relative">
-            <input
+            <Input
               ref={inputRef}
               type="text"
               value={query}
@@ -398,56 +374,41 @@ function CollectionPicker({
               }}
               onFocus={() => setIsOpen(true)}
               placeholder={isOpen ? t('searchCollections') : t('autoOrganize')}
-              className="w-full text-sm bg-white border border-border rounded-lg pl-8 pr-3 py-2 outline-none focus:border-ink text-ink placeholder:text-muted transition-colors"
+              className="pl-8"
               autoComplete="off"
             />
-            <svg
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted"
-              width="14"
-              height="14"
-              viewBox="0 0 16 16"
-              fill="none"
-              aria-hidden="true"
-            >
-              <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
-              <path
-                d="M11 11l3.5 3.5"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground h-3.5 w-3.5" aria-hidden="true" />
           </div>
         )}
 
         {isOpen && (
-          <div className="absolute z-10 mt-1 w-full bg-white border border-border rounded-lg shadow-lg max-h-52 overflow-y-auto">
+          <div className="absolute z-10 mt-1 w-full bg-card border border-input rounded-lg shadow-lg max-h-52 overflow-y-auto">
             <button
               type="button"
               onClick={handleClear}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-cream transition-colors ${
-                !selectedId ? 'text-accent font-medium' : 'text-muted'
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${
+                !selectedId ? 'text-orange-500 font-medium' : 'text-muted-foreground'
               }`}
             >
               {t('autoOrganize')}
             </button>
-            <div className="border-t border-border" />
+            <div className="border-t" />
 
             {filtered.length === 0 ? (
-              <p className="px-3 py-3 text-xs text-muted text-center">{t('noCollectionsFound')}</p>
+              <p className="px-3 py-3 text-xs text-muted-foreground text-center">{t('noCollectionsFound')}</p>
             ) : (
               filtered.map((c) => (
                 <button
                   key={c.id}
                   type="button"
                   onClick={() => handleSelect(c.id)}
-                  className={`w-full text-left px-3 py-2 hover:bg-cream transition-colors ${
-                    c.id === selectedId ? 'bg-cream' : ''
+                  className={`w-full text-left px-3 py-2 hover:bg-muted transition-colors ${
+                    c.id === selectedId ? 'bg-muted' : ''
                   }`}
                 >
-                  <span className="block text-sm text-ink truncate">{c.title}</span>
+                  <span className="block text-sm text-foreground truncate">{c.title}</span>
                   {c.path !== c.title && (
-                    <span className="block text-xs text-muted truncate">{c.path}</span>
+                    <span className="block text-xs text-muted-foreground truncate">{c.path}</span>
                   )}
                 </button>
               ))
@@ -498,14 +459,14 @@ function IdleState({
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-muted leading-relaxed">{t('description')}</p>
+      <p className="text-sm text-muted-foreground leading-relaxed">{t('description')}</p>
 
       {/* Goal — primary field */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="crawl-goal" className="text-xs font-medium text-ink">
+        <label htmlFor="crawl-goal" className="text-xs font-medium text-foreground">
           {t('goal')}
         </label>
-        <input
+        <Input
           ref={goalInputRef}
           id="crawl-goal"
           type="text"
@@ -513,7 +474,6 @@ function IdleState({
           onChange={(e) => onGoalChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t('goalPlaceholderModal')}
-          className="w-full text-sm bg-white border border-border rounded-lg px-3 py-2 outline-none focus:border-ink text-ink placeholder:text-muted transition-colors"
           autoComplete="off"
           spellCheck={false}
         />
@@ -521,17 +481,16 @@ function IdleState({
 
       {/* URL — secondary field */}
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="crawl-url" className="text-xs font-medium text-ink">
+        <label htmlFor="crawl-url" className="text-xs font-medium text-foreground">
           {t('pageUrl')}
         </label>
-        <input
+        <Input
           id="crawl-url"
           type="url"
           value={url}
           onChange={(e) => onUrlChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t('urlPlaceholder')}
-          className="w-full text-sm bg-white border border-border rounded-lg px-3 py-2 outline-none focus:border-ink text-ink placeholder:text-muted transition-colors"
           autoComplete="off"
           spellCheck={false}
         />
@@ -543,10 +502,10 @@ function IdleState({
         onSelect={onCollectionChange}
       />
 
-      <div className="bg-white border border-border rounded-lg px-4 py-3 text-xs text-muted leading-relaxed">
-        <span className="font-medium text-ink">{t('extensionNudge')}</span>{' '}
+      <div className="bg-card border rounded-lg px-4 py-3 text-xs text-muted-foreground leading-relaxed">
+        <span className="font-medium text-foreground">{t('extensionNudge')}</span>{' '}
         {t('extensionDescription')}{' '}
-        <span className="text-accent font-medium">{t('extensionComingSoon')}</span>
+        <span className="text-orange-500 font-medium">{t('extensionComingSoon')}</span>
       </div>
 
       <div className="flex items-center justify-between gap-2 pt-1">
@@ -560,21 +519,23 @@ function IdleState({
           )}
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="sm"
             onClick={onCancel}
-            className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
           >
             {t('cancel')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="sm"
             onClick={onSubmit}
             disabled={!canSubmit}
-            className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            className="bg-orange-500 text-white hover:bg-orange-500/90"
           >
             {t('importButton')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -590,12 +551,12 @@ function CrawlingState() {
   return (
     <div className="flex flex-col items-center gap-4 py-8">
       <div
-        className="w-8 h-8 border-2 border-border border-t-accent rounded-full animate-spin"
+        className="w-8 h-8 border-2 border-muted border-t-orange-500 rounded-full animate-spin"
         aria-hidden="true"
       />
       <div className="text-center">
-        <p className="text-sm font-medium text-ink">{t('analysing')}</p>
-        <p className="text-xs text-muted mt-1">{t('analysingHelp')}</p>
+        <p className="text-sm font-medium text-foreground">{t('analysing')}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t('analysingHelp')}</p>
       </div>
     </div>
   )
@@ -619,29 +580,21 @@ function FocusedDoneState({
   if (result.articles.length === 0) {
     return (
       <div className="flex flex-col gap-4">
-        <div className="flex items-start gap-3 bg-white border border-border rounded-lg px-4 py-3">
+        <div className="flex items-start gap-3 bg-card border rounded-lg px-4 py-3">
           <span className="text-base mt-0.5" aria-hidden="true">
             &#9888;&#65039;
           </span>
           <div>
-            <p className="text-sm font-medium text-ink">{t('noArticlesCreated')}</p>
+            <p className="text-sm font-medium text-foreground">{t('noArticlesCreated')}</p>
           </div>
         </div>
         <div className="flex items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={onImportAnother}
-            className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-          >
+          <Button type="button" variant="outline" size="sm" onClick={onImportAnother}>
             {t('tryAnother')}
-          </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="bg-ink text-cream text-sm font-medium px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors"
-          >
+          </Button>
+          <Button type="button" size="sm" onClick={onClose}>
             {t('done')}
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -650,31 +603,31 @@ function FocusedDoneState({
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center gap-2">
-        <span className="text-green-700 text-base" aria-hidden="true">
+        <span className="text-emerald-700 text-base" aria-hidden="true">
           &#10003;
         </span>
-        <p className="text-sm font-medium text-ink">
+        <p className="text-sm font-medium text-foreground">
           {t('focusedComplete', { count: result.articles.length })}
         </p>
       </div>
 
-      <div className="bg-white border border-border rounded-lg divide-y divide-border max-h-64 overflow-y-auto">
+      <div className="bg-card border rounded-lg divide-y max-h-64 overflow-y-auto">
         {result.articles.map((article) => (
           <a
             key={article.id}
             href={`/dashboard/articles/${article.id}/edit`}
-            className="flex items-center justify-between px-4 py-3 hover:bg-cream transition-colors group"
+            className="flex items-center justify-between px-4 py-3 hover:bg-muted transition-colors group"
           >
             <div className="min-w-0 flex-1">
-              <p className="text-sm text-ink truncate group-hover:text-accent transition-colors">
+              <p className="text-sm text-foreground truncate group-hover:text-orange-500 transition-colors">
                 {article.title}
               </p>
               {article.excerpt && (
-                <p className="text-xs text-muted truncate mt-0.5">{article.excerpt}</p>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">{article.excerpt}</p>
               )}
             </div>
             <svg
-              className="ml-3 shrink-0 text-muted group-hover:text-accent transition-colors"
+              className="ml-3 shrink-0 text-muted-foreground group-hover:text-orange-500 transition-colors"
               width="14"
               height="14"
               viewBox="0 0 16 16"
@@ -694,26 +647,18 @@ function FocusedDoneState({
       </div>
 
       {result.skippedPages && result.skippedPages.length > 0 && (
-        <p className="text-xs text-muted">
+        <p className="text-xs text-muted-foreground">
           {t('skippedPages', { count: result.skippedPages.length })}
         </p>
       )}
 
       <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onImportAnother}
-          className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onImportAnother}>
           {t('importAnotherUrl')}
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="bg-ink text-cream text-sm font-medium px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors"
-        >
+        </Button>
+        <Button type="button" size="sm" onClick={onClose}>
           {t('done')}
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -735,30 +680,27 @@ function ErrorState({
   const t = useTranslations('crawl')
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-start gap-3 bg-white border border-red-200 rounded-lg px-4 py-3">
-        <span className="text-base mt-0.5 text-red-500" aria-hidden="true">
+      <div className="flex items-start gap-3 bg-card border border-red-200 dark:border-red-800 rounded-lg px-4 py-3">
+        <span className="text-base mt-0.5 text-destructive" aria-hidden="true">
           &#x2715;
         </span>
         <div>
-          <p className="text-sm font-medium text-ink">{t('importFailed')}</p>
-          <p className="text-xs text-muted mt-0.5 break-words">{message}</p>
+          <p className="text-sm font-medium text-foreground">{t('importFailed')}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 break-words">{message}</p>
         </div>
       </div>
       <div className="flex items-center justify-end gap-2">
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-        >
+        <Button type="button" variant="outline" size="sm" onClick={onClose}>
           {t('cancel')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          size="sm"
           onClick={onRetry}
-          className="bg-accent text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-accent/90 transition-colors"
+          className="bg-orange-500 text-white hover:bg-orange-500/90"
         >
           {t('tryAgain')}
-        </button>
+        </Button>
       </div>
     </div>
   )
@@ -771,15 +713,15 @@ function ErrorState({
 export function SensitiveDataWarnings({ warnings }: { warnings: string[] }) {
   const t = useTranslations('crawl')
   return (
-    <div className="flex items-start gap-3 bg-white border border-amber-200 rounded-lg px-4 py-3">
+    <div className="flex items-start gap-3 bg-card border border-amber-200 dark:border-amber-800 rounded-lg px-4 py-3">
       <span className="text-base mt-0.5 text-amber-500" aria-hidden="true">
         &#9888;
       </span>
       <div>
-        <p className="text-xs font-medium text-ink">{t('sensitiveDataWarning')}</p>
+        <p className="text-xs font-medium text-foreground">{t('sensitiveDataWarning')}</p>
         <ul className="mt-1 space-y-0.5">
           {warnings.map((w) => (
-            <li key={w} className="text-xs text-muted">
+            <li key={w} className="text-xs text-muted-foreground">
               {w}
             </li>
           ))}

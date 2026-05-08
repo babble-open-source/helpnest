@@ -118,7 +118,7 @@ export default async function ConversationPage({
   }))
 
   return (
-    <div className="flex flex-col lg:flex-row h-full">
+    <div className="flex flex-col lg:flex-row h-full min-h-0">
       <ConversationDetail
         conversation={serializedConv}
         members={serializedMembers}
