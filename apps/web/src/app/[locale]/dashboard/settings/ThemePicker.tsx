@@ -400,17 +400,17 @@ export function ThemePicker({
           <div>
             <Label className="text-xs mb-1">{t('cornerRadius')}</Label>
             <Select
-              value={customRadius}
+              value={customRadius || '__default'}
               onValueChange={(value) => {
                 setSaved(false)
-                setCustomRadius(value)
+                setCustomRadius(value === '__default' ? '' : value)
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder={t('useThemeRadius')} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">{t('useThemeRadius')}</SelectItem>
+                <SelectItem value="__default">{t('useThemeRadius')}</SelectItem>
                 {radiusOptions.map((option) => (
                   <SelectItem key={option} value={option}>
                     {option.toUpperCase()}

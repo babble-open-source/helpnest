@@ -23,6 +23,8 @@ import {
   Sun,
   ChevronsUpDown,
   Building2,
+  Plus,
+  Check,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
@@ -45,6 +47,7 @@ interface Props {
   workspaceName: string
   workspaceLogo?: string | null
   workspaceBrandText?: string | null
+  allWorkspaces: { id: string; name: string; slug: string; logo: string | null }[]
   userName: string
   userEmail: string
   userInitial: string
@@ -66,6 +69,7 @@ export function DashboardSidebar({
   workspaceName,
   workspaceLogo,
   workspaceBrandText,
+  allWorkspaces,
   userName,
   userEmail,
   userInitial,
@@ -80,6 +84,16 @@ export function DashboardSidebar({
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
+
+  async function switchWorkspace(targetId: string) {
+    if (targetId === workspaceId) return
+    await fetch('/api/workspaces/switch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId: targetId }),
+    })
+    window.location.assign('/dashboard')
+  }
 
   const navItems = [
     { href: '/dashboard', label: t('overview') },
@@ -134,16 +148,30 @@ export function DashboardSidebar({
                   <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
-                <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium truncate">{displayName}</p>
-                  <p className="text-xs text-muted-foreground">Current workspace</p>
-                </div>
+              <DropdownMenuContent align="start" className="w-64">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Workspaces</div>
+                {allWorkspaces.map((ws) => (
+                  <DropdownMenuItem
+                    key={ws.id}
+                    onClick={() => switchWorkspace(ws.id)}
+                    className={cn('cursor-pointer flex items-center gap-2.5', ws.id === workspaceId && 'bg-accent')}
+                  >
+                      {ws.logo ? (
+                        <NextImage src={ws.logo} alt="" width={20} height={20} unoptimized className="w-5 h-5 rounded object-contain shrink-0" />
+                      ) : (
+                        <div className="w-5 h-5 rounded bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-semibold shrink-0">
+                          {ws.name[0]?.toUpperCase() ?? '?'}
+                        </div>
+                      )}
+                      <span className="truncate flex-1">{ws.name}</span>
+                      {ws.id === workspaceId && <Check className="w-4 h-4 text-foreground shrink-0" />}
+                  </DropdownMenuItem>
+                ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <a href={`/${locale}/workspaces`} className="cursor-pointer">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Switch workspace
+                  <a href={`/${locale}/onboarding`} className="cursor-pointer">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create workspace
                   </a>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -168,16 +196,30 @@ export function DashboardSidebar({
                   {workspaceIcon('sm')}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent side="right" align="start" className="w-56">
-                <div className="px-2 py-1.5">
-                  <p className="text-sm font-medium truncate">{displayName}</p>
-                  <p className="text-xs text-muted-foreground">Current workspace</p>
-                </div>
+              <DropdownMenuContent side="right" align="start" className="w-64">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Workspaces</div>
+                {allWorkspaces.map((ws) => (
+                  <DropdownMenuItem
+                    key={ws.id}
+                    onClick={() => switchWorkspace(ws.id)}
+                    className={cn('cursor-pointer flex items-center gap-2.5', ws.id === workspaceId && 'bg-accent')}
+                  >
+                      {ws.logo ? (
+                        <NextImage src={ws.logo} alt="" width={20} height={20} unoptimized className="w-5 h-5 rounded object-contain shrink-0" />
+                      ) : (
+                        <div className="w-5 h-5 rounded bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-semibold shrink-0">
+                          {ws.name[0]?.toUpperCase() ?? '?'}
+                        </div>
+                      )}
+                      <span className="truncate flex-1">{ws.name}</span>
+                      {ws.id === workspaceId && <Check className="w-4 h-4 text-foreground shrink-0" />}
+                  </DropdownMenuItem>
+                ))}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <a href={`/${locale}/workspaces`} className="cursor-pointer">
-                    <Building2 className="w-4 h-4 mr-2" />
-                    Switch workspace
+                  <a href={`/${locale}/onboarding`} className="cursor-pointer">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create workspace
                   </a>
                 </DropdownMenuItem>
               </DropdownMenuContent>

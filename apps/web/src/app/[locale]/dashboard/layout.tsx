@@ -33,16 +33,29 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const columns = await getWorkspaceColumnSet()
 
-  const workspace = await prisma.workspace.findUnique({
-    where: { id: member.workspaceId },
-    select: {
-      name: true,
-      logo: true,
-      ...(columns.has('brandText') ? { brandText: true } : {}),
-    },
-  })
+  const [workspace, allMemberships] = await Promise.all([
+    prisma.workspace.findUnique({
+      where: { id: member.workspaceId },
+      select: {
+        name: true,
+        logo: true,
+        slug: true,
+        ...(columns.has('brandText') ? { brandText: true } : {}),
+      },
+    }),
+    prisma.member.findMany({
+      where: { userId, deactivatedAt: null },
+      select: {
+        workspace: {
+          select: { id: true, name: true, slug: true, logo: true },
+        },
+      },
+      orderBy: { workspace: { name: 'asc' } },
+    }),
+  ])
   if (!workspace) redirect('/login')
 
+  const allWorkspaces = allMemberships.map((m) => m.workspace)
   const userInitial = session.user.name?.[0] ?? session.user.email?.[0] ?? 'U'
 
   return (
@@ -78,6 +91,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
             workspaceName={workspace.name}
             workspaceLogo={workspace.logo}
             workspaceBrandText={workspace.brandText ?? null}
+            allWorkspaces={allWorkspaces}
             userName={session.user.name ?? 'User'}
             userEmail={session.user.email ?? ''}
             userInitial={userInitial}
