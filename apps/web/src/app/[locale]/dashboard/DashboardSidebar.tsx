@@ -272,6 +272,15 @@ export function DashboardSidebar({
     </div>
   )
 
+  if (!mounted) {
+    return (
+      <>
+        <div className="lg:hidden fixed top-0 inset-x-0 z-50 h-14 border-b flex items-center px-4" />
+        <aside className="hidden lg:flex flex-col border-r shrink-0 w-60" />
+      </>
+    )
+  }
+
   return (
     <>
       {/* Mobile top bar */}
@@ -292,11 +301,11 @@ export function DashboardSidebar({
           {workspaceLogo ? (
             <NextImage src={workspaceLogo} alt="" width={24} height={24} unoptimized className="w-6 h-6 rounded object-contain" />
           ) : (
-            <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
+            <div className="w-6 h-6 rounded bg-zinc-900 text-zinc-50 flex items-center justify-center text-xs font-semibold">
               {workspaceName[0]?.toUpperCase() ?? '?'}
             </div>
           )}
-          <span className="text-sm font-semibold text-foreground">{displayName}</span>
+          <span className="text-sm font-semibold">{displayName}</span>
         </Link>
       </div>
 
