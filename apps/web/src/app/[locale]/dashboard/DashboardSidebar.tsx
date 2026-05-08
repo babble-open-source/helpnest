@@ -21,6 +21,8 @@ import {
   LogOut,
   Moon,
   Sun,
+  ChevronsUpDown,
+  Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
@@ -118,14 +120,34 @@ export function DashboardSidebar({
       {/* Workspace header */}
       <div className={cn(
         'flex items-center shrink-0',
-        isMobile || !collapsed ? 'gap-2 px-4 py-3' : 'flex-col gap-1.5 px-1 py-3'
+        isMobile || !collapsed ? 'gap-1 px-2 py-3' : 'flex-col gap-1.5 px-1 py-3'
       )}>
         {(isMobile || !collapsed) ? (
           <>
-            {workspaceIcon()}
-            <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">
-              {displayName}
-            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="flex items-center gap-2.5 flex-1 min-w-0 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors text-left cursor-pointer">
+                  {workspaceIcon()}
+                  <span className="text-sm font-semibold text-foreground truncate flex-1">
+                    {displayName}
+                  </span>
+                  <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium truncate">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">Current workspace</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a href={`/${locale}/workspaces`} className="cursor-pointer">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Switch workspace
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {!isMobile && (
               <Button
                 variant="ghost"
@@ -140,9 +162,26 @@ export function DashboardSidebar({
           </>
         ) : (
           <>
-            <SimpleTooltip content={displayName} side="right">
-              {workspaceIcon('sm')}
-            </SimpleTooltip>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="cursor-pointer rounded-lg p-1 hover:bg-accent transition-colors">
+                  {workspaceIcon('sm')}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side="right" align="start" className="w-56">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium truncate">{displayName}</p>
+                  <p className="text-xs text-muted-foreground">Current workspace</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <a href={`/${locale}/workspaces`} className="cursor-pointer">
+                    <Building2 className="w-4 h-4 mr-2" />
+                    Switch workspace
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="ghost"
               size="icon"
@@ -272,31 +311,24 @@ export function DashboardSidebar({
     </div>
   )
 
-  if (!mounted) {
-    return (
-      <>
-        <div className="lg:hidden fixed top-0 inset-x-0 z-50 h-14 border-b flex items-center px-4" />
-        <aside className="hidden lg:flex flex-col border-r shrink-0 w-60" />
-      </>
-    )
-  }
-
   return (
     <>
       {/* Mobile top bar */}
       <div className="lg:hidden fixed top-0 inset-x-0 z-50 h-14 bg-background border-b flex items-center px-4">
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 -ms-1 me-3 text-muted-foreground">
-              <Menu className="h-5 w-5" />
-              <span className="sr-only">{tc('openMenu')}</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="w-72 p-0 bg-background">
-            <SheetTitle className="sr-only">{tc('openMenu')}</SheetTitle>
-            {sidebarContent(true)}
-          </SheetContent>
-        </Sheet>
+        {mounted && (
+          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 -ms-1 me-3 text-muted-foreground">
+                <Menu className="h-5 w-5" />
+                <span className="sr-only">{tc('openMenu')}</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0 bg-background">
+              <SheetTitle className="sr-only">{tc('openMenu')}</SheetTitle>
+              {sidebarContent(true)}
+            </SheetContent>
+          </Sheet>
+        )}
         <Link href="/dashboard" className="flex items-center gap-2">
           {workspaceLogo ? (
             <NextImage src={workspaceLogo} alt="" width={24} height={24} unoptimized className="w-6 h-6 rounded object-contain" />
@@ -316,7 +348,12 @@ export function DashboardSidebar({
           collapsed ? 'w-14' : 'w-60'
         )}
       >
-        {sidebarContent(false)}
+        {mounted ? sidebarContent(false) : (
+          <div className="flex items-center gap-2 px-4 py-3">
+            <div className="w-7 h-7 rounded-md bg-zinc-200 shrink-0" />
+            <div className="h-4 w-32 bg-zinc-200 rounded" />
+          </div>
+        )}
       </aside>
     </>
   )
