@@ -14,6 +14,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 
 interface ImportResult {
   collectionsCreated: number
@@ -81,14 +82,14 @@ export function FreshdeskImportModal({ onClose }: Props) {
                 {t('subdomain')} <span className="text-destructive">*</span>
               </Label>
               <div className="flex items-center border border-input rounded-md overflow-hidden focus-within:ring-2 focus-within:ring-ring">
-                <input
+                <Input
                   id="freshdesk-subdomain"
                   type="text"
                   value={subdomain}
                   onChange={(e) => setSubdomain(e.target.value)}
                   placeholder="mycompany"
                   required
-                  className="flex-1 px-3 py-2 text-sm bg-background text-foreground focus:outline-none"
+                  className="flex-1 border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0"
                 />
                 <span className="px-3 py-2 text-sm text-muted-foreground bg-muted border-l border-input whitespace-nowrap">
                   .freshdesk.com
@@ -116,21 +117,15 @@ export function FreshdeskImportModal({ onClose }: Props) {
 
             <div className="space-y-1.5">
               <Label>{t('importAs')}</Label>
-              <div className="flex gap-4">
-                {(['DRAFT', 'PUBLISHED'] as const).map((s) => (
-                  <label key={s} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="freshdesk-status"
-                      value={s}
-                      checked={status === s}
-                      onChange={() => setStatus(s)}
-                      className="accent-primary"
-                    />
-                    <span className="text-sm text-foreground">{s === 'DRAFT' ? tc('draft') : tc('published')}</span>
-                  </label>
-                ))}
-              </div>
+              <ToggleGroup
+                type="single"
+                value={status}
+                onValueChange={(value) => { if (value) setStatus(value as 'DRAFT' | 'PUBLISHED') }}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="DRAFT" className="text-sm">{tc('draft')}</ToggleGroupItem>
+                <ToggleGroupItem value="PUBLISHED" className="text-sm">{tc('published')}</ToggleGroupItem>
+              </ToggleGroup>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}

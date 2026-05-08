@@ -29,7 +29,7 @@ export function EditorBubbleMenu({ editor, active }: Props) {
       appendTo={() => document.body}
       shouldShow={({ from, to }: { from: number; to: number }) => active && from !== to}
     >
-      <div className="flex items-center gap-0.5 bg-ink rounded-lg px-1.5 py-1 shadow-lg">
+      <div className="flex items-center gap-0.5 bg-primary rounded-lg px-1.5 py-1 shadow-lg">
         {showLinkInput ? (
           <div className="flex items-center gap-1">
             <input
@@ -38,11 +38,11 @@ export function EditorBubbleMenu({ editor, active }: Props) {
               onChange={e => setLinkUrl(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') applyLink(); if (e.key === 'Escape') setShowLinkInput(false) }}
               placeholder="https://"
-              className="text-xs bg-transparent text-cream border-b border-cream/50 outline-none w-40 px-1"
+              className="text-xs bg-transparent text-primary-foreground border-b border-primary-foreground/50 outline-none w-40 px-1"
               autoFocus
             />
-            <button onClick={applyLink} className="text-xs text-cream hover:text-white px-1">✓</button>
-            <button onClick={() => setShowLinkInput(false)} className="text-xs text-cream/60 hover:text-cream px-1">✕</button>
+            <button onClick={applyLink} className="text-xs text-primary-foreground hover:text-white px-1">✓</button>
+            <button onClick={() => setShowLinkInput(false)} className="text-xs text-primary-foreground/60 hover:text-primary-foreground px-1">✕</button>
           </div>
         ) : (
           <>
@@ -57,7 +57,7 @@ export function EditorBubbleMenu({ editor, active }: Props) {
                 key={label}
                 onClick={cmd}
                 className={`text-xs px-1.5 py-0.5 rounded transition-colors ${className ?? ''} ${
-                  active ? 'bg-cream text-ink' : 'text-cream hover:bg-white/10'
+                  active ? 'bg-muted text-foreground' : 'text-primary-foreground hover:bg-primary-foreground/10'
                 }`}
               >
                 {label}
@@ -69,7 +69,7 @@ export function EditorBubbleMenu({ editor, active }: Props) {
                 key={level}
                 onClick={() => editor.chain().focus().toggleHeading({ level: level as 1 | 2 | 3 }).run()}
                 className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
-                  editor.isActive('heading', { level }) ? 'bg-cream text-ink' : 'text-cream hover:bg-white/10'
+                  editor.isActive('heading', { level }) ? 'bg-muted text-foreground' : 'text-primary-foreground hover:bg-primary-foreground/10'
                 }`}
               >
                 H{level}
@@ -83,7 +83,7 @@ export function EditorBubbleMenu({ editor, active }: Props) {
                 setShowLinkInput(true)
               }}
               className={`text-xs px-1.5 py-0.5 rounded transition-colors ${
-                editor.isActive('link') ? 'bg-cream text-ink' : 'text-cream hover:bg-white/10'
+                editor.isActive('link') ? 'bg-muted text-foreground' : 'text-primary-foreground hover:bg-primary-foreground/10'
               }`}
             >
               🔗

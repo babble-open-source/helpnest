@@ -229,13 +229,15 @@ export function MembersSection({ members: initialMembers, currentUserId, callerR
                     {inviteCopied ? t('copied') : t('copy')}
                   </Button>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="sm"
                   onClick={() => { setInviteUrl(null); setShowInviteForm(false) }}
-                  className="text-xs text-muted-foreground underline hover:no-underline"
+                  className="h-auto p-0 text-xs text-muted-foreground"
                 >
                   {t('done')}
-                </button>
+                </Button>
               </>
             ) : (
               <form onSubmit={(e) => void handleInvite(e)} className="space-y-3">

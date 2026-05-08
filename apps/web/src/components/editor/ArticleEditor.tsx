@@ -1,6 +1,9 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
@@ -266,81 +269,89 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
     {editorThemeCSS && (
       <style dangerouslySetInnerHTML={{ __html: `.hn-prose-scope { ${editorThemeCSS} }` }} />
     )}
-    <div className="flex h-screen bg-cream overflow-hidden">
+    <div className="flex h-screen bg-background overflow-hidden">
       {/* Left outline panel */}
       {showOutline && editor && <EditorOutline editor={editor} />}
 
       {/* Editor area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top bar */}
-        <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-6 py-3 bg-card border-b shrink-0">
           <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
-            <LocaleLink href="/dashboard/articles" className="text-muted hover:text-ink transition-colors text-sm shrink-0">
+            <LocaleLink href="/dashboard/articles" className="text-muted-foreground hover:text-foreground transition-colors text-sm shrink-0">
               {t('backToArticles')}
             </LocaleLink>
-            <div className="flex items-center gap-1 border-s border-border ps-3">
+            <div className="flex items-center gap-1 border-s ps-3">
               {/* Outline toggle */}
               <Tooltip content={t('toggleOutline')} side="bottom" align="start">
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowOutline((v) => !v)}
                   aria-label={t('toggleOutline')}
-                  className={`p-1.5 rounded transition-colors ${showOutline ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
+                  className={`h-7 w-7 ${showOutline ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h8M4 14h12M4 18h6" />
                   </svg>
-                </button>
+                </Button>
               </Tooltip>
               {/* Meta sidebar toggle */}
               <Tooltip content={t('toggleProperties')} side="bottom" align="start">
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => setShowMeta((v) => !v)}
                   aria-label={t('toggleProperties')}
-                  className={`p-1.5 rounded transition-colors ${showMeta ? 'bg-ink text-cream' : 'text-muted hover:text-ink hover:bg-cream'}`}
+                  className={`h-7 w-7 ${showMeta ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' : ''}`}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
                     <rect x="14" y="10" width="6" height="8" rx="1" strokeWidth={2} />
                   </svg>
-                </button>
+                </Button>
               </Tooltip>
               {/* Editor mode switch */}
-              <div className="ms-1 inline-flex items-center rounded-lg border border-border bg-cream p-0.5">
+              <div className="ms-1 inline-flex items-center rounded-lg border bg-muted p-0.5">
                 <Tooltip content={t('classicToolbar')} side="bottom" align="start">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setAndPersistEditorMode('classic')}
                     aria-pressed={editorMode === 'classic'}
                     aria-label={t('classicToolbar')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    className={`px-2.5 py-1 h-auto text-xs font-medium ${
                       editorMode === 'classic'
-                        ? 'bg-white text-ink shadow-sm'
-                        : 'text-muted hover:text-ink'
+                        ? 'bg-card text-foreground shadow-sm hover:bg-card'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {t('classic')}
-                  </button>
+                  </Button>
                 </Tooltip>
                 <Tooltip content={t('notionStyle')} side="bottom" align="start">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setAndPersistEditorMode('notion')}
                     aria-pressed={editorMode === 'notion'}
                     aria-label={t('notionStyle')}
-                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                    className={`px-2.5 py-1 h-auto text-xs font-medium ${
                       editorMode === 'notion'
-                        ? 'bg-white text-ink shadow-sm'
-                        : 'text-muted hover:text-ink'
+                        ? 'bg-card text-foreground shadow-sm hover:bg-card'
+                        : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
                     {t('notion')}
-                  </button>
+                  </Button>
                 </Tooltip>
               </div>
             </div>
             <span className={`min-w-0 shrink-0 text-xs px-2 py-0.5 rounded-full ${
-              saveStatus === 'saved' ? 'text-green bg-green/10' :
-              saveStatus === 'saving' ? 'text-muted bg-cream' :
-              saveStatus === 'error' ? 'text-red-500 bg-cream' :
-              'text-accent bg-accent/10'
+              saveStatus === 'saved' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' :
+              saveStatus === 'saving' ? 'text-muted-foreground bg-muted' :
+              saveStatus === 'error' ? 'text-red-500 bg-muted' :
+              'text-orange-500 bg-orange-500/10'
             }`}>
               {saveStatus === 'saved' ? t('saved') :
                saveStatus === 'saving' ? tCommon('saving') :
@@ -350,7 +361,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {hasDraft && saveStatus === 'saved' && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500">
                 {t('draftPendingPublish')}
               </span>
             )}
@@ -360,7 +371,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
                   href={`/${workspaceSlug}/help/${savedCollectionSlug}/${savedSlug}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-ink transition-colors border border-border rounded-lg px-3 py-1.5"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors border rounded-lg px-3 py-1.5"
                   title={
                     slug !== savedSlug || collectionSlug !== savedCollectionSlug
                       ? t('urlUnsaved')
@@ -376,20 +387,24 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
               </>
             )}
             <Tooltip content={t('history')} side="bottom" align="end">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={loadVersions}
-                className="text-sm text-muted hover:text-ink transition-colors px-3 py-1.5"
+                className="text-sm px-3 py-1.5 h-auto"
               >
                 {t('history')}
-              </button>
+              </Button>
             </Tooltip>
             <Tooltip content={t('saveDescription')} side="bottom" align="end">
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => save()}
-                className="text-sm text-muted hover:text-ink transition-colors px-3 py-1.5"
+                className="text-sm px-3 py-1.5 h-auto"
               >
                 {tCommon('save')}
-              </button>
+              </Button>
             </Tooltip>
             <Tooltip
               content={status === 'PUBLISHED'
@@ -398,12 +413,12 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
               side="bottom"
               align="end"
             >
-              <button
+              <Button
                 onClick={publish}
-                className="text-sm bg-accent text-white rounded-lg px-4 py-1.5 hover:bg-accent/90 transition-colors font-medium"
+                className="text-sm bg-orange-500 text-white rounded-lg px-4 py-1.5 h-auto hover:bg-orange-500/90 transition-colors font-medium"
               >
                 {status === 'PUBLISHED' ? tCommon('update') : tCommon('publish')}
-              </button>
+              </Button>
             </Tooltip>
           </div>
         </div>
@@ -427,27 +442,29 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
         <div className="flex-1 overflow-y-auto">
           {/* AI banner: derive visibility from current state so it clears automatically after publish */}
           {!dismissedAiBanner && article.aiGenerated && (status === 'DRAFT' || (status === 'PUBLISHED' && hasDraft)) && (
-            <div className="border-b border-border bg-accent/5 px-6 py-3 flex items-start justify-between gap-4">
-              <p className="text-sm text-ink">
+            <div className="border-b bg-orange-500/5 px-6 py-3 flex items-start justify-between gap-4">
+              <p className="text-sm text-foreground">
                 {status === 'DRAFT'
                   ? t('aiDraftBanner')
                   : t('aiUpdateBanner')}
               </p>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => setDismissedAiBanner(true)}
-                className="shrink-0 text-muted hover:text-ink text-xs mt-0.5"
+                className="shrink-0 text-xs mt-0.5 h-auto py-0.5"
               >
                 {t('dismiss')}
-              </button>
+              </Button>
             </div>
           )}
           <div className="max-w-2xl mx-auto px-8 py-10">
             {/* Title */}
-            <input
+            <Input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t('articleTitle')}
-              className="w-full font-serif text-4xl text-ink bg-transparent outline-none placeholder:text-muted/40 mb-6 leading-tight"
+              className="w-full font-semibold text-4xl text-foreground bg-transparent border-none shadow-none outline-none placeholder:text-muted-foreground/40 mb-6 leading-tight px-0 focus-visible:ring-0 h-auto"
             />
             {/* Editor body */}
             <EditorContent
@@ -458,7 +475,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-2 border-t border-border bg-white flex items-center gap-4 text-xs text-muted shrink-0">
+        <div className="px-6 py-2 border-t bg-card flex items-center gap-4 text-xs text-muted-foreground shrink-0">
           <span>{t('words', { count: wordCount })}</span>
           <span>&middot;</span>
           <span>{t('readTime', { minutes: readTime })}</span>
@@ -488,49 +505,37 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
       />}
 
       {/* Version history modal */}
-      {showVersions && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40"
-          onClick={() => setShowVersions(false)}
-        >
-          <div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-              <h2 className="font-medium text-ink">{t('versionHistory')}</h2>
-              <button
-                onClick={() => setShowVersions(false)}
-                className="text-muted hover:text-ink"
-              >
-                &#x2715;
-              </button>
-            </div>
-            <div className="max-h-96 overflow-y-auto divide-y divide-border">
-              {versions.length === 0 ? (
-                <p className="p-6 text-center text-muted text-sm">{t('noVersions')}</p>
-              ) : (
-                versions.map((v) => (
-                  <div key={v.id} className="flex items-center justify-between p-4 hover:bg-cream">
-                    <div>
-                      <p className="text-sm font-medium text-ink">{t('version', { number: v.version })}</p>
-                      <p className="text-xs text-muted mt-0.5">
-                        {format.dateTime(new Date(v.createdAt), { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} &middot; {v.author.name ?? v.author.email}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => restoreVersion(v.content, v.title)}
-                      className="text-xs text-accent hover:underline"
-                    >
-                      {t('restore')}
-                    </button>
+      <Dialog open={showVersions} onOpenChange={setShowVersions}>
+        <DialogContent className="max-w-lg p-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b">
+            <DialogTitle className="font-medium text-foreground">{t('versionHistory')}</DialogTitle>
+          </DialogHeader>
+          <div className="max-h-96 overflow-y-auto divide-y divide-border">
+            {versions.length === 0 ? (
+              <p className="p-6 text-center text-muted-foreground text-sm">{t('noVersions')}</p>
+            ) : (
+              versions.map((v) => (
+                <div key={v.id} className="flex items-center justify-between p-4 hover:bg-muted">
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{t('version', { number: v.version })}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {format.dateTime(new Date(v.createdAt), { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} &middot; {v.author.name ?? v.author.email}
+                    </p>
                   </div>
-                ))
-              )}
-            </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => restoreVersion(v.content, v.title)}
+                    className="text-xs text-orange-500 hover:text-orange-500 hover:underline h-auto py-0.5"
+                  >
+                    {t('restore')}
+                  </Button>
+                </div>
+              ))
+            )}
           </div>
-        </div>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
     </>
   )

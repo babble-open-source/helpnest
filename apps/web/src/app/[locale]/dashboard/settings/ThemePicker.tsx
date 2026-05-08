@@ -212,7 +212,7 @@ export function ThemePicker({
           setCustomRadius(generated.customRadius)
         }}
       />
-      <p className="text-sm font-medium text-ink mb-3">{t('theme')}</p>
+      <p className="text-sm font-medium text-foreground mb-3">{t('theme')}</p>
       {/* Theme grid — keep with original inline styles (help center preview) */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {themes.map((theme) => (
@@ -274,13 +274,13 @@ export function ThemePicker({
       </div>
 
       <div className="flex items-center gap-1 mb-3">
-        <p className="text-sm font-medium text-ink">{t('font')}</p>
+        <p className="text-sm font-medium text-foreground">{t('font')}</p>
         <span className="group relative flex items-center">
-          <svg className="w-3.5 h-3.5 text-muted cursor-default" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className="w-3.5 h-3.5 text-muted-foreground cursor-default" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <circle cx="12" cy="12" r="10" strokeWidth={2} />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 16v-4m0-4h.01" />
           </svg>
-          <span className="pointer-events-none absolute bottom-full start-0 mb-2 w-56 rounded-lg bg-ink px-3 py-2 text-xs text-cream opacity-0 group-hover:opacity-100 transition-opacity z-10">
+          <span className="pointer-events-none absolute bottom-full start-0 mb-2 w-56 rounded-lg bg-primary px-3 py-2 text-xs text-primary-foreground opacity-0 group-hover:opacity-100 transition-opacity z-10">
             {t('fontTooltip')}
           </span>
         </span>
@@ -298,15 +298,15 @@ export function ThemePicker({
               : 'border-border hover:border-muted'
           }`}
         >
-          <div className="border-b border-border bg-cream px-4 py-3">
-            <p className="text-lg text-ink font-serif" style={{ fontFamily: selectedTheme.fonts.heading }}>Aa</p>
-            <p className="text-sm text-ink mt-1" style={{ fontFamily: selectedTheme.fonts.body }}>
+          <div className="border-b border px-4 py-3 bg-muted">
+            <p className="text-lg text-foreground font-semibold" style={{ fontFamily: selectedTheme.fonts.heading }}>Aa</p>
+            <p className="text-sm text-foreground mt-1" style={{ fontFamily: selectedTheme.fonts.body }}>
               Help articles, search, and AI answers
             </p>
           </div>
-          <div className="bg-white px-4 py-3">
-            <p className="text-sm font-medium text-ink">{t('matchTheme')}</p>
-            <p className="text-xs text-muted">
+          <div className="bg-card px-4 py-3">
+            <p className="text-sm font-medium text-foreground">{t('matchTheme')}</p>
+            <p className="text-xs text-muted-foreground">
               {selectedTheme.fonts.heading.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '')} / {selectedTheme.fonts.body.split(',')[0]?.trim().replace(/^['"]|['"]$/g, '')}
             </p>
           </div>
@@ -325,17 +325,17 @@ export function ThemePicker({
                 : 'border-border hover:border-muted'
             }`}
           >
-            <div className="border-b border-border bg-cream px-4 py-3">
-              <p className="text-lg text-ink" style={{ fontFamily: preset.fonts.heading }}>
+            <div className="border-b border px-4 py-3 bg-muted">
+              <p className="text-lg text-foreground" style={{ fontFamily: preset.fonts.heading }}>
                 Aa
               </p>
-              <p className="text-sm text-ink mt-1" style={{ fontFamily: preset.fonts.body }}>
+              <p className="text-sm text-foreground mt-1" style={{ fontFamily: preset.fonts.body }}>
                 {t('fontPreview')}
               </p>
             </div>
-            <div className="bg-white px-4 py-3">
-              <p className="text-sm font-medium text-ink">{preset.headingLabel}</p>
-              <p className="text-xs text-muted">{preset.bodyLabel}</p>
+            <div className="bg-card px-4 py-3">
+              <p className="text-sm font-medium text-foreground">{preset.headingLabel}</p>
+              <p className="text-xs text-muted-foreground">{preset.bodyLabel}</p>
             </div>
           </button>
         ))}
@@ -543,13 +543,13 @@ export function ThemePicker({
           <div className="mt-3 rounded-xl border bg-card px-4 py-3">
             <p className="text-xs text-muted-foreground mb-1">{t('customFontPreview')}</p>
             <p
-              className="text-xl text-ink"
+              className="text-xl text-foreground"
               style={{ fontFamily: customHeadingFontFamily || undefined }}
             >
               {workspaceSlug} help center
             </p>
             <p
-              className="text-sm text-muted mt-1"
+              className="text-sm text-muted-foreground mt-1"
               style={{ fontFamily: customBodyFontFamily || undefined }}
             >
               {t('bodyFontPreview')}

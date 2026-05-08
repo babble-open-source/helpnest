@@ -77,7 +77,7 @@ export default async function ArticlesPage(props: {
       {/* Header */}
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
-          <h1 className="font-serif text-2xl sm:text-3xl text-foreground">{t('articles')}</h1>
+          <h1 className="font-semibold text-2xl sm:text-3xl text-foreground">{t('articles')}</h1>
           <p className="text-muted-foreground text-sm mt-1">
             {tc('articles', { count: articles.length })}
           </p>

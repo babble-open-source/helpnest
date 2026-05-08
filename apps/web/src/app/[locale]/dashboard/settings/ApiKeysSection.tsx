@@ -149,13 +149,15 @@ export function ApiKeysSection({ demoMode = false }: { demoMode?: boolean }) {
                 {copied ? tm('copied') : tm('copy')}
               </Button>
             </div>
-            <button
+            <Button
               type="button"
+              variant="link"
+              size="sm"
               onClick={() => setNewRawKey(null)}
-              className="mt-3 text-xs text-muted-foreground underline hover:no-underline"
+              className="mt-3 h-auto p-0 text-xs text-muted-foreground"
             >
               {t('dismiss')}
-            </button>
+            </Button>
           </div>
         )}
 

@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { cn } from '@/lib/utils'
 
 interface ImportResult {
@@ -136,21 +137,15 @@ export function CsvImportModal({ onClose }: Props) {
 
             <div className="space-y-1.5">
               <Label>{t('importAs')}</Label>
-              <div className="flex gap-4">
-                {(['DRAFT', 'PUBLISHED'] as const).map((s) => (
-                  <label key={s} className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="csv-status"
-                      value={s}
-                      checked={status === s}
-                      onChange={() => setStatus(s)}
-                      className="accent-primary"
-                    />
-                    <span className="text-sm text-foreground">{s === 'DRAFT' ? tc('draft') : tc('published')}</span>
-                  </label>
-                ))}
-              </div>
+              <ToggleGroup
+                type="single"
+                value={status}
+                onValueChange={(value) => { if (value) setStatus(value as 'DRAFT' | 'PUBLISHED') }}
+                className="justify-start"
+              >
+                <ToggleGroupItem value="DRAFT" className="text-sm">{tc('draft')}</ToggleGroupItem>
+                <ToggleGroupItem value="PUBLISHED" className="text-sm">{tc('published')}</ToggleGroupItem>
+              </ToggleGroup>
             </div>
 
             {error && <p className="text-sm text-destructive">{error}</p>}

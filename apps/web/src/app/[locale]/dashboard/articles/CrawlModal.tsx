@@ -337,15 +337,16 @@ function CollectionPicker({
       </label>
       <div ref={containerRef} className="relative">
         {selectedId && !isOpen ? (
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={() => {
               setIsOpen(true)
               setTimeout(() => inputRef.current?.focus(), 0)
             }}
-            className="w-full text-left text-sm bg-card border border-input rounded-lg px-3 py-2 text-foreground flex items-center justify-between hover:border-foreground/30 transition-colors"
+            className="w-full justify-between text-sm font-normal h-auto px-3 py-2"
           >
-            <div className="min-w-0">
+            <div className="min-w-0 text-left">
               <span className="block truncate">{selectedCollection?.title}</span>
               {selectedPath && selectedPath !== selectedCollection?.title && (
                 <span className="block text-xs text-muted-foreground truncate">{selectedPath}</span>
@@ -361,7 +362,7 @@ function CollectionPicker({
             >
               &times;
             </span>
-          </button>
+          </Button>
         ) : (
           <div className="relative">
             <Input
@@ -383,34 +384,38 @@ function CollectionPicker({
 
         {isOpen && (
           <div className="absolute z-10 mt-1 w-full bg-card border border-input rounded-lg shadow-lg max-h-52 overflow-y-auto">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={handleClear}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-muted transition-colors ${
+              className={`w-full justify-start px-3 py-2 text-sm h-auto rounded-none font-normal ${
                 !selectedId ? 'text-orange-500 font-medium' : 'text-muted-foreground'
               }`}
             >
               {t('autoOrganize')}
-            </button>
+            </Button>
             <div className="border-t" />
 
             {filtered.length === 0 ? (
               <p className="px-3 py-3 text-xs text-muted-foreground text-center">{t('noCollectionsFound')}</p>
             ) : (
               filtered.map((c) => (
-                <button
+                <Button
                   key={c.id}
                   type="button"
+                  variant="ghost"
                   onClick={() => handleSelect(c.id)}
-                  className={`w-full text-left px-3 py-2 hover:bg-muted transition-colors ${
+                  className={`w-full justify-start px-3 py-2 h-auto rounded-none font-normal ${
                     c.id === selectedId ? 'bg-muted' : ''
                   }`}
                 >
-                  <span className="block text-sm text-foreground truncate">{c.title}</span>
-                  {c.path !== c.title && (
-                    <span className="block text-xs text-muted-foreground truncate">{c.path}</span>
-                  )}
-                </button>
+                  <div className="text-left min-w-0">
+                    <span className="block text-sm text-foreground truncate">{c.title}</span>
+                    {c.path !== c.title && (
+                      <span className="block text-xs text-muted-foreground truncate">{c.path}</span>
+                    )}
+                  </div>
+                </Button>
               ))
             )}
           </div>

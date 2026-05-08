@@ -30,8 +30,8 @@ function ToolbarButton({
       aria-label={title}
       className={`p-1.5 rounded text-sm transition-colors ${
         active
-          ? 'bg-ink text-cream'
-          : 'text-muted hover:text-ink hover:bg-cream'
+          ? 'bg-primary text-primary-foreground'
+          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
       } ${className ?? ''}`}
     >
       {children}
@@ -56,7 +56,7 @@ export function EditorToolbar({ editor }: Props) {
   }, [editor])
 
   return (
-    <div className="flex flex-wrap items-center gap-0.5 px-4 py-2 bg-white border-b border-border shrink-0">
+    <div className="flex flex-wrap items-center gap-0.5 px-4 py-2 bg-card border-b shrink-0">
       {/* Text style */}
       <ToolbarButton
         onClick={() => editor.chain().focus().toggleBold().run()}

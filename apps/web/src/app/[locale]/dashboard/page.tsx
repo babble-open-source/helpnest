@@ -167,7 +167,7 @@ export default async function DashboardPage() {
   return (
     <div className="p-4 sm:p-8">
       <div className="mb-8">
-        <h1 className="font-serif text-2xl sm:text-3xl text-foreground">{t('overview')}</h1>
+        <h1 className="font-semibold text-2xl sm:text-3xl text-foreground">{t('overview')}</h1>
         <p className="text-muted-foreground mt-1">{workspace?.name}</p>
       </div>
 
@@ -230,7 +230,7 @@ export default async function DashboardPage() {
       </div>
 
       <div className="mb-10">
-        <h2 className="font-serif text-xl text-foreground mb-4">{t('needsAttention')}</h2>
+        <h2 className="font-semibold text-xl text-foreground mb-4">{t('needsAttention')}</h2>
         <Card>
           {needsAttention.length === 0 ? (
             <CardContent className="p-6">
@@ -266,7 +266,7 @@ export default async function DashboardPage() {
 
       {/* Recent articles */}
       <div>
-        <h2 className="font-serif text-xl text-foreground mb-4">{t('recentArticles')}</h2>
+        <h2 className="font-semibold text-xl text-foreground mb-4">{t('recentArticles')}</h2>
         <Card>
           {recentArticles.length === 0 ? (
             <CardContent className="p-6 text-center">

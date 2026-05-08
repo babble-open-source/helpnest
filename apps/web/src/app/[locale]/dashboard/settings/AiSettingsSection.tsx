@@ -205,7 +205,7 @@ export function AiSettingsSection({
                     {removeApiKey ? (
                       <div className="flex items-center gap-2 px-3 py-2 border border-destructive/30 rounded-md bg-destructive/5 text-sm text-destructive">
                         <span className="flex-1">{t('keyRemoved')}</span>
-                        <button type="button" onClick={() => setRemoveApiKey(false)} className="underline hover:no-underline shrink-0">{t('undo')}</button>
+                        <Button type="button" variant="link" size="sm" onClick={() => setRemoveApiKey(false)} className="h-auto p-0 text-destructive underline hover:no-underline shrink-0">{t('undo')}</Button>
                       </div>
                     ) : (
                       <Input
@@ -226,14 +226,16 @@ export function AiSettingsSection({
                             : ''}
                       </p>
                       {hasApiKey && !removeApiKey && (
-                        <button
+                        <Button
                           type="button"
+                          variant="link"
+                          size="sm"
                           onClick={() => { setRemoveApiKey(true); setApiKey('') }}
                           disabled={demoMode}
-                          className="text-xs text-destructive hover:underline disabled:opacity-50"
+                          className="h-auto p-0 text-destructive hover:text-destructive/80"
                         >
                           {t('removeKey')}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </>
@@ -324,14 +326,14 @@ export function AiSettingsSection({
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium text-foreground">
                       {t('draftAfter')}{' '}
-                      <input
+                      <Input
                         type="number"
                         min={1}
                         max={100}
                         value={autoDraftGapThreshold}
                         onChange={(e) => setAutoDraftGapThreshold(Math.max(1, parseInt(e.target.value, 10) || 1))}
                         disabled={demoMode}
-                        className="inline-block w-16 mx-1 px-2 py-0.5 border border-input rounded text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                        className="inline-block w-16 mx-1 h-7 py-0.5 text-sm"
                       />{' '}
                       {t('orMoreOccurrences')}
                     </Label>
@@ -357,14 +359,14 @@ export function AiSettingsSection({
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium text-foreground">
                       {t('batchWindow')}{' '}
-                      <input
+                      <Input
                         type="number"
                         min={1}
                         max={1440}
                         value={batchWindowMinutes}
                         onChange={(e) => setBatchWindowMinutes(Math.max(1, parseInt(e.target.value, 10) || 60))}
                         disabled={demoMode}
-                        className="inline-block w-20 mx-1 px-2 py-0.5 border border-input rounded text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                        className="inline-block w-20 mx-1 h-7 py-0.5 text-sm"
                       />{' '}
                       {t('minutes')}
                     </Label>
@@ -381,14 +383,14 @@ export function AiSettingsSection({
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-sm font-medium text-foreground">
-                    <input
+                    <Input
                       type="number"
                       min={1}
                       max={500}
                       value={aiDraftRateLimit}
                       onChange={(e) => setAiDraftRateLimit(Math.max(1, Math.min(500, parseInt(e.target.value, 10) || 50)))}
                       disabled={demoMode}
-                      className="inline-block w-20 me-1 px-2 py-0.5 border border-input rounded text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-50"
+                      className="inline-block w-20 me-1 h-7 py-0.5 text-sm"
                     />{' '}
                     {t('perHour')}
                   </Label>

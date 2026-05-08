@@ -10,8 +10,19 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog'
 import { isAllowedFontUrl } from '@/lib/font-url'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 interface Props {
   name: string
@@ -238,12 +249,12 @@ export function WorkspaceForm({
               {appUrl.replace(/^https?:\/\//, '')}/
             </span>
           )}
-          <input
+          <Input
             id="ws-slug"
             value={values.slug}
             onChange={set('slug')}
             readOnly={demoMode}
-            className={`flex-1 px-3 py-2 text-sm bg-background text-foreground focus:outline-none${demoMode ? ' cursor-not-allowed select-none' : ''}`}
+            className={`flex-1 border-0 rounded-none focus-visible:ring-0 focus-visible:ring-offset-0${demoMode ? ' cursor-not-allowed select-none' : ''}`}
           />
           {helpCenterDomain && (
             <span className="px-3 py-2 bg-muted text-muted-foreground text-sm border-s border-input shrink-0">
@@ -522,14 +533,14 @@ export function WorkspaceForm({
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="ws-meta-description">{t('metaDescription')}</Label>
-        <textarea
+        <Textarea
           id="ws-meta-description"
           value={values.metaDescription}
           onChange={set('metaDescription')}
           placeholder={t('metaDescriptionPlaceholder', { name: values.name })}
           rows={4}
           disabled={demoMode}
-          className="w-full px-3 py-2 border border-input rounded-md text-sm bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y disabled:opacity-50 disabled:cursor-not-allowed"
+          className="resize-y"
         />
         <p className="text-xs text-muted-foreground">{t('metaDescriptionHelp')}</p>
       </div>
@@ -610,15 +621,17 @@ export function WorkspaceForm({
         onCancel={() => setShowRemoveDomainConfirm(false)}
       />
 
-      {showDeleteModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-card rounded-xl border shadow-lg p-6 max-w-md mx-4">
-            <h3 className="font-semibold text-lg text-foreground mb-2">Delete workspace</h3>
-            <p className="text-sm text-muted-foreground mb-4">
+      <AlertDialog open={showDeleteModal} onOpenChange={(open) => { if (!open) { setShowDeleteModal(false); setDeleteConfirmName('') } }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete workspace</AlertDialogTitle>
+            <AlertDialogDescription>
               This will soft-delete <span className="font-medium text-foreground">{values.name}</span>.
               All content will be inaccessible. You have 30 days to restore it.
-            </p>
-            <p className="text-sm text-muted-foreground mb-2">
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 px-0">
+            <p className="text-sm text-muted-foreground">
               Type <span className="font-medium text-foreground">{values.name}</span> to confirm:
             </p>
             <Input
@@ -626,31 +639,23 @@ export function WorkspaceForm({
               value={deleteConfirmName}
               onChange={(e) => { setDeleteConfirmName(e.target.value); setDeleteError('') }}
               placeholder={values.name}
-              className="mb-4"
             />
             {deleteError && (
-              <p className="text-sm text-destructive mb-3">{deleteError}</p>
+              <p className="text-sm text-destructive">{deleteError}</p>
             )}
-            <div className="flex gap-3 justify-end">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => { setShowDeleteModal(false); setDeleteConfirmName('') }}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={handleDeleteWorkspace}
-                disabled={deleting || deleteConfirmName.toLowerCase() !== values.name.toLowerCase()}
-              >
-                {deleting ? 'Deleting…' : 'Delete workspace'}
-              </Button>
-            </div>
           </div>
-        </div>
-      )}
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteConfirmName('')}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteWorkspace}
+              disabled={deleting || deleteConfirmName.toLowerCase() !== values.name.toLowerCase()}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? 'Deleting…' : 'Delete workspace'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
