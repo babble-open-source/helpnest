@@ -18,16 +18,23 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Menu,
-  X,
   LogOut,
   Moon,
   Sun,
-  ChevronRight,
+  ChevronsUpDown,
+  Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { InboxBadge } from './InboxBadge'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { cn } from '@/lib/utils'
@@ -85,72 +92,71 @@ export function DashboardSidebar({
     return href === '/dashboard' ? pathname === href : pathname.startsWith(href)
   }
 
+  const workspaceIcon = workspaceLogo ? (
+    <NextImage
+      src={workspaceLogo}
+      alt=""
+      width={28}
+      height={28}
+      unoptimized
+      className="w-7 h-7 rounded-md object-contain"
+    />
+  ) : (
+    <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold shrink-0">
+      {workspaceName[0]?.toUpperCase() ?? '?'}
+    </div>
+  )
+
+  const displayName = workspaceBrandText ?? workspaceName
+
   const sidebarContent = (isMobile: boolean) => (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex items-center gap-2 px-3 py-4 shrink-0">
-        <div className={cn('min-w-0 flex-1', !isMobile && collapsed && 'lg:hidden')}>
-          <Link href="/dashboard" className="flex items-center gap-2">
-            {workspaceLogo ? (
-              <NextImage
-                src={workspaceLogo}
-                alt=""
-                width={28}
-                height={28}
-                unoptimized
-                className="w-7 h-7 rounded-md object-contain"
-              />
-            ) : (
-              <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold shrink-0">
-                {workspaceName[0]?.toUpperCase() ?? '?'}
+      {/* Workspace switcher dropdown */}
+      <div className="flex items-center gap-1 px-2 py-3 shrink-0">
+        {(isMobile || !collapsed) ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="flex items-center gap-2.5 flex-1 min-w-0 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors text-left">
+                {workspaceIcon}
+                <span className="text-sm font-semibold text-foreground truncate flex-1">
+                  {displayName}
+                </span>
+                <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <div className="px-2 py-1.5">
+                <p className="text-sm font-medium truncate">{displayName}</p>
+                <p className="text-xs text-muted-foreground">Current workspace</p>
               </div>
-            )}
-            <span className="text-sm font-semibold text-foreground truncate">
-              {workspaceBrandText ?? workspaceName}
-            </span>
-          </Link>
-        </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <a href={`/${locale}/workspaces`} className="cursor-pointer">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Switch workspace
+                </a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <div className="flex justify-center w-full">
+            {workspaceIcon}
+          </div>
+        )}
         {!isMobile && (
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setCollapsed((v) => !v)}
             title={collapsed ? tc('expandSidebar') : tc('collapseSidebar')}
-            className="hidden lg:flex h-7 w-7 text-muted-foreground hover:text-foreground"
+            className="hidden lg:flex h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
           >
             {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
           </Button>
         )}
       </div>
 
-      {/* Workspace switcher */}
-      {(isMobile || !collapsed) && (
-        <a
-          href={`/${locale}/workspaces`}
-          className="flex items-center gap-3 mx-2 px-2 py-2.5 rounded-lg hover:bg-accent text-foreground transition-colors group"
-        >
-          {workspaceLogo ? (
-            <NextImage
-              src={workspaceLogo}
-              alt=""
-              width={32}
-              height={32}
-              unoptimized
-              className="w-8 h-8 rounded-lg object-contain border bg-card p-1"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium">
-              {workspaceName[0]?.toUpperCase() ?? '?'}
-            </div>
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium truncate">{workspaceBrandText ?? workspaceName}</p>
-          </div>
-          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
-        </a>
-      )}
-
-      <Separator className="my-1" />
+      <Separator />
 
       {/* Nav */}
       <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
@@ -278,7 +284,7 @@ export function DashboardSidebar({
               {workspaceName[0]?.toUpperCase() ?? '?'}
             </div>
           )}
-          <span className="text-sm font-semibold text-foreground">{workspaceBrandText ?? workspaceName}</span>
+          <span className="text-sm font-semibold text-foreground">{displayName}</span>
         </Link>
       </div>
 
