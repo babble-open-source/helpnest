@@ -52,7 +52,7 @@ const config = {
                     DEFAULT: 'rgb(var(--color-destructive) / <alpha-value>)',
                     foreground: 'rgb(var(--color-destructive-foreground) / <alpha-value>)',
                 },
-                input: 'rgb(var(--color-input) / <alpha-value>)',
+                input: 'var(--input-color, rgb(var(--color-input)))',
                 ring: 'rgb(var(--color-ring) / <alpha-value>)',
                 chart: {
                     1: 'rgb(var(--color-chart-1) / <alpha-value>)',

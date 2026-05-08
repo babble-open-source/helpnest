@@ -78,7 +78,8 @@
     --color-border: 229 229 232;
     --color-input: 229 229 232;
     --color-ring: 24 24 27;
-    --border-color: rgba(9, 9, 11, 0.08);
+    --border-color: rgba(9, 9, 11, 0.10);
+    --input-color: rgba(9, 9, 11, 0.12);
     --color-cream: 255 255 255;
     --color-ink: 9 9 11;
     --color-white: 255 255 255;
@@ -119,9 +120,10 @@
     --color-destructive: 220 38 38;
     --color-destructive-foreground: 250 250 250;
     --color-border: 35 35 39;
-    --color-input: 40 40 45;
+    --color-input: 35 35 39;
     --color-ring: 100 100 110;
-    --border-color: rgba(255, 255, 255, 0.08);
+    --border-color: rgba(255, 255, 255, 0.06);
+    --input-color: rgba(255, 255, 255, 0.10);
     --color-cream: 10 10 12;
     --color-ink: 237 237 237;
     --color-white: 23 23 26;
