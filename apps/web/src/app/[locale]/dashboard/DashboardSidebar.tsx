@@ -21,8 +21,6 @@ import {
   LogOut,
   Moon,
   Sun,
-  ChevronsUpDown,
-  Building2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
@@ -35,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { SimpleTooltip } from '@/components/ui/simple-tooltip'
 import { InboxBadge } from './InboxBadge'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
 import { cn } from '@/lib/utils'
@@ -92,117 +91,121 @@ export function DashboardSidebar({
     return href === '/dashboard' ? pathname === href : pathname.startsWith(href)
   }
 
-  const workspaceIcon = workspaceLogo ? (
-    <NextImage
-      src={workspaceLogo}
-      alt=""
-      width={28}
-      height={28}
-      unoptimized
-      className="w-7 h-7 rounded-md object-contain"
-    />
-  ) : (
-    <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold shrink-0">
-      {workspaceName[0]?.toUpperCase() ?? '?'}
-    </div>
-  )
-
   const displayName = workspaceBrandText ?? workspaceName
+
+  const workspaceIcon = (size: 'sm' | 'md' = 'md') => {
+    const cls = size === 'sm' ? 'w-6 h-6 text-[10px]' : 'w-7 h-7 text-xs'
+    return workspaceLogo ? (
+      <NextImage
+        src={workspaceLogo}
+        alt=""
+        width={size === 'sm' ? 24 : 28}
+        height={size === 'sm' ? 24 : 28}
+        unoptimized
+        className={cn(cls, 'rounded-md object-contain shrink-0')}
+      />
+    ) : (
+      <div className={cn(cls, 'rounded-md bg-primary text-primary-foreground flex items-center justify-center font-semibold shrink-0')}>
+        {workspaceName[0]?.toUpperCase() ?? '?'}
+      </div>
+    )
+  }
 
   const sidebarContent = (isMobile: boolean) => (
     <div className="flex flex-col h-full">
-      {/* Workspace switcher dropdown */}
-      <div className="flex items-center gap-1 px-2 py-3 shrink-0">
+      {/* Workspace header */}
+      <div className={cn(
+        'flex items-center shrink-0',
+        isMobile || !collapsed ? 'gap-2 px-4 py-3' : 'flex-col gap-1.5 px-1 py-3'
+      )}>
         {(isMobile || !collapsed) ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2.5 flex-1 min-w-0 px-2 py-1.5 rounded-lg hover:bg-accent transition-colors text-left">
-                {workspaceIcon}
-                <span className="text-sm font-semibold text-foreground truncate flex-1">
-                  {displayName}
-                </span>
-                <ChevronsUpDown className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium truncate">{displayName}</p>
-                <p className="text-xs text-muted-foreground">Current workspace</p>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <a href={`/${locale}/workspaces`} className="cursor-pointer">
-                  <Building2 className="w-4 h-4 mr-2" />
-                  Switch workspace
-                </a>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <>
+            {workspaceIcon()}
+            <span className="text-sm font-semibold text-foreground truncate flex-1 min-w-0">
+              {displayName}
+            </span>
+            {!isMobile && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setCollapsed((v) => !v)}
+                title={tc('collapseSidebar')}
+                className="hidden lg:flex h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+            )}
+          </>
         ) : (
-          <div className="flex justify-center w-full">
-            {workspaceIcon}
-          </div>
-        )}
-        {!isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setCollapsed((v) => !v)}
-            title={collapsed ? tc('expandSidebar') : tc('collapseSidebar')}
-            className="hidden lg:flex h-7 w-7 text-muted-foreground hover:text-foreground shrink-0"
-          >
-            {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
-          </Button>
+          <>
+            <SimpleTooltip content={displayName} side="right">
+              {workspaceIcon('sm')}
+            </SimpleTooltip>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setCollapsed((v) => !v)}
+              title={tc('expandSidebar')}
+              className="h-6 w-6 text-muted-foreground hover:text-foreground"
+            >
+              <ChevronsRight className="h-3.5 w-3.5" />
+            </Button>
+          </>
         )}
       </div>
 
       <Separator />
 
       {/* Nav */}
-      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+      <nav className={cn('flex-1 space-y-0.5 overflow-y-auto', isMobile || !collapsed ? 'p-2' : 'px-1 py-2')}>
         {navItems.map((item) => {
           const Icon = NAV_ICONS[item.href]
+          const isCollapsed = !isMobile && collapsed
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              title={collapsed && !isMobile ? item.label : undefined}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                isActive(item.href)
-                  ? 'bg-accent text-accent-foreground font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-              )}
-            >
-              {Icon && <Icon className="w-4 h-4 shrink-0" />}
-              {(isMobile || !collapsed) && <span>{item.label}</span>}
-              {item.href === '/dashboard/inbox' && (isMobile || !collapsed) && (
-                <InboxBadge workspaceId={workspaceId} />
-              )}
-            </Link>
+            <SimpleTooltip key={item.href} content={item.label} side="right" wrapperClassName={isCollapsed ? 'block' : undefined}>
+              <Link
+                href={item.href}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  'flex items-center rounded-lg text-sm transition-colors',
+                  isCollapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2',
+                  isActive(item.href)
+                    ? 'bg-accent text-accent-foreground font-medium'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+                )}
+              >
+                {Icon && <Icon className="w-4 h-4 shrink-0" />}
+                {!isCollapsed && <span>{item.label}</span>}
+                {item.href === '/dashboard/inbox' && !isCollapsed && (
+                  <InboxBadge workspaceId={workspaceId} />
+                )}
+              </Link>
+            </SimpleTooltip>
           )
         })}
 
         {cloudMode && (
-          <Link
-            href="/dashboard/billing"
-            onClick={() => setMobileOpen(false)}
-            className={cn(
-              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-              isActive('/dashboard/billing')
-                ? 'bg-accent text-accent-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-            )}
-          >
-            <CreditCard className="w-4 h-4 shrink-0" />
-            {(isMobile || !collapsed) && <span>{t('billing')}</span>}
-          </Link>
+          <SimpleTooltip content={t('billing')} side="right" wrapperClassName={!isMobile && collapsed ? 'block' : undefined}>
+            <Link
+              href="/dashboard/billing"
+              onClick={() => setMobileOpen(false)}
+              className={cn(
+                'flex items-center rounded-lg text-sm transition-colors',
+                !isMobile && collapsed ? 'justify-center p-2' : 'gap-3 px-3 py-2',
+                isActive('/dashboard/billing')
+                  ? 'bg-accent text-accent-foreground font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              )}
+            >
+              <CreditCard className="w-4 h-4 shrink-0" />
+              {(isMobile || !collapsed) && <span>{t('billing')}</span>}
+            </Link>
+          </SimpleTooltip>
         )}
       </nav>
 
       {/* Footer */}
-      <div className="p-2 space-y-1 shrink-0">
+      <div className={cn('space-y-1 shrink-0', isMobile || !collapsed ? 'p-2' : 'px-1 py-2')}>
         {(isMobile || !collapsed) && (
           <div className="px-2 py-1">
             <LanguageSwitcher className="w-full bg-background text-sm border border-input rounded-md px-2 py-1 pr-7 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer" />
@@ -212,50 +215,56 @@ export function DashboardSidebar({
         <Separator />
 
         {/* Theme toggle */}
-        <Button
-          variant="ghost"
-          size={collapsed && !isMobile ? 'icon' : 'default'}
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className={cn(
-            'w-full text-muted-foreground hover:text-foreground',
-            collapsed && !isMobile ? 'h-9 w-9 mx-auto' : 'justify-start gap-3 px-3'
-          )}
-        >
-          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-          {(isMobile || !collapsed) && (
-            <span className="text-sm">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-          )}
-        </Button>
+        <SimpleTooltip content={theme === 'dark' ? 'Light mode' : 'Dark mode'} side="right">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className={cn(
+              'text-muted-foreground hover:text-foreground',
+              isMobile || !collapsed ? 'w-full justify-start gap-3 px-3 h-9' : 'h-8 w-8 mx-auto'
+            )}
+          >
+            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+            {(isMobile || !collapsed) && (
+              <span className="text-sm">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+            )}
+          </Button>
+        </SimpleTooltip>
 
         {/* User */}
-        <div className={cn(
-          'flex items-center gap-3 px-2 py-2 rounded-lg',
-          collapsed && !isMobile && 'justify-center px-0'
-        )}>
-          <Avatar className="h-8 w-8 shrink-0">
-            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
-              {userInitial}
-            </AvatarFallback>
-          </Avatar>
-          {(isMobile || !collapsed) && (
-            <>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{userName}</p>
-                <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => signOut({ callbackUrl: `/${locale}/login` })}
-                title={tc('signOut')}
-                className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </>
-          )}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className={cn(
+              'flex items-center rounded-lg w-full hover:bg-accent transition-colors',
+              isMobile || !collapsed ? 'gap-3 px-2 py-2' : 'justify-center p-2'
+            )}>
+              <Avatar className={cn('shrink-0', isMobile || !collapsed ? 'h-8 w-8' : 'h-7 w-7')}>
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-medium">
+                  {userInitial}
+                </AvatarFallback>
+              </Avatar>
+              {(isMobile || !collapsed) && (
+                <div className="flex-1 min-w-0 text-left">
+                  <p className="text-sm font-medium text-foreground truncate">{userName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
+                </div>
+              )}
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side={isMobile || !collapsed ? 'top' : 'right'} className="w-56">
+            <div className="px-2 py-1.5">
+              <p className="text-sm font-medium">{userName}</p>
+              <p className="text-xs text-muted-foreground">{userEmail}</p>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => signOut({ callbackUrl: `/${locale}/login` })} className="cursor-pointer text-destructive focus:text-destructive">
+              <LogOut className="w-4 h-4 mr-2" />
+              {tc('signOut')}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )
