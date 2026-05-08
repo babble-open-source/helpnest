@@ -100,42 +100,43 @@
   }
 
   .dark .dashboard {
+    /* Aligned with shadcn/ui default zinc dark theme (oklch → RGB) */
     --color-background: 9 9 11;
-    --color-foreground: 244 244 245;
-    --color-card: 24 24 27;
-    --color-card-foreground: 244 244 245;
-    --color-popover: 24 24 27;
-    --color-popover-foreground: 244 244 245;
-    --color-primary: 244 244 245;
-    --color-primary-foreground: 9 9 11;
-    --color-secondary: 39 39 42;
-    --color-secondary-foreground: 244 244 245;
-    --color-muted: 24 24 27;
-    --color-muted-foreground: 161 161 170;
-    --color-accent: 39 39 42;
-    --color-accent-foreground: 244 244 245;
+    --color-foreground: 250 250 250;
+    --color-card: 26 26 30;
+    --color-card-foreground: 250 250 250;
+    --color-popover: 26 26 30;
+    --color-popover-foreground: 250 250 250;
+    --color-primary: 235 235 235;
+    --color-primary-foreground: 26 26 30;
+    --color-secondary: 39 39 44;
+    --color-secondary-foreground: 250 250 250;
+    --color-muted: 39 39 44;
+    --color-muted-foreground: 161 161 166;
+    --color-accent: 39 39 44;
+    --color-accent-foreground: 250 250 250;
     --color-destructive: 220 38 38;
     --color-destructive-foreground: 250 250 250;
-    --color-border: 39 39 42;
-    --color-input: 39 39 42;
-    --color-ring: 161 161 170;
+    --color-border: 34 34 36;
+    --color-input: 45 45 48;
+    --color-ring: 113 113 122;
     --color-cream: 9 9 11;
-    --color-ink: 244 244 245;
-    --color-white: 24 24 27;
+    --color-ink: 250 250 250;
+    --color-white: 26 26 30;
     --color-green: 74 222 128;
-    --color-chart-1: 244 244 245;
+    --color-chart-1: 250 250 250;
     --color-chart-2: 161 161 170;
     --color-chart-3: 113 113 122;
     --color-chart-4: 96 165 250;
     --color-chart-5: 192 132 252;
     --color-sidebar: 14 14 16;
-    --color-sidebar-foreground: 244 244 245;
-    --color-sidebar-primary: 244 244 245;
+    --color-sidebar-foreground: 250 250 250;
+    --color-sidebar-primary: 250 250 250;
     --color-sidebar-primary-foreground: 9 9 11;
-    --color-sidebar-accent: 30 30 33;
-    --color-sidebar-accent-foreground: 244 244 245;
-    --color-sidebar-border: 39 39 42;
-    --color-sidebar-ring: 161 161 170;
+    --color-sidebar-accent: 30 30 34;
+    --color-sidebar-accent-foreground: 250 250 250;
+    --color-sidebar-border: 34 34 36;
+    --color-sidebar-ring: 113 113 122;
   }
 
   html {
