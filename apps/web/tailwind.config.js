@@ -73,7 +73,7 @@ const config = {
                 },
             },
             borderColor: {
-                DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',
+                DEFAULT: 'var(--border-color)',
             },
             borderRadius: {
                 ...baseConfig.theme?.extend?.borderRadius,
