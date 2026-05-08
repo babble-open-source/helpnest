@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signOut } from 'next-auth/react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
@@ -76,6 +76,8 @@ export function DashboardSidebar({
   const t = useTranslations('dashboard')
   const tc = useTranslations('common')
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+  useEffect(() => setMounted(true), [])
 
   const navItems = [
     { href: '/dashboard', label: t('overview') },
@@ -215,23 +217,24 @@ export function DashboardSidebar({
         <Separator />
 
         {/* Theme toggle */}
-        <SimpleTooltip content={theme === 'dark' ? 'Light mode' : 'Dark mode'} side="right">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className={cn(
-              'text-muted-foreground hover:text-foreground',
-              isMobile || !collapsed ? 'w-full justify-start gap-3 px-3 h-9' : 'h-8 w-8 mx-auto'
-            )}
-          >
-            <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-            <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-            {(isMobile || !collapsed) && (
-              <span className="text-sm">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-            )}
-          </Button>
-        </SimpleTooltip>
+        {mounted && (
+          <SimpleTooltip content={theme === 'dark' ? 'Light mode' : 'Dark mode'} side="right">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              className={cn(
+                'text-muted-foreground hover:text-foreground',
+                isMobile || !collapsed ? 'w-full justify-start gap-3 px-3 h-9' : 'h-8 w-8 mx-auto'
+              )}
+            >
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              {(isMobile || !collapsed) && (
+                <span className="text-sm">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+              )}
+            </Button>
+          </SimpleTooltip>
+        )}
 
         {/* User */}
         <DropdownMenu>
