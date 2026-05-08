@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
+import { Badge } from '@/components/ui/badge'
 
 export function InboxBadge({ workspaceId }: { workspaceId: string }) {
   const [count, setCount] = useState(0)
@@ -41,8 +42,8 @@ export function InboxBadge({ workspaceId }: { workspaceId: string }) {
 
   if (count === 0) return null
   return (
-    <span className="ml-auto text-xs font-semibold bg-accent text-white rounded-full px-1.5 py-0.5 min-w-[18px] text-center leading-none">
+    <Badge variant="destructive" className="ml-auto text-xs px-1.5 py-0 min-w-[18px] text-center leading-tight">
       {count > 99 ? '99+' : count}
-    </span>
+    </Badge>
   )
 }

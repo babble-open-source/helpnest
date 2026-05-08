@@ -4,7 +4,7 @@ import React, { useState } from 'react'
 import { Link } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
 import { CollectionActions } from './CollectionActions'
-import { Tooltip } from '@/components/ui/Tooltip'
+import { SimpleTooltip as Tooltip } from '@/components/ui/simple-tooltip'
 
 type GrandChild = {
   id: string

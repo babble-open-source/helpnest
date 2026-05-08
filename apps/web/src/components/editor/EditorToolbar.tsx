@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { Editor } from '@tiptap/react'
-import { Tooltip } from '@/components/ui/Tooltip'
+import { SimpleTooltip as Tooltip } from '@/components/ui/simple-tooltip'
 import { useTranslations } from 'next-intl'
 
 interface Props {

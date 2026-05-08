@@ -1,13 +1,36 @@
 'use client'
 
-import { WorkspaceBrandLink } from '@/components/help/WorkspaceBrandLink'
 import { useState } from 'react'
 import { signOut } from 'next-auth/react'
 import { Link, usePathname } from '@/i18n/navigation'
 import { useLocale, useTranslations } from 'next-intl'
 import NextImage from 'next/image'
+import { useTheme } from 'next-themes'
+import {
+  LayoutDashboard,
+  Inbox,
+  FileText,
+  FolderOpen,
+  AlertCircle,
+  Upload,
+  Settings,
+  CreditCard,
+  ChevronsLeft,
+  ChevronsRight,
+  Menu,
+  X,
+  LogOut,
+  Moon,
+  Sun,
+  ChevronRight,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Separator } from '@/components/ui/separator'
 import { InboxBadge } from './InboxBadge'
 import { LanguageSwitcher } from '@/components/LanguageSwitcher'
+import { cn } from '@/lib/utils'
 
 interface Props {
   workspaceId: string
@@ -20,6 +43,16 @@ interface Props {
   cloudMode?: boolean
 }
 
+const NAV_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  '/dashboard': LayoutDashboard,
+  '/dashboard/inbox': Inbox,
+  '/dashboard/articles': FileText,
+  '/dashboard/collections': FolderOpen,
+  '/dashboard/knowledge-gaps': AlertCircle,
+  '/dashboard/imports': Upload,
+  '/dashboard/settings': Settings,
+}
+
 export function DashboardSidebar({
   workspaceId,
   workspaceName,
@@ -30,12 +63,13 @@ export function DashboardSidebar({
   userInitial,
   cloudMode,
 }: Props) {
-  const [open, setOpen] = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
   const locale = useLocale()
   const t = useTranslations('dashboard')
   const tc = useTranslations('common')
+  const { theme, setTheme } = useTheme()
 
   const navItems = [
     { href: '/dashboard', label: t('overview') },
@@ -51,228 +85,211 @@ export function DashboardSidebar({
     return href === '/dashboard' ? pathname === href : pathname.startsWith(href)
   }
 
-  return (
-    <>
-      {/* Mobile top bar — visible only on small screens */}
-      <div className="lg:hidden fixed top-0 inset-x-0 z-50 h-14 bg-ink text-cream flex items-center px-4 border-b border-white/10">
-        <button
-          onClick={() => setMobileOpen(true)}
-          title={tc('openMenu')}
-          className="p-1.5 rounded text-cream/60 hover:text-cream hover:bg-white/10 transition-colors -ms-1 me-3 shrink-0"
-        >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-        <WorkspaceBrandLink
-          href="/dashboard"
-          name={workspaceName}
-          logo={workspaceLogo}
-          brandText={workspaceBrandText}
-          hideNameWhenLogo
-          textClassName="font-serif text-lg text-cream"
-          markClassName="border-white/10 bg-white p-1.5"
-          fallbackClassName="text-ink"
-        />
-      </div>
-
-      {/* Mobile backdrop */}
-      {mobileOpen && (
-        <div
-          className="lg:hidden fixed inset-0 z-40 bg-black/50"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <aside
-        className={[
-          'bg-ink text-cream flex flex-col shrink-0 overflow-hidden',
-          // Mobile: fixed drawer that slides in from left
-          'fixed inset-y-0 start-0 z-40 w-64',
-          'transition-transform duration-200',
-          mobileOpen ? 'translate-x-0 rtl:-translate-x-0' : '-translate-x-full rtl:translate-x-full',
-          // Desktop: static, width-based collapse
-          // lg:rtl:translate-x-0 overrides rtl:translate-x-full ([dir=rtl] has higher specificity than plain class)
-          'lg:static lg:translate-x-0 lg:rtl:translate-x-0 lg:transition-[width] lg:duration-200',
-          open ? 'lg:w-60' : 'lg:w-12',
-        ].join(' ')}
-      >
-        {/* Header */}
-        <div className="flex items-center gap-2 px-3 py-4 border-b border-white/10 shrink-0">
-          {/* Brand — always visible on mobile; on desktop only when expanded */}
-          <div className={`min-w-0 flex-1 ${open ? '' : 'lg:hidden'}`.trim()}>
-            <WorkspaceBrandLink
-              href="/dashboard"
-              name={workspaceName}
-              logo={workspaceLogo}
-              brandText={workspaceBrandText}
-              hideNameWhenLogo
-              textClassName="font-serif text-lg text-cream"
-              markClassName="border-white/10 bg-white p-1.5"
-              fallbackClassName="text-ink"
-            />
-          </div>
-          {/* Mobile close button */}
-          <button
-            onClick={() => setMobileOpen(false)}
-            title={tc('closeMenu')}
-            className="lg:hidden p-1.5 rounded text-cream/60 hover:text-cream hover:bg-white/10 transition-colors shrink-0"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          {/* Desktop collapse/expand button */}
-          <button
-            onClick={() => setOpen((v) => !v)}
-            title={open ? tc('collapseSidebar') : tc('expandSidebar')}
-            className="hidden lg:block p-1.5 rounded text-cream/60 hover:text-cream hover:bg-white/10 transition-colors shrink-0"
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {open ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7M18 19l-7-7 7-7" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M6 5l7 7-7 7" />
-              )}
-            </svg>
-          </button>
-        </div>
-
-        {/* Workspace hub link */}
-        {open && (
-          <a
-            href={`/${locale}/workspaces`}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-white/10 transition-colors group"
-          >
+  const sidebarContent = (isMobile: boolean) => (
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center gap-2 px-3 py-4 shrink-0">
+        <div className={cn('min-w-0 flex-1', !isMobile && collapsed && 'lg:hidden')}>
+          <Link href="/dashboard" className="flex items-center gap-2">
             {workspaceLogo ? (
-              <NextImage src={workspaceLogo} alt="" width={32} height={32} unoptimized className="w-8 h-8 rounded-lg object-contain border border-white/10 bg-white p-1" />
+              <NextImage
+                src={workspaceLogo}
+                alt=""
+                width={28}
+                height={28}
+                unoptimized
+                className="w-7 h-7 rounded-md object-contain"
+              />
             ) : (
-              <div className="w-8 h-8 rounded-lg bg-white/10 text-cream flex items-center justify-center text-sm font-medium">
+              <div className="w-7 h-7 rounded-md bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold shrink-0">
                 {workspaceName[0]?.toUpperCase() ?? '?'}
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-cream truncate">{workspaceBrandText ?? workspaceName}</p>
-            </div>
-            <svg className="w-4 h-4 text-cream/40 group-hover:text-cream transition-colors shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-            </svg>
-          </a>
+            <span className="text-sm font-semibold text-foreground truncate">
+              {workspaceBrandText ?? workspaceName}
+            </span>
+          </Link>
+        </div>
+        {!isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed((v) => !v)}
+            title={collapsed ? tc('expandSidebar') : tc('collapseSidebar')}
+            className="hidden lg:flex h-7 w-7 text-muted-foreground hover:text-foreground"
+          >
+            {collapsed ? <ChevronsRight className="h-4 w-4" /> : <ChevronsLeft className="h-4 w-4" />}
+          </Button>
         )}
+      </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-2 space-y-1">
-          {navItems.map((item) => (
+      {/* Workspace switcher */}
+      {(isMobile || !collapsed) && (
+        <a
+          href={`/${locale}/workspaces`}
+          className="flex items-center gap-3 mx-2 px-2 py-2.5 rounded-lg hover:bg-accent text-foreground transition-colors group"
+        >
+          {workspaceLogo ? (
+            <NextImage
+              src={workspaceLogo}
+              alt=""
+              width={32}
+              height={32}
+              unoptimized
+              className="w-8 h-8 rounded-lg object-contain border bg-card p-1"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium">
+              {workspaceName[0]?.toUpperCase() ?? '?'}
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{workspaceBrandText ?? workspaceName}</p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors shrink-0" />
+        </a>
+      )}
+
+      <Separator className="my-1" />
+
+      {/* Nav */}
+      <nav className="flex-1 p-2 space-y-0.5 overflow-y-auto">
+        {navItems.map((item) => {
+          const Icon = NAV_ICONS[item.href]
+          return (
             <Link
               key={item.href}
               href={item.href}
-              title={!open ? item.label : undefined}
+              title={collapsed && !isMobile ? item.label : undefined}
               onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+              className={cn(
+                'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                 isActive(item.href)
-                  ? 'bg-white/15 text-cream font-medium'
-                  : 'text-cream/70 hover:text-cream hover:bg-white/10'
-              }`}
+                  ? 'bg-accent text-accent-foreground font-medium'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              )}
             >
-              {/* Mobile: always show full label */}
-              <span className="lg:hidden">{item.label}</span>
-              {/* Desktop: full label when expanded, first char when collapsed */}
-              <span className={`hidden lg:block ${!open ? 'text-xs font-medium text-cream/60' : ''}`}>
-                {open ? item.label : item.label[0]}
-              </span>
-              {item.href === '/dashboard/inbox' && open && (
+              {Icon && <Icon className="w-4 h-4 shrink-0" />}
+              {(isMobile || !collapsed) && <span>{item.label}</span>}
+              {item.href === '/dashboard/inbox' && (isMobile || !collapsed) && (
                 <InboxBadge workspaceId={workspaceId} />
               )}
             </Link>
-          ))}
-        </nav>
+          )
+        })}
 
-        {/* Billing — only in cloud mode */}
         {cloudMode && (
-          <div className="px-2 pb-2">
-            <Link
-              href="/dashboard/billing"
-              onClick={() => setMobileOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
-                isActive('/dashboard/billing')
-                  ? 'bg-white/15 text-cream font-medium'
-                  : 'text-cream/70 hover:text-cream hover:bg-white/10'
-              }`}
-            >
-              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              <span className="lg:hidden">{t('billing')}</span>
-              <span className={`hidden lg:block ${!open ? 'text-xs font-medium text-cream/60' : ''}`}>
-                {open ? t('billing') : t('billingShort')}
-              </span>
-            </Link>
+          <Link
+            href="/dashboard/billing"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+              isActive('/dashboard/billing')
+                ? 'bg-accent text-accent-foreground font-medium'
+                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+            )}
+          >
+            <CreditCard className="w-4 h-4 shrink-0" />
+            {(isMobile || !collapsed) && <span>{t('billing')}</span>}
+          </Link>
+        )}
+      </nav>
+
+      {/* Footer */}
+      <div className="p-2 space-y-1 shrink-0">
+        {(isMobile || !collapsed) && (
+          <div className="px-2 py-1">
+            <LanguageSwitcher className="w-full bg-background text-sm border border-input rounded-md px-2 py-1 pr-7 text-muted-foreground hover:text-foreground focus:outline-none focus:ring-1 focus:ring-ring cursor-pointer" />
           </div>
         )}
 
-        {/* User */}
-        <div className="p-2 border-t border-white/10 shrink-0">
-          {/* Language switcher — mobile: always visible; desktop: only when expanded */}
-          <div className={`px-2 py-1.5 lg:hidden`}>
-            <LanguageSwitcher className="w-full bg-transparent text-sm border border-white/20 rounded-md px-2 py-1 pr-7 text-cream/70 hover:text-cream focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer disabled:opacity-50" />
-          </div>
-          {open && (
-            <div className="hidden lg:block px-2 py-1.5">
-              <LanguageSwitcher className="w-full bg-transparent text-sm border border-white/20 rounded-md px-2 py-1 pr-7 text-cream/70 hover:text-cream focus:outline-none focus:ring-1 focus:ring-white/40 cursor-pointer disabled:opacity-50" />
-            </div>
+        <Separator />
+
+        {/* Theme toggle */}
+        <Button
+          variant="ghost"
+          size={collapsed && !isMobile ? 'icon' : 'default'}
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className={cn(
+            'w-full text-muted-foreground hover:text-foreground',
+            collapsed && !isMobile ? 'h-9 w-9 mx-auto' : 'justify-start gap-3 px-3'
           )}
-          {/* Mobile: always show full user row */}
-          <div className="flex items-center gap-3 px-2 py-2 lg:hidden">
-            <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white text-sm font-medium shrink-0">
+        >
+          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          {(isMobile || !collapsed) && (
+            <span className="text-sm">{theme === 'dark' ? 'Light mode' : 'Dark mode'}</span>
+          )}
+        </Button>
+
+        {/* User */}
+        <div className={cn(
+          'flex items-center gap-3 px-2 py-2 rounded-lg',
+          collapsed && !isMobile && 'justify-center px-0'
+        )}>
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
               {userInitial}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-cream truncate">{userName}</p>
-              <p className="text-xs text-cream/50 truncate">{userEmail}</p>
-            </div>
-            <button
-              onClick={() => signOut({ callbackUrl: `/${locale}/login` })}
-              title={tc('signOut')}
-              className="p-1.5 rounded text-cream/40 hover:text-cream hover:bg-white/10 transition-colors shrink-0"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
-          </div>
-          {/* Desktop: expanded or collapsed user */}
-          {open ? (
-            <div className="hidden lg:flex items-center gap-3 px-2 py-2">
-              <div className="w-8 h-8 rounded-full bg-accent flex items-center justify-center text-white text-sm font-medium shrink-0">
-                {userInitial}
-              </div>
+            </AvatarFallback>
+          </Avatar>
+          {(isMobile || !collapsed) && (
+            <>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-cream truncate">{userName}</p>
-                <p className="text-xs text-cream/50 truncate">{userEmail}</p>
+                <p className="text-sm font-medium text-foreground truncate">{userName}</p>
+                <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => signOut({ callbackUrl: `/${locale}/login` })}
                 title={tc('signOut')}
-                className="p-1.5 rounded text-cream/40 hover:text-cream hover:bg-white/10 transition-colors shrink-0"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
               >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => signOut({ callbackUrl: `/${locale}/login` })}
-              title={tc('signOut')}
-              className="hidden lg:flex w-full items-center justify-center p-1.5 rounded text-cream/40 hover:text-cream hover:bg-white/10 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-            </button>
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </>
           )}
         </div>
+      </div>
+    </div>
+  )
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 inset-x-0 z-50 h-14 bg-background border-b flex items-center px-4">
+        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-9 w-9 -ms-1 me-3 text-muted-foreground">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">{tc('openMenu')}</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left" className="w-72 p-0 bg-background">
+            <SheetTitle className="sr-only">{tc('openMenu')}</SheetTitle>
+            {sidebarContent(true)}
+          </SheetContent>
+        </Sheet>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          {workspaceLogo ? (
+            <NextImage src={workspaceLogo} alt="" width={24} height={24} unoptimized className="w-6 h-6 rounded object-contain" />
+          ) : (
+            <div className="w-6 h-6 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold">
+              {workspaceName[0]?.toUpperCase() ?? '?'}
+            </div>
+          )}
+          <span className="text-sm font-semibold text-foreground">{workspaceBrandText ?? workspaceName}</span>
+        </Link>
+      </div>
+
+      {/* Desktop sidebar */}
+      <aside
+        className={cn(
+          'hidden lg:flex flex-col border-r bg-background shrink-0 overflow-hidden transition-[width] duration-200',
+          collapsed ? 'w-14' : 'w-60'
+        )}
+      >
+        {sidebarContent(false)}
       </aside>
     </>
   )

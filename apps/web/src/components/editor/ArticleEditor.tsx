@@ -24,7 +24,7 @@ import { EditorOutline } from './EditorOutline'
 import { EditorBubbleMenu } from './EditorBubbleMenu'
 import { EditorFloatingMenu } from './EditorFloatingMenu'
 import { fixOrderedListCounters } from '@/components/help/ArticleContent'
-import { Tooltip } from '@/components/ui/Tooltip'
+import { SimpleTooltip as Tooltip } from '@/components/ui/simple-tooltip'
 import { Link as LocaleLink } from '@/i18n/navigation'
 import { useTranslations, useFormatter } from 'next-intl'
 

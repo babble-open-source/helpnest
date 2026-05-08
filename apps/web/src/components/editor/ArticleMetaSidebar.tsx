@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from '@/i18n/navigation'
 import { useTranslations } from 'next-intl'
-import { Tooltip } from '@/components/ui/Tooltip'
+import { SimpleTooltip as Tooltip } from '@/components/ui/simple-tooltip'
 
 interface Collection {
   id: string
