@@ -72,6 +72,9 @@ const config = {
                     ring: 'rgb(var(--color-sidebar-ring) / <alpha-value>)',
                 },
             },
+            borderColor: {
+                DEFAULT: 'rgb(var(--color-border) / <alpha-value>)',
+            },
             borderRadius: {
                 ...baseConfig.theme?.extend?.borderRadius,
             },
