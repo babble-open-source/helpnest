@@ -208,7 +208,7 @@ export function CrawlModal({
         aria-label={t('title')}
       >
         <DialogHeader className="shrink-0">
-          <DialogTitle className="font-serif text-xl">{t('title')}</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">{t('title')}</DialogTitle>
         </DialogHeader>
 
         <div className="overflow-y-auto flex-1 py-2">

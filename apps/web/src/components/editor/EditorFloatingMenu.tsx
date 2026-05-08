@@ -34,13 +34,13 @@ export function EditorFloatingMenu({ editor, active }: Props) {
         return $from.node().type.name === 'paragraph' && $from.node().textContent === ''
       }}
     >
-      <div className="flex items-center gap-1 bg-white border border-border rounded-lg px-2 py-1 shadow-md">
+      <div className="flex items-center gap-1 bg-popover border rounded-lg px-2 py-1 shadow-md">
         {BLOCK_OPTIONS.map(({ label, title, cmd }) => (
           <button
             key={title}
             onClick={() => cmd(editor)}
             title={title}
-            className="text-xs text-muted hover:text-ink hover:bg-cream px-1.5 py-1 rounded transition-colors font-mono"
+            className="text-xs text-muted-foreground hover:text-foreground hover:bg-muted px-1.5 py-1 rounded transition-colors font-mono"
           >
             {label}
           </button>

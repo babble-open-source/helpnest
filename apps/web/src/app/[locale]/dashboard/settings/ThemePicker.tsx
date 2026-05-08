@@ -224,8 +224,8 @@ export function ThemePicker({
             }}
             className={`text-start rounded-xl border-2 overflow-hidden transition-all ${
               selectedThemeId === theme.id
-                ? 'border-accent shadow-sm'
-                : 'border-border hover:border-muted'
+                ? 'border-foreground'
+                : 'border-transparent hover:border-muted-foreground/30'
             }`}
           >
             {/* Color swatch strip */}
@@ -263,10 +263,10 @@ export function ThemePicker({
             </div>
 
             {/* Name */}
-            <div className="px-3 py-2 bg-white flex items-center justify-between">
-              <span className="text-sm font-medium text-ink">{theme.name}</span>
+            <div className="px-3 py-2 bg-card flex items-center justify-between">
+              <span className="text-sm font-medium text-foreground">{theme.name}</span>
               {theme.dark && (
-                <span className="text-[10px] bg-ink text-cream px-1.5 py-0.5 rounded-full">{t('dark')}</span>
+                <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded-full">{t('dark')}</span>
               )}
             </div>
           </button>
@@ -294,8 +294,8 @@ export function ThemePicker({
           }}
           className={`text-start rounded-xl border-2 overflow-hidden transition-all ${
             selectedFontPresetId.length === 0
-              ? 'border-accent shadow-sm'
-              : 'border-border hover:border-muted'
+              ? 'border-foreground'
+              : 'border-transparent hover:border-muted-foreground/30'
           }`}
         >
           <div className="border-b border px-4 py-3 bg-muted">
@@ -321,8 +321,8 @@ export function ThemePicker({
             }}
             className={`text-start rounded-xl border-2 overflow-hidden transition-all ${
               selectedFontPresetId === preset.id
-                ? 'border-accent shadow-sm'
-                : 'border-border hover:border-muted'
+                ? 'border-foreground'
+                : 'border-transparent hover:border-muted-foreground/30'
             }`}
           >
             <div className="border-b border px-4 py-3 bg-muted">

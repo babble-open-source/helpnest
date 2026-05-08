@@ -14,7 +14,7 @@ export function AiCreditsIndicator({ used: _used, limit, remaining }: AiCreditsI
 
   return (
     <div
-      className={`text-xs ${isExhausted ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-muted'}`}
+      className={`text-xs ${isExhausted ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-muted-foreground'}`}
     >
       {isExhausted
         ? 'No free articles remaining. Add your AI key in settings to continue.'
