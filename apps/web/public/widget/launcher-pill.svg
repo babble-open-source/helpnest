@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60">
+  <defs><filter id="s7" x="-20%" y="-20%" width="140%" height="140%">
+  <feGaussianBlur in="SourceAlpha" stdDeviation="2"></feGaussianBlur>
+  <feOffset dx="0" dy="3"></feOffset>
+  <feComponentTransfer><feFuncA type="linear" slope="0.25"></feFuncA></feComponentTransfer>
+  <feMerge><feMergeNode></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
+</filter></defs>
+  <rect x="2" y="2" width="196" height="56" rx="28" ry="28" fill="#1a1814" filter="url(#s7)"></rect>
+  <circle cx="30" cy="30" r="20" fill="#c8622a"></circle>
+  <g transform="translate(15 15) scale(0.5)">
+    <g fill="none" stroke="#f7f4ee" stroke-linecap="round">
+      <g stroke-width="6">
+        <path d="M30 11 A 19 19 0 0 1 47 21"></path>
+        <path d="M49 30 A 19 19 0 0 1 39 47"></path>
+        <path d="M30 49 A 19 19 0 0 1 13 39"></path>
+      </g>
+      <g stroke-width="3.2">
+        <path d="M22 24 H36"></path>
+        <path d="M22 30 H38"></path>
+        <path d="M22 36 H32"></path>
+      </g>
+    </g>
+  </g>
+  <text x="60" y="38" font-family="Lora, Georgia, serif" font-size="20" font-weight="500" letter-spacing="-0.3" fill="#f7f4ee">Ask HelpNest</text>
+</svg>

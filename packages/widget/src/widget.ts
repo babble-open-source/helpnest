@@ -44,11 +44,21 @@ export class HelpNestWidget {
     this.launcher.className = `hn-launcher ${this.initConfig.position === 'bottom-left' ? 'hn-launcher-left' : ''}`
     this.launcher.setAttribute('aria-label', 'Open help')
     this.launcher.innerHTML = `
-      <svg class="hn-launcher-icon hn-launcher-open" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+      <svg class="hn-launcher-icon hn-launcher-open" width="28" height="28" viewBox="0 0 60 60" fill="none" stroke-linecap="round">
+        <g stroke="#c8622a" stroke-width="5">
+          <path d="M30 11 A 19 19 0 0 1 47 21"/>
+          <path d="M49 30 A 19 19 0 0 1 39 47"/>
+          <path d="M30 49 A 19 19 0 0 1 13 39"/>
+        </g>
+        <g stroke="currentColor" stroke-width="2.6">
+          <path d="M22 24 H36"/>
+          <path d="M22 30 H38"/>
+          <path d="M22 36 H32"/>
+        </g>
       </svg>
-      <svg class="hn-launcher-icon hn-launcher-close" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <polyline points="6 9 12 15 18 9"/>
+      <svg class="hn-launcher-icon hn-launcher-close" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+        <path d="M18 6 L6 18"/>
+        <path d="M6 6 L18 18"/>
       </svg>
     `
     this.shadow.appendChild(this.launcher)
