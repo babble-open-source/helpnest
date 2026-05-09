@@ -48,7 +48,7 @@ export default async function DashboardLayout({ children, params }: { children: 
       },
     }),
     prisma.member.findMany({
-      where: { userId, deactivatedAt: null },
+      where: { userId, deactivatedAt: null, workspace: { deletedAt: null } },
       select: {
         workspace: {
           select: { id: true, name: true, slug: true, logo: true },
