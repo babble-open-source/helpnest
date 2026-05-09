@@ -44,7 +44,7 @@ export class HelpNestWidget {
     this.launcher.className = `hn-launcher ${this.initConfig.position === 'bottom-left' ? 'hn-launcher-left' : ''}`
     this.launcher.setAttribute('aria-label', 'Open help')
     this.launcher.innerHTML = `
-      <svg class="hn-launcher-icon hn-launcher-open" width="28" height="28" viewBox="0 0 60 60" fill="none" stroke-linecap="round">
+      <svg class="hn-launcher-icon hn-launcher-open" width="36" height="36" viewBox="0 0 60 60" fill="none" stroke-linecap="round">
         <g stroke="#c8622a" stroke-width="5">
           <path d="M30 11 A 19 19 0 0 1 47 21"/>
           <path d="M49 30 A 19 19 0 0 1 39 47"/>
