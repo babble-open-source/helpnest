@@ -108,6 +108,7 @@ export function OnboardingForm({
   return (
     <main className="min-h-screen bg-cream flex items-center justify-center">
       <div className="w-full max-w-md px-6 py-10">
+        <img src="/mark-ink.svg" alt="HelpNest" className="w-10 h-10 mx-auto mb-6" />
         <h1 className="font-serif text-3xl text-ink mb-2 text-center">
           {t.title}
         </h1>

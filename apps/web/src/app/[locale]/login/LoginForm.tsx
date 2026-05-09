@@ -69,6 +69,7 @@ export function LoginForm({ defaultEmail, showDefaultCreds, workspaceSlug, showS
         </div>
       )}
       <div className="w-full max-w-sm px-6">
+        <img src="/mark-ink.svg" alt="HelpNest" className="w-10 h-10 mx-auto mb-6" />
         <h1 className="font-serif text-3xl text-ink mb-2 text-center">{t.signInTitle}</h1>
         <p className="text-muted text-sm text-center mb-8">{t.signInSubtitle}</p>
 
