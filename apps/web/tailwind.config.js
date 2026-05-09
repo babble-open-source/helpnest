@@ -56,14 +56,14 @@ const config = {
     				'5': 'rgb(var(--color-chart-5) / <alpha-value>)'
     			},
     			sidebar: {
-    				DEFAULT: 'hsl(var(--sidebar-background))',
-    				foreground: 'hsl(var(--sidebar-foreground))',
-    				primary: 'hsl(var(--sidebar-primary))',
-    				'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-    				accent: 'hsl(var(--sidebar-accent))',
-    				'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-    				border: 'hsl(var(--sidebar-border))',
-    				ring: 'hsl(var(--sidebar-ring))'
+    				DEFAULT: 'rgb(var(--color-sidebar) / <alpha-value>)',
+    				foreground: 'rgb(var(--color-sidebar-foreground) / <alpha-value>)',
+    				primary: 'rgb(var(--color-sidebar-primary) / <alpha-value>)',
+    				'primary-foreground': 'rgb(var(--color-sidebar-primary-foreground) / <alpha-value>)',
+    				accent: 'rgb(var(--color-sidebar-accent) / <alpha-value>)',
+    				'accent-foreground': 'rgb(var(--color-sidebar-accent-foreground) / <alpha-value>)',
+    				border: 'rgb(var(--color-sidebar-border) / <alpha-value>)',
+    				ring: 'rgb(var(--color-sidebar-ring) / <alpha-value>)'
     			}
     		},
     		borderColor: {

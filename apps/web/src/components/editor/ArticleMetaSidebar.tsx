@@ -9,6 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { Globe, Lock } from 'lucide-react'
 
 interface Collection {
   id: string
@@ -235,7 +237,7 @@ export function ArticleMetaSidebar({
         setDeleteError(data.error ?? tCommon('somethingWentWrong'))
         return
       }
-      router.push('/dashboard/articles')
+      router.push('/articles')
       router.refresh()
     } catch {
       setDeleteError(tCommon('somethingWentWrong'))
@@ -277,10 +279,11 @@ export function ArticleMetaSidebar({
           </label>
           {/* Trigger */}
           <Tooltip content={hasPickedCollection ? (selectedCollection?.title ?? '—') : tCol('selectCollection')} wrapperClassName="w-full">
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={openModal}
-              className="w-full flex items-center gap-2 px-3 py-2 border rounded-lg text-sm bg-card text-foreground hover:border-orange-500/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+              className="w-full justify-start gap-2 h-auto px-3 py-2 text-sm font-normal"
             >
               {hasPickedCollection && <span className="shrink-0">{selectedCollection?.emoji ?? '📁'}</span>}
               <span className={`flex-1 text-left truncate ${!hasPickedCollection ? 'text-muted-foreground' : ''}`}>
@@ -292,12 +295,15 @@ export function ArticleMetaSidebar({
               <svg className="shrink-0 w-4 h-4 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-            </button>
+            </Button>
           </Tooltip>
 
           {/* File explorer modal */}
           <Dialog open={collectionOpen} onOpenChange={(open) => { if (!open) closeModal() }}>
-            <DialogContent className="max-w-2xl p-0 overflow-hidden flex flex-col" style={{ height: '560px' }}>
+            <DialogContent
+              className="relative flex max-h-[calc(100vh-2rem)] min-h-0 max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:max-h-[80vh]"
+              style={{ height: 'min(560px, calc(100vh - 2rem))' }}
+            >
 
               {/* Header */}
               <DialogHeader className="px-6 py-4 border-b shrink-0">
@@ -327,15 +333,15 @@ export function ArticleMetaSidebar({
                     {navPath.map((item, idx) => (
                       <span key={idx} className="flex items-center gap-1 shrink-0">
                         {idx > 0 && <span className="text-border mx-0.5">/</span>}
-                        <Tooltip content={item.emoji ? `${item.emoji} ${item.title}` : item.title} side="bottom">
-                          <button
-                            type="button"
-                            onClick={() => navigateTo(idx)}
-                            className={`hover:text-foreground transition-colors truncate max-w-[120px] ${idx === navPath.length - 1 ? 'text-foreground font-medium' : ''}`}
-                          >
-                            {item.emoji ? `${item.emoji} ${item.title}` : item.title}
-                          </button>
-                        </Tooltip>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => navigateTo(idx)}
+                          title={item.emoji ? `${item.emoji} ${item.title}` : item.title}
+                          className={`h-auto p-0 hover:bg-transparent hover:text-foreground transition-colors truncate max-w-[120px] ${idx === navPath.length - 1 ? 'text-foreground font-medium' : ''}`}
+                        >
+                          {item.emoji ? `${item.emoji} ${item.title}` : item.title}
+                        </Button>
                       </span>
                     ))}
                   </div>
@@ -353,7 +359,7 @@ export function ArticleMetaSidebar({
               </div>
 
               {/* Content area */}
-              <div className="flex-1 overflow-y-auto p-6">
+              <div className="min-h-0 flex-1 overflow-y-auto p-6">
                 {searchResults ? (
                   searchResults.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
@@ -369,7 +375,7 @@ export function ArticleMetaSidebar({
                             <button
                               type="button"
                               onClick={() => { onCollectionChange(c.id); setHasPickedCollection(true); closeModal() }}
-                              className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-muted transition-colors ${c.id === collectionId ? 'bg-orange-500/5' : ''}`}
+                              className={`w-full flex items-center gap-3 px-4 py-3 text-sm text-left hover:bg-muted transition-colors ${c.id === collectionId ? 'bg-primary/5' : ''}`}
                             >
                               <span className="text-xl shrink-0">{c.emoji ?? '📁'}</span>
                               <div className="flex-1 min-w-0">
@@ -383,7 +389,7 @@ export function ArticleMetaSidebar({
                                 )}
                               </div>
                               {c.id === collectionId && (
-                                <svg className="shrink-0 w-4 h-4 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <svg className="shrink-0 w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                                 </svg>
                               )}
@@ -412,15 +418,15 @@ export function ArticleMetaSidebar({
                           title={isFolder ? tCol('clickToSelectOrOpen') : tCol('clickToSelect')}
                           className={`relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 transition-all text-center select-none cursor-pointer
                             ${isHighlighted
-                              ? 'border-orange-500 bg-orange-500/10 shadow-sm'
+                              ? 'border-primary bg-primary/10 shadow-sm'
                               : 'border-transparent hover:border-border hover:bg-muted'
                             }`}
                         >
                           {isCurrent && (
-                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-orange-500" title={tCol('currentCollection')} />
+                            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary" title={tCol('currentCollection')} />
                           )}
                           <span className="text-4xl leading-none">{c.emoji ?? (isFolder ? '📁' : '📄')}</span>
-                          <span className={`text-xs font-medium leading-tight line-clamp-2 w-full ${isHighlighted ? 'text-orange-500' : 'text-foreground'}`}>
+                          <span className={`text-xs font-medium leading-tight line-clamp-2 w-full ${isHighlighted ? 'text-primary' : 'text-foreground'}`}>
                             {c.title}
                           </span>
                           {isFolder && (
@@ -435,7 +441,7 @@ export function ArticleMetaSidebar({
 
               {/* Create form — shown inline when showCreate is true */}
               {showCreate && (
-                <div className="absolute inset-0 bg-card rounded-2xl flex flex-col overflow-hidden">
+                <div className="absolute inset-0 z-10 flex min-h-0 flex-col overflow-hidden rounded-lg bg-background">
                   <div className="flex items-center justify-between px-6 py-4 border-b shrink-0">
                     <div>
                       <p className="font-medium text-foreground">{tCol('createCollection')}</p>
@@ -447,22 +453,22 @@ export function ArticleMetaSidebar({
                       &#x2715;
                     </Button>
                   </div>
-                  <form onSubmit={handleCreate} className="p-6 space-y-4 flex-1 overflow-y-auto">
+                  <form onSubmit={handleCreate} className="flex-1 space-y-4 overflow-y-auto p-6">
                     {/* Emoji */}
                     <div>
                       <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{tCol('icon')}</label>
                       <div className="flex flex-wrap gap-2">
                         {EMOJI_OPTIONS.map((e) => (
-                          <button key={e} type="button" onClick={() => setNewEmoji(e)}
-                            className={`w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-colors ${newEmoji === e ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-border'}`}
-                          >{e}</button>
+                          <Button key={e} type="button" variant={newEmoji === e ? 'default' : 'secondary'} size="icon" onClick={() => setNewEmoji(e)}
+                            className="w-9 h-9 text-lg"
+                          >{e}</Button>
                         ))}
                       </div>
                     </div>
                     {/* Title */}
                     <div>
                       <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1.5">
-                        {tCol('title')} <span className="text-orange-500">*</span>
+                        {tCol('title')} <span className="text-primary">*</span>
                       </label>
                       <Input
                         autoFocus
@@ -486,25 +492,26 @@ export function ArticleMetaSidebar({
                     {/* Visibility */}
                     <div>
                       <label className="block text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">{tCol('visibility')}</label>
-                      <div className="flex gap-2">
-                        <button type="button" onClick={() => setNewVisibility('PUBLIC')}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${newVisibility === 'PUBLIC' ? 'border-orange-500 bg-orange-500/5 text-foreground' : 'border-border text-muted-foreground hover:border-foreground'}`}
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                      <ToggleGroup
+                        type="single"
+                        value={newVisibility}
+                        onValueChange={(v) => { if (v) setNewVisibility(v as 'PUBLIC' | 'INTERNAL') }}
+                        className="justify-start"
+                      >
+                        <ToggleGroupItem value="PUBLIC" className="gap-2">
+                          <Globe className="w-4 h-4" />
                           {tCol('visibilityPublic')}
-                        </button>
-                        <button type="button" onClick={() => setNewVisibility('INTERNAL')}
-                          className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border transition-colors ${newVisibility === 'INTERNAL' ? 'border-orange-500 bg-orange-500/5 text-foreground' : 'border-border text-muted-foreground hover:border-foreground'}`}
-                        >
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="INTERNAL" className="gap-2">
+                          <Lock className="w-4 h-4" />
                           {tCol('visibilityInternal')}
-                        </button>
-                      </div>
+                        </ToggleGroupItem>
+                      </ToggleGroup>
                       <p className="text-xs text-muted-foreground mt-1.5">
                         {newVisibility === 'PUBLIC' ? tCol('visibilityPublicDescription') : tCol('visibilityInternalDescription')}
                       </p>
                     </div>
-                    {createError && <p className="text-sm text-red-500">{createError}</p>}
+                    {createError && <p className="text-sm text-destructive">{createError}</p>}
                   </form>
                   <div className="flex items-center justify-end gap-3 px-6 py-4 border-t shrink-0">
                     <Button type="button" variant="ghost" onClick={() => { setShowCreate(false); setCreateError('') }}>
@@ -521,15 +528,15 @@ export function ArticleMetaSidebar({
                 </div>
               )}
 
-              {/* Footer */}
-              <div className="flex items-center justify-between px-6 py-4 border-t shrink-0">
+              {/* Footer — hidden when inline create form is showing */}
+              <div className={`flex items-center justify-between px-6 py-4 border-t shrink-0 ${showCreate ? 'invisible' : ''}`}>
                 {canCreateHere && !searchResults ? (
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => { setShowCreate(true); setNewTitle(''); setNewDescription(''); setNewEmoji('📁'); setNewVisibility('PUBLIC'); setCreateError('') }}
-                    className="text-xs text-muted-foreground hover:text-orange-500 h-auto py-1"
+                    className="text-xs text-muted-foreground hover:text-primary h-auto py-1"
                   >
                     {tCol('newCollection')}
                   </Button>
@@ -565,25 +572,26 @@ export function ArticleMetaSidebar({
             className="font-mono"
           />
           {!slug.trim() && (
-            <p className="text-xs text-red-500 mt-1">{t('slugEmpty')}</p>
+            <p className="text-xs text-destructive mt-1">{t('slugEmpty')}</p>
           )}
           <div className="flex items-center justify-between mt-1">
             <span className={`text-xs ${
-              !slug.trim() ? 'text-red-500' :
-              slug.length >= 180 ? 'text-red-500' :
+              !slug.trim() ? 'text-destructive' :
+              slug.length >= 180 ? 'text-destructive' :
               slug.length >= 150 ? 'text-amber-500' :
               'text-muted-foreground'
             }`}>
               {slug.length}/200
             </span>
             {slug !== savedSlug && (
-              <button
+              <Button
+                variant="link"
                 onClick={onSlugSave}
                 disabled={!slug.trim()}
-                className="text-xs text-orange-500 hover:underline font-medium cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                className="text-xs h-auto p-0"
               >
                 {t('saveSlug')}
-              </button>
+              </Button>
             )}
           </div>
           <p
@@ -615,7 +623,7 @@ export function ArticleMetaSidebar({
           variant="ghost"
           size="sm"
           onClick={() => { setDeleteError(''); setConfirmDelete(true) }}
-          className="w-full text-xs text-muted-foreground hover:text-red-500 h-auto py-1"
+          className="w-full text-xs text-muted-foreground hover:text-destructive h-auto py-1"
         >
           {t('deleteArticle')}
         </Button>
@@ -628,7 +636,7 @@ export function ArticleMetaSidebar({
             <AlertDialogTitle>{t('deleteConfirmTitle', { title: articleTitle })}</AlertDialogTitle>
             <AlertDialogDescription>{t('deleteConfirmMessage')}</AlertDialogDescription>
           </AlertDialogHeader>
-          {deleteError && <p className="text-xs text-red-500 px-1">{deleteError}</p>}
+          {deleteError && <p className="text-xs text-destructive px-1">{deleteError}</p>}
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setConfirmDelete(false)}>
               {tCommon('cancel')}

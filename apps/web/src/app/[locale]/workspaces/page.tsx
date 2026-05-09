@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
 import { WorkspaceList } from './WorkspaceList'
+import { StandaloneDashboardShell } from '@/components/StandaloneDashboardShell'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,7 @@ export default async function WorkspacesPage() {
 
   const cookieStore = await cookies()
   const currentWorkspaceId = cookieStore.get('helpnest-workspace')?.value ?? null
+  const dashboardTheme = cookieStore.get('dashboard_theme')?.value === 'dark' ? 'dark' : 'light'
   const cloudMode = isCloudMode()
 
   const helpCenterDomain = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''
@@ -26,10 +28,10 @@ export default async function WorkspacesPage() {
   const slugSuffix = helpCenterDomain ? `.${helpCenterDomain}` : ''
 
   return (
-    <div className="min-h-screen bg-cream">
+    <StandaloneDashboardShell initialTheme={dashboardTheme}>
       <div className="max-w-3xl mx-auto px-4 py-8 sm:py-12">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="font-serif text-2xl sm:text-3xl text-ink">{t('title')}</h1>
+          <h1 className="text-2xl font-semibold text-foreground">{t('title')}</h1>
         </div>
         <WorkspaceList
           active={active.map((w) => ({
@@ -48,6 +50,6 @@ export default async function WorkspacesPage() {
           slugSuffix={slugSuffix}
         />
       </div>
-    </div>
+    </StandaloneDashboardShell>
   )
 }

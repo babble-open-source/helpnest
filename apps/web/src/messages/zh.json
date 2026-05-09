@@ -37,7 +37,11 @@
     "results": "{count, plural, other {# 条结果}}",
     "internal": "内部",
     "saved": "Saved!",
-    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}"
+    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}",
+    "lightMode": "浅色模式",
+    "darkMode": "深色模式",
+    "workspaces": "工作区",
+    "createWorkspace": "创建工作区"
   },
   "help": {
     "helpCenter": "帮助中心",
@@ -261,6 +265,7 @@
   "generateTopic": {
     "generate": "+ 从主题生成",
     "dialogTitle": "从主题生成文章",
+    "dialogDescription": "输入一个主题，我们会为你生成一篇文章草稿。",
     "draftCreated": "草稿已创建",
     "generateAnother": "再生成一篇",
     "placeholder": "例如：配置 SSO",

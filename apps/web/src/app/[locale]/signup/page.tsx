@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic'
 export default async function SignupPage() {
   const session = await auth()
   const userId = await resolveSessionUserId(session)
-  if (session?.user && userId) redirect('/dashboard')
+  if (session?.user && userId) redirect('/')
 
   const t = await getTranslations('auth')
 

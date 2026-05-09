@@ -37,7 +37,11 @@
     "results": "{count, plural, one {# resultado} other {# resultados}}",
     "internal": "Interno",
     "saved": "Saved!",
-    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}"
+    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}",
+    "lightMode": "Modo claro",
+    "darkMode": "Modo oscuro",
+    "workspaces": "Espacios de trabajo",
+    "createWorkspace": "Crear espacio de trabajo"
   },
   "help": {
     "helpCenter": "Centro de ayuda",
@@ -261,6 +265,7 @@
   "generateTopic": {
     "generate": "+ Generar desde un tema",
     "dialogTitle": "Generar artículo desde un tema",
+    "dialogDescription": "Ingresa un tema y generaremos un borrador de artículo para ti.",
     "draftCreated": "Borrador creado",
     "generateAnother": "Generar otro",
     "placeholder": "p. ej. Configurar SSO",

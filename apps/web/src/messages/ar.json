@@ -37,7 +37,11 @@
     "results": "{count, plural, zero {# نتائج} one {# نتيجة} two {# نتيجتان} few {# نتائج} many {# نتيجة} other {# نتائج}}",
     "internal": "داخلي",
     "saved": "Saved!",
-    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}"
+    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}",
+    "lightMode": "الوضع الفاتح",
+    "darkMode": "الوضع الداكن",
+    "workspaces": "مساحات العمل",
+    "createWorkspace": "إنشاء مساحة عمل"
   },
   "help": {
     "helpCenter": "مركز المساعدة",
@@ -261,6 +265,7 @@
   "generateTopic": {
     "generate": "+ توليد من موضوع",
     "dialogTitle": "توليد مقالة من موضوع",
+    "dialogDescription": "أدخل موضوعًا وسننشىء لك مسودة مقالة.",
     "draftCreated": "تمّ إنشاء المسودة",
     "generateAnother": "توليد أخرى",
     "placeholder": "مثال: إعداد SSO",

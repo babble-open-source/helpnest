@@ -14,7 +14,7 @@ export default async function OnboardingPage() {
   if (!userId || !session?.user) redirect('/login')
 
   const workspaceId = await resolveWorkspaceId(userId)
-  if (workspaceId) redirect('/dashboard')
+  if (workspaceId) redirect('/')
 
   // Check for restorable deleted workspaces (any soft-deleted within membership)
   const deletedWorkspaces = await prisma.member.findMany({

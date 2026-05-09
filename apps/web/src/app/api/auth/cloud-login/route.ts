@@ -9,7 +9,7 @@ import { useSecureCookies } from '@/lib/auth.config'
  * Cloud Login — receives a short-lived JWT from helpnest-cloud's auth bridge
  * and creates a NextAuth session for the user in the OSS app.
  *
- * GET /api/auth/cloud-login?token=xxx&redirect=/dashboard
+ * GET /api/auth/cloud-login?token=xxx&redirect=/
  *
  * The JWT contains { email, name, workspaceSlug } and is signed with
  * SHARED_AUTH_SECRET (same value in both apps).
@@ -17,11 +17,11 @@ import { useSecureCookies } from '@/lib/auth.config'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const token = searchParams.get('token')
-  const rawRedirect = searchParams.get('redirect') ?? '/dashboard'
+  const rawRedirect = searchParams.get('redirect') ?? '/'
   // Only allow relative paths — prevent open redirect to external sites
   const redirect = rawRedirect.startsWith('/') && !rawRedirect.startsWith('//')
     ? rawRedirect
-    : '/dashboard'
+    : '/'
 
   if (!token) {
     return NextResponse.json({ error: 'Missing token' }, { status: 400 })

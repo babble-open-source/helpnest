@@ -37,7 +37,11 @@
     "results": "{count, plural, one {# परिणाम} other {# परिणाम}}",
     "internal": "आंतरिक",
     "saved": "Saved!",
-    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}"
+    "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}",
+    "lightMode": "लाइट मोड",
+    "darkMode": "डार्क मोड",
+    "workspaces": "कार्यक्षेत्र",
+    "createWorkspace": "कार्यक्षेत्र बनाएं"
   },
   "help": {
     "helpCenter": "सहायता केंद्र",
@@ -261,6 +265,7 @@
   "generateTopic": {
     "generate": "+ विषय से जेनरेट करें",
     "dialogTitle": "विषय से लेख जेनरेट करें",
+    "dialogDescription": "कोई विषय दर्ज करें और हम आपके लिए लेख का ड्राफ्ट बना देंगे।",
     "draftCreated": "ड्राफ़्ट बनाया गया",
     "generateAnother": "दूसरा जेनरेट करें",
     "placeholder": "जैसे: SSO सेट अप करना",

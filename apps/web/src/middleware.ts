@@ -74,7 +74,7 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   if (pathWithoutLocale.startsWith('/api/')) return null
   if (pathWithoutLocale === '/widget.js') return null
   // App routes that should never be rewritten by subdomain routing
-  const APP_PATHS = ['/dashboard', '/login', '/signup', '/onboarding', '/invite/', '/workspaces']
+  const APP_PATHS = ['/login', '/signup', '/onboarding', '/invite/', '/workspaces', '/articles', '/inbox', '/collections', '/knowledge-gaps', '/imports', '/settings', '/billing']
   if (APP_PATHS.some((p) => pathWithoutLocale.startsWith(p))) return null
   if (pathWithoutLocale.startsWith('/imports/') || pathWithoutLocale === '/manifest.json' || pathWithoutLocale.match(/\.(png|ico|svg|jpg|jpeg|webp)$/)) return null
 
@@ -216,7 +216,9 @@ function handleAuthRedirect(
   const locale = detectLocaleFromPath(pathname)
   const pathWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), '') || '/'
 
-  if ((pathWithoutLocale.startsWith('/dashboard') || pathWithoutLocale.startsWith('/workspaces')) && !isLoggedIn) {
+  const PROTECTED_PATHS = ['/workspaces', '/articles', '/inbox', '/collections', '/knowledge-gaps', '/imports', '/settings', '/billing']
+  const isProtected = pathWithoutLocale === '/' || PROTECTED_PATHS.some((p) => pathWithoutLocale.startsWith(p))
+  if (isProtected && !isLoggedIn) {
     return NextResponse.redirect(new URL(`/${locale}/login`, req.url))
   }
   return null
@@ -263,7 +265,7 @@ export default auth(async (req) => {
       return response
     }
 
-    // BYOD domain hitting a non-help path (e.g. /dashboard) — block it
+    // BYOD domain hitting a non-help path (e.g. /articles) — block it
     return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
   }
 

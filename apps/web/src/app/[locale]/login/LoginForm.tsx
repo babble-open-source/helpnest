@@ -57,7 +57,7 @@ export function LoginForm({ defaultEmail, showDefaultCreds, workspaceSlug, showS
       setError(t.invalidCredentials)
       setLoading(false)
     } else {
-      router.push('/dashboard')
+      router.push('/')
     }
   }
 

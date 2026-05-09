@@ -37,7 +37,11 @@
     "collections": "{count, plural, one {# collection} other {# collections}}",
     "subCollections": "{count, plural, one {# sub-collection} other {# sub-collections}}",
     "results": "{count, plural, one {# result} other {# results}}",
-    "internal": "Internal"
+    "internal": "Internal",
+    "lightMode": "Light mode",
+    "darkMode": "Dark mode",
+    "workspaces": "Workspaces",
+    "createWorkspace": "Create workspace"
   },
   "help": {
     "helpCenter": "Help Center",
@@ -261,6 +265,7 @@
   "generateTopic": {
     "generate": "+ Generate from topic",
     "dialogTitle": "Generate article from topic",
+    "dialogDescription": "Enter a topic and we'll generate a draft article for you.",
     "draftCreated": "Draft created",
     "generateAnother": "Generate another",
     "placeholder": "e.g. Setting up SSO",

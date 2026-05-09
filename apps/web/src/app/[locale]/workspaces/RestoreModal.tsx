@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
+import { Button } from '@/components/ui/button'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
 
 interface Props {
   workspace: { id: string; name: string; deletedAt: string | null }
@@ -99,59 +102,57 @@ export function RestoreModal({ workspace, cloudMode, onClose, onSuccess }: Props
     (slugState === 'available' || newSlug.trim().length >= 3)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40" onClick={onClose}>
-      <div
-        className="bg-white rounded-xl border border-border shadow-lg p-6 max-w-md mx-4 w-full"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <h3 className="font-serif text-lg text-ink mb-2">{t('restoreTitle')}</h3>
-        <p className="text-sm text-muted mb-4">
-          <span className="font-medium text-ink">{workspace.name}</span>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t('restoreTitle')}</DialogTitle>
+        </DialogHeader>
+
+        <p className="text-sm text-muted-foreground">
+          <span className="font-medium text-foreground">{workspace.name}</span>
         </p>
 
         {slugState === 'loading' && !error && (
-          <p className="text-sm text-muted mb-4">…</p>
+          <p className="text-sm text-muted-foreground">…</p>
         )}
 
         {slugState === 'claimed' && (
-          <div className="mb-4">
-            <p className="text-sm text-muted mb-2">{t('restoreSlugClaimed')}</p>
-            <input
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">{t('restoreSlugClaimed')}</p>
+            <Input
               type="text"
               value={newSlug}
               onChange={(e) => { setNewSlug(e.target.value); setError('') }}
               placeholder={t('restoreSlugPlaceholder')}
-              className="w-full px-3 py-2 text-sm border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
             />
           </div>
         )}
 
-        <div className="space-y-1.5 mb-4 text-xs text-muted">
+        <div className="space-y-1.5 text-xs text-muted-foreground">
           <p>{t('restoreAiReindex')}</p>
           <p>{t('restoreDomainNote')}</p>
           {cloudMode && <p>{t('restoreBillingNote')}</p>}
         </div>
 
-        {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
-        <div className="flex gap-3 justify-end">
-          <button
+        <DialogFooter>
+          <Button
             type="button"
             onClick={onClose}
-            className="text-sm font-medium px-4 py-2 rounded-lg border border-border text-ink hover:bg-cream transition-colors"
+            variant="outline"
           >
             {tc('cancel')}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
             onClick={handleRestore}
             disabled={!canSubmit}
-            className="text-sm font-medium px-4 py-2 rounded-lg bg-ink text-cream hover:bg-ink/90 transition-colors disabled:opacity-50"
           >
             {restoring ? t('restoring') : t('restoreConfirm')}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

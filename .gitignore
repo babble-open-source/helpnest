@@ -40,3 +40,4 @@ coverage/
 next-env.d.ts
 docs/superpowers/
 .wrangler/
+/AGENTS.md

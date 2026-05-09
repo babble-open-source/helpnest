@@ -3,6 +3,15 @@
 import { useState, useEffect, useRef } from 'react'
 import { useLocale, useTranslations } from 'next-intl'
 import { CrawlStep } from '../onboarding/CrawlStep'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 function slugify(str: string): string {
   return str
@@ -33,7 +42,6 @@ export function CreateWorkspaceModal({ slugPrefix, slugSuffix, onClose }: Props)
   const [slugEdited, setSlugEdited] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const backdropRef = useRef<HTMLDivElement>(null)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -43,18 +51,6 @@ export function CreateWorkspaceModal({ slugPrefix, slugSuffix, onClose }: Props)
   useEffect(() => {
     if (step === 'workspace') nameInputRef.current?.focus()
   }, [step])
-
-  useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape' && step === 'workspace') onClose()
-    }
-    document.addEventListener('keydown', handleKeyDown)
-    return () => document.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, step])
-
-  function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
-    if (e.target === backdropRef.current && step === 'workspace') onClose()
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -84,7 +80,6 @@ export function CreateWorkspaceModal({ slugPrefix, slugSuffix, onClose }: Props)
         return
       }
 
-      // Cookie is already set by the API — crawl step will use the new workspace
       setLoading(false)
       setStep('crawl')
     } catch {
@@ -94,80 +89,59 @@ export function CreateWorkspaceModal({ slugPrefix, slugSuffix, onClose }: Props)
   }
 
   function goToDashboard() {
-    window.location.assign(`/${locale}/dashboard`)
+    window.location.assign(`/${locale}`)
   }
 
   if (step === 'crawl') {
     return (
-      <div
-        ref={backdropRef}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40"
-      >
-        <div className="bg-cream border border-border rounded-xl shadow-xl w-full max-w-md overflow-hidden">
-          <div className="px-6 py-5">
-            <CrawlStep onSkip={goToDashboard} onComplete={goToDashboard} compact />
-          </div>
-        </div>
-      </div>
+      <Dialog open onOpenChange={(open) => { if (!open) goToDashboard() }}>
+        <DialogContent className="dashboard-root sm:max-w-md">
+          <CrawlStep onSkip={goToDashboard} onComplete={goToDashboard} compact />
+        </DialogContent>
+      </Dialog>
     )
   }
 
   return (
-    <div
-      ref={backdropRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40"
-      onClick={handleBackdropClick}
-      role="dialog"
-      aria-modal="true"
-    >
-      <div className="bg-cream border border-border rounded-xl shadow-xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-border">
-          <h2 className="font-serif text-xl text-ink">{t('title')}</h2>
-          <button
-            onClick={onClose}
-            className="text-muted hover:text-ink transition-colors p-1 rounded-md hover:bg-border/50"
-            aria-label="Close"
-          >
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-              <path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
-            </svg>
-          </button>
-        </div>
+    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+      <DialogContent className="dashboard-root sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-sans text-base font-medium tracking-normal text-foreground">{t('title')}</DialogTitle>
+        </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
           {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2">
               {error}
             </p>
           )}
 
           <div>
-            <label htmlFor="ws-name" className="block text-xs font-medium text-ink mb-1.5">
+            <label htmlFor="ws-name" className="block text-xs font-medium text-foreground mb-1.5">
               {t('helpCenterName')}
             </label>
-            <input
+            <Input
               ref={nameInputRef}
               id="ws-name"
               type="text"
               required
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-3 py-2 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:border-ink text-sm transition-colors"
               placeholder={t('helpCenterNamePlaceholder')}
             />
           </div>
 
           <div>
-            <label htmlFor="ws-slug" className="block text-xs font-medium text-ink mb-1.5">
+            <label htmlFor="ws-slug" className="block text-xs font-medium text-foreground mb-1.5">
               {t('urlSlug')}
             </label>
             <div className="flex items-center">
               {slugPrefix && (
-                <span className="text-sm text-muted bg-white border border-border border-r-0 rounded-l-lg px-3 py-2 whitespace-nowrap">
+                <span className="text-sm text-muted-foreground bg-muted border border-input border-r-0 rounded-l-md px-3 py-2 whitespace-nowrap">
                   {slugPrefix}
                 </span>
               )}
-              <input
+              <Input
                 id="ws-slug"
                 type="text"
                 required
@@ -177,38 +151,31 @@ export function CreateWorkspaceModal({ slugPrefix, slugSuffix, onClose }: Props)
                   setSlugEdited(true)
                 }}
                 onBlur={() => setSlug(cleanSlug(slug))}
-                className={`flex-1 min-w-0 px-3 py-2 border border-border bg-white text-ink placeholder:text-muted focus:outline-none focus:border-ink text-sm transition-colors ${
-                  slugPrefix ? '' : 'rounded-l-lg'
-                } ${slugSuffix ? '' : 'rounded-r-lg'}`}
+                className={`${slugPrefix ? 'rounded-l-none' : ''} ${slugSuffix ? 'rounded-r-none' : ''}`}
                 placeholder={t('slugPlaceholder')}
               />
               {slugSuffix && (
-                <span className="text-sm text-muted bg-white border border-border border-l-0 rounded-r-lg px-3 py-2 whitespace-nowrap">
+                <span className="text-sm text-muted-foreground bg-muted border border-input border-l-0 rounded-r-md px-3 py-2 whitespace-nowrap">
                   {slugSuffix}
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted mt-1">{t('slugHint')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{t('slugHint')}</p>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-sm text-muted hover:text-ink transition-colors px-4 py-2 rounded-lg border border-border bg-white hover:bg-cream"
-            >
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
               {tc('cancel')}
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
               disabled={loading || !name.trim() || slug.trim().length < 3}
-              className="bg-ink text-cream text-sm font-medium px-4 py-2 rounded-lg hover:bg-ink/90 transition-colors disabled:opacity-50"
             >
               {loading ? t('creating') : t('createButton')}
-            </button>
-          </div>
+            </Button>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

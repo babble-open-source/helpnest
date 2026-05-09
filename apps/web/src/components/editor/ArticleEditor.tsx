@@ -269,7 +269,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
     {editorThemeCSS && (
       <style dangerouslySetInnerHTML={{ __html: `.hn-prose-scope { ${editorThemeCSS} }` }} />
     )}
-    <div className="flex h-screen bg-background overflow-hidden">
+    <div className="flex h-full bg-background overflow-hidden">
       {/* Left outline panel */}
       {showOutline && editor && <EditorOutline editor={editor} />}
 
@@ -278,7 +278,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
         {/* Top bar */}
         <div className="flex items-center justify-between px-6 py-3 bg-card border-b shrink-0">
           <div className="flex-1 min-w-0 flex items-center gap-2 overflow-hidden">
-            <LocaleLink href="/dashboard/articles" className="text-muted-foreground hover:text-foreground transition-colors text-sm shrink-0">
+            <LocaleLink href="/articles" className="text-muted-foreground hover:text-foreground transition-colors text-sm shrink-0">
               {t('backToArticles')}
             </LocaleLink>
             <div className="flex items-center gap-1 border-s ps-3">
@@ -350,8 +350,8 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
             <span className={`min-w-0 shrink-0 text-xs px-2 py-0.5 rounded-full ${
               saveStatus === 'saved' ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' :
               saveStatus === 'saving' ? 'text-muted-foreground bg-muted' :
-              saveStatus === 'error' ? 'text-red-500 bg-muted' :
-              'text-orange-500 bg-orange-500/10'
+              saveStatus === 'error' ? 'text-destructive bg-muted' :
+              'text-primary bg-primary/10'
             }`}>
               {saveStatus === 'saved' ? t('saved') :
                saveStatus === 'saving' ? tCommon('saving') :
@@ -361,7 +361,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
           </div>
           <div className="flex items-center gap-1 shrink-0">
             {hasDraft && saveStatus === 'saved' && (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-500">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary">
                 {t('draftPendingPublish')}
               </span>
             )}
@@ -415,7 +415,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
             >
               <Button
                 onClick={publish}
-                className="text-sm bg-orange-500 text-white rounded-lg px-4 py-1.5 h-auto hover:bg-orange-500/90 transition-colors font-medium"
+                className="text-sm px-4 py-1.5 h-auto font-medium"
               >
                 {status === 'PUBLISHED' ? tCommon('update') : tCommon('publish')}
               </Button>
@@ -439,11 +439,11 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
           </>
         )}
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto hn-prose-scope bg-[rgb(var(--color-cream))] text-[rgb(var(--color-ink))]">
           {/* AI banner: derive visibility from current state so it clears automatically after publish */}
           {!dismissedAiBanner && article.aiGenerated && (status === 'DRAFT' || (status === 'PUBLISHED' && hasDraft)) && (
-            <div className="border-b bg-orange-500/5 px-6 py-3 flex items-start justify-between gap-4">
-              <p className="text-sm text-foreground">
+            <div className="border-b bg-primary/5 px-6 py-3 flex items-start justify-between gap-4">
+              <p className="text-sm">
                 {status === 'DRAFT'
                   ? t('aiDraftBanner')
                   : t('aiUpdateBanner')}
@@ -464,12 +464,12 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder={t('articleTitle')}
-              className="w-full font-semibold text-4xl text-foreground bg-transparent border-none shadow-none outline-none placeholder:text-muted-foreground/40 mb-6 leading-tight px-0 focus-visible:ring-0 h-auto"
+              className="w-full font-semibold text-4xl [color:inherit] bg-transparent border-none shadow-none outline-none placeholder:opacity-40 mb-6 leading-tight px-0 focus-visible:ring-0 h-auto"
             />
             {/* Editor body */}
             <EditorContent
               editor={editor}
-              className="prose-editor hn-prose hn-prose-scope min-h-[400px] focus:outline-none"
+              className="prose-editor hn-prose min-h-[400px] focus:outline-none"
             />
           </div>
         </div>
@@ -506,7 +506,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
 
       {/* Version history modal */}
       <Dialog open={showVersions} onOpenChange={setShowVersions}>
-        <DialogContent className="max-w-lg p-0 overflow-hidden">
+        <DialogContent className="max-w-lg p-0 gap-0 overflow-hidden">
           <DialogHeader className="px-6 py-4 border-b">
             <DialogTitle className="font-medium text-foreground">{t('versionHistory')}</DialogTitle>
           </DialogHeader>
@@ -526,7 +526,7 @@ export function ArticleEditor({ article, collections, workspaceSlug, autoOpenCol
                     variant="ghost"
                     size="sm"
                     onClick={() => restoreVersion(v.content, v.title)}
-                    className="text-xs text-orange-500 hover:text-orange-500 hover:underline h-auto py-0.5"
+                    className="text-xs text-primary hover:text-primary hover:underline h-auto py-0.5"
                   >
                     {t('restore')}
                   </Button>

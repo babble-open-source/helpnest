@@ -19,7 +19,7 @@ export async function DashboardButton() {
         {t('github')}
       </a>
       <Link
-        href="/dashboard"
+        href="/"
         className="text-sm font-medium text-ink border border-border rounded-lg px-3 py-1.5 bg-white hover:bg-cream transition-colors"
       >
           Dashboard

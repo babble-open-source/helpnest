@@ -12,7 +12,7 @@ const DEFAULT_EMAIL = 'admin@helpnest.cloud'
 export default async function LoginPage() {
   const session = await auth()
   const userId = await resolveSessionUserId(session)
-  if (session?.user && userId) redirect('/dashboard')
+  if (session?.user && userId) redirect('/')
   const demoMode = isDemoMode()
   const seedEmail = process.env.ADMIN_SEED_EMAIL ?? DEFAULT_EMAIL
   const t = await getTranslations('auth')

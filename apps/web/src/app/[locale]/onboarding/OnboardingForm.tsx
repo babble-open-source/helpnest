@@ -94,11 +94,11 @@ export function OnboardingForm({
     return (
       <CrawlStep
         onSkip={() => {
-          router.push('/dashboard')
+          router.push('/')
           router.refresh()
         }}
         onComplete={() => {
-          router.push('/dashboard')
+          router.push('/')
           router.refresh()
         }}
       />
