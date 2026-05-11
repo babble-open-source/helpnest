@@ -86,7 +86,13 @@ export interface ConversationMessage {
 export type SSEEvent =
   | { type: 'text'; text: string }
   | { type: 'sources'; sources: Source[] }
-  | { type: 'done'; shouldEscalate?: boolean; escalationReason?: string; message?: string; confidence?: number }
+  | {
+      type: 'done'
+      shouldEscalate?: boolean
+      escalationReason?: string
+      message?: string
+      confidence?: number
+    }
   | { type: 'error'; message?: string }
 
 export type ViewType =
