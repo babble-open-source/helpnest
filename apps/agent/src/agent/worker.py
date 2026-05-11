@@ -34,13 +34,6 @@ async def entrypoint(ctx: JobContext):
     stt, llm, tts = resolve_drivers(config)
     system_prompt = build_system_prompt(config, greeting)
 
-    session = AgentSession(
-        stt=stt,
-        llm=llm,
-        tts=tts,
-        userdata=userdata,
-    )
-
     userdata = {
         "workspace_id": workspace_id,
         "conversation_id": conversation_id,
@@ -48,6 +41,13 @@ async def entrypoint(ctx: JobContext):
         "last_agent_message_id": "",
         "last_sources": [],
     }
+
+    session = AgentSession(
+        stt=stt,
+        llm=llm,
+        tts=tts,
+        userdata=userdata,
+    )
 
     @session.on("user_input_transcribed")
     def on_transcript(ev):
