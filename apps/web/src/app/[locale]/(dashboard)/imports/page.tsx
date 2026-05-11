@@ -46,7 +46,7 @@ export default async function ImportsPage() {
   ]
 
   return (
-    <div className="p-4 sm:p-8 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-8">
       <div className="mb-8">
         <h1 className="text-2xl font-semibold text-foreground mb-2">{t('title')}</h1>
         <p className="text-muted-foreground text-sm">

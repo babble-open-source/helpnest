@@ -115,7 +115,7 @@ export default async function SettingsPage() {
   const isAdmin = member.role === 'OWNER' || member.role === 'ADMIN'
 
   return (
-    <div className="p-4 sm:p-8 max-w-2xl mx-auto">
+    <div className="p-4 sm:p-8">
       <h1 className="text-2xl font-semibold text-foreground mb-8">{t('title')}</h1>
 
       <div className="space-y-6">
