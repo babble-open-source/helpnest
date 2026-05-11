@@ -1,8 +1,6 @@
-# apps/agent/src/agent/worker.py
 import json
 import asyncio
 import logging
-from livekit import rtc
 from livekit.agents import AgentSession, Agent, JobContext
 from agent.config import load_workspace_config, post_message
 from agent.providers import resolve_drivers
@@ -15,6 +13,7 @@ async def entrypoint(ctx: JobContext):
     await ctx.connect()
 
     raw_metadata = ctx.room.metadata or "{}"
+    logger.info("Room metadata: %s", raw_metadata)
     meta = json.loads(raw_metadata)
 
     workspace_id = meta.get("workspaceId", "")
@@ -22,6 +21,10 @@ async def entrypoint(ctx: JobContext):
     greeting = meta.get("greeting")
     language = meta.get("language", "en")
     voice_settings = meta.get("voiceSettings")
+
+    if not workspace_id:
+        logger.error("No workspaceId in room metadata, cannot proceed")
+        return
 
     config = await load_workspace_config(workspace_id)
 
@@ -46,16 +49,21 @@ async def entrypoint(ctx: JobContext):
     }
 
     @session.on("user_input_transcribed")
-    async def on_transcript(ev):
+    def on_transcript(ev):
         if ev.is_final and ev.transcript.strip():
-            msg = await post_message(conversation_id, "CUSTOMER", ev.transcript)
-            userdata["last_user_message_id"] = msg.get("messageId", "")
+            asyncio.create_task(_handle_user_transcript(ev.transcript))
 
-            data = json.dumps({"type": "transcript_user", "text": ev.transcript, "isFinal": True})
-            await ctx.room.local_participant.publish_data(data.encode(), reliable=True)
+    async def _handle_user_transcript(text: str):
+        msg = await post_message(conversation_id, "CUSTOMER", text)
+        userdata["last_user_message_id"] = msg.get("messageId", "")
+        data = json.dumps({"type": "transcript_user", "text": text, "isFinal": True})
+        await ctx.room.local_participant.publish_data(data.encode(), reliable=True)
 
     @session.on("agent_speech_committed")
-    async def on_speech(ev):
+    def on_speech(ev):
+        asyncio.create_task(_handle_agent_speech(ev))
+
+    async def _handle_agent_speech(ev):
         text = ev.content if hasattr(ev, "content") else str(ev)
         sources = userdata.get("last_sources")
         msg = await post_message(conversation_id, "AI", text, sources)
@@ -82,14 +90,12 @@ async def entrypoint(ctx: JobContext):
 
     logger.info("Voice session started for workspace=%s conversation=%s", workspace_id, conversation_id)
 
-    # 10-minute max session duration
     async def session_timeout():
-        await asyncio.sleep(480)  # 8 minutes — warn
-        warn_data = json.dumps({"type": "transcript_agent", "text": "Just a heads up — this voice session will end in about 2 minutes. Feel free to switch to text chat if you need more time.", "isFinal": True})
+        await asyncio.sleep(480)
+        warn_data = json.dumps({"type": "transcript_agent", "text": "Just a heads up — this voice session will end in about 2 minutes.", "isFinal": True})
         await ctx.room.local_participant.publish_data(warn_data.encode(), reliable=True)
-        await session.generate_reply(instructions="Tell the customer the voice session will end in 2 minutes and they can continue via text chat.")
-
-        await asyncio.sleep(120)  # 10 minutes total — disconnect
+        await session.generate_reply(instructions="Tell the customer the voice session will end in 2 minutes.")
+        await asyncio.sleep(120)
         end_data = json.dumps({"type": "session_end", "reason": "timeout"})
         await ctx.room.local_participant.publish_data(end_data.encode(), reliable=True)
         await asyncio.sleep(2)
