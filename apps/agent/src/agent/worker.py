@@ -38,6 +38,7 @@ async def entrypoint(ctx: JobContext):
         stt=stt,
         llm=llm,
         tts=tts,
+        userdata=userdata,
     )
 
     userdata = {
@@ -80,7 +81,6 @@ async def entrypoint(ctx: JobContext):
     agent = Agent(
         instructions=system_prompt,
         tools=[search_articles, report_confidence, escalate_to_human],
-        userdata=userdata,
     )
 
     await session.start(agent=agent, room=ctx.room)
