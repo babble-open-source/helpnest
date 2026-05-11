@@ -31,9 +31,7 @@ export async function fetchCollections(): Promise<CollectionNode[]> {
   return data.collections ?? []
 }
 
-export async function fetchArticles(
-  collectionId: string
-): Promise<{
+export async function fetchArticles(collectionId: string): Promise<{
   collection: { title: string; description: string | null; slug: string }
   articles: ArticleSummary[]
 }> {
