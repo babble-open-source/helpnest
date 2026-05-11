@@ -10,8 +10,10 @@ import {
   setConversations,
   getTransitionDirection,
   clearTransitionDirection,
+  setVoiceState,
 } from './state'
-import { initApi, fetchConfig, fetchCollections, fetchConversations } from './api'
+import { initApi, fetchConfig, fetchCollections, fetchConversations, getVoiceToken, createConversation } from './api'
+import { startVoiceSession, stopVoiceSession } from './voice/session'
 import { renderHome, bindHomeEvents } from './views/home'
 import { renderMessages, bindMessagesEvents } from './views/messages'
 import { renderHelp, bindHelpEvents } from './views/help'
@@ -400,7 +402,11 @@ export class HelpNestWidget {
   private swapView(html: string, view: ViewType) {
     if (!this.panel) return
     const state = getState()
-    const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help' || view.kind === 'voice'
+    const showTabBar =
+      view.kind === 'home' ||
+      view.kind === 'messages' ||
+      view.kind === 'help' ||
+      view.kind === 'voice'
 
     // Preserve textarea value + focus across chat in-place re-renders (streaming)
     let savedInputValue = ''
@@ -567,6 +573,36 @@ export class HelpNestWidget {
         break
       case 'voice':
         bindVoiceEvents(this.panel)
+        this.panel.addEventListener('hn-voice-start', () => {
+          void (async () => {
+            try {
+              const storageKey = `helpnest:chat:${getState().config?.slug ?? ''}`
+              const stored = localStorage.getItem(storageKey)
+              let sessionToken: string | null = null
+              if (stored) {
+                try {
+                  const parsed = JSON.parse(stored) as { sessionToken?: string }
+                  sessionToken = parsed.sessionToken ?? null
+                } catch {}
+              }
+              if (!sessionToken) {
+                const conv = await createConversation(getState().config!.slug)
+                sessionToken = conv.sessionToken
+                localStorage.setItem(
+                  storageKey,
+                  JSON.stringify({ sessionToken, conversationId: conv.id })
+                )
+              }
+              const tokenData = await getVoiceToken(sessionToken)
+              await startVoiceSession(tokenData, this.panel!)
+            } catch {
+              setVoiceState('error')
+            }
+          })()
+        })
+        this.panel.addEventListener('hn-voice-stop', () => {
+          stopVoiceSession()
+        })
         break
     }
   }
