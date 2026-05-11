@@ -2109,6 +2109,19 @@ export const widgetStyles = `
     padding: 16px;
   }
 
+  .hn-voice-intro {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .hn-voice-greeting {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--hn-ink);
+  }
+
   .hn-voice-transcript {
     flex: 1;
     overflow-y: auto;

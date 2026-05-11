@@ -2,6 +2,14 @@ import { renderOrb } from '../voice/orb'
 import { getState, setVoiceState } from '../state'
 import type { VoiceState } from '../types'
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+}
+
 export function renderVoice(): string {
   const state = getState()
   const voiceState = state.voiceState
@@ -9,6 +17,9 @@ export function renderVoice(): string {
 
   return `
     <div class="hn-voice-view">
+      <div class="hn-voice-intro">
+        <p class="hn-voice-greeting">${escapeHtml(greeting)}</p>
+      </div>
       ${renderOrb(voiceState)}
       <div class="hn-voice-transcript" role="log" aria-live="polite">
         <div class="hn-voice-transcript__messages"></div>
@@ -54,6 +65,19 @@ export function bindVoiceEvents(panel: HTMLElement) {
       }
     })
   }
+
+  panel.querySelectorAll('.hn-voice-source-chip').forEach((chip) => {
+    chip.addEventListener('click', () => {
+      const articleId = (chip as HTMLElement).dataset.articleId
+      if (!articleId) return
+      panel.dispatchEvent(
+        new CustomEvent('hn-open-article', {
+          detail: { articleId },
+          bubbles: true,
+        })
+      )
+    })
+  })
 }
 
 export function appendTranscript(panel: HTMLElement, role: 'user' | 'agent', text: string) {

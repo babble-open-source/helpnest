@@ -28,6 +28,7 @@ let isStreaming = false
 let streamingContent = ''
 let rerender: (() => void) | null = null
 let _initializedForConvId: string | null | undefined = undefined // undefined = never initialized
+let pendingDraft: { text: string; conversationId?: string } | null = null
 
 export function setChatRerender(fn: () => void): void {
   rerender = fn
@@ -45,6 +46,11 @@ export function resetChatView(): void {
   streamingContent = ''
   rerender = null
   _initializedForConvId = undefined
+  pendingDraft = null
+}
+
+export function queueChatDraft(text: string, conversationId?: string): void {
+  pendingDraft = { text, conversationId }
 }
 
 export async function initChatView(conversationId?: string, forceNew?: boolean): Promise<void> {
@@ -275,6 +281,15 @@ export function bindChatEvents(container: HTMLElement, rerenderFn: () => void): 
       })
     })
   })
+
+  if (pendingDraft) {
+    const draft = pendingDraft
+    const activeConversationId = chatManager?.getSession()?.conversationId
+    if (!draft.conversationId || draft.conversationId === activeConversationId) {
+      pendingDraft = null
+      void sendMessage(draft.text, input)
+    }
+  }
 
   scrollToBottom(container)
 }

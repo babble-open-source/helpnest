@@ -23,7 +23,12 @@ export async function POST(request: Request) {
 
   const conversation = await prisma.conversation.findFirst({
     where: { sessionToken },
-    select: { workspaceId: true },
+    select: {
+      workspaceId: true,
+      visitorId: true,
+      customerName: true,
+      customerEmail: true,
+    },
   })
   if (!conversation) {
     return NextResponse.json(
@@ -95,7 +100,12 @@ export async function POST(request: Request) {
   const participantIdentity = `widget-${crypto.randomUUID().slice(0, 10)}`
 
   const voiceConversation = await prisma.conversation.create({
-    data: { workspaceId: workspace.id },
+    data: {
+      workspaceId: workspace.id,
+      visitorId: conversation.visitorId,
+      customerName: conversation.customerName,
+      customerEmail: conversation.customerEmail,
+    },
     select: { id: true, sessionToken: true },
   })
 
@@ -147,6 +157,7 @@ export async function POST(request: Request) {
       roomName,
       participantIdentity,
       conversationId: voiceConversation.id,
+      sessionToken: voiceConversation.sessionToken,
     },
     { headers: WIDGET_CORS_HEADERS },
   )

@@ -9,6 +9,7 @@ interface VoiceTokenResponse {
   roomName: string
   participantIdentity: string
   conversationId: string
+  sessionToken: string
 }
 
 type DataMessage =

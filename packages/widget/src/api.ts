@@ -96,6 +96,7 @@ export async function getVoiceToken(sessionToken: string): Promise<{
   roomName: string
   participantIdentity: string
   conversationId: string
+  sessionToken: string
 }> {
   const res = await fetch(`${baseUrl}/api/voice/token`, {
     method: 'POST',
@@ -114,12 +115,13 @@ export async function getVoiceToken(sessionToken: string): Promise<{
 }
 
 export async function createConversation(
-  workspaceSlug: string
+  workspaceSlug: string,
+  visitorId?: string
 ): Promise<{ id: string; sessionToken: string }> {
   const res = await fetch(`${baseUrl}/api/conversations`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ workspaceSlug }),
+    body: JSON.stringify({ workspaceSlug, visitorId }),
   })
   if (!res.ok) throw new Error(`Failed to create conversation: ${res.status}`)
   return res.json() as Promise<{ id: string; sessionToken: string }>

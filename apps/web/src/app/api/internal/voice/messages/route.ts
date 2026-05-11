@@ -17,6 +17,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: body.conversationId },
+    select: { id: true, subject: true },
+  })
+
+  if (!conversation) {
+    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+  }
+
   const message = await prisma.message.create({
     data: {
       conversationId: body.conversationId,
@@ -28,11 +37,7 @@ export async function POST(request: Request) {
   })
 
   if (body.role === 'CUSTOMER') {
-    const conv = await prisma.conversation.findUnique({
-      where: { id: body.conversationId },
-      select: { subject: true },
-    })
-    if (!conv?.subject) {
+    if (!conversation.subject) {
       await prisma.conversation.update({
         where: { id: body.conversationId },
         data: { subject: body.content.slice(0, 200) },

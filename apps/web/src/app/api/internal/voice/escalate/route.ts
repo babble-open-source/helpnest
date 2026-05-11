@@ -16,6 +16,19 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'conversationId required' }, { status: 400 })
   }
 
+  const conversation = await prisma.conversation.findUnique({
+    where: { id: body.conversationId },
+    select: { id: true, workspaceId: true },
+  })
+
+  if (!conversation) {
+    return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
+  }
+
+  if (body.workspaceId && conversation.workspaceId !== body.workspaceId) {
+    return NextResponse.json({ error: 'Workspace mismatch' }, { status: 400 })
+  }
+
   await prisma.conversation.update({
     where: { id: body.conversationId },
     data: { status: 'ESCALATED' },

@@ -5,7 +5,8 @@ import {
   setConfig,
   setOpen,
   switchTab,
-  popView,
+  pushView,
+  switchTabAndPush,
   setCollections,
   setConversations,
   getTransitionDirection,
@@ -30,6 +31,7 @@ import {
   initChatView,
   setChatRerender,
   resetChatView,
+  queueChatDraft,
 } from './views/chat'
 import {
   renderCollectionDetail,
@@ -57,6 +59,10 @@ export class HelpNestWidget {
   private currentViewKind: string = ''
   private viewContainer: HTMLElement | null = null
   private floatingTooltip: HTMLElement | null = null
+  private voiceStartHandler: (() => void) | null = null
+  private voiceStopHandler: (() => void) | null = null
+  private voiceTextFallbackHandler: ((event: Event) => void) | null = null
+  private voiceOpenArticleHandler: ((event: Event) => void) | null = null
 
   constructor(config: InitConfig) {
     this.initConfig = config
@@ -311,6 +317,57 @@ export class HelpNestWidget {
     return [...tokens]
   }
 
+  private getChatStorageKey(): string {
+    return `helpnest:chat:${this.initConfig.workspace}`
+  }
+
+  private persistConversationSession(sessionToken: string, conversationId: string) {
+    localStorage.setItem(
+      this.getChatStorageKey(),
+      JSON.stringify({ sessionToken, conversationId, lastMessageAt: Date.now() })
+    )
+
+    const key = SESSIONS_KEY_PREFIX + this.initConfig.workspace
+    const raw = localStorage.getItem(key)
+    let existing: Array<{ sessionToken: string; conversationId: string } | string> = []
+
+    if (raw) {
+      try {
+        existing = JSON.parse(raw) as Array<{ sessionToken: string; conversationId: string } | string>
+      } catch {
+        existing = []
+      }
+    }
+
+    const alreadyStored = existing.some((entry) =>
+      typeof entry === 'object'
+        ? entry.sessionToken === sessionToken || entry.conversationId === conversationId
+        : entry === sessionToken
+    )
+
+    if (!alreadyStored) {
+      existing.push({ sessionToken, conversationId })
+      localStorage.setItem(key, JSON.stringify(existing))
+    }
+  }
+
+  private getStoredSession(): { sessionToken: string | null; conversationId: string | null } {
+    const stored = localStorage.getItem(this.getChatStorageKey())
+    if (!stored) {
+      return { sessionToken: null, conversationId: null }
+    }
+
+    try {
+      const parsed = JSON.parse(stored) as { sessionToken?: string; conversationId?: string }
+      return {
+        sessionToken: parsed.sessionToken ?? null,
+        conversationId: parsed.conversationId ?? null,
+      }
+    } catch {
+      return { sessionToken: null, conversationId: null }
+    }
+  }
+
   private async render() {
     if (this.rendering) {
       this.pendingRender = true
@@ -454,7 +511,11 @@ export class HelpNestWidget {
         return
       }
 
-      const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help' || view.kind === 'voice'
+      const showTabBar =
+        view.kind === 'home' ||
+        view.kind === 'messages' ||
+        view.kind === 'help' ||
+        view.kind === 'voice'
       const existingTabBar = this.panel.querySelector('.hn-tab-bar') as HTMLElement | null
 
       const oldLayer = this.viewContainer.querySelector('.hn-view-layer') as HTMLElement | null
@@ -533,7 +594,11 @@ export class HelpNestWidget {
   private updateTabBar(view: ViewType) {
     if (!this.panel) return
     const state = getState()
-    const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help' || view.kind === 'voice'
+    const showTabBar =
+      view.kind === 'home' ||
+      view.kind === 'messages' ||
+      view.kind === 'help' ||
+      view.kind === 'voice'
     const existing = this.panel.querySelector('.hn-tab-bar')
     if (showTabBar && state.config) {
       // Always replace tab bar to get fresh elements with no stale listeners
@@ -580,36 +645,61 @@ export class HelpNestWidget {
         break
       case 'voice':
         bindVoiceEvents(this.panel)
-        this.panel.addEventListener('hn-voice-start', () => {
+        if (this.voiceStartHandler) {
+          this.panel.removeEventListener('hn-voice-start', this.voiceStartHandler)
+        }
+        if (this.voiceStopHandler) {
+          this.panel.removeEventListener('hn-voice-stop', this.voiceStopHandler)
+        }
+        if (this.voiceTextFallbackHandler) {
+          this.panel.removeEventListener('hn-voice-text-fallback', this.voiceTextFallbackHandler)
+        }
+        if (this.voiceOpenArticleHandler) {
+          this.panel.removeEventListener('hn-open-article', this.voiceOpenArticleHandler)
+        }
+
+        this.voiceStartHandler = () => {
           void (async () => {
             try {
-              const storageKey = `helpnest:chat:${getState().config?.slug ?? ''}`
-              const stored = localStorage.getItem(storageKey)
-              let sessionToken: string | null = null
-              if (stored) {
-                try {
-                  const parsed = JSON.parse(stored) as { sessionToken?: string }
-                  sessionToken = parsed.sessionToken ?? null
-                } catch {}
-              }
+              const visitorId = this.getVisitorId()
+              let { sessionToken } = this.getStoredSession()
               if (!sessionToken) {
-                const conv = await createConversation(getState().config!.slug)
+                const conv = await createConversation(getState().config!.slug, visitorId)
                 sessionToken = conv.sessionToken
-                localStorage.setItem(
-                  storageKey,
-                  JSON.stringify({ sessionToken, conversationId: conv.id })
-                )
+                this.persistConversationSession(conv.sessionToken, conv.id)
               }
               const tokenData = await getVoiceToken(sessionToken)
+              this.persistConversationSession(tokenData.sessionToken, tokenData.conversationId)
               await startVoiceSession(tokenData, this.panel!)
             } catch {
               setVoiceState('error')
             }
           })()
-        })
-        this.panel.addEventListener('hn-voice-stop', () => {
+        }
+        this.voiceStopHandler = () => {
           stopVoiceSession()
-        })
+        }
+        this.voiceTextFallbackHandler = (event: Event) => {
+          const customEvent = event as CustomEvent<{ message?: string }>
+          const message = customEvent.detail?.message?.trim()
+          if (!message) return
+
+          const { conversationId } = this.getStoredSession()
+          stopVoiceSession()
+          queueChatDraft(message, conversationId ?? undefined)
+          switchTabAndPush('messages', { kind: 'chat', conversationId: conversationId ?? undefined })
+        }
+        this.voiceOpenArticleHandler = (event: Event) => {
+          const customEvent = event as CustomEvent<{ articleId?: string }>
+          const articleId = customEvent.detail?.articleId
+          if (!articleId) return
+          pushView({ kind: 'article', articleId }, 'push')
+        }
+
+        this.panel.addEventListener('hn-voice-start', this.voiceStartHandler)
+        this.panel.addEventListener('hn-voice-stop', this.voiceStopHandler)
+        this.panel.addEventListener('hn-voice-text-fallback', this.voiceTextFallbackHandler)
+        this.panel.addEventListener('hn-open-article', this.voiceOpenArticleHandler)
         break
     }
   }

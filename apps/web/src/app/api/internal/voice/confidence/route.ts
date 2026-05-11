@@ -19,6 +19,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
   }
 
+  const message = await prisma.message.findUnique({
+    where: { id: body.messageId },
+    select: { id: true, conversationId: true, conversation: { select: { workspaceId: true } } },
+  })
+
+  if (!message) {
+    return NextResponse.json({ error: 'Message not found' }, { status: 404 })
+  }
+
+  if (message.conversation.workspaceId !== body.workspaceId) {
+    return NextResponse.json({ error: 'Workspace mismatch' }, { status: 400 })
+  }
+
+  if (body.conversationId && message.conversationId !== body.conversationId) {
+    return NextResponse.json({ error: 'Conversation mismatch' }, { status: 400 })
+  }
+
   await prisma.message
     .update({
       where: { id: body.messageId },

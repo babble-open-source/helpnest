@@ -23,9 +23,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true })
   }
 
-  // participant_left = individual participant disconnected
-  // room_finished   = all participants gone, room closed
-  if (event.event === 'participant_left' || event.event === 'room_finished') {
+  // Only finalize once the room is actually finished. participant_left fires
+  // for individual disconnects and can happen before the session is over.
+  if (event.event === 'room_finished') {
     await finalizeVoiceSession(roomName)
   }
 
