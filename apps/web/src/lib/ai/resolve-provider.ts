@@ -36,7 +36,7 @@ export function isByok(
  * If the value matches neither format it is returned unchanged — this covers
  * plaintext keys stored in development or before encryption was enabled.
  */
-function decryptApiKey(encrypted: string): string {
+export function decryptApiKey(encrypted: string): string {
   const secret = process.env.AI_KEY_ENCRYPTION_SECRET
   if (!secret) {
     // No encryption secret configured — return as-is, consistent with encryptApiKey
