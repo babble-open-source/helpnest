@@ -12,8 +12,9 @@ logger = logging.getLogger(__name__)
 async def entrypoint(ctx: JobContext):
     await ctx.connect()
 
+    logger.info("Room name: %s, sid: %s", ctx.room.name, ctx.room.sid)
     raw_metadata = ctx.room.metadata or "{}"
-    logger.info("Room metadata: %s", raw_metadata)
+    logger.info("Room metadata (len=%d): %s", len(raw_metadata), raw_metadata[:500])
     meta = json.loads(raw_metadata)
 
     workspace_id = meta.get("workspaceId", "")
