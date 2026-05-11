@@ -61,6 +61,37 @@ export async function submitArticleFeedback(articleId: string, type: 'helpful' |
   })
 }
 
+export async function getVoiceToken(sessionToken: string): Promise<{
+  token: string
+  livekitUrl: string
+  roomName: string
+  participantIdentity: string
+  conversationId: string
+}> {
+  const res = await fetch(`${baseUrl}/api/voice/token`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Session-Token': sessionToken,
+    },
+  })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({ error: 'Voice unavailable' })) as { error?: string }
+    throw new Error(data.error ?? `Voice token failed: ${res.status}`)
+  }
+  return res.json()
+}
+
+export async function createConversation(workspaceSlug: string): Promise<{ id: string; sessionToken: string }> {
+  const res = await fetch(`${baseUrl}/api/conversations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ workspaceSlug }),
+  })
+  if (!res.ok) throw new Error(`Failed to create conversation: ${res.status}`)
+  return res.json() as Promise<{ id: string; sessionToken: string }>
+}
+
 function getVoterToken(): string {
   const key = 'helpnest:voter'
   let token = localStorage.getItem(key)

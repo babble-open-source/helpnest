@@ -28,6 +28,7 @@ import {
   loadCollectionDetail,
 } from './views/collection-detail'
 import { renderArticle, bindArticleEvents, loadArticle } from './views/article'
+import { renderVoice, bindVoiceEvents } from './views/voice'
 import { renderTabBar } from './components/tab-bar'
 import { SESSIONS_KEY_PREFIX } from './chat'
 import { widgetStyles } from './styles'
@@ -377,7 +378,7 @@ export class HelpNestWidget {
         return '<div class="hn-error">Article not found</div>'
       }
       case 'voice':
-        return '<div class="hn-voice-view"></div>'
+        return renderVoice()
       default:
         return ''
     }
@@ -399,7 +400,7 @@ export class HelpNestWidget {
   private swapView(html: string, view: ViewType) {
     if (!this.panel) return
     const state = getState()
-    const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help'
+    const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help' || view.kind === 'voice'
 
     // Preserve textarea value + focus across chat in-place re-renders (streaming)
     let savedInputValue = ''
@@ -563,6 +564,9 @@ export class HelpNestWidget {
         break
       case 'article':
         bindArticleEvents(this.panel)
+        break
+      case 'voice':
+        bindVoiceEvents(this.panel)
         break
     }
   }
