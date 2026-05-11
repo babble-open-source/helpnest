@@ -80,6 +80,8 @@ export async function GET(request: Request) {
       ...(columns.has('customBrandFontFamily') ? { customBrandFontFamily: true } : {}),
       ...(columns.has('customBrandFontUrl') ? { customBrandFontUrl: true } : {}),
       ...(columns.has('customDomain') ? { customDomain: true } : {}),
+      ...(columns.has('voiceEnabled') ? { voiceEnabled: true } : {}),
+      ...(columns.has('voiceGreeting') ? { voiceGreeting: true } : {}),
     },
   })
 
@@ -131,6 +133,8 @@ export async function GET(request: Request) {
       aiEnabled: workspace.aiEnabled,
       aiGreeting: workspace.aiGreeting?.trim() || 'Hi there! How can we help?',
       widgetResponseTime: workspace.widgetResponseTime ?? null,
+      voiceEnabled: (workspace as Record<string, unknown>).voiceEnabled ?? false,
+      voiceGreeting: (workspace as Record<string, unknown>).voiceGreeting ?? null,
       helpCenterUrl,
       theme: {
         vars,
