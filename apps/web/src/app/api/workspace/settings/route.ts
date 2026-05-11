@@ -86,6 +86,10 @@ export async function PATCH(request: Request) {
     autoDraftExternalEnabled,
     batchWindowMinutes,
     aiDraftRateLimit,
+    voiceEnabled,
+    voiceGreeting,
+    voiceLanguage,
+    voiceSettings,
   } = body as {
     name?: unknown
     slug?: unknown
@@ -123,6 +127,10 @@ export async function PATCH(request: Request) {
     autoDraftExternalEnabled?: unknown
     batchWindowMinutes?: unknown
     aiDraftRateLimit?: unknown
+    voiceEnabled?: unknown
+    voiceGreeting?: unknown
+    voiceLanguage?: unknown
+    voiceSettings?: unknown
   }
 
   if (isDemoMode()) {
@@ -480,6 +488,34 @@ export async function PATCH(request: Request) {
     }
   }
 
+  if (voiceEnabled !== undefined && typeof voiceEnabled !== 'boolean') {
+    return NextResponse.json({ error: 'voiceEnabled must be a boolean' }, { status: 400 })
+  }
+
+  if (voiceGreeting !== undefined && voiceGreeting !== null) {
+    if (typeof voiceGreeting !== 'string') {
+      return NextResponse.json({ error: 'voiceGreeting must be a string' }, { status: 400 })
+    }
+    if (voiceGreeting.trim().length > 500) {
+      return NextResponse.json({ error: 'voiceGreeting must be 500 characters or fewer' }, { status: 400 })
+    }
+  }
+
+  if (voiceLanguage !== undefined && voiceLanguage !== null) {
+    if (typeof voiceLanguage !== 'string') {
+      return NextResponse.json({ error: 'voiceLanguage must be a string' }, { status: 400 })
+    }
+    if (voiceLanguage.trim().length > 10) {
+      return NextResponse.json({ error: 'voiceLanguage must be 10 characters or fewer' }, { status: 400 })
+    }
+  }
+
+  if (voiceSettings !== undefined && voiceSettings !== null) {
+    if (typeof voiceSettings !== 'object' || Array.isArray(voiceSettings)) {
+      return NextResponse.json({ error: 'voiceSettings must be an object' }, { status: 400 })
+    }
+  }
+
   const clampedThreshold =
     aiEscalationThreshold !== undefined ? (aiEscalationThreshold as number) : undefined
 
@@ -536,6 +572,18 @@ export async function PATCH(request: Request) {
   const canPersistAutoDraftExternalEnabled = autoDraftExternalEnabled !== undefined && cols.has('autoDraftExternalEnabled')
   const canPersistBatchWindowMinutes = batchWindowMinutes !== undefined && cols.has('batchWindowMinutes')
   const canPersistAiDraftRateLimit = aiDraftRateLimit !== undefined && cols.has('aiDraftRateLimit')
+  const canPersistVoiceEnabled = voiceEnabled !== undefined && cols.has('voiceEnabled')
+  const canPersistVoiceGreeting = voiceGreeting !== undefined && cols.has('voiceGreeting')
+  const canPersistVoiceLanguage = voiceLanguage !== undefined && cols.has('voiceLanguage')
+  const canPersistVoiceSettings = voiceSettings !== undefined && cols.has('voiceSettings')
+  const trimmedVoiceGreeting =
+    typeof voiceGreeting === 'string' && voiceGreeting.trim().length > 0
+      ? voiceGreeting.trim()
+      : null
+  const trimmedVoiceLanguage =
+    typeof voiceLanguage === 'string' && voiceLanguage.trim().length > 0
+      ? voiceLanguage.trim()
+      : null
 
   // 409 only when the client is trying to SET a non-empty value for a column that
   // doesn't exist yet (migration pending). Sending null/empty to clear a missing
@@ -640,6 +688,10 @@ export async function PATCH(request: Request) {
         ...(canPersistAutoDraftExternalEnabled ? { autoDraftExternalEnabled: autoDraftExternalEnabled as boolean } : {}),
         ...(canPersistBatchWindowMinutes ? { batchWindowMinutes: batchWindowMinutes as number } : {}),
         ...(canPersistAiDraftRateLimit ? { aiDraftRateLimit: aiDraftRateLimit as number } : {}),
+        ...(canPersistVoiceEnabled ? { voiceEnabled: voiceEnabled as boolean } : {}),
+        ...(canPersistVoiceGreeting ? { voiceGreeting: trimmedVoiceGreeting } : {}),
+        ...(canPersistVoiceLanguage ? { voiceLanguage: trimmedVoiceLanguage } : {}),
+        ...(canPersistVoiceSettings ? { voiceSettings: voiceSettings ?? Prisma.JsonNull } : {}),
       },
     })
     // If the slug changed and the workspace has a custom domain, refresh the KV

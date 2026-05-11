@@ -9,6 +9,7 @@ import { redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { AiSettingsSection } from './AiSettingsSection'
+import { VoiceSettingsSection } from './VoiceSettingsSection'
 import { ApiKeysSection } from './ApiKeysSection'
 import { MembersSection } from './MembersSection'
 import { ProfileForm } from './ProfileForm'
@@ -72,6 +73,11 @@ export default async function SettingsPage() {
         autoDraftExternalEnabled: true,
         batchWindowMinutes: true,
         ...(columns.has('aiDraftRateLimit') ? { aiDraftRateLimit: true } : {}),
+        // Voice settings
+        ...(columns.has('voiceEnabled') ? { voiceEnabled: true } : {}),
+        ...(columns.has('voiceGreeting') ? { voiceGreeting: true } : {}),
+        ...(columns.has('voiceLanguage') ? { voiceLanguage: true } : {}),
+        ...(columns.has('voiceSettings') ? { voiceSettings: true } : {}),
         // Migration-guarded branding fields — only selected when the column exists
         ...(columns.has('fontPresetId') ? { fontPresetId: true } : {}),
         ...(columns.has('brandText') ? { brandText: true } : {}),
@@ -211,6 +217,15 @@ export default async function SettingsPage() {
               autoDraftExternalEnabled={workspace?.autoDraftExternalEnabled ?? true}
               batchWindowMinutes={workspace?.batchWindowMinutes ?? 60}
               aiDraftRateLimit={workspace?.aiDraftRateLimit ?? 50}
+            />
+
+            {/* Voice Assistant */}
+            <VoiceSettingsSection
+              voiceEnabled={workspace?.voiceEnabled ?? false}
+              voiceGreeting={workspace?.voiceGreeting ?? null}
+              voiceLanguage={workspace?.voiceLanguage ?? null}
+              voiceSettings={workspace?.voiceSettings as Record<string, unknown> | null ?? null}
+              demoMode={demoMode}
             />
 
             {/* AI Search */}
