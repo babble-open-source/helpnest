@@ -1,4 +1,3 @@
-// packages/widget/src/voice/orb.ts
 import type { VoiceState } from '../types'
 
 export function renderOrb(state: VoiceState): string {
@@ -23,14 +22,11 @@ export function renderOrb(state: VoiceState): string {
   return `
     <div class="hn-voice-orb-container">
       <button
-        class="hn-voice-orb hn-voice-orb--${state}"
+        class="hn-voice-orb siri-orb hn-voice-orb--${state}"
         aria-label="${stateLabel[state]}"
         type="button"
-      >
-        <div class="hn-voice-orb__glow"></div>
-        <div class="hn-voice-orb__core"></div>
-        <div class="hn-voice-orb__ring"></div>
-      </button>
+        style="width:120px;height:120px;--bg:oklch(95% 0.02 264.695);--c1:oklch(75% 0.15 25);--c2:oklch(80% 0.12 200);--c3:oklch(78% 0.14 280);--animation-duration:20s;--blur-amount:4px;--contrast-amount:1.5;--dot-size:0.5px;--shadow-spread:2px;--mask-radius:25%"
+      ></button>
       <p class="hn-voice-status" aria-live="assertive">${statusText[state]}</p>
     </div>
   `
@@ -38,6 +34,12 @@ export function renderOrb(state: VoiceState): string {
 
 export function getOrbStyles(): string {
   return `
+    @property --angle {
+      syntax: "<angle>";
+      inherits: false;
+      initial-value: 0deg;
+    }
+
     .hn-voice-orb-container {
       display: flex;
       flex-direction: column;
@@ -46,87 +48,97 @@ export function getOrbStyles(): string {
       padding: 24px 0;
     }
 
-    .hn-voice-orb {
+    .siri-orb {
+      display: grid;
+      grid-template-areas: "stack";
+      overflow: hidden;
+      border-radius: 50%;
       position: relative;
-      width: 96px;
-      height: 96px;
-      border-radius: 50%;
       border: none;
-      background: none;
-      cursor: pointer;
       padding: 0;
+      cursor: pointer;
       outline: none;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
     }
 
-    .hn-voice-orb:focus-visible {
+    .siri-orb:focus-visible {
       box-shadow: 0 0 0 3px var(--hn-accent);
+    }
+
+    .siri-orb::before,
+    .siri-orb::after {
+      content: "";
+      display: block;
+      grid-area: stack;
+      width: 100%;
+      height: 100%;
       border-radius: 50%;
     }
 
-    .hn-voice-orb__glow {
-      position: absolute;
-      inset: -8px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(200,98,42,0.3) 0%, transparent 70%);
-      opacity: 0;
-      transition: opacity 0.3s ease;
+    .siri-orb::before {
+      background:
+        conic-gradient(from calc(var(--angle) * 2) at 25% 70%, var(--c3), transparent 20% 80%, var(--c3)),
+        conic-gradient(from calc(var(--angle) * 2) at 45% 75%, var(--c2), transparent 30% 60%, var(--c2)),
+        conic-gradient(from calc(var(--angle) * -3) at 80% 20%, var(--c1), transparent 40% 60%, var(--c1)),
+        conic-gradient(from calc(var(--angle) * 2) at 15% 5%, var(--c2), transparent 10% 90%, var(--c2)),
+        conic-gradient(from calc(var(--angle) * 1) at 20% 80%, var(--c1), transparent 10% 90%, var(--c1)),
+        conic-gradient(from calc(var(--angle) * -2) at 85% 10%, var(--c3), transparent 20% 80%, var(--c3));
+      box-shadow: inset var(--bg) 0 0 var(--shadow-spread) calc(var(--shadow-spread) * 0.2);
+      filter: blur(var(--blur-amount)) contrast(var(--contrast-amount));
+      animation: hn-siri-rotate var(--animation-duration) linear infinite;
     }
 
-    .hn-voice-orb__core {
-      position: absolute;
-      inset: 8px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--hn-accent) 0%, #e8854a 50%, var(--hn-accent) 100%);
-      background-size: 200% 200%;
-      transition: transform 0.3s ease;
+    .siri-orb::after {
+      background-image: radial-gradient(circle at center, var(--bg) var(--dot-size), transparent var(--dot-size));
+      background-size: calc(var(--dot-size) * 2) calc(var(--dot-size) * 2);
+      backdrop-filter: blur(calc(var(--blur-amount) * 2)) contrast(calc(var(--contrast-amount) * 2));
+      mix-blend-mode: overlay;
+      mask-image: radial-gradient(black var(--mask-radius), transparent 75%);
     }
 
-    .hn-voice-orb__ring {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 2px solid var(--hn-accent);
-      opacity: 0.3;
-      transition: opacity 0.3s ease, transform 0.3s ease;
+    @keyframes hn-siri-rotate {
+      to { --angle: 360deg; }
     }
 
-    .hn-voice-orb--idle .hn-voice-orb__core {
-      animation: hn-orb-idle-pulse 3s ease-in-out infinite;
+    .hn-voice-orb--idle {
+      --animation-duration: 20s;
     }
 
-    .hn-voice-orb--connecting .hn-voice-orb__ring {
-      opacity: 0.8;
-      animation: hn-orb-spin 1.5s linear infinite;
+    .hn-voice-orb--connecting {
+      --animation-duration: 8s;
+      opacity: 0.7;
     }
 
-    .hn-voice-orb--listening .hn-voice-orb__glow {
-      opacity: 1;
-      animation: hn-orb-breathe 1.5s ease-in-out infinite;
-    }
-    .hn-voice-orb--listening .hn-voice-orb__core {
-      animation: hn-orb-listen-pulse 0.8s ease-in-out infinite;
-      transform: scale(calc(1 + var(--hn-audio-level, 0) * 0.15));
-    }
-
-    .hn-voice-orb--thinking .hn-voice-orb__core {
-      animation: hn-orb-gradient-rotate 1.2s linear infinite;
-    }
-    .hn-voice-orb--thinking .hn-voice-orb__ring {
-      opacity: 0.6;
-      animation: hn-orb-spin 2s linear infinite;
+    .hn-voice-orb--listening {
+      --animation-duration: 6s;
+      --c1: oklch(70% 0.2 25);
+      --c2: oklch(75% 0.18 200);
+      --c3: oklch(72% 0.2 280);
+      transform: scale(1.05);
     }
 
-    .hn-voice-orb--speaking .hn-voice-orb__glow {
-      opacity: calc(0.4 + var(--hn-audio-level, 0) * 0.6);
-    }
-    .hn-voice-orb--speaking .hn-voice-orb__core {
-      transform: scale(calc(1 + var(--hn-audio-level, 0) * 0.1));
-      animation: hn-orb-gradient-rotate 2s linear infinite;
+    .hn-voice-orb--thinking {
+      --animation-duration: 4s;
+      --c1: oklch(65% 0.22 25);
+      --c2: oklch(70% 0.2 200);
+      --c3: oklch(68% 0.22 280);
     }
 
-    .hn-voice-orb--error .hn-voice-orb__core {
-      background: var(--hn-muted);
-      animation: none;
+    .hn-voice-orb--speaking {
+      --animation-duration: 3s;
+      --c1: oklch(70% 0.25 25);
+      --c2: oklch(75% 0.22 200);
+      --c3: oklch(72% 0.25 280);
+      transform: scale(1.08);
+      box-shadow: 0 0 30px rgba(200, 98, 42, 0.2);
+    }
+
+    .hn-voice-orb--error {
+      --animation-duration: 40s;
+      --c1: oklch(70% 0.05 0);
+      --c2: oklch(75% 0.05 0);
+      --c3: oklch(72% 0.05 0);
+      opacity: 0.5;
     }
 
     .hn-voice-status {
@@ -137,29 +149,10 @@ export function getOrbStyles(): string {
       min-height: 18px;
     }
 
-    @keyframes hn-orb-idle-pulse {
-      0%, 100% { transform: scale(1); opacity: 0.85; }
-      50% { transform: scale(1.04); opacity: 1; }
-    }
-
-    @keyframes hn-orb-breathe {
-      0%, 100% { transform: scale(1); opacity: 0.5; }
-      50% { transform: scale(1.1); opacity: 1; }
-    }
-
-    @keyframes hn-orb-listen-pulse {
-      0%, 100% { opacity: 0.9; }
-      50% { opacity: 1; }
-    }
-
-    @keyframes hn-orb-spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes hn-orb-gradient-rotate {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    @media (prefers-reduced-motion: reduce) {
+      .siri-orb::before {
+        animation: none;
+      }
     }
   `
 }
