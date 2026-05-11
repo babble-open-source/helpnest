@@ -454,7 +454,7 @@ export class HelpNestWidget {
         return
       }
 
-      const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help'
+      const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help' || view.kind === 'voice'
       const existingTabBar = this.panel.querySelector('.hn-tab-bar') as HTMLElement | null
 
       const oldLayer = this.viewContainer.querySelector('.hn-view-layer') as HTMLElement | null
@@ -533,7 +533,7 @@ export class HelpNestWidget {
   private updateTabBar(view: ViewType) {
     if (!this.panel) return
     const state = getState()
-    const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help'
+    const showTabBar = view.kind === 'home' || view.kind === 'messages' || view.kind === 'help' || view.kind === 'voice'
     const existing = this.panel.querySelector('.hn-tab-bar')
     if (showTabBar && state.config) {
       // Always replace tab bar to get fresh elements with no stale listeners
