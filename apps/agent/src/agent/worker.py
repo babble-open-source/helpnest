@@ -3,7 +3,7 @@ import json
 import asyncio
 import logging
 from livekit import rtc
-from livekit.agents import AgentSession, Agent, RoomInputOptions
+from livekit.agents import AgentSession, Agent, JobContext
 from agent.config import load_workspace_config, post_message
 from agent.providers import resolve_drivers
 from agent.prompt import build_system_prompt
@@ -11,7 +11,7 @@ from agent.tools import search_articles, report_confidence, escalate_to_human
 
 logger = logging.getLogger(__name__)
 
-async def entrypoint(ctx: rtc.JobContext):
+async def entrypoint(ctx: JobContext):
     await ctx.connect()
 
     raw_metadata = ctx.room.metadata or "{}"
@@ -52,7 +52,7 @@ async def entrypoint(ctx: rtc.JobContext):
             userdata["last_user_message_id"] = msg.get("messageId", "")
 
             data = json.dumps({"type": "transcript_user", "text": ev.transcript, "isFinal": True})
-            await ctx.room.local_participant.publish_data(data.encode(), kind=rtc.DataPacket.KIND_RELIABLE)
+            await ctx.room.local_participant.publish_data(data.encode(), reliable=True)
 
     @session.on("agent_speech_committed")
     async def on_speech(ev):
@@ -62,11 +62,11 @@ async def entrypoint(ctx: rtc.JobContext):
         userdata["last_agent_message_id"] = msg.get("messageId", "")
 
         data = json.dumps({"type": "transcript_agent", "text": text, "isFinal": True})
-        await ctx.room.local_participant.publish_data(data.encode(), kind=rtc.DataPacket.KIND_RELIABLE)
+        await ctx.room.local_participant.publish_data(data.encode(), reliable=True)
 
         if sources:
             src_data = json.dumps({"type": "sources", "sources": sources})
-            await ctx.room.local_participant.publish_data(src_data.encode(), kind=rtc.DataPacket.KIND_RELIABLE)
+            await ctx.room.local_participant.publish_data(src_data.encode(), reliable=True)
             userdata["last_sources"] = []
 
     agent = Agent(
@@ -86,12 +86,12 @@ async def entrypoint(ctx: rtc.JobContext):
     async def session_timeout():
         await asyncio.sleep(480)  # 8 minutes — warn
         warn_data = json.dumps({"type": "transcript_agent", "text": "Just a heads up — this voice session will end in about 2 minutes. Feel free to switch to text chat if you need more time.", "isFinal": True})
-        await ctx.room.local_participant.publish_data(warn_data.encode(), kind=rtc.DataPacket.KIND_RELIABLE)
+        await ctx.room.local_participant.publish_data(warn_data.encode(), reliable=True)
         await session.generate_reply(instructions="Tell the customer the voice session will end in 2 minutes and they can continue via text chat.")
 
         await asyncio.sleep(120)  # 10 minutes total — disconnect
         end_data = json.dumps({"type": "session_end", "reason": "timeout"})
-        await ctx.room.local_participant.publish_data(end_data.encode(), kind=rtc.DataPacket.KIND_RELIABLE)
+        await ctx.room.local_participant.publish_data(end_data.encode(), reliable=True)
         await asyncio.sleep(2)
         ctx.shutdown()
 
