@@ -41,6 +41,7 @@ const nextConfig = {
     'jose',
     'playwright-core',
     '@helpnest/crawler',
+    'livekit-server-sdk',
   ],
   webpack: (config, { isServer }) => {
     if (isServer) {

@@ -413,7 +413,7 @@ export class HelpNestWidget {
     }
 
     const tabBarHtml =
-      showTabBar && state.config ? renderTabBar(state.activeTab, state.config.aiEnabled) : ''
+      showTabBar && state.config ? renderTabBar(state.activeTab, state.config.aiEnabled, state.config.voiceEnabled ?? false) : ''
     this.panel.innerHTML = `<div class="hn-view-stack"><div class="hn-view-layer">${html}</div></div>${tabBarHtml}`
     this.viewContainer = this.panel.querySelector('.hn-view-stack')
     this.bindViewEvents(view)
@@ -473,7 +473,7 @@ export class HelpNestWidget {
         const state = getState()
         if (state.config) {
           const wrapper = document.createElement('div')
-          wrapper.innerHTML = renderTabBar(state.activeTab, state.config.aiEnabled)
+          wrapper.innerHTML = renderTabBar(state.activeTab, state.config.aiEnabled, state.config.voiceEnabled ?? false)
           const tabBar = wrapper.firstElementChild as HTMLElement | null
           if (tabBar) {
             tabBar.style.opacity = '0'
@@ -518,7 +518,7 @@ export class HelpNestWidget {
     if (showTabBar && state.config) {
       // Always replace tab bar to get fresh elements with no stale listeners
       const tabBarDiv = document.createElement('div')
-      tabBarDiv.innerHTML = renderTabBar(state.activeTab, state.config.aiEnabled)
+      tabBarDiv.innerHTML = renderTabBar(state.activeTab, state.config.aiEnabled, state.config.voiceEnabled ?? false)
       const newTabBar = tabBarDiv.firstElementChild
       if (newTabBar) {
         if (existing) {
