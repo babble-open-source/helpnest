@@ -124,6 +124,13 @@ model Workspace {
   aiCreditsLimit            Int        @default(5)
   productContext            String?    @db.Text
   widgetResponseTime        String?
+  // Voice
+  voiceEnabled      Boolean  @default(false)
+  voiceGreeting     String?
+  voiceLanguage     String?  @default("en")
+  voiceSettings     Json?
+  voiceMinutesUsed  Int      @default(0)
+  voiceSessions     VoiceSession[]
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -336,15 +343,33 @@ model Conversation {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
 
-  workspace  Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  assignedTo Member?              @relation(fields: [assignedToId], references: [id])
-  messages   Message[]
-  articles   ConversationArticle[]
+  workspace     Workspace            @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  assignedTo    Member?              @relation(fields: [assignedToId], references: [id])
+  messages      Message[]
+  articles      ConversationArticle[]
+  voiceSessions VoiceSession[]
 
   @@index([workspaceId, status])
   @@index([workspaceId, createdAt])
   @@index([assignedToId])
   @@index([workspaceId, visitorId])
+}
+
+model VoiceSession {
+  id              String        @id @default(cuid())
+  workspaceId     String
+  workspace       Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  conversationId  String?
+  conversation    Conversation? @relation(fields: [conversationId], references: [id])
+  roomName        String        @unique
+  startedAt       DateTime      @default(now())
+  endedAt         DateTime?
+  durationSeconds Int?
+  status          String        @default("active")
+  createdAt       DateTime      @default(now())
+
+  @@index([workspaceId])
+  @@index([roomName])
 }
 
 model Message {
