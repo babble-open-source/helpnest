@@ -146,4 +146,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
   CMD wget -qO- http://localhost:${PORT:-3000}/api/health || exit 1
 
-CMD ["sh", "-c", "cd packages/db && npx prisma migrate deploy || echo 'Migration warning: migrate deploy failed, continuing...' && cd /app && node apps/web/server.js"]
+CMD ["sh", "-c", "cd packages/db && node node_modules/prisma/build/index.js migrate deploy || echo 'Migration warning: migrate deploy failed, continuing...' && cd /app && node apps/web/server.js"]
