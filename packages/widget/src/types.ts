@@ -4,6 +4,8 @@ export interface WidgetConfig {
   slug: string
   logo: string | null
   aiEnabled: boolean
+  voiceEnabled: boolean
+  voiceGreeting: string | null
   aiGreeting: string
   widgetResponseTime: string | null
   helpCenterUrl: string
@@ -19,7 +21,7 @@ export interface InitConfig {
   position: 'bottom-right' | 'bottom-left'
 }
 
-export type TabId = 'home' | 'messages' | 'help'
+export type TabId = 'home' | 'messages' | 'help' | 'voice'
 
 export interface CollectionNode {
   id: string
@@ -94,6 +96,9 @@ export type ViewType =
   | { kind: 'chat'; conversationId?: string; forceNew?: boolean }
   | { kind: 'collection-detail'; collectionId: string; title: string }
   | { kind: 'article'; articleId: string }
+  | { kind: 'voice' }
+
+export type VoiceState = 'idle' | 'connecting' | 'listening' | 'thinking' | 'speaking' | 'error'
 
 export interface WidgetState {
   activeTab: TabId
@@ -104,4 +109,5 @@ export interface WidgetState {
   searchQuery: string
   searchResults: ArticleSummary[]
   isOpen: boolean
+  voiceState: VoiceState
 }

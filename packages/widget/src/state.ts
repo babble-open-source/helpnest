@@ -1,4 +1,4 @@
-import type { WidgetState, TabId, ViewType, WidgetConfig, CollectionNode, ConversationSummary, ArticleSummary } from './types'
+import type { WidgetState, TabId, ViewType, WidgetConfig, CollectionNode, ConversationSummary, ArticleSummary, VoiceState } from './types'
 
 export type TransitionDirection = 'push' | 'pop' | 'fade' | 'none'
 
@@ -13,6 +13,7 @@ const initialState: WidgetState = {
   searchQuery: '',
   searchResults: [],
   isOpen: false,
+  voiceState: 'idle' as VoiceState,
 }
 
 let state: WidgetState = { ...initialState }
@@ -47,6 +48,11 @@ export function setConfig(config: WidgetConfig) {
 
 export function setOpen(isOpen: boolean) {
   state = { ...state, isOpen }
+  notify()
+}
+
+export function setVoiceState(voiceState: VoiceState) {
+  state = { ...state, voiceState }
   notify()
 }
 

@@ -1,11 +1,32 @@
 import type { InitConfig, TabId, ViewType } from './types'
-import { getState, subscribe, setConfig, setOpen, switchTab, popView, setCollections, setConversations, getTransitionDirection, clearTransitionDirection } from './state'
+import {
+  getState,
+  subscribe,
+  setConfig,
+  setOpen,
+  switchTab,
+  popView,
+  setCollections,
+  setConversations,
+  getTransitionDirection,
+  clearTransitionDirection,
+} from './state'
 import { initApi, fetchConfig, fetchCollections, fetchConversations } from './api'
 import { renderHome, bindHomeEvents } from './views/home'
 import { renderMessages, bindMessagesEvents } from './views/messages'
 import { renderHelp, bindHelpEvents } from './views/help'
-import { renderChat, bindChatEvents, initChatView, setChatRerender, resetChatView } from './views/chat'
-import { renderCollectionDetail, bindCollectionDetailEvents, loadCollectionDetail } from './views/collection-detail'
+import {
+  renderChat,
+  bindChatEvents,
+  initChatView,
+  setChatRerender,
+  resetChatView,
+} from './views/chat'
+import {
+  renderCollectionDetail,
+  bindCollectionDetailEvents,
+  loadCollectionDetail,
+} from './views/collection-detail'
 import { renderArticle, bindArticleEvents, loadArticle } from './views/article'
 import { renderTabBar } from './components/tab-bar'
 import { SESSIONS_KEY_PREFIX } from './chat'
@@ -262,7 +283,9 @@ export class HelpNestWidget {
         if (Array.isArray(arr)) {
           arr.forEach((e) => tokens.add(typeof e === 'string' ? e : e.sessionToken))
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     const chatData = localStorage.getItem('helpnest:chat:' + this.initConfig.workspace)
@@ -270,7 +293,9 @@ export class HelpNestWidget {
       try {
         const parsed = JSON.parse(chatData) as { sessionToken?: string }
         if (parsed.sessionToken) tokens.add(parsed.sessionToken)
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     return [...tokens]
@@ -296,7 +321,11 @@ export class HelpNestWidget {
       const isViewChange = viewKey !== this.currentViewKind
 
       // Reset chat state when navigating away from a chat view
-      if (isViewChange && this.currentViewKind.startsWith('chat:') && !viewKey.startsWith('chat:')) {
+      if (
+        isViewChange &&
+        this.currentViewKind.startsWith('chat:') &&
+        !viewKey.startsWith('chat:')
+      ) {
         resetChatView()
       }
 
@@ -347,15 +376,23 @@ export class HelpNestWidget {
         }
         return '<div class="hn-error">Article not found</div>'
       }
+      case 'voice':
+        return '<div class="hn-voice-view"></div>'
+      default:
+        return ''
     }
   }
 
   private viewKey(view: ViewType): string {
     switch (view.kind) {
-      case 'collection-detail': return `collection-detail:${view.collectionId}`
-      case 'article': return `article:${view.articleId}`
-      case 'chat': return `chat:${view.conversationId ?? 'new'}`
-      default: return view.kind
+      case 'collection-detail':
+        return `collection-detail:${view.collectionId}`
+      case 'article':
+        return `article:${view.articleId}`
+      case 'chat':
+        return `chat:${view.conversationId ?? 'new'}`
+      default:
+        return view.kind
     }
   }
 
@@ -375,9 +412,8 @@ export class HelpNestWidget {
       }
     }
 
-    const tabBarHtml = showTabBar && state.config
-      ? renderTabBar(state.activeTab, state.config.aiEnabled)
-      : ''
+    const tabBarHtml =
+      showTabBar && state.config ? renderTabBar(state.activeTab, state.config.aiEnabled) : ''
     this.panel.innerHTML = `<div class="hn-view-stack"><div class="hn-view-layer">${html}</div></div>${tabBarHtml}`
     this.viewContainer = this.panel.querySelector('.hn-view-stack')
     this.bindViewEvents(view)
@@ -531,5 +567,4 @@ export class HelpNestWidget {
       })
     })
   }
-
 }
