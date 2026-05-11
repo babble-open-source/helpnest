@@ -18,7 +18,7 @@ interface WorkspaceAiSettings {
  */
 export function isByok(
   workspace: Pick<WorkspaceAiSettings, 'aiApiKey'>,
-  planLimits?: { byok?: boolean } | null,
+  planLimits?: { byok?: boolean } | null
 ): boolean {
   if (!workspace.aiApiKey) return false
   // If plan data is available, enforce the byok flag (FREE plan: byok=false)
@@ -150,7 +150,7 @@ export function resolveProvider(workspace: WorkspaceAiSettings): ModelProvider {
   if (!apiKey) {
     throw new Error(
       `No API key configured for AI provider "${provider}". ` +
-        `Set it in workspace settings or via the corresponding environment variable.`,
+        `Set it in workspace settings or via the corresponding environment variable.`
     )
   }
 

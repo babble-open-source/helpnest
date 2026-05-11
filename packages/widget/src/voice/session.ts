@@ -14,7 +14,10 @@ interface VoiceTokenResponse {
 type DataMessage =
   | { type: 'transcript_user'; text: string; isFinal: boolean }
   | { type: 'transcript_agent'; text: string; isFinal: boolean }
-  | { type: 'sources'; sources: { id: string; title: string; slug: string; collectionSlug: string }[] }
+  | {
+      type: 'sources'
+      sources: { id: string; title: string; slug: string; collectionSlug: string }[]
+    }
   | { type: 'state'; state: VoiceState }
   | { type: 'error'; message: string; fallbackToText: boolean }
   | { type: 'session_end'; reason: 'timeout' | 'escalated' | 'completed' }

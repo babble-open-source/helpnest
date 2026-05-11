@@ -45,9 +45,11 @@ export function bindVoiceEvents(panel: HTMLElement) {
   if (textInput) {
     textInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && textInput.value.trim()) {
-        panel.dispatchEvent(new CustomEvent('hn-voice-text-fallback', {
-          detail: { message: textInput.value.trim() },
-        }))
+        panel.dispatchEvent(
+          new CustomEvent('hn-voice-text-fallback', {
+            detail: { message: textInput.value.trim() },
+          })
+        )
         textInput.value = ''
       }
     })
@@ -64,10 +66,16 @@ export function appendTranscript(panel: HTMLElement, role: 'user' | 'agent', tex
   container.scrollTop = container.scrollHeight
 }
 
-export function setSourceChips(panel: HTMLElement, sources: { id: string; title: string; slug: string }[]) {
+export function setSourceChips(
+  panel: HTMLElement,
+  sources: { id: string; title: string; slug: string }[]
+) {
   const container = panel.querySelector('.hn-voice-sources')
   if (!container) return
   container.innerHTML = sources
-    .map((s) => `<button class="hn-voice-source-chip" data-article-id="${s.id}" data-slug="${s.slug}">${s.title}</button>`)
+    .map(
+      (s) =>
+        `<button class="hn-voice-source-chip" data-article-id="${s.id}" data-slug="${s.slug}">${s.title}</button>`
+    )
     .join('')
 }

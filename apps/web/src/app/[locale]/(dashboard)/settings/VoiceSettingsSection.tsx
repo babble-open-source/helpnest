@@ -121,11 +121,7 @@ export function VoiceSettingsSection({
 
               <div className="space-y-1.5">
                 <Label htmlFor="voice-language">Language</Label>
-                <Select
-                  value={language}
-                  onValueChange={setLanguage}
-                  disabled={demoMode}
-                >
+                <Select value={language} onValueChange={setLanguage} disabled={demoMode}>
                   <SelectTrigger id="voice-language" className="w-48">
                     <SelectValue />
                   </SelectTrigger>

@@ -12,7 +12,14 @@ import {
   clearTransitionDirection,
   setVoiceState,
 } from './state'
-import { initApi, fetchConfig, fetchCollections, fetchConversations, getVoiceToken, createConversation } from './api'
+import {
+  initApi,
+  fetchConfig,
+  fetchCollections,
+  fetchConversations,
+  getVoiceToken,
+  createConversation,
+} from './api'
 import { startVoiceSession, stopVoiceSession } from './voice/session'
 import { renderHome, bindHomeEvents } from './views/home'
 import { renderMessages, bindMessagesEvents } from './views/messages'

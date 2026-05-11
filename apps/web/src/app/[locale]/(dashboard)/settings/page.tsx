@@ -224,7 +224,7 @@ export default async function SettingsPage() {
               voiceEnabled={workspace?.voiceEnabled ?? false}
               voiceGreeting={workspace?.voiceGreeting ?? null}
               voiceLanguage={workspace?.voiceLanguage ?? null}
-              voiceSettings={workspace?.voiceSettings as Record<string, unknown> | null ?? null}
+              voiceSettings={(workspace?.voiceSettings as Record<string, unknown> | null) ?? null}
               demoMode={demoMode}
             />
 

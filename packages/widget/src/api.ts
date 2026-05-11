@@ -1,4 +1,10 @@
-import type { WidgetConfig, CollectionNode, ArticleSummary, ArticleDetail, ConversationSummary } from './types'
+import type {
+  WidgetConfig,
+  CollectionNode,
+  ArticleSummary,
+  ArticleDetail,
+  ConversationSummary,
+} from './types'
 
 let baseUrl = ''
 let workspaceSlug = ''
@@ -9,22 +15,36 @@ export function initApi(base: string, slug: string) {
 }
 
 export async function fetchConfig(): Promise<WidgetConfig> {
-  const res = await fetch(`${baseUrl}/api/widget/config?workspace=${encodeURIComponent(workspaceSlug)}`)
+  const res = await fetch(
+    `${baseUrl}/api/widget/config?workspace=${encodeURIComponent(workspaceSlug)}`
+  )
   if (!res.ok) throw new Error(`Config fetch failed: ${res.status}`)
   return res.json() as Promise<WidgetConfig>
 }
 
 export async function fetchCollections(): Promise<CollectionNode[]> {
-  const res = await fetch(`${baseUrl}/api/widget/collections?workspace=${encodeURIComponent(workspaceSlug)}`)
+  const res = await fetch(
+    `${baseUrl}/api/widget/collections?workspace=${encodeURIComponent(workspaceSlug)}`
+  )
   if (!res.ok) return []
-  const data = await res.json() as { collections: CollectionNode[] }
+  const data = (await res.json()) as { collections: CollectionNode[] }
   return data.collections ?? []
 }
 
-export async function fetchArticles(collectionId: string): Promise<{ collection: { title: string; description: string | null; slug: string }; articles: ArticleSummary[] }> {
-  const res = await fetch(`${baseUrl}/api/widget/articles?collection=${encodeURIComponent(collectionId)}`)
+export async function fetchArticles(
+  collectionId: string
+): Promise<{
+  collection: { title: string; description: string | null; slug: string }
+  articles: ArticleSummary[]
+}> {
+  const res = await fetch(
+    `${baseUrl}/api/widget/articles?collection=${encodeURIComponent(collectionId)}`
+  )
   if (!res.ok) return { collection: { title: '', description: null, slug: '' }, articles: [] }
-  return res.json() as Promise<{ collection: { title: string; description: string | null; slug: string }; articles: ArticleSummary[] }>
+  return res.json() as Promise<{
+    collection: { title: string; description: string | null; slug: string }
+    articles: ArticleSummary[]
+  }>
 }
 
 export async function fetchArticle(articleId: string): Promise<ArticleDetail | null> {
@@ -35,24 +55,35 @@ export async function fetchArticle(articleId: string): Promise<ArticleDetail | n
 
 export async function searchArticles(query: string): Promise<ArticleSummary[]> {
   if (query.length < 2) return []
-  const res = await fetch(`${baseUrl}/api/search?q=${encodeURIComponent(query)}&workspace=${encodeURIComponent(workspaceSlug)}`)
+  const res = await fetch(
+    `${baseUrl}/api/search?q=${encodeURIComponent(query)}&workspace=${encodeURIComponent(workspaceSlug)}`
+  )
   if (!res.ok) return []
-  const data = await res.json() as { results: ArticleSummary[] }
+  const data = (await res.json()) as { results: ArticleSummary[] }
   return data.results ?? []
 }
 
-export async function fetchConversations(visitorId: string, sessionTokens: string[]): Promise<ConversationSummary[]> {
+export async function fetchConversations(
+  visitorId: string,
+  sessionTokens: string[]
+): Promise<ConversationSummary[]> {
   if (!visitorId && sessionTokens.length === 0) return []
   const headers: Record<string, string> = {}
   if (visitorId) headers['X-Visitor-Id'] = visitorId
   if (sessionTokens.length > 0) headers['X-Session-Token'] = sessionTokens.join(',')
-  const res = await fetch(`${baseUrl}/api/widget/conversations?workspace=${encodeURIComponent(workspaceSlug)}`, { headers })
+  const res = await fetch(
+    `${baseUrl}/api/widget/conversations?workspace=${encodeURIComponent(workspaceSlug)}`,
+    { headers }
+  )
   if (!res.ok) return []
-  const data = await res.json() as { conversations: ConversationSummary[] }
+  const data = (await res.json()) as { conversations: ConversationSummary[] }
   return data.conversations ?? []
 }
 
-export async function submitArticleFeedback(articleId: string, type: 'helpful' | 'not'): Promise<void> {
+export async function submitArticleFeedback(
+  articleId: string,
+  type: 'helpful' | 'not'
+): Promise<void> {
   const voterToken = getVoterToken()
   await fetch(`${baseUrl}/api/widget/article/${encodeURIComponent(articleId)}/feedback`, {
     method: 'POST',
@@ -76,13 +107,17 @@ export async function getVoiceToken(sessionToken: string): Promise<{
     },
   })
   if (!res.ok) {
-    const data = await res.json().catch(() => ({ error: 'Voice unavailable' })) as { error?: string }
+    const data = (await res.json().catch(() => ({ error: 'Voice unavailable' }))) as {
+      error?: string
+    }
     throw new Error(data.error ?? `Voice token failed: ${res.status}`)
   }
   return res.json()
 }
 
-export async function createConversation(workspaceSlug: string): Promise<{ id: string; sessionToken: string }> {
+export async function createConversation(
+  workspaceSlug: string
+): Promise<{ id: string; sessionToken: string }> {
   const res = await fetch(`${baseUrl}/api/conversations`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },

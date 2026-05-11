@@ -134,7 +134,10 @@ export async function PATCH(request: Request) {
   }
 
   if (isDemoMode()) {
-    return NextResponse.json({ error: 'Workspace settings cannot be changed in demo mode.' }, { status: 403 })
+    return NextResponse.json(
+      { error: 'Workspace settings cannot be changed in demo mode.' },
+      { status: 403 }
+    )
   }
 
   // Resolve the active workspace (respects the helpnest-workspace cookie, same
@@ -166,7 +169,7 @@ export async function PATCH(request: Request) {
     if (typeof slug !== 'string' || !SLUG_RE.test(slug) || slug.length > 63) {
       return NextResponse.json(
         { error: 'Slug must be lowercase alphanumeric with hyphens, max 63 characters' },
-        { status: 400 },
+        { status: 400 }
       )
     }
   }
@@ -178,12 +181,15 @@ export async function PATCH(request: Request) {
 
     const trimmedLogo = logo.trim()
     if (trimmedLogo.length > 2048) {
-      return NextResponse.json({ error: 'Logo URL must be 2048 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Logo URL must be 2048 characters or fewer' },
+        { status: 400 }
+      )
     }
     if (trimmedLogo.length > 0 && !isValidLogoUrl(trimmedLogo)) {
       return NextResponse.json(
         { error: 'Logo must be an absolute URL, root-relative path, or data image' },
-        { status: 400 },
+        { status: 400 }
       )
     }
   }
@@ -193,7 +199,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Brand wordmark must be a string' }, { status: 400 })
     }
     if (brandText.trim().length > 120) {
-      return NextResponse.json({ error: 'Brand wordmark must be 120 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Brand wordmark must be 120 characters or fewer' },
+        { status: 400 }
+      )
     }
   }
 
@@ -204,12 +213,15 @@ export async function PATCH(request: Request) {
 
     const trimmedFavicon = favicon.trim()
     if (trimmedFavicon.length > 2048) {
-      return NextResponse.json({ error: 'Favicon URL must be 2048 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Favicon URL must be 2048 characters or fewer' },
+        { status: 400 }
+      )
     }
     if (trimmedFavicon.length > 0 && !isValidLogoUrl(trimmedFavicon)) {
       return NextResponse.json(
         { error: 'Favicon must be an absolute URL, root-relative path, or data image' },
-        { status: 400 },
+        { status: 400 }
       )
     }
   }
@@ -219,7 +231,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Meta title must be a string' }, { status: 400 })
     }
     if (metaTitle.trim().length > 120) {
-      return NextResponse.json({ error: 'Meta title must be 120 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Meta title must be 120 characters or fewer' },
+        { status: 400 }
+      )
     }
   }
 
@@ -228,7 +243,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Meta description must be a string' }, { status: 400 })
     }
     if (metaDescription.trim().length > 320) {
-      return NextResponse.json({ error: 'Meta description must be 320 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Meta description must be 320 characters or fewer' },
+        { status: 400 }
+      )
     }
   }
 
@@ -273,8 +291,14 @@ export async function PATCH(request: Request) {
     if (typeof customRadius !== 'string') {
       return NextResponse.json({ error: 'Radius must be a string' }, { status: 400 })
     }
-    if (customRadius.length > 0 && !radiusOptions.includes(customRadius as (typeof radiusOptions)[number])) {
-      return NextResponse.json({ error: 'Radius must be one of none, sm, md, lg, or xl' }, { status: 400 })
+    if (
+      customRadius.length > 0 &&
+      !radiusOptions.includes(customRadius as (typeof radiusOptions)[number])
+    ) {
+      return NextResponse.json(
+        { error: 'Radius must be one of none, sm, md, lg, or xl' },
+        { status: 400 }
+      )
     }
   }
 
@@ -288,7 +312,10 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: `${label} must be a string` }, { status: 400 })
       }
       if (value.trim().length > 200) {
-        return NextResponse.json({ error: `${label} must be 200 characters or fewer` }, { status: 400 })
+        return NextResponse.json(
+          { error: `${label} must be 200 characters or fewer` },
+          { status: 400 }
+        )
       }
     }
   }
@@ -304,10 +331,18 @@ export async function PATCH(request: Request) {
       }
       const trimmedUrl = value.trim()
       if (trimmedUrl.length > 2048) {
-        return NextResponse.json({ error: `${label} must be 2048 characters or fewer` }, { status: 400 })
+        return NextResponse.json(
+          { error: `${label} must be 2048 characters or fewer` },
+          { status: 400 }
+        )
       }
       if (trimmedUrl.length > 0 && !isValidFontUrl(trimmedUrl)) {
-        return NextResponse.json({ error: `${label} must be an HTTPS URL from a supported font provider (Google Fonts, Bunny Fonts, Typekit, cdnfonts)` }, { status: 400 })
+        return NextResponse.json(
+          {
+            error: `${label} must be an HTTPS URL from a supported font provider (Google Fonts, Bunny Fonts, Typekit, cdnfonts)`,
+          },
+          { status: 400 }
+        )
       }
     }
   }
@@ -337,61 +372,72 @@ export async function PATCH(request: Request) {
       ? customBrandFontUrl.trim()
       : null
   const trimmedBrandText =
-    typeof brandText === 'string' && brandText.trim().length > 0
-      ? brandText.trim()
-      : null
+    typeof brandText === 'string' && brandText.trim().length > 0 ? brandText.trim() : null
   const trimmedFavicon =
-    typeof favicon === 'string' && favicon.trim().length > 0
-      ? favicon.trim()
-      : null
+    typeof favicon === 'string' && favicon.trim().length > 0 ? favicon.trim() : null
   const trimmedMetaTitle =
-    typeof metaTitle === 'string' && metaTitle.trim().length > 0
-      ? metaTitle.trim()
-      : null
+    typeof metaTitle === 'string' && metaTitle.trim().length > 0 ? metaTitle.trim() : null
   const trimmedMetaDescription =
     typeof metaDescription === 'string' && metaDescription.trim().length > 0
       ? metaDescription.trim()
       : null
   const trimmedCustomCreamColor =
-    typeof customCreamColor === 'string' && customCreamColor.trim().length > 0 ? customCreamColor.trim() : null
+    typeof customCreamColor === 'string' && customCreamColor.trim().length > 0
+      ? customCreamColor.trim()
+      : null
   const trimmedCustomInkColor =
-    typeof customInkColor === 'string' && customInkColor.trim().length > 0 ? customInkColor.trim() : null
+    typeof customInkColor === 'string' && customInkColor.trim().length > 0
+      ? customInkColor.trim()
+      : null
   const trimmedCustomMutedColor =
-    typeof customMutedColor === 'string' && customMutedColor.trim().length > 0 ? customMutedColor.trim() : null
+    typeof customMutedColor === 'string' && customMutedColor.trim().length > 0
+      ? customMutedColor.trim()
+      : null
   const trimmedCustomBorderColor =
-    typeof customBorderColor === 'string' && customBorderColor.trim().length > 0 ? customBorderColor.trim() : null
+    typeof customBorderColor === 'string' && customBorderColor.trim().length > 0
+      ? customBorderColor.trim()
+      : null
   const trimmedCustomAccentColor =
-    typeof customAccentColor === 'string' && customAccentColor.trim().length > 0 ? customAccentColor.trim() : null
+    typeof customAccentColor === 'string' && customAccentColor.trim().length > 0
+      ? customAccentColor.trim()
+      : null
   const trimmedCustomGreenColor =
-    typeof customGreenColor === 'string' && customGreenColor.trim().length > 0 ? customGreenColor.trim() : null
+    typeof customGreenColor === 'string' && customGreenColor.trim().length > 0
+      ? customGreenColor.trim()
+      : null
   const trimmedCustomWhiteColor =
-    typeof customWhiteColor === 'string' && customWhiteColor.trim().length > 0 ? customWhiteColor.trim() : null
+    typeof customWhiteColor === 'string' && customWhiteColor.trim().length > 0
+      ? customWhiteColor.trim()
+      : null
   const trimmedCustomRadius =
     typeof customRadius === 'string' && customRadius.trim().length > 0 ? customRadius.trim() : null
 
   if (trimmedCustomHeadingFontUrl && !trimmedCustomHeadingFontFamily) {
     return NextResponse.json(
       { error: 'Heading font family is required when a heading stylesheet URL is provided' },
-      { status: 400 },
+      { status: 400 }
     )
   }
   if (trimmedCustomBodyFontUrl && !trimmedCustomBodyFontFamily) {
     return NextResponse.json(
       { error: 'Body font family is required when a body stylesheet URL is provided' },
-      { status: 400 },
+      { status: 400 }
     )
   }
   if (trimmedCustomBrandFontUrl && !trimmedCustomBrandFontFamily) {
     return NextResponse.json(
       { error: 'Brand font family is required when a brand stylesheet URL is provided' },
-      { status: 400 },
+      { status: 400 }
     )
   }
 
   // AI field validation
   const AI_PROVIDERS = ['anthropic', 'openai', 'google', 'mistral'] as const
   type LowercaseAiProvider = (typeof AI_PROVIDERS)[number]
-  const AI_PROVIDER_ENUM_MAP: Record<LowercaseAiProvider, 'ANTHROPIC' | 'OPENAI' | 'GOOGLE' | 'MISTRAL'> = {
+  const AI_PROVIDER_ENUM_MAP: Record<
+    LowercaseAiProvider,
+    'ANTHROPIC' | 'OPENAI' | 'GOOGLE' | 'MISTRAL'
+  > = {
     anthropic: 'ANTHROPIC',
     openai: 'OPENAI',
     google: 'GOOGLE',
@@ -403,10 +449,13 @@ export async function PATCH(request: Request) {
   }
 
   if (aiProvider !== undefined && aiProvider !== null) {
-    if (typeof aiProvider !== 'string' || !AI_PROVIDERS.includes(aiProvider.toLowerCase() as LowercaseAiProvider)) {
+    if (
+      typeof aiProvider !== 'string' ||
+      !AI_PROVIDERS.includes(aiProvider.toLowerCase() as LowercaseAiProvider)
+    ) {
       return NextResponse.json(
         { error: 'aiProvider must be one of: anthropic, openai, google, mistral' },
-        { status: 400 },
+        { status: 400 }
       )
     }
   }
@@ -416,7 +465,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'aiModel must be a string' }, { status: 400 })
     }
     if (aiModel.trim().length > 120) {
-      return NextResponse.json({ error: 'aiModel must be 120 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'aiModel must be 120 characters or fewer' },
+        { status: 400 }
+      )
     }
   }
 
@@ -431,7 +483,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'aiGreeting must be a string' }, { status: 400 })
     }
     if (aiGreeting.trim().length > 500) {
-      return NextResponse.json({ error: 'aiGreeting must be 500 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'aiGreeting must be 500 characters or fewer' },
+        { status: 400 }
+      )
     }
   }
 
@@ -440,7 +495,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'aiInstructions must be a string' }, { status: 400 })
     }
     if (aiInstructions.trim().length > 4000) {
-      return NextResponse.json({ error: 'aiInstructions must be 4000 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'aiInstructions must be 4000 characters or fewer' },
+        { status: 400 }
+      )
     }
   }
 
@@ -449,7 +507,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'aiEscalationThreshold must be a number' }, { status: 400 })
     }
     if (aiEscalationThreshold < 0 || aiEscalationThreshold > 1) {
-      return NextResponse.json({ error: 'aiEscalationThreshold must be between 0 and 1' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'aiEscalationThreshold must be between 0 and 1' },
+        { status: 400 }
+      )
     }
   }
 
@@ -458,7 +519,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'productContext must be a string' }, { status: 400 })
     }
     if (productContext.trim().length > 4000) {
-      return NextResponse.json({ error: 'productContext must be 4000 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'productContext must be 4000 characters or fewer' },
+        { status: 400 }
+      )
     }
   }
 
@@ -467,24 +531,51 @@ export async function PATCH(request: Request) {
   }
 
   if (autoDraftGapThreshold !== undefined) {
-    if (typeof autoDraftGapThreshold !== 'number' || !Number.isInteger(autoDraftGapThreshold) || autoDraftGapThreshold < 1 || autoDraftGapThreshold > 100) {
-      return NextResponse.json({ error: 'autoDraftGapThreshold must be an integer between 1 and 100' }, { status: 400 })
+    if (
+      typeof autoDraftGapThreshold !== 'number' ||
+      !Number.isInteger(autoDraftGapThreshold) ||
+      autoDraftGapThreshold < 1 ||
+      autoDraftGapThreshold > 100
+    ) {
+      return NextResponse.json(
+        { error: 'autoDraftGapThreshold must be an integer between 1 and 100' },
+        { status: 400 }
+      )
     }
   }
 
   if (autoDraftExternalEnabled !== undefined && typeof autoDraftExternalEnabled !== 'boolean') {
-    return NextResponse.json({ error: 'autoDraftExternalEnabled must be a boolean' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'autoDraftExternalEnabled must be a boolean' },
+      { status: 400 }
+    )
   }
 
   if (batchWindowMinutes !== undefined) {
-    if (typeof batchWindowMinutes !== 'number' || !Number.isInteger(batchWindowMinutes) || batchWindowMinutes < 1 || batchWindowMinutes > 1440) {
-      return NextResponse.json({ error: 'batchWindowMinutes must be an integer between 1 and 1440' }, { status: 400 })
+    if (
+      typeof batchWindowMinutes !== 'number' ||
+      !Number.isInteger(batchWindowMinutes) ||
+      batchWindowMinutes < 1 ||
+      batchWindowMinutes > 1440
+    ) {
+      return NextResponse.json(
+        { error: 'batchWindowMinutes must be an integer between 1 and 1440' },
+        { status: 400 }
+      )
     }
   }
 
   if (aiDraftRateLimit !== undefined) {
-    if (typeof aiDraftRateLimit !== 'number' || !Number.isInteger(aiDraftRateLimit) || aiDraftRateLimit < 1 || aiDraftRateLimit > 500) {
-      return NextResponse.json({ error: 'aiDraftRateLimit must be an integer between 1 and 500' }, { status: 400 })
+    if (
+      typeof aiDraftRateLimit !== 'number' ||
+      !Number.isInteger(aiDraftRateLimit) ||
+      aiDraftRateLimit < 1 ||
+      aiDraftRateLimit > 500
+    ) {
+      return NextResponse.json(
+        { error: 'aiDraftRateLimit must be an integer between 1 and 500' },
+        { status: 400 }
+      )
     }
   }
 
@@ -497,7 +588,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'voiceGreeting must be a string' }, { status: 400 })
     }
     if (voiceGreeting.trim().length > 500) {
-      return NextResponse.json({ error: 'voiceGreeting must be 500 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'voiceGreeting must be 500 characters or fewer' },
+        { status: 400 }
+      )
     }
   }
 
@@ -506,7 +600,10 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'voiceLanguage must be a string' }, { status: 400 })
     }
     if (voiceLanguage.trim().length > 10) {
-      return NextResponse.json({ error: 'voiceLanguage must be 10 characters or fewer' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'voiceLanguage must be 10 characters or fewer' },
+        { status: 400 }
+      )
     }
   }
 
@@ -529,7 +626,9 @@ export async function PATCH(request: Request) {
   const trimmedAiGreeting =
     typeof aiGreeting === 'string' && aiGreeting.trim().length > 0 ? aiGreeting.trim() : null
   const trimmedAiInstructions =
-    typeof aiInstructions === 'string' && aiInstructions.trim().length > 0 ? aiInstructions.trim() : null
+    typeof aiInstructions === 'string' && aiInstructions.trim().length > 0
+      ? aiInstructions.trim()
+      : null
   // null = explicit removal (revert to env vars); string = encrypt and store; undefined = no change
   const encryptedAiApiKey =
     aiApiKey === null
@@ -551,26 +650,38 @@ export async function PATCH(request: Request) {
   const canPersistCustomCreamColor = customCreamColor !== undefined && cols.has('customCreamColor')
   const canPersistCustomInkColor = customInkColor !== undefined && cols.has('customInkColor')
   const canPersistCustomMutedColor = customMutedColor !== undefined && cols.has('customMutedColor')
-  const canPersistCustomBorderColor = customBorderColor !== undefined && cols.has('customBorderColor')
-  const canPersistCustomAccentColor = customAccentColor !== undefined && cols.has('customAccentColor')
+  const canPersistCustomBorderColor =
+    customBorderColor !== undefined && cols.has('customBorderColor')
+  const canPersistCustomAccentColor =
+    customAccentColor !== undefined && cols.has('customAccentColor')
   const canPersistCustomGreenColor = customGreenColor !== undefined && cols.has('customGreenColor')
   const canPersistCustomWhiteColor = customWhiteColor !== undefined && cols.has('customWhiteColor')
   const canPersistCustomRadius = customRadius !== undefined && cols.has('customRadius')
-  const canPersistCustomHeadingFontFamily = customHeadingFontFamily !== undefined && cols.has('customHeadingFontFamily')
-  const canPersistCustomHeadingFontUrl = customHeadingFontUrl !== undefined && cols.has('customHeadingFontUrl')
-  const canPersistCustomBodyFontFamily = customBodyFontFamily !== undefined && cols.has('customBodyFontFamily')
-  const canPersistCustomBodyFontUrl = customBodyFontUrl !== undefined && cols.has('customBodyFontUrl')
-  const canPersistCustomBrandFontFamily = customBrandFontFamily !== undefined && cols.has('customBrandFontFamily')
-  const canPersistCustomBrandFontUrl = customBrandFontUrl !== undefined && cols.has('customBrandFontUrl')
+  const canPersistCustomHeadingFontFamily =
+    customHeadingFontFamily !== undefined && cols.has('customHeadingFontFamily')
+  const canPersistCustomHeadingFontUrl =
+    customHeadingFontUrl !== undefined && cols.has('customHeadingFontUrl')
+  const canPersistCustomBodyFontFamily =
+    customBodyFontFamily !== undefined && cols.has('customBodyFontFamily')
+  const canPersistCustomBodyFontUrl =
+    customBodyFontUrl !== undefined && cols.has('customBodyFontUrl')
+  const canPersistCustomBrandFontFamily =
+    customBrandFontFamily !== undefined && cols.has('customBrandFontFamily')
+  const canPersistCustomBrandFontUrl =
+    customBrandFontUrl !== undefined && cols.has('customBrandFontUrl')
   const trimmedProductContext =
     typeof productContext === 'string' && productContext.trim().length > 0
       ? productContext.trim()
       : null
   const canPersistProductContext = productContext !== undefined && cols.has('productContext')
-  const canPersistAutoDraftGapsEnabled = autoDraftGapsEnabled !== undefined && cols.has('autoDraftGapsEnabled')
-  const canPersistAutoDraftGapThreshold = autoDraftGapThreshold !== undefined && cols.has('autoDraftGapThreshold')
-  const canPersistAutoDraftExternalEnabled = autoDraftExternalEnabled !== undefined && cols.has('autoDraftExternalEnabled')
-  const canPersistBatchWindowMinutes = batchWindowMinutes !== undefined && cols.has('batchWindowMinutes')
+  const canPersistAutoDraftGapsEnabled =
+    autoDraftGapsEnabled !== undefined && cols.has('autoDraftGapsEnabled')
+  const canPersistAutoDraftGapThreshold =
+    autoDraftGapThreshold !== undefined && cols.has('autoDraftGapThreshold')
+  const canPersistAutoDraftExternalEnabled =
+    autoDraftExternalEnabled !== undefined && cols.has('autoDraftExternalEnabled')
+  const canPersistBatchWindowMinutes =
+    batchWindowMinutes !== undefined && cols.has('batchWindowMinutes')
   const canPersistAiDraftRateLimit = aiDraftRateLimit !== undefined && cols.has('aiDraftRateLimit')
   const canPersistVoiceEnabled = voiceEnabled !== undefined && cols.has('voiceEnabled')
   const canPersistVoiceGreeting = voiceGreeting !== undefined && cols.has('voiceGreeting')
@@ -591,61 +702,86 @@ export async function PATCH(request: Request) {
   if (typeof fontPresetId === 'string' && fontPresetId.length > 0 && !canPersistFontPreset) {
     return NextResponse.json(
       { error: 'Font presets require the latest database migration.' },
-      { status: 409 },
+      { status: 409 }
     )
   }
   if (
     (typeof brandText === 'string' && brandText.trim().length > 0 && !canPersistBrandText) ||
     (typeof favicon === 'string' && favicon.trim().length > 0 && !canPersistFavicon) ||
     (typeof metaTitle === 'string' && metaTitle.trim().length > 0 && !canPersistMetaTitle) ||
-    (typeof metaDescription === 'string' && metaDescription.trim().length > 0 && !canPersistMetaDescription)
+    (typeof metaDescription === 'string' &&
+      metaDescription.trim().length > 0 &&
+      !canPersistMetaDescription)
   ) {
     return NextResponse.json(
       { error: 'Workspace identity branding requires the latest database migration.' },
-      { status: 409 },
+      { status: 409 }
     )
   }
   if (
-    (typeof customCreamColor === 'string' && customCreamColor.trim().length > 0 && !canPersistCustomCreamColor) ||
-    (typeof customInkColor === 'string' && customInkColor.trim().length > 0 && !canPersistCustomInkColor) ||
-    (typeof customMutedColor === 'string' && customMutedColor.trim().length > 0 && !canPersistCustomMutedColor) ||
-    (typeof customBorderColor === 'string' && customBorderColor.trim().length > 0 && !canPersistCustomBorderColor) ||
-    (typeof customAccentColor === 'string' && customAccentColor.trim().length > 0 && !canPersistCustomAccentColor) ||
-    (typeof customGreenColor === 'string' && customGreenColor.trim().length > 0 && !canPersistCustomGreenColor) ||
-    (typeof customWhiteColor === 'string' && customWhiteColor.trim().length > 0 && !canPersistCustomWhiteColor) ||
+    (typeof customCreamColor === 'string' &&
+      customCreamColor.trim().length > 0 &&
+      !canPersistCustomCreamColor) ||
+    (typeof customInkColor === 'string' &&
+      customInkColor.trim().length > 0 &&
+      !canPersistCustomInkColor) ||
+    (typeof customMutedColor === 'string' &&
+      customMutedColor.trim().length > 0 &&
+      !canPersistCustomMutedColor) ||
+    (typeof customBorderColor === 'string' &&
+      customBorderColor.trim().length > 0 &&
+      !canPersistCustomBorderColor) ||
+    (typeof customAccentColor === 'string' &&
+      customAccentColor.trim().length > 0 &&
+      !canPersistCustomAccentColor) ||
+    (typeof customGreenColor === 'string' &&
+      customGreenColor.trim().length > 0 &&
+      !canPersistCustomGreenColor) ||
+    (typeof customWhiteColor === 'string' &&
+      customWhiteColor.trim().length > 0 &&
+      !canPersistCustomWhiteColor) ||
     (typeof customRadius === 'string' && customRadius.trim().length > 0 && !canPersistCustomRadius)
   ) {
     return NextResponse.json(
       { error: 'Custom theme overrides require the latest database migration.' },
-      { status: 409 },
+      { status: 409 }
     )
   }
   if (
-    (typeof customHeadingFontFamily === 'string' && customHeadingFontFamily.trim().length > 0 && !canPersistCustomHeadingFontFamily) ||
-    (typeof customHeadingFontUrl === 'string' && customHeadingFontUrl.trim().length > 0 && !canPersistCustomHeadingFontUrl) ||
-    (typeof customBodyFontFamily === 'string' && customBodyFontFamily.trim().length > 0 && !canPersistCustomBodyFontFamily) ||
-    (typeof customBodyFontUrl === 'string' && customBodyFontUrl.trim().length > 0 && !canPersistCustomBodyFontUrl) ||
-    (typeof customBrandFontFamily === 'string' && customBrandFontFamily.trim().length > 0 && !canPersistCustomBrandFontFamily) ||
-    (typeof customBrandFontUrl === 'string' && customBrandFontUrl.trim().length > 0 && !canPersistCustomBrandFontUrl)
+    (typeof customHeadingFontFamily === 'string' &&
+      customHeadingFontFamily.trim().length > 0 &&
+      !canPersistCustomHeadingFontFamily) ||
+    (typeof customHeadingFontUrl === 'string' &&
+      customHeadingFontUrl.trim().length > 0 &&
+      !canPersistCustomHeadingFontUrl) ||
+    (typeof customBodyFontFamily === 'string' &&
+      customBodyFontFamily.trim().length > 0 &&
+      !canPersistCustomBodyFontFamily) ||
+    (typeof customBodyFontUrl === 'string' &&
+      customBodyFontUrl.trim().length > 0 &&
+      !canPersistCustomBodyFontUrl) ||
+    (typeof customBrandFontFamily === 'string' &&
+      customBrandFontFamily.trim().length > 0 &&
+      !canPersistCustomBrandFontFamily) ||
+    (typeof customBrandFontUrl === 'string' &&
+      customBrandFontUrl.trim().length > 0 &&
+      !canPersistCustomBrandFontUrl)
   ) {
     return NextResponse.json(
       { error: 'Brand and content font overrides require the latest database migration.' },
-      { status: 409 },
+      { status: 409 }
     )
   }
 
   if (typeof aiDraftRateLimit === 'number' && !canPersistAiDraftRateLimit) {
     return NextResponse.json(
       { error: 'AI draft rate limit requires the latest database migration.' },
-      { status: 409 },
+      { status: 409 }
     )
   }
 
   try {
-    const trimmedLogo =
-      typeof logo === 'string' && logo.trim().length > 0
-        ? logo.trim()
-        : null
+    const trimmedLogo = typeof logo === 'string' && logo.trim().length > 0 ? logo.trim() : null
 
     const updated = await prisma.workspace.update({
       where: { id: member.workspaceId },
@@ -659,7 +795,10 @@ export async function PATCH(request: Request) {
         ...(canPersistMetaDescription ? { metaDescription: trimmedMetaDescription } : {}),
         ...(themeId ? { themeId: themeId as string } : {}),
         ...(canPersistFontPreset
-          ? { fontPresetId: typeof fontPresetId === 'string' && fontPresetId.length > 0 ? fontPresetId : null }
+          ? {
+              fontPresetId:
+                typeof fontPresetId === 'string' && fontPresetId.length > 0 ? fontPresetId : null,
+            }
           : {}),
         ...(canPersistCustomCreamColor ? { customCreamColor: trimmedCustomCreamColor } : {}),
         ...(canPersistCustomInkColor ? { customInkColor: trimmedCustomInkColor } : {}),
@@ -669,11 +808,19 @@ export async function PATCH(request: Request) {
         ...(canPersistCustomGreenColor ? { customGreenColor: trimmedCustomGreenColor } : {}),
         ...(canPersistCustomWhiteColor ? { customWhiteColor: trimmedCustomWhiteColor } : {}),
         ...(canPersistCustomRadius ? { customRadius: trimmedCustomRadius } : {}),
-        ...(canPersistCustomHeadingFontFamily ? { customHeadingFontFamily: trimmedCustomHeadingFontFamily } : {}),
-        ...(canPersistCustomHeadingFontUrl ? { customHeadingFontUrl: trimmedCustomHeadingFontUrl } : {}),
-        ...(canPersistCustomBodyFontFamily ? { customBodyFontFamily: trimmedCustomBodyFontFamily } : {}),
+        ...(canPersistCustomHeadingFontFamily
+          ? { customHeadingFontFamily: trimmedCustomHeadingFontFamily }
+          : {}),
+        ...(canPersistCustomHeadingFontUrl
+          ? { customHeadingFontUrl: trimmedCustomHeadingFontUrl }
+          : {}),
+        ...(canPersistCustomBodyFontFamily
+          ? { customBodyFontFamily: trimmedCustomBodyFontFamily }
+          : {}),
         ...(canPersistCustomBodyFontUrl ? { customBodyFontUrl: trimmedCustomBodyFontUrl } : {}),
-        ...(canPersistCustomBrandFontFamily ? { customBrandFontFamily: trimmedCustomBrandFontFamily } : {}),
+        ...(canPersistCustomBrandFontFamily
+          ? { customBrandFontFamily: trimmedCustomBrandFontFamily }
+          : {}),
         ...(canPersistCustomBrandFontUrl ? { customBrandFontUrl: trimmedCustomBrandFontUrl } : {}),
         ...(aiEnabled !== undefined ? { aiEnabled: aiEnabled as boolean } : {}),
         ...(resolvedAiProvider !== undefined ? { aiProvider: resolvedAiProvider } : {}),
@@ -683,10 +830,18 @@ export async function PATCH(request: Request) {
         ...(aiInstructions !== undefined ? { aiInstructions: trimmedAiInstructions } : {}),
         ...(clampedThreshold !== undefined ? { aiEscalationThreshold: clampedThreshold } : {}),
         ...(canPersistProductContext ? { productContext: trimmedProductContext } : {}),
-        ...(canPersistAutoDraftGapsEnabled ? { autoDraftGapsEnabled: autoDraftGapsEnabled as boolean } : {}),
-        ...(canPersistAutoDraftGapThreshold ? { autoDraftGapThreshold: autoDraftGapThreshold as number } : {}),
-        ...(canPersistAutoDraftExternalEnabled ? { autoDraftExternalEnabled: autoDraftExternalEnabled as boolean } : {}),
-        ...(canPersistBatchWindowMinutes ? { batchWindowMinutes: batchWindowMinutes as number } : {}),
+        ...(canPersistAutoDraftGapsEnabled
+          ? { autoDraftGapsEnabled: autoDraftGapsEnabled as boolean }
+          : {}),
+        ...(canPersistAutoDraftGapThreshold
+          ? { autoDraftGapThreshold: autoDraftGapThreshold as number }
+          : {}),
+        ...(canPersistAutoDraftExternalEnabled
+          ? { autoDraftExternalEnabled: autoDraftExternalEnabled as boolean }
+          : {}),
+        ...(canPersistBatchWindowMinutes
+          ? { batchWindowMinutes: batchWindowMinutes as number }
+          : {}),
         ...(canPersistAiDraftRateLimit ? { aiDraftRateLimit: aiDraftRateLimit as number } : {}),
         ...(canPersistVoiceEnabled ? { voiceEnabled: voiceEnabled as boolean } : {}),
         ...(canPersistVoiceGreeting ? { voiceGreeting: trimmedVoiceGreeting } : {}),
