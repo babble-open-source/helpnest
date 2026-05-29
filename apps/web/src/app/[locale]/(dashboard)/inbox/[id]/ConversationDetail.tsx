@@ -4,7 +4,6 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useRouter } from '@/i18n/navigation'
 import { useTranslations, useFormatter } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -17,6 +16,7 @@ import {
 import { ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CustomerContextPanel } from './CustomerContextPanel'
+import { MessageComposer } from './MessageComposer'
 
 interface ContactSummary {
   id: string
@@ -105,8 +105,6 @@ export function ConversationDetail({ conversation: initialConv, members, current
   const format = useFormatter()
   const [conversation, setConversation] = useState(initialConv)
   const [linkedContact, setLinkedContact] = useState(initialConv.contact)
-  const [reply, setReply] = useState('')
-  const [sending, setSending] = useState(false)
   const [updating, setUpdating] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -148,37 +146,6 @@ export function ConversationDetail({ conversation: initialConv, members, current
     }, 10_000)
     return () => clearInterval(interval)
   }, [conversation.id, conversation.messages, conversation.createdAt])
-
-  async function handleSendReply() {
-    if (!reply.trim() || sending) return
-    setSending(true)
-    try {
-      const res = await fetch(`/api/conversations/${conversation.id}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: reply.trim() }),
-      })
-      if (res.ok) {
-        const data = (await res.json()) as { message: Message }
-        setConversation((prev) => ({
-          ...prev,
-          messages: [
-            ...prev.messages,
-            {
-              ...data.message,
-              createdAt:
-                typeof data.message.createdAt === 'string'
-                  ? data.message.createdAt
-                  : new Date(data.message.createdAt).toISOString(),
-            },
-          ],
-        }))
-        setReply('')
-      }
-    } finally {
-      setSending(false)
-    }
-  }
 
   async function handleStatusUpdate(status: string) {
     setUpdating(true)
@@ -349,32 +316,17 @@ export function ConversationDetail({ conversation: initialConv, members, current
           </div>
         </ScrollArea>
 
-        {/* Reply composer */}
+        {/* Composer */}
         {conversation.status !== 'CLOSED' && (
-          <div className="border-t p-4 shrink-0">
-            <div className="flex gap-3">
-              <Textarea
-                value={reply}
-                onChange={(e) => setReply(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault()
-                    void handleSendReply()
-                  }
-                }}
-                placeholder={t('replyPlaceholder')}
-                rows={2}
-                className="flex-1 resize-none"
-              />
-              <Button
-                onClick={() => void handleSendReply()}
-                disabled={!reply.trim() || sending}
-                className="self-end bg-emerald-600 hover:bg-emerald-600/90 text-white"
-              >
-                {sending ? t('sending') : t('send')}
-              </Button>
-            </div>
-          </div>
+          <MessageComposer
+            conversationId={conversation.id}
+            onMessageSent={(msg) =>
+              setConversation((prev) => ({
+                ...prev,
+                messages: [...prev.messages, msg],
+              }))
+            }
+          />
         )}
       </div>
 
