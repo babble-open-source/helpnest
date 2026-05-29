@@ -1,46 +1,18 @@
 // apps/web/src/lib/__tests__/conversation-events.test.ts
 import { describe, it, expect, beforeEach } from 'vitest'
-import { prisma } from '@/lib/db'
+import {
+  testDb,
+  registerTestDbTeardown,
+  truncateTicketingTables,
+  createTestWorkspace,
+  createTestConversation,
+} from '@/test/harness'
 import * as conversationEventsModule from '@/lib/conversation-events'
 import { emitConversationEvent } from '@/lib/conversation-events'
-import { EventActorType, ConversationEventVerb } from '@helpnest/db'
+import { EventActorType, ConversationEventVerb, Prisma } from '@helpnest/db'
 
-// ---------------------------------------------------------------------------
-// Seed helpers — create the minimal graph needed for FK satisfaction
-// ---------------------------------------------------------------------------
-
-async function seedWorkspace(slug: string): Promise<string> {
-  const ws = await prisma.workspace.upsert({
-    where: { slug },
-    create: { slug, name: slug },
-    update: {},
-    select: { id: true },
-  })
-  return ws.id
-}
-
-async function seedConversation(workspaceId: string): Promise<string> {
-  const conv = await prisma.conversation.create({
-    data: { workspaceId },
-    select: { id: true },
-  })
-  return conv.id
-}
-
-async function seedMember(workspaceId: string): Promise<{ memberId: string; userId: string }> {
-  const user = await prisma.user.create({
-    data: {
-      email: `agent-${Date.now()}-${Math.random().toString(36).slice(2)}@test.invalid`,
-      name: 'Agent Alice',
-    },
-    select: { id: true },
-  })
-  const member = await prisma.member.create({
-    data: { workspaceId, userId: user.id, role: 'EDITOR' },
-    select: { id: true },
-  })
-  return { memberId: member.id, userId: user.id }
-}
+// Disconnect testDb after all tests in this file complete.
+registerTestDbTeardown()
 
 // ---------------------------------------------------------------------------
 // Suite
@@ -49,10 +21,15 @@ async function seedMember(workspaceId: string): Promise<{ memberId: string; user
 describe('emitConversationEvent — integration', () => {
   let workspaceId: string
   let conversationId: string
+  let memberId: string
 
   beforeEach(async () => {
-    workspaceId = await seedWorkspace(`conv-event-ws-${Date.now()}`)
-    conversationId = await seedConversation(workspaceId)
+    await truncateTicketingTables()
+    const ws = await createTestWorkspace('conv-event')
+    workspaceId = ws.workspaceId
+    memberId = ws.memberId
+    const conv = await createTestConversation(workspaceId)
+    conversationId = conv.conversationId
   })
 
   // -------------------------------------------------------------------------
@@ -69,7 +46,7 @@ describe('emitConversationEvent — integration', () => {
       payload: { source: 'widget' },
     })
 
-    const events = await prisma.conversationEvent.findMany({
+    const events = await testDb.conversationEvent.findMany({
       where: { conversationId },
     })
 
@@ -91,8 +68,7 @@ describe('emitConversationEvent — integration', () => {
   // -------------------------------------------------------------------------
 
   it('stores actorMemberId and actorLabel for AGENT actor type', async () => {
-    const { memberId } = await seedMember(workspaceId)
-
+    // memberId comes from createTestWorkspace() in beforeEach — same workspace.
     await emitConversationEvent({
       workspaceId,
       conversationId,
@@ -103,7 +79,7 @@ describe('emitConversationEvent — integration', () => {
       payload: { toMemberId: memberId, toMemberName: 'Agent Alice' },
     })
 
-    const event = await prisma.conversationEvent.findFirst({
+    const event = await testDb.conversationEvent.findFirst({
       where: { conversationId, verb: ConversationEventVerb.ASSIGNED },
     })
 
@@ -127,7 +103,7 @@ describe('emitConversationEvent — integration', () => {
       durationSeconds: 42,
     })
 
-    const event = await prisma.conversationEvent.findFirst({
+    const event = await testDb.conversationEvent.findFirst({
       where: { conversationId, verb: ConversationEventVerb.FIRST_RESPONSE_SENT },
     })
 
@@ -140,7 +116,7 @@ describe('emitConversationEvent — integration', () => {
   // -------------------------------------------------------------------------
 
   it('uses the provided transaction client when tx is supplied', async () => {
-    await prisma.$transaction(async (tx) => {
+    await testDb.$transaction(async (tx: Prisma.TransactionClient) => {
       await emitConversationEvent({
         tx,
         workspaceId,
@@ -152,7 +128,7 @@ describe('emitConversationEvent — integration', () => {
       })
     })
 
-    const event = await prisma.conversationEvent.findFirst({
+    const event = await testDb.conversationEvent.findFirst({
       where: { conversationId, verb: ConversationEventVerb.STATUS_CHANGED },
     })
 
@@ -166,7 +142,7 @@ describe('emitConversationEvent — integration', () => {
 
   it('produces no event row when the surrounding transaction is rolled back', async () => {
     await expect(
-      prisma.$transaction(async (tx) => {
+      testDb.$transaction(async (tx: Prisma.TransactionClient) => {
         await emitConversationEvent({
           tx,
           workspaceId,
@@ -182,7 +158,7 @@ describe('emitConversationEvent — integration', () => {
       })
     ).rejects.toThrow('Intentional rollback')
 
-    const count = await prisma.conversationEvent.count({ where: { conversationId } })
+    const count = await testDb.conversationEvent.count({ where: { conversationId } })
     expect(count).toBe(0)
   })
 
@@ -215,7 +191,7 @@ describe('emitConversationEvent — integration', () => {
       payload: { messageId: 'msg-1' },
     })
 
-    const before = await prisma.conversationEvent.findFirst({ where: { conversationId } })
+    const before = await testDb.conversationEvent.findFirst({ where: { conversationId } })
     expect(before).not.toBeNull()
 
     // The module under test exports only emitConversationEvent — no update/delete API exists.
@@ -226,7 +202,7 @@ describe('emitConversationEvent — integration', () => {
     expect(exportedKeys).toEqual(['emitConversationEvent'])
 
     // The row is unchanged after the test (no mutation happened).
-    const after = await prisma.conversationEvent.findFirst({ where: { conversationId } })
+    const after = await testDb.conversationEvent.findFirst({ where: { conversationId } })
     expect(after?.id).toBe(before?.id)
     expect(after?.verb).toBe(ConversationEventVerb.NOTE_ADDED)
   })
@@ -253,12 +229,12 @@ describe('emitConversationEvent — integration', () => {
       })
     }
 
-    const events = await prisma.conversationEvent.findMany({
+    const events = await testDb.conversationEvent.findMany({
       where: { conversationId },
       orderBy: { createdAt: 'asc' },
     })
 
     expect(events).toHaveLength(3)
-    expect(events.map((e) => e.verb)).toEqual(verbs)
+    expect(events.map((e: { verb: ConversationEventVerb }) => e.verb)).toEqual(verbs)
   })
 })

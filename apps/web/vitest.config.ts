@@ -7,6 +7,16 @@ export default defineConfig({
     environment: 'node',
     globalSetup: ['./src/test/global-setup.ts'],
     setupFiles: ['./src/test/setup.ts'],
+    // Run all test files sequentially in a single thread.
+    // The integration tests share a single helpnest_test Postgres database; parallel
+    // workers cause cross-file races where one file's TRUNCATE deletes rows another
+    // file's test just created, producing FK violations and false failures.
+    pool: 'threads',
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
     // Exclude Playwright e2e specs — they use @playwright/test, not vitest.
     // Playwright has its own runner configured via playwright.config.ts.
     exclude: ['**/node_modules/**', '**/e2e/**'],
