@@ -103,9 +103,7 @@ describe('GET /api/conversations/[id]/events', () => {
 
     vi.mocked(prisma.conversationEvent.findMany).mockResolvedValue(events as never)
 
-    const req = makeRequest(
-      `http://localhost/api/conversations/${CONVERSATION_ID}/events`,
-    )
+    const req = makeRequest(`http://localhost/api/conversations/${CONVERSATION_ID}/events`)
     const res = await GET(req, { params: Promise.resolve({ id: CONVERSATION_ID }) })
     const body = await res.json()
 
@@ -121,7 +119,7 @@ describe('GET /api/conversations/[id]/events', () => {
           workspaceId: WORKSPACE_ID,
         }),
         orderBy: { createdAt: 'asc' },
-      }),
+      })
     )
   })
 
@@ -132,7 +130,7 @@ describe('GET /api/conversations/[id]/events', () => {
 
     const since = '2026-05-29T10:03:00.000Z'
     const req = makeRequest(
-      `http://localhost/api/conversations/${CONVERSATION_ID}/events?since=${encodeURIComponent(since)}`,
+      `http://localhost/api/conversations/${CONVERSATION_ID}/events?since=${encodeURIComponent(since)}`
     )
     const res = await GET(req, { params: Promise.resolve({ id: CONVERSATION_ID }) })
 
@@ -142,7 +140,7 @@ describe('GET /api/conversations/[id]/events', () => {
         where: expect.objectContaining({
           createdAt: { gt: new Date(since) },
         }),
-      }),
+      })
     )
   })
 
@@ -152,13 +150,13 @@ describe('GET /api/conversations/[id]/events', () => {
     vi.mocked(prisma.conversationEvent.findMany).mockResolvedValue([])
 
     const req = makeRequest(
-      `http://localhost/api/conversations/${CONVERSATION_ID}/events?limit=9999`,
+      `http://localhost/api/conversations/${CONVERSATION_ID}/events?limit=9999`
     )
     const res = await GET(req, { params: Promise.resolve({ id: CONVERSATION_ID }) })
 
     expect(res.status).toBe(200)
     expect(prisma.conversationEvent.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 200 }),
+      expect.objectContaining({ take: 200 })
     )
   })
 
@@ -167,13 +165,11 @@ describe('GET /api/conversations/[id]/events', () => {
     vi.mocked(prisma.conversation.findFirst).mockResolvedValue({ id: CONVERSATION_ID } as never)
     vi.mocked(prisma.conversationEvent.findMany).mockResolvedValue([])
 
-    const req = makeRequest(
-      `http://localhost/api/conversations/${CONVERSATION_ID}/events`,
-    )
+    const req = makeRequest(`http://localhost/api/conversations/${CONVERSATION_ID}/events`)
     await GET(req, { params: Promise.resolve({ id: CONVERSATION_ID }) })
 
     expect(prisma.conversationEvent.findMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 50 }),
+      expect.objectContaining({ take: 50 })
     )
   })
 
@@ -182,7 +178,7 @@ describe('GET /api/conversations/[id]/events', () => {
     vi.mocked(prisma.conversation.findFirst).mockResolvedValue({ id: CONVERSATION_ID } as never)
 
     const req = makeRequest(
-      `http://localhost/api/conversations/${CONVERSATION_ID}/events?since=not-a-date`,
+      `http://localhost/api/conversations/${CONVERSATION_ID}/events?since=not-a-date`
     )
     const res = await GET(req, { params: Promise.resolve({ id: CONVERSATION_ID }) })
 

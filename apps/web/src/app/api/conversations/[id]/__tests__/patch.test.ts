@@ -76,7 +76,10 @@ beforeEach(() => {
 
 describe('PATCH /api/conversations/[id]', () => {
   it('accepts HUMAN_ACTIVE as a valid status and returns 200', async () => {
-    vi.mocked(prisma.conversation.update).mockResolvedValue({ id: 'conv-1', status: 'HUMAN_ACTIVE' } as never)
+    vi.mocked(prisma.conversation.update).mockResolvedValue({
+      id: 'conv-1',
+      status: 'HUMAN_ACTIVE',
+    } as never)
     const res = await PATCH(makeRequest({ status: 'HUMAN_ACTIVE' }), { params: PARAMS })
     expect(res.status).toBe(200)
   })
@@ -100,7 +103,7 @@ describe('PATCH /api/conversations/[id]', () => {
     expect(res.status).toBe(404)
     // Confirm the where-clause included workspaceId
     expect(prisma.conversation.findFirst).toHaveBeenCalledWith(
-      expect.objectContaining({ where: expect.objectContaining({ workspaceId: 'ws-1' }) }),
+      expect.objectContaining({ where: expect.objectContaining({ workspaceId: 'ws-1' }) })
     )
   })
 
@@ -119,7 +122,10 @@ describe('PATCH /api/conversations/[id]', () => {
       email: 'a@b.com',
       fullName: 'Alice',
     } as never)
-    vi.mocked(prisma.conversation.update).mockResolvedValue({ id: 'conv-1', contactId: 'contact-1' } as never)
+    vi.mocked(prisma.conversation.update).mockResolvedValue({
+      id: 'conv-1',
+      contactId: 'contact-1',
+    } as never)
 
     const res = await PATCH(makeRequest({ contactId: 'contact-1' }), { params: PARAMS })
     expect(res.status).toBe(200)
@@ -128,10 +134,10 @@ describe('PATCH /api/conversations/[id]', () => {
       expect.objectContaining({
         where: expect.objectContaining({ id: 'conv-1', workspaceId: 'ws-1' }),
         data: expect.objectContaining({ contactId: 'contact-1' }),
-      }),
+      })
     )
     expect(emitConversationEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ verb: 'CONTACT_LINKED', conversationId: 'conv-1' }),
+      expect.objectContaining({ verb: 'CONTACT_LINKED', conversationId: 'conv-1' })
     )
   })
 
@@ -149,12 +155,15 @@ describe('PATCH /api/conversations/[id]', () => {
       workspaceId: 'ws-1',
       name: 'Acme',
     } as never)
-    vi.mocked(prisma.conversation.update).mockResolvedValue({ id: 'conv-1', organizationId: 'org-1' } as never)
+    vi.mocked(prisma.conversation.update).mockResolvedValue({
+      id: 'conv-1',
+      organizationId: 'org-1',
+    } as never)
 
     const res = await PATCH(makeRequest({ organizationId: 'org-1' }), { params: PARAMS })
     expect(res.status).toBe(200)
     expect(emitConversationEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ verb: 'ORG_LINKED', conversationId: 'conv-1' }),
+      expect.objectContaining({ verb: 'ORG_LINKED', conversationId: 'conv-1' })
     )
   })
 })

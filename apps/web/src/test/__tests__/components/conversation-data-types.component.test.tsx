@@ -147,7 +147,9 @@ function makeContactSummary(overrides: Partial<ContactSummary> = {}): ContactSum
   }
 }
 
-function makeOrganizationSummary(overrides: Partial<OrganizationSummary> = {}): OrganizationSummary {
+function makeOrganizationSummary(
+  overrides: Partial<OrganizationSummary> = {}
+): OrganizationSummary {
   return {
     id: 'org-1',
     name: 'Acme Corp',
@@ -156,7 +158,9 @@ function makeOrganizationSummary(overrides: Partial<OrganizationSummary> = {}): 
   }
 }
 
-function makeConversationSummary(overrides: Partial<ConversationSummary> = {}): ConversationSummary {
+function makeConversationSummary(
+  overrides: Partial<ConversationSummary> = {}
+): ConversationSummary {
   return {
     id: 'conv-1',
     number: 1042,
@@ -191,21 +195,13 @@ function ConversationHeader({ conv }: { conv: ConversationData }) {
       {conv.contact && (
         <span data-testid="contact-name">{conv.contact.fullName ?? conv.contact.email}</span>
       )}
-      {conv.organization && (
-        <span data-testid="org-name">{conv.organization.name}</span>
-      )}
-      {conv.organization?.plan && (
-        <span data-testid="org-plan">{conv.organization.plan}</span>
-      )}
+      {conv.organization && <span data-testid="org-name">{conv.organization.name}</span>}
+      {conv.organization?.plan && <span data-testid="org-plan">{conv.organization.plan}</span>}
       {conv.messages.map((m) => (
         <div key={m.id} data-testid={`msg-${m.id}`}>
-          {m.isInternal && (
-            <span data-testid={`internal-badge-${m.id}`}>Internal note</span>
-          )}
+          {m.isInternal && <span data-testid={`internal-badge-${m.id}`}>Internal note</span>}
           <span data-testid={`msg-content-${m.id}`}>{m.content}</span>
-          {m.authorMemberId && (
-            <span data-testid={`author-${m.id}`}>{m.authorMemberId}</span>
-          )}
+          {m.authorMemberId && <span data-testid={`author-${m.id}`}>{m.authorMemberId}</span>}
         </div>
       ))}
     </div>
@@ -215,16 +211,12 @@ function ConversationHeader({ conv }: { conv: ConversationData }) {
 function InboxRow({ conv }: { conv: ConversationSummary }) {
   return (
     <div>
-      {conv.number !== null && (
-        <span data-testid="list-ticket-number">#{conv.number}</span>
-      )}
+      {conv.number !== null && <span data-testid="list-ticket-number">#{conv.number}</span>}
       <span data-testid="list-subject">{conv.subject ?? 'No subject'}</span>
       {conv.contact && (
         <span data-testid="list-contact">{conv.contact.fullName ?? conv.contact.email}</span>
       )}
-      {conv.organization && (
-        <span data-testid="list-org">{conv.organization.name}</span>
-      )}
+      {conv.organization && <span data-testid="list-org">{conv.organization.name}</span>}
     </div>
   )
 }
@@ -306,7 +298,12 @@ describe('ConversationData interface — organization field', () => {
 
 describe('Message interface — isInternal and authorMemberId', () => {
   it('shows Internal note badge for internal messages', () => {
-    const msg = makeMessage({ id: 'msg-int', isInternal: true, role: 'AGENT', authorMemberId: 'mem-1' })
+    const msg = makeMessage({
+      id: 'msg-int',
+      isInternal: true,
+      role: 'AGENT',
+      authorMemberId: 'mem-1',
+    })
     render(<ConversationHeader conv={makeConversation({ messages: [msg] })} />)
     expect(screen.getByTestId('internal-badge-msg-int')).toHaveTextContent('Internal note')
     expect(screen.getByTestId('author-msg-int')).toHaveTextContent('mem-1')
@@ -347,7 +344,7 @@ describe('ConversationSummary interface (InboxList) — new fields', () => {
         conv={makeConversationSummary({
           contact: { id: 'c-1', fullName: 'Jane Doe', email: 'jane@acme.com' },
         })}
-      />,
+      />
     )
     expect(screen.getByTestId('list-contact')).toHaveTextContent('Jane Doe')
   })
@@ -358,7 +355,7 @@ describe('ConversationSummary interface (InboxList) — new fields', () => {
         conv={makeConversationSummary({
           contact: { id: 'c-1', fullName: null, email: 'jane@acme.com' },
         })}
-      />,
+      />
     )
     expect(screen.getByTestId('list-contact')).toHaveTextContent('jane@acme.com')
   })
@@ -374,7 +371,7 @@ describe('ConversationSummary interface (InboxList) — new fields', () => {
         conv={makeConversationSummary({
           organization: { id: 'org-1', name: 'Acme Corp', plan: 'Pro' },
         })}
-      />,
+      />
     )
     expect(screen.getByTestId('list-org')).toHaveTextContent('Acme Corp')
   })

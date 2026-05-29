@@ -97,7 +97,7 @@ describe('CustomerContextPanel — contact-linked state', () => {
         contact={contact}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     expect(screen.getByText('J')).toBeInTheDocument()
   })
@@ -109,7 +109,7 @@ describe('CustomerContextPanel — contact-linked state', () => {
         contact={contact}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     expect(screen.getByText('Jane Smith')).toBeInTheDocument()
   })
@@ -121,7 +121,7 @@ describe('CustomerContextPanel — contact-linked state', () => {
         contact={contact}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     const link = screen.getByRole('link', { name: 'jane@acme.com' })
     expect(link).toHaveAttribute('href', 'mailto:jane@acme.com')
@@ -134,7 +134,7 @@ describe('CustomerContextPanel — contact-linked state', () => {
         contact={contact}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     expect(screen.getByText('+1-555-0100')).toBeInTheDocument()
   })
@@ -146,7 +146,7 @@ describe('CustomerContextPanel — contact-linked state', () => {
         contact={contact}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     expect(screen.getByText('Acme Corp')).toBeInTheDocument()
     expect(screen.getByText('pro')).toBeInTheDocument()
@@ -159,7 +159,7 @@ describe('CustomerContextPanel — contact-linked state', () => {
         contact={contact}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     expect(screen.queryByRole('button', { name: /link contact/i })).not.toBeInTheDocument()
   })
@@ -177,7 +177,7 @@ describe('CustomerContextPanel — org-linked, no contact state', () => {
         contact={null}
         organization={{ id: 'o1', name: 'Acme Corp', plan: null }}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     expect(screen.getByText('Acme Corp')).toBeInTheDocument()
     expect(screen.getByText(/no contact linked/i)).toBeInTheDocument()
@@ -190,7 +190,7 @@ describe('CustomerContextPanel — org-linked, no contact state', () => {
         contact={null}
         organization={{ id: 'o1', name: 'Acme Corp', plan: null }}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     expect(screen.getByRole('button', { name: /link contact/i })).toBeInTheDocument()
   })
@@ -208,7 +208,7 @@ describe('CustomerContextPanel — anonymous state', () => {
         contact={null}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     expect(screen.getByText(/no contact linked/i)).toBeInTheDocument()
   })
@@ -220,7 +220,7 @@ describe('CustomerContextPanel — anonymous state', () => {
         contact={null}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     expect(screen.getByRole('button', { name: /link contact/i })).toBeInTheDocument()
   })
@@ -250,7 +250,7 @@ describe('CustomerContextPanel — Link contact modal', () => {
         contact={null}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     await userEvent.click(screen.getByRole('button', { name: /link contact/i }))
     expect(screen.getByRole('dialog')).toBeInTheDocument()
@@ -263,18 +263,16 @@ describe('CustomerContextPanel — Link contact modal', () => {
         contact={null}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     await userEvent.click(screen.getByRole('button', { name: /link contact/i }))
     const searchInput = screen.getByRole('textbox')
     await userEvent.type(searchInput, 'bob')
     await waitFor(
       () => {
-        expect(mockFetch).toHaveBeenCalledWith(
-          expect.stringContaining('/api/customers?search=bob'),
-        )
+        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/customers?search=bob'))
       },
-      { timeout: 1000 },
+      { timeout: 1000 }
     )
   })
 
@@ -285,14 +283,17 @@ describe('CustomerContextPanel — Link contact modal', () => {
         contact={null}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     await userEvent.click(screen.getByRole('button', { name: /link contact/i }))
     const searchInput = screen.getByRole('textbox')
     await userEvent.type(searchInput, 'bob')
-    await waitFor(() => {
-      expect(screen.getByText('Bob Jones')).toBeInTheDocument()
-    }, { timeout: 1000 })
+    await waitFor(
+      () => {
+        expect(screen.getByText('Bob Jones')).toBeInTheDocument()
+      },
+      { timeout: 1000 }
+    )
   })
 
   it('PATCHes the conversation and calls onContactLinked when a result is selected', async () => {
@@ -311,7 +312,7 @@ describe('CustomerContextPanel — Link contact modal', () => {
         contact={null}
         organization={null}
         onContactLinked={onContactLinked}
-      />,
+      />
     )
     await userEvent.click(screen.getByRole('button', { name: /link contact/i }))
     await userEvent.type(screen.getByRole('textbox'), 'bob')
@@ -325,7 +326,7 @@ describe('CustomerContextPanel — Link contact modal', () => {
         expect.objectContaining({
           method: 'PATCH',
           body: JSON.stringify({ contactId: 'c2' }),
-        }),
+        })
       )
       expect(onContactLinked).toHaveBeenCalledWith({
         id: 'c2',

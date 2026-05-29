@@ -31,7 +31,7 @@ async function createWorkspace(slug: string): Promise<{ id: string }> {
 async function createContact(
   workspaceId: string,
   email: string | null,
-  extras: Partial<{ fullName: string; visitorId: string; externalId: string }> = {},
+  extras: Partial<{ fullName: string; visitorId: string; externalId: string }> = {}
 ): Promise<Contact> {
   return prisma.contact.create({
     data: { workspaceId, email, ...extras },
@@ -41,7 +41,7 @@ async function createContact(
 async function createOrg(
   workspaceId: string,
   name: string,
-  domains: string[],
+  domains: string[]
 ): Promise<Organization> {
   return prisma.organization.create({
     data: { workspaceId, name, domains },
@@ -67,7 +67,7 @@ describe('autoAssociateContactToOrg — domain match', () => {
     const contact = await createContact(workspaceId, 'alice@acme.com')
 
     const result = await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
+      autoAssociateContactToOrg(tx, workspaceId, contact)
     )
 
     expect(result).not.toBeNull()
@@ -78,9 +78,7 @@ describe('autoAssociateContactToOrg — domain match', () => {
     const org = await createOrg(workspaceId, 'Acme Corp', ['acme.com'])
     const contact = await createContact(workspaceId, 'bob@acme.com')
 
-    await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
-    )
+    await prisma.$transaction((tx) => autoAssociateContactToOrg(tx, workspaceId, contact))
 
     const link = await prisma.contactOrganization.findUnique({
       where: { contactId_organizationId: { contactId: contact.id, organizationId: org.id } },
@@ -93,9 +91,7 @@ describe('autoAssociateContactToOrg — domain match', () => {
     const org = await createOrg(workspaceId, 'Acme Corp', ['acme.com'])
     const contact = await createContact(workspaceId, 'carol@acme.com')
 
-    await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
-    )
+    await prisma.$transaction((tx) => autoAssociateContactToOrg(tx, workspaceId, contact))
 
     const link = await prisma.contactOrganization.findUnique({
       where: { contactId_organizationId: { contactId: contact.id, organizationId: org.id } },
@@ -110,7 +106,7 @@ describe('autoAssociateContactToOrg — free-mail skip', () => {
     const contact = await createContact(workspaceId, 'user@gmail.com')
 
     const result = await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
+      autoAssociateContactToOrg(tx, workspaceId, contact)
     )
 
     expect(result).toBeNull()
@@ -120,7 +116,7 @@ describe('autoAssociateContactToOrg — free-mail skip', () => {
     const contact = await createContact(workspaceId, 'user@yahoo.com')
 
     const result = await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
+      autoAssociateContactToOrg(tx, workspaceId, contact)
     )
 
     expect(result).toBeNull()
@@ -130,7 +126,7 @@ describe('autoAssociateContactToOrg — free-mail skip', () => {
     const contact = await createContact(workspaceId, null)
 
     const result = await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
+      autoAssociateContactToOrg(tx, workspaceId, contact)
     )
 
     expect(result).toBeNull()
@@ -140,7 +136,7 @@ describe('autoAssociateContactToOrg — free-mail skip', () => {
     const contact = await createContact(workspaceId, 'nodomain')
 
     const result = await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
+      autoAssociateContactToOrg(tx, workspaceId, contact)
     )
 
     expect(result).toBeNull()
@@ -155,7 +151,7 @@ describe('autoAssociateContactToOrg — multiple orgs on the same domain', () =>
     const contact = await createContact(workspaceId, 'user@shared.com')
 
     const result = await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
+      autoAssociateContactToOrg(tx, workspaceId, contact)
     )
 
     expect(result!.id).toBe(apple.id)
@@ -181,9 +177,7 @@ describe('autoAssociateContactToOrg — second link is not primary', () => {
       },
     })
 
-    await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
-    )
+    await prisma.$transaction((tx) => autoAssociateContactToOrg(tx, workspaceId, contact))
 
     const link = await prisma.contactOrganization.findUnique({
       where: {
@@ -201,7 +195,7 @@ describe('autoAssociateContactToOrg — no matching org', () => {
     const contact = await createContact(workspaceId, 'user@nomatch.com')
 
     const result = await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
+      autoAssociateContactToOrg(tx, workspaceId, contact)
     )
 
     expect(result).toBeNull()
@@ -210,9 +204,7 @@ describe('autoAssociateContactToOrg — no matching org', () => {
   it('does not create any ContactOrganization row when no match', async () => {
     const contact = await createContact(workspaceId, 'user@nomatch.com')
 
-    await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
-    )
+    await prisma.$transaction((tx) => autoAssociateContactToOrg(tx, workspaceId, contact))
 
     const count = await prisma.contactOrganization.count({
       where: { contactId: contact.id },
@@ -224,7 +216,7 @@ describe('autoAssociateContactToOrg — no matching org', () => {
     const contact = await createContact(workspaceId, 'user@acme.com')
 
     const result = await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
+      autoAssociateContactToOrg(tx, workspaceId, contact)
     )
 
     expect(result).toBeNull()
@@ -236,13 +228,9 @@ describe('autoAssociateContactToOrg — idempotency', () => {
     const org = await createOrg(workspaceId, 'Acme Corp', ['acme.com'])
     const contact = await createContact(workspaceId, 'repeat@acme.com')
 
-    await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
-    )
+    await prisma.$transaction((tx) => autoAssociateContactToOrg(tx, workspaceId, contact))
     // Second call — must not throw a unique constraint violation
-    await prisma.$transaction((tx) =>
-      autoAssociateContactToOrg(tx, workspaceId, contact),
-    )
+    await prisma.$transaction((tx) => autoAssociateContactToOrg(tx, workspaceId, contact))
 
     const count = await prisma.contactOrganization.count({
       where: { contactId: contact.id, organizationId: org.id },

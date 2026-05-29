@@ -46,7 +46,7 @@ describe('Messages GET — widget isInternal guard', () => {
     expect(vi.mocked(prisma.message.findMany)).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ isInternal: false }),
-      }),
+      })
     )
   })
 
@@ -55,7 +55,7 @@ describe('Messages GET — widget isInternal guard', () => {
     expect(vi.mocked(prisma.message.findMany)).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ isInternal: false }),
-      }),
+      })
     )
   })
 })

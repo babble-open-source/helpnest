@@ -4,12 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Mail, Phone, Building2, User, Link2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -113,9 +108,7 @@ function LinkContactModal({ open, onClose, conversationId, onLinked }: LinkConta
     debounceRef.current = setTimeout(async () => {
       setSearching(true)
       try {
-        const res = await fetch(
-          `/api/customers?search=${encodeURIComponent(value.trim())}&limit=8`,
-        )
+        const res = await fetch(`/api/customers?search=${encodeURIComponent(value.trim())}&limit=8`)
         if (res.ok) {
           const data = (await res.json()) as { customers: CustomerSearchResult[] }
           setResults(data.customers ?? [])
@@ -157,15 +150,9 @@ function LinkContactModal({ open, onClose, conversationId, onLinked }: LinkConta
             autoFocus
             aria-label="Search contacts"
           />
-          {searching && (
-            <p className="text-xs text-muted-foreground">Searching…</p>
-          )}
+          {searching && <p className="text-xs text-muted-foreground">Searching…</p>}
           {results.length > 0 && (
-            <ul
-              className="space-y-1"
-              role="listbox"
-              aria-label="Contact search results"
-            >
+            <ul className="space-y-1" role="listbox" aria-label="Contact search results">
               {results.map((c) => (
                 <li key={c.id}>
                   <button
@@ -175,7 +162,7 @@ function LinkContactModal({ open, onClose, conversationId, onLinked }: LinkConta
                     className={cn(
                       'w-full text-left px-3 py-2 rounded-md hover:bg-muted transition-colors',
                       'focus:outline-none focus:ring-2 focus:ring-ring',
-                      'disabled:opacity-50 disabled:cursor-not-allowed',
+                      'disabled:opacity-50 disabled:cursor-not-allowed'
                     )}
                     aria-label={`Link contact ${c.fullName ?? c.email ?? 'Unknown'}`}
                   >

@@ -74,7 +74,7 @@ describe('InboxList — label fallback', () => {
         escalated={[{ ...baseConv, contactName: 'Jane Smith', orgName: 'Acme' }]}
         active={[]}
         resolved={[]}
-      />,
+      />
     )
     expect(screen.getByText('Jane Smith')).toBeInTheDocument()
   })
@@ -85,7 +85,7 @@ describe('InboxList — label fallback', () => {
         escalated={[{ ...baseConv, customerName: 'Old Name', contactName: null }]}
         active={[]}
         resolved={[]}
-      />,
+      />
     )
     expect(screen.getByText('Old Name')).toBeInTheDocument()
   })
@@ -98,7 +98,7 @@ describe('InboxList — label fallback', () => {
         ]}
         active={[]}
         resolved={[]}
-      />,
+      />
     )
     expect(screen.getByText('old@example.com')).toBeInTheDocument()
   })
@@ -116,7 +116,7 @@ describe('InboxList — label fallback', () => {
         ]}
         active={[]}
         resolved={[]}
-      />,
+      />
     )
     // useTranslations stub returns key as-is
     expect(screen.getByText('anonymous')).toBeInTheDocument()
@@ -132,7 +132,7 @@ describe('InboxList — org secondary line', () => {
         escalated={[{ ...baseConv, contactName: 'Jane Smith', orgName: 'Acme Corp' }]}
         active={[]}
         resolved={[]}
-      />,
+      />
     )
     expect(screen.getByText('Acme Corp')).toBeInTheDocument()
   })
@@ -143,7 +143,7 @@ describe('InboxList — org secondary line', () => {
         escalated={[{ ...baseConv, contactName: 'Jane Smith', orgName: null }]}
         active={[]}
         resolved={[]}
-      />,
+      />
     )
     expect(screen.queryByText('Acme Corp')).not.toBeInTheDocument()
   })

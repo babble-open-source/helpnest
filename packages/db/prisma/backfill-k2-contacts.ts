@@ -32,9 +32,7 @@ import path from 'node:path'
 // Guard: only load .env when running as a CLI script, not when imported by
 // tests (vitest setup.ts already loaded .env.test with the test DATABASE_URL).
 const scriptPath =
-  typeof process !== 'undefined' && process.argv[1]
-    ? path.resolve(process.argv[1])
-    : null
+  typeof process !== 'undefined' && process.argv[1] ? path.resolve(process.argv[1]) : null
 
 const isScript =
   scriptPath !== null &&
@@ -87,10 +85,7 @@ async function backfillWorkspace(db: PrismaClient, workspaceId: string): Promise
  * Ordering is by createdAt ASC for stable, deterministic results.
  * Resumes from the current WorkspaceCounter value so partial runs are safe.
  */
-async function numberUnnumberedConversations(
-  db: PrismaClient,
-  workspaceId: string
-): Promise<void> {
+async function numberUnnumberedConversations(db: PrismaClient, workspaceId: string): Promise<void> {
   const unnumbered = await db.conversation.findMany({
     where: { workspaceId, number: null },
     orderBy: { createdAt: 'asc' },

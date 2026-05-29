@@ -93,11 +93,19 @@ beforeEach(() => {
   mockRequireAuth.mockResolvedValue({ workspaceId: 'ws-1', userId: 'user-1', via: 'session' })
   mockConversationFindFirst.mockResolvedValue(AGENT_CONVERSATION)
   mockConversationUpdate.mockResolvedValue({ ...AGENT_CONVERSATION, status: 'HUMAN_ACTIVE' })
-  mockMessageCreate.mockResolvedValue({ id: 'msg-1', content: 'hello', role: 'AGENT', isInternal: false })
+  mockMessageCreate.mockResolvedValue({
+    id: 'msg-1',
+    content: 'hello',
+    role: 'AGENT',
+    isInternal: false,
+  })
   mockMessageFindMany.mockResolvedValue([])
   mockMessageCount.mockResolvedValue(0)
   mockEmitConversationEvent.mockResolvedValue(undefined)
-  mockMemberFindFirst.mockResolvedValue({ id: 'member-1', user: { name: 'Test Agent', email: 'agent@test.com' } })
+  mockMemberFindFirst.mockResolvedValue({
+    id: 'member-1',
+    user: { name: 'Test Agent', email: 'agent@test.com' },
+  })
 })
 
 // ── POST tests ─────────────────────────────────────────────────────────────
@@ -105,14 +113,21 @@ beforeEach(() => {
 describe('POST /api/conversations/[id]/messages', () => {
   describe('agent flow — isInternal', () => {
     it('saves an internal note for AGENT role and does NOT transition to HUMAN_ACTIVE', async () => {
-      mockMessageCreate.mockResolvedValue({ id: 'msg-2', content: 'private note', role: 'AGENT', isInternal: true })
+      mockMessageCreate.mockResolvedValue({
+        id: 'msg-2',
+        content: 'private note',
+        role: 'AGENT',
+        isInternal: true,
+      })
 
-      const res = await POST(makePostRequest({ content: 'private note', isInternal: true }), { params: PARAMS })
+      const res = await POST(makePostRequest({ content: 'private note', isInternal: true }), {
+        params: PARAMS,
+      })
       expect(res.status).toBe(200)
 
       // message.create called with isInternal: true
       expect(mockMessageCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ isInternal: true }) }),
+        expect.objectContaining({ data: expect.objectContaining({ isInternal: true }) })
       )
 
       // conversation.update should NOT have been called (no HUMAN_ACTIVE transition)
@@ -120,21 +135,29 @@ describe('POST /api/conversations/[id]/messages', () => {
     })
 
     it('emits NOTE_ADDED for an internal note', async () => {
-      mockMessageCreate.mockResolvedValue({ id: 'msg-2', content: 'note', role: 'AGENT', isInternal: true })
+      mockMessageCreate.mockResolvedValue({
+        id: 'msg-2',
+        content: 'note',
+        role: 'AGENT',
+        isInternal: true,
+      })
 
       await POST(makePostRequest({ content: 'note', isInternal: true }), { params: PARAMS })
 
       expect(mockEmitConversationEvent).toHaveBeenCalledWith(
-        expect.objectContaining({ verb: 'NOTE_ADDED' }),
+        expect.objectContaining({ verb: 'NOTE_ADDED' })
       )
     })
 
     it('transitions to HUMAN_ACTIVE on a public AGENT reply (existing behaviour preserved)', async () => {
-      const res = await POST(makePostRequest({ content: 'Hello, let me help.', isInternal: false }), { params: PARAMS })
+      const res = await POST(
+        makePostRequest({ content: 'Hello, let me help.', isInternal: false }),
+        { params: PARAMS }
+      )
       expect(res.status).toBe(200)
 
       expect(mockConversationUpdate).toHaveBeenCalledWith(
-        expect.objectContaining({ data: expect.objectContaining({ status: 'HUMAN_ACTIVE' }) }),
+        expect.objectContaining({ data: expect.objectContaining({ status: 'HUMAN_ACTIVE' }) })
       )
     })
 
@@ -159,11 +182,14 @@ describe('POST /api/conversations/[id]/messages', () => {
 
       // The POST handler for the widget/session-token path does not support isInternal.
       // Passing isInternal=true from a customer session must return 400.
-      const reqWithSessionToken = new Request('http://localhost/api/conversations/conv-1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Session-Token': 'tok-abc' },
-        body: JSON.stringify({ content: 'try internal', isInternal: true }),
-      })
+      const reqWithSessionToken = new Request(
+        'http://localhost/api/conversations/conv-1/messages',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'X-Session-Token': 'tok-abc' },
+          body: JSON.stringify({ content: 'try internal', isInternal: true }),
+        }
+      )
 
       const res = await POST(reqWithSessionToken, { params: PARAMS })
       expect(res.status).toBe(400)
@@ -178,7 +204,7 @@ describe('POST /api/conversations/[id]/messages', () => {
       expect(mockMessageCreate).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ authorMemberId: expect.any(String) }),
-        }),
+        })
       )
     })
 
@@ -192,7 +218,7 @@ describe('POST /api/conversations/[id]/messages', () => {
         expect.objectContaining({
           verb: 'FIRST_RESPONSE_SENT',
           durationSeconds: expect.any(Number),
-        }),
+        })
       )
     })
   })
@@ -209,7 +235,7 @@ describe('GET /api/conversations/[id]/messages', () => {
     expect(mockMessageFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ isInternal: false }),
-      }),
+      })
     )
   })
 
@@ -221,7 +247,7 @@ describe('GET /api/conversations/[id]/messages', () => {
     expect(mockMessageFindMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({ isInternal: false }),
-      }),
+      })
     )
   })
 

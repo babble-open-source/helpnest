@@ -12,10 +12,7 @@ const MAX_LIMIT = 200
 //   ?limit  — number of events to return; default 50, max 200; ordered asc
 //
 // No POST — event emission is handled server-side by emitConversationEvent.
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const authResult = await requireAuth(request)
   if (!authResult) {
@@ -46,7 +43,7 @@ export async function GET(
     if (isNaN(sinceDate.getTime())) {
       return NextResponse.json(
         { error: 'Invalid ?since value — must be a valid ISO 8601 timestamp' },
-        { status: 400 },
+        { status: 400 }
       )
     }
     where.createdAt = { gt: sinceDate }

@@ -8,7 +8,12 @@
  */
 import { describe, it, expect, beforeEach } from 'vitest'
 import type { Conversation, Contact } from '@helpnest/db'
-import { testDb, createTestWorkspace, truncateTicketingTables, registerTestDbTeardown } from '@/test/harness'
+import {
+  testDb,
+  createTestWorkspace,
+  truncateTicketingTables,
+  registerTestDbTeardown,
+} from '@/test/harness'
 
 // We import the exported runBackfill function from the script.
 // The script must export a runBackfill(db) function for testability.

@@ -106,7 +106,7 @@ describe('GET /api/conversations (list)', () => {
             select: expect.objectContaining({ id: true, name: true, plan: true }),
           }),
         }),
-      }),
+      })
     )
   })
 })

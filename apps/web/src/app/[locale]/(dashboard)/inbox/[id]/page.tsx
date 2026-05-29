@@ -5,11 +5,7 @@ import { notFound } from 'next/navigation'
 import { redirect } from 'next/navigation'
 import { ConversationDetail } from './ConversationDetail'
 
-export default async function ConversationPage({
-  params,
-}: {
-  params: Promise<{ id: string }>
-}) {
+export default async function ConversationPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
 
   const session = await auth()
@@ -74,11 +70,12 @@ export default async function ConversationPage({
 
   if (!conversation) notFound()
 
-  const members: Array<{ id: string; user: { name: string | null; email: string } }> = await prisma.member.findMany({
-    where: { workspaceId: workspaceId, deactivatedAt: null },
-    select: { id: true, user: { select: { name: true, email: true } } },
-    orderBy: { user: { name: 'asc' } },
-  })
+  const members: Array<{ id: string; user: { name: string | null; email: string } }> =
+    await prisma.member.findMany({
+      where: { workspaceId: workspaceId, deactivatedAt: null },
+      select: { id: true, user: { select: { name: true, email: true } } },
+      orderBy: { user: { name: 'asc' } },
+    })
 
   // Serialize all Date objects before passing to the client component.
   const serializedConv = {
@@ -116,30 +113,34 @@ export default async function ConversationPage({
           email: conversation.assignedTo.user.email,
         }
       : null,
-    articles: (conversation.articles as Array<{
-      article: {
-        id: string
-        title: string
-        slug: string
-        collection: { slug: string; title: string }
-      }
-    }>).map((ca) => ({
+    articles: (
+      conversation.articles as Array<{
+        article: {
+          id: string
+          title: string
+          slug: string
+          collection: { slug: string; title: string }
+        }
+      }>
+    ).map((ca) => ({
       id: ca.article.id,
       title: ca.article.title,
       slug: ca.article.slug,
       collection: ca.article.collection,
     })),
-    messages: (conversation.messages as Array<{
-      id: string
-      role: string
-      content: string
-      isInternal: boolean
-      authorMemberId: string | null
-      sources: unknown
-      confidence: number | null
-      feedbackHelpful: boolean | null
-      createdAt: Date
-    }>).map((m) => ({
+    messages: (
+      conversation.messages as Array<{
+        id: string
+        role: string
+        content: string
+        isInternal: boolean
+        authorMemberId: string | null
+        sources: unknown
+        confidence: number | null
+        feedbackHelpful: boolean | null
+        createdAt: Date
+      }>
+    ).map((m) => ({
       id: m.id,
       role: m.role,
       content: m.content,

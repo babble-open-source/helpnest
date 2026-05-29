@@ -66,7 +66,7 @@ export function MessageComposer({
     <div
       className={cn(
         'border-t p-4 shrink-0 transition-colors',
-        isNote && 'bg-amber-50 border-amber-200',
+        isNote && 'bg-amber-50 border-amber-200'
       )}
     >
       {/* Mode tabs */}
@@ -81,7 +81,7 @@ export function MessageComposer({
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             !isNote
               ? 'bg-background border text-foreground font-medium shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
+              : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <MessageSquare className="w-3 h-3" aria-hidden="true" />
@@ -97,7 +97,7 @@ export function MessageComposer({
             'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             isNote
               ? 'bg-amber-100 border border-amber-300 text-amber-800 font-medium shadow-sm'
-              : 'text-muted-foreground hover:text-foreground',
+              : 'text-muted-foreground hover:text-foreground'
           )}
         >
           <Lock className="w-3 h-3" aria-hidden="true" />
@@ -121,7 +121,7 @@ export function MessageComposer({
           disabled={disabled}
           className={cn(
             'flex-1 resize-none transition-colors',
-            isNote && 'bg-amber-50 border-amber-200 focus-visible:ring-amber-300',
+            isNote && 'bg-amber-50 border-amber-200 focus-visible:ring-amber-300'
           )}
           aria-label={isNote ? 'Internal note content' : 'Reply content'}
         />
@@ -133,7 +133,7 @@ export function MessageComposer({
             'self-end transition-colors',
             isNote
               ? 'bg-amber-600 hover:bg-amber-600/90 text-white'
-              : 'bg-emerald-600 hover:bg-emerald-600/90 text-white',
+              : 'bg-emerald-600 hover:bg-emerald-600/90 text-white'
           )}
         >
           {sending ? 'Sending…' : 'Send'}

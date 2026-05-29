@@ -53,10 +53,7 @@ export async function OPTIONS() {
 }
 
 // GET — Load message history (widget via sessionToken or dashboard via auth)
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const sessionToken = request.headers.get('x-session-token')
   const visitorId = request.headers.get('x-visitor-id')
@@ -92,7 +89,7 @@ export async function GET(
   if (!conversation) {
     return NextResponse.json(
       { error: 'Conversation not found' },
-      { status: 404, headers: WIDGET_CORS_HEADERS },
+      { status: 404, headers: WIDGET_CORS_HEADERS }
     )
   }
 
@@ -136,10 +133,7 @@ export async function GET(
 //      - Validates workspace membership.
 //      - Saves the reply as role=AGENT.
 //      - Resets ESCALATED → ACTIVE to signal agent engagement.
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const sessionToken = request.headers.get('x-session-token')
 
@@ -149,7 +143,7 @@ export async function POST(
   } catch {
     return NextResponse.json(
       { error: 'Invalid JSON body' },
-      { status: 400, headers: WIDGET_CORS_HEADERS },
+      { status: 400, headers: WIDGET_CORS_HEADERS }
     )
   }
 
@@ -159,7 +153,7 @@ export async function POST(
   if (!content) {
     return NextResponse.json(
       { error: 'content is required' },
-      { status: 400, headers: WIDGET_CORS_HEADERS },
+      { status: 400, headers: WIDGET_CORS_HEADERS }
     )
   }
 
@@ -172,7 +166,7 @@ export async function POST(
     if (body.isInternal) {
       return NextResponse.json(
         { error: 'Internal notes are not allowed from the customer widget' },
-        { status: 400, headers: WIDGET_CORS_HEADERS },
+        { status: 400, headers: WIDGET_CORS_HEADERS }
       )
     }
 
@@ -180,7 +174,7 @@ export async function POST(
     if (rate.limited) {
       return NextResponse.json(
         { error: 'Too many messages' },
-        { status: 429, headers: WIDGET_CORS_HEADERS },
+        { status: 429, headers: WIDGET_CORS_HEADERS }
       )
     }
 
@@ -209,7 +203,7 @@ export async function POST(
     if (!conversation) {
       return NextResponse.json(
         { error: 'Conversation not found' },
-        { status: 404, headers: WIDGET_CORS_HEADERS },
+        { status: 404, headers: WIDGET_CORS_HEADERS }
       )
     }
 
@@ -262,12 +256,18 @@ export async function POST(
 
     // Check AI credit quota per message — BYOK allowed for self-hosted, PRO, BUSINESS
     const creditLimit = await checkLimit(conversation.workspaceId, 'aiCredits')
-    const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || creditLimit.plan === 'PRO' || creditLimit.plan === 'BUSINESS'
+    const byokAllowed =
+      creditLimit.plan === 'SELF_HOSTED' ||
+      creditLimit.plan === 'PRO' ||
+      creditLimit.plan === 'BUSINESS'
     if (!isByok({ aiApiKey: conversation.workspace.aiApiKey }, { byok: byokAllowed })) {
       if (!creditLimit.allowed) {
         return NextResponse.json(
-          { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },
-          { status: 429, headers: WIDGET_CORS_HEADERS },
+          {
+            error:
+              'AI credit limit reached for this month. Upgrade your plan or add your own API key.',
+          },
+          { status: 429, headers: WIDGET_CORS_HEADERS }
         )
       }
       incrementUsage(conversation.workspaceId, 'aiCredits')
@@ -299,9 +299,7 @@ export async function POST(
             if (event.type === 'text') {
               aiResponseText += event.text
               controller.enqueue(
-                encoder.encode(
-                  `data: ${JSON.stringify({ type: 'text', text: event.text })}\n\n`,
-                ),
+                encoder.encode(`data: ${JSON.stringify({ type: 'text', text: event.text })}\n\n`)
               )
             } else if (event.type === 'done') {
               // The done event from AgentStreamEvent carries metadata fields.
@@ -318,8 +316,8 @@ export async function POST(
             } else if (event.type === 'error') {
               controller.enqueue(
                 encoder.encode(
-                  `data: ${JSON.stringify({ type: 'error', message: event.message })}\n\n`,
-                ),
+                  `data: ${JSON.stringify({ type: 'error', message: event.message })}\n\n`
+                )
               )
             }
           }
@@ -359,7 +357,9 @@ export async function POST(
           // the KB is missing that would have resolved this question.
           // Use the same threshold as escalation so gaps and escalations stay in sync.
           if (confidence < (conversation.workspace.aiEscalationThreshold ?? 0.3)) {
-            const gap = await recordKnowledgeGap(conversation.workspaceId, content).catch(() => null)
+            const gap = await recordKnowledgeGap(conversation.workspaceId, content).catch(
+              () => null
+            )
             if (
               gap &&
               conversation.workspace.autoDraftGapsEnabled &&
@@ -375,7 +375,7 @@ export async function POST(
 
           // Send sources then the terminal done event.
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources })}\n\n`),
+            encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources })}\n\n`)
           )
           controller.enqueue(
             encoder.encode(
@@ -384,13 +384,13 @@ export async function POST(
                 confidence,
                 shouldEscalate,
                 escalationReason,
-              })}\n\n`,
-            ),
+              })}\n\n`
+            )
           )
         } catch (err) {
           const message = err instanceof Error ? err.message : 'AI service error'
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify({ type: 'error', message })}\n\n`),
+            encoder.encode(`data: ${JSON.stringify({ type: 'error', message })}\n\n`)
           )
         } finally {
           controller.close()
@@ -477,7 +477,7 @@ export async function POST(
     })
     if (priorAgentMessageCount === 0) {
       const durationSeconds = Math.floor(
-        (Date.now() - new Date(conversation.createdAt).getTime()) / 1000,
+        (Date.now() - new Date(conversation.createdAt).getTime()) / 1000
       )
       await emitConversationEvent({
         workspaceId: authResult.workspaceId,

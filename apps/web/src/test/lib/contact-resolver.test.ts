@@ -54,7 +54,7 @@ describe('resolveOrCreateContact — dedup by externalId', () => {
     })
 
     const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { externalId: 'ext-001' }),
+      resolveOrCreateContact(tx, workspaceId, { externalId: 'ext-001' })
     )
 
     expect(result.id).toBe(existing.id)
@@ -66,7 +66,7 @@ describe('resolveOrCreateContact — dedup by externalId', () => {
     })
 
     await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { externalId: 'ext-002' }),
+      resolveOrCreateContact(tx, workspaceId, { externalId: 'ext-002' })
     )
 
     const count = await prisma.contact.count({ where: { workspaceId, externalId: 'ext-002' } })
@@ -79,7 +79,7 @@ describe('resolveOrCreateContact — dedup by externalId', () => {
     })
 
     const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { externalId: 'ext-003', fullName: 'Carol' }),
+      resolveOrCreateContact(tx, workspaceId, { externalId: 'ext-003', fullName: 'Carol' })
     )
 
     expect(result.fullName).toBe('Carol')
@@ -95,7 +95,7 @@ describe('resolveOrCreateContact — dedup by email', () => {
     })
 
     const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { email: 'dana@acme.com' }),
+      resolveOrCreateContact(tx, workspaceId, { email: 'dana@acme.com' })
     )
 
     expect(result.id).toBe(existing.id)
@@ -105,7 +105,7 @@ describe('resolveOrCreateContact — dedup by email', () => {
     await prisma.contact.create({ data: { workspaceId, email: 'eve@acme.com' } })
 
     const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { email: 'eve@acme.com', fullName: 'Eve' }),
+      resolveOrCreateContact(tx, workspaceId, { email: 'eve@acme.com', fullName: 'Eve' })
     )
 
     expect(result.fullName).toBe('Eve')
@@ -117,7 +117,7 @@ describe('resolveOrCreateContact — dedup by email', () => {
     })
 
     const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { email: 'frank@acme.com' }),
+      resolveOrCreateContact(tx, workspaceId, { email: 'frank@acme.com' })
     )
 
     expect(result.fullName).toBe('Frank')
@@ -131,7 +131,7 @@ describe('resolveOrCreateContact — dedup by visitorId', () => {
     })
 
     const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { visitorId: 'vis-abc' }),
+      resolveOrCreateContact(tx, workspaceId, { visitorId: 'vis-abc' })
     )
 
     expect(result.id).toBe(existing.id)
@@ -141,7 +141,7 @@ describe('resolveOrCreateContact — dedup by visitorId', () => {
     await prisma.contact.create({ data: { workspaceId, visitorId: 'vis-xyz' } })
 
     const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { visitorId: 'vis-xyz', fullName: 'Grace' }),
+      resolveOrCreateContact(tx, workspaceId, { visitorId: 'vis-xyz', fullName: 'Grace' })
     )
 
     expect(result.fullName).toBe('Grace')
@@ -155,7 +155,7 @@ describe('resolveOrCreateContact — no match → create', () => {
         externalId: 'new-ext',
         email: 'new@acme.com',
         fullName: 'New User',
-      }),
+      })
     )
 
     expect(result.id).toBeDefined()
@@ -165,9 +165,7 @@ describe('resolveOrCreateContact — no match → create', () => {
   })
 
   it('creates an anonymous contact when all input keys are null/undefined', async () => {
-    const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, {}),
-    )
+    const result = await prisma.$transaction((tx) => resolveOrCreateContact(tx, workspaceId, {}))
 
     expect(result.id).toBeDefined()
     expect(result.email).toBeNull()
@@ -177,12 +175,8 @@ describe('resolveOrCreateContact — no match → create', () => {
   })
 
   it('creates a separate anonymous contact on a second call with empty input', async () => {
-    const first = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, {}),
-    )
-    const second = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, {}),
-    )
+    const first = await prisma.$transaction((tx) => resolveOrCreateContact(tx, workspaceId, {}))
+    const second = await prisma.$transaction((tx) => resolveOrCreateContact(tx, workspaceId, {}))
 
     // Postgres treats NULL as distinct in unique indexes, so two anonymous contacts are allowed
     expect(first.id).not.toBe(second.id)
@@ -204,7 +198,7 @@ describe('resolveOrCreateContact — follows mergedInto to survivor', () => {
     })
 
     const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { externalId: 'ghost-ext' }),
+      resolveOrCreateContact(tx, workspaceId, { externalId: 'ghost-ext' })
     )
 
     expect(result.id).toBe(survivor.id)
@@ -223,7 +217,7 @@ describe('resolveOrCreateContact — follows mergedInto to survivor', () => {
     })
 
     const result = await prisma.$transaction((tx) =>
-      resolveOrCreateContact(tx, workspaceId, { externalId: 'original-ext' }),
+      resolveOrCreateContact(tx, workspaceId, { externalId: 'original-ext' })
     )
 
     expect(result.id).toBe(final.id)

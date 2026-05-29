@@ -35,7 +35,7 @@ export interface ResolveContactInput {
 export async function resolveOrCreateContact(
   tx: Prisma.TransactionClient,
   workspaceId: string,
-  input: ResolveContactInput,
+  input: ResolveContactInput
 ): Promise<Contact> {
   const contact = await findExistingContact(tx, workspaceId, input)
 
@@ -65,7 +65,7 @@ export async function resolveOrCreateContact(
 async function findExistingContact(
   tx: Prisma.TransactionClient,
   workspaceId: string,
-  input: ResolveContactInput,
+  input: ResolveContactInput
 ): Promise<Contact | null> {
   // Priority 1: externalId
   if (input.externalId != null) {
@@ -101,7 +101,7 @@ async function findExistingContact(
 async function updateContactFields(
   tx: Prisma.TransactionClient,
   contact: Contact,
-  input: ResolveContactInput,
+  input: ResolveContactInput
 ): Promise<Contact> {
   const patch: { fullName?: string; phone?: string } = {}
 
@@ -123,7 +123,7 @@ async function updateContactFields(
 async function followMergeChain(
   tx: Prisma.TransactionClient,
   contact: Contact,
-  depth = 0,
+  depth = 0
 ): Promise<Contact> {
   const MAX_DEPTH = 10
 

@@ -113,7 +113,7 @@ describe('GET /api/conversations/[id] (detail)', () => {
             take: 20,
           }),
         }),
-      }),
+      })
     )
   })
 })

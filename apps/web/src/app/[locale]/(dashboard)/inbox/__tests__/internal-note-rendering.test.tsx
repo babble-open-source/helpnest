@@ -102,7 +102,7 @@ describe('Internal note rendering', () => {
         conversation={{ ...baseConversation, messages: [internalNoteMessage] }}
         members={members}
         currentMemberId="m1"
-      />,
+      />
     )
     expect(screen.getByText('Internal note')).toBeInTheDocument()
   })
@@ -113,7 +113,7 @@ describe('Internal note rendering', () => {
         conversation={{ ...baseConversation, messages: [internalNoteMessage] }}
         members={members}
         currentMemberId="m1"
-      />,
+      />
     )
     expect(screen.getByLabelText('Internal note')).toBeInTheDocument()
   })
@@ -124,7 +124,7 @@ describe('Internal note rendering', () => {
         conversation={{ ...baseConversation, messages: [internalNoteMessage] }}
         members={members}
         currentMemberId="m1"
-      />,
+      />
     )
     const bubble = screen.getByText('Customer seems frustrated.').closest('div')
     expect(bubble?.className).toMatch(/bg-amber-50/)
@@ -137,7 +137,7 @@ describe('Internal note rendering', () => {
         conversation={{ ...baseConversation, messages: [agentPublicMessage] }}
         members={members}
         currentMemberId="m1"
-      />,
+      />
     )
     const bubble = screen.getByText('Hi, let me look into this.').closest('div')
     expect(bubble?.className).not.toMatch(/bg-amber-50/)
@@ -149,7 +149,7 @@ describe('Internal note rendering', () => {
         conversation={{ ...baseConversation, messages: [agentPublicMessage] }}
         members={members}
         currentMemberId="m1"
-      />,
+      />
     )
     expect(screen.queryByText('Internal note')).not.toBeInTheDocument()
   })
@@ -163,7 +163,7 @@ describe('Internal note rendering', () => {
         }}
         members={members}
         currentMemberId="m1"
-      />,
+      />
     )
     expect(screen.getByText('Hi, let me look into this.')).toBeInTheDocument()
     expect(screen.getByText('Customer seems frustrated.')).toBeInTheDocument()
