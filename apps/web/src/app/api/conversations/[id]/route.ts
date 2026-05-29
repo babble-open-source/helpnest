@@ -15,10 +15,7 @@ export async function OPTIONS() {
 }
 
 // GET — Get conversation details (widget via sessionToken or dashboard via auth)
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const sessionToken = request.headers.get('x-session-token')
 
@@ -45,7 +42,7 @@ export async function GET(
     if (!conversation) {
       return NextResponse.json(
         { error: 'Conversation not found' },
-        { status: 404, headers: CORS_HEADERS },
+        { status: 404, headers: CORS_HEADERS }
       )
     }
     return NextResponse.json(conversation, { headers: CORS_HEADERS })
@@ -64,6 +61,25 @@ export async function GET(
       assignedTo: {
         select: { id: true, user: { select: { name: true, email: true } } },
       },
+      contact: {
+        select: {
+          id: true,
+          email: true,
+          fullName: true,
+          phone: true,
+          avatarUrl: true,
+          organizations: {
+            select: {
+              organization: {
+                select: { id: true, name: true, plan: true },
+              },
+            },
+          },
+        },
+      },
+      organization: {
+        select: { id: true, name: true, plan: true },
+      },
       articles: {
         include: {
           article: {
@@ -74,6 +90,20 @@ export async function GET(
               collection: { select: { slug: true, title: true } },
             },
           },
+        },
+      },
+      events: {
+        orderBy: { createdAt: 'desc' },
+        take: 20,
+        select: {
+          id: true,
+          verb: true,
+          actorType: true,
+          actorMemberId: true,
+          actorLabel: true,
+          payload: true,
+          durationSeconds: true,
+          createdAt: true,
         },
       },
     },
@@ -87,10 +117,7 @@ export async function GET(
 
 // PATCH — Update conversation (status, resolutionSummary, contactId, organizationId)
 // Dashboard auth required.
-export async function PATCH(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const authResult = await requireAuth(request)
   if (!authResult) {
@@ -143,9 +170,7 @@ export async function PATCH(
   // ── resolutionSummary ────────────────────────────────────────────────────
   if (body.resolutionSummary !== undefined) {
     // Explicit null clears the field; otherwise truncate to a safe length.
-    data.resolutionSummary = body.resolutionSummary
-      ? body.resolutionSummary.slice(0, 2000)
-      : null
+    data.resolutionSummary = body.resolutionSummary ? body.resolutionSummary.slice(0, 2000) : null
   }
 
   // ── contactId ────────────────────────────────────────────────────────────
@@ -157,10 +182,7 @@ export async function PATCH(
         where: { id: body.contactId, workspaceId: authResult.workspaceId },
       })
       if (!contact) {
-        return NextResponse.json(
-          { error: 'Contact not found in this workspace' },
-          { status: 400 },
-        )
+        return NextResponse.json({ error: 'Contact not found in this workspace' }, { status: 400 })
       }
       data.contactId = contact.id
       pendingEvents.push({
@@ -181,7 +203,7 @@ export async function PATCH(
       if (!organization) {
         return NextResponse.json(
           { error: 'Organization not found in this workspace' },
-          { status: 400 },
+          { status: 400 }
         )
       }
       data.organizationId = organization.id

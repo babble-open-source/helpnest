@@ -18,7 +18,6 @@ const WIDGET_CORS_HEADERS = {
 
 // Dashboard-facing responses omit permissive CORS — same-origin only
 
-
 // Rate limiting for conversation creation: 10/min per IP
 const CONV_RATE_LIMIT_WINDOW_MS = 60_000
 const CONV_RATE_LIMIT_MAX = 10
@@ -33,7 +32,7 @@ function getClientIp(request: Request): string {
 }
 
 async function checkConvRateLimit(
-  key: string,
+  key: string
 ): Promise<{ limited: boolean; retryAfterSeconds: number }> {
   if (redis) {
     try {
@@ -90,7 +89,7 @@ export async function POST(request: Request) {
       {
         status: 429,
         headers: { ...WIDGET_CORS_HEADERS, 'Retry-After': String(rate.retryAfterSeconds) },
-      },
+      }
     )
   }
 
@@ -103,14 +102,17 @@ export async function POST(request: Request) {
   try {
     body = (await request.json()) as typeof body
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: WIDGET_CORS_HEADERS })
+    return NextResponse.json(
+      { error: 'Invalid JSON body' },
+      { status: 400, headers: WIDGET_CORS_HEADERS }
+    )
   }
 
   const { workspaceSlug, customerName, customerEmail, visitorId } = body
   if (!workspaceSlug) {
     return NextResponse.json(
       { error: 'workspaceSlug is required' },
-      { status: 400, headers: WIDGET_CORS_HEADERS },
+      { status: 400, headers: WIDGET_CORS_HEADERS }
     )
   }
 
@@ -124,7 +126,7 @@ export async function POST(request: Request) {
   if (!workspacePrecheck) {
     return NextResponse.json(
       { error: 'Workspace not found' },
-      { status: 404, headers: WIDGET_CORS_HEADERS },
+      { status: 404, headers: WIDGET_CORS_HEADERS }
     )
   }
 
@@ -136,8 +138,11 @@ export async function POST(request: Request) {
   if (!isByok({ aiApiKey: workspacePrecheck.aiApiKey }, { byok: byokAllowed })) {
     if (!limit.allowed) {
       return NextResponse.json(
-        { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },
-        { status: 429, headers: WIDGET_CORS_HEADERS },
+        {
+          error:
+            'AI credit limit reached for this month. Upgrade your plan or add your own API key.',
+        },
+        { status: 429, headers: WIDGET_CORS_HEADERS }
       )
     }
   }
@@ -164,7 +169,7 @@ export async function POST(request: Request) {
 
   let txResult: TxResult
   try {
-    txResult = await prisma.$transaction(async (tx) => {
+    txResult = (await prisma.$transaction(async (tx) => {
       // Re-fetch workspace inside tx — guards against deletion between the
       // pre-check above and this write.
       const ws = await tx.workspace.findFirst({
@@ -241,12 +246,12 @@ export async function POST(request: Request) {
       }
 
       return { conversation: conv, workspace: ws }
-    }) as TxResult
+    })) as TxResult
   } catch (err) {
     if (err instanceof Error && err.message === 'WORKSPACE_NOT_FOUND') {
       return NextResponse.json(
         { error: 'Workspace not found' },
-        { status: 404, headers: WIDGET_CORS_HEADERS },
+        { status: 404, headers: WIDGET_CORS_HEADERS }
       )
     }
     throw err
@@ -264,7 +269,7 @@ export async function POST(request: Request) {
       greeting: workspace.aiGreeting || 'Hi! How can I help you today?',
       createdAt: conversation.createdAt,
     },
-    { status: 201, headers: WIDGET_CORS_HEADERS },
+    { status: 201, headers: WIDGET_CORS_HEADERS }
   )
 }
 
@@ -286,21 +291,7 @@ export async function GET(request: Request) {
     where.status = status
   }
 
-  type ConversationRow = {
-    id: string
-    status: string
-    customerName: string | null
-    customerEmail: string | null
-    subject: string | null
-    aiConfidence: number | null
-    escalationReason: string | null
-    assignedTo: { user: { name: string | null; email: string } } | null
-    messages: Array<{ content: string; role: string }>
-    _count: { messages: number }
-    createdAt: Date
-    updatedAt: Date
-  }
-  const [conversations, total]: [ConversationRow[], number] = await Promise.all([
+  const [conversations, total] = await Promise.all([
     prisma.conversation.findMany({
       where,
       orderBy: { updatedAt: 'desc' },
@@ -317,6 +308,12 @@ export async function GET(request: Request) {
             user: { select: { name: true, email: true } },
           },
         },
+        contact: {
+          select: { id: true, email: true, fullName: true },
+        },
+        organization: {
+          select: { id: true, name: true, plan: true },
+        },
         _count: { select: { messages: true } },
       },
     }),
@@ -326,12 +323,15 @@ export async function GET(request: Request) {
   return NextResponse.json({
     data: conversations.map((c) => ({
       id: c.id,
+      number: c.number ?? null,
       status: c.status,
       customerName: c.customerName,
       customerEmail: c.customerEmail,
       subject: c.subject,
       aiConfidence: c.aiConfidence,
       escalationReason: c.escalationReason,
+      contact: c.contact ?? null,
+      organization: c.organization ?? null,
       assignedTo: c.assignedTo
         ? {
             name: c.assignedTo.user.name,
