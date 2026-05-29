@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 
 interface ConversationSummary {
   id: string
+  number: number | null
   status: string
   customerName: string | null
   customerEmail: string | null
@@ -18,6 +19,8 @@ interface ConversationSummary {
   assignedTo: string | null
   firstMessage: string | null
   messageCount: number
+  contact: { id: string; fullName: string | null; email: string | null } | null
+  organization: { id: string; name: string; plan: string | null } | null
   createdAt: string
   updatedAt: string
 }

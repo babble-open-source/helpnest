@@ -17,10 +17,31 @@ import {
 import { ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+interface ContactSummary {
+  id: string
+  fullName: string | null
+  email: string | null
+  phone: string | null
+  avatarUrl: string | null
+  primaryOrganization: {
+    id: string
+    name: string
+    plan: string | null
+  } | null
+}
+
+interface OrganizationSummary {
+  id: string
+  name: string
+  plan: string | null
+}
+
 interface Message {
   id: string
   role: string
   content: string
+  isInternal: boolean
+  authorMemberId: string | null
   sources: unknown
   confidence: number | null
   feedbackHelpful: boolean | null
@@ -29,6 +50,7 @@ interface Message {
 
 interface ConversationData {
   id: string
+  number: number | null
   status: string
   customerName: string | null
   customerEmail: string | null
@@ -36,6 +58,8 @@ interface ConversationData {
   aiConfidence: number | null
   escalationReason: string | null
   resolutionSummary: string | null
+  contact: ContactSummary | null
+  organization: OrganizationSummary | null
   assignedTo: { id: string; name: string | null; email: string } | null
   articles: Array<{
     id: string

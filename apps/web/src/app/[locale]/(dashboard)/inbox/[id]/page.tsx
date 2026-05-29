@@ -31,6 +31,26 @@ export default async function ConversationPage({
     where: { id, workspaceId },
     include: {
       messages: { orderBy: { createdAt: 'asc' } },
+      contact: {
+        select: {
+          id: true,
+          fullName: true,
+          email: true,
+          phone: true,
+          avatarUrl: true,
+          organizations: {
+            select: {
+              isPrimary: true,
+              organization: {
+                select: { id: true, name: true, plan: true, domains: true },
+              },
+            },
+          },
+        },
+      },
+      organization: {
+        select: { id: true, name: true, plan: true },
+      },
       assignedTo: {
         select: {
           id: true,
@@ -63,6 +83,7 @@ export default async function ConversationPage({
   // Serialize all Date objects before passing to the client component.
   const serializedConv = {
     id: conversation.id,
+    number: conversation.number ?? null,
     status: conversation.status,
     customerName: conversation.customerName,
     customerEmail: conversation.customerEmail,
@@ -70,6 +91,24 @@ export default async function ConversationPage({
     aiConfidence: conversation.aiConfidence,
     escalationReason: conversation.escalationReason,
     resolutionSummary: conversation.resolutionSummary,
+    contact: conversation.contact
+      ? {
+          id: conversation.contact.id,
+          fullName: conversation.contact.fullName,
+          email: conversation.contact.email,
+          phone: conversation.contact.phone ?? null,
+          avatarUrl: conversation.contact.avatarUrl ?? null,
+          primaryOrganization:
+            conversation.contact.organizations.find((co) => co.isPrimary)?.organization ?? null,
+        }
+      : null,
+    organization: conversation.organization
+      ? {
+          id: conversation.organization.id,
+          name: conversation.organization.name,
+          plan: conversation.organization.plan ?? null,
+        }
+      : null,
     assignedTo: conversation.assignedTo
       ? {
           id: conversation.assignedTo.id,
@@ -94,6 +133,8 @@ export default async function ConversationPage({
       id: string
       role: string
       content: string
+      isInternal: boolean
+      authorMemberId: string | null
       sources: unknown
       confidence: number | null
       feedbackHelpful: boolean | null
@@ -102,6 +143,8 @@ export default async function ConversationPage({
       id: m.id,
       role: m.role,
       content: m.content,
+      isInternal: m.isInternal,
+      authorMemberId: m.authorMemberId ?? null,
       sources: m.sources,
       confidence: m.confidence,
       feedbackHelpful: m.feedbackHelpful,

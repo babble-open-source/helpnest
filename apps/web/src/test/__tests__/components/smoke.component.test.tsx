@@ -12,9 +12,13 @@
  */
 
 import React, { useState } from 'react'
-import { describe, it, expect } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { describe, it, expect, afterEach } from 'vitest'
+import { render, screen, cleanup } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+
+afterEach(() => {
+  cleanup()
+})
 
 /** Minimal client component — no server-only imports. */
 function Counter({ label }: { label: string }) {

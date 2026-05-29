@@ -17,6 +17,7 @@ export default async function InboxPage() {
 
   type InboxConv = {
     id: string
+    number: number | null
     status: string
     customerName: string | null
     customerEmail: string | null
@@ -24,11 +25,21 @@ export default async function InboxPage() {
     aiConfidence: number | null
     escalationReason: string | null
     assignedTo: { user: { name: string | null } } | null
+    contact: { id: string; fullName: string | null; email: string | null } | null
+    organization: { id: string; name: string; plan: string | null } | null
     messages: Array<{ content: string }>
     _count: { messages: number }
     createdAt: Date
     updatedAt: Date
   }
+
+  const contactSelect = {
+    select: { id: true, fullName: true, email: true },
+  } as const
+
+  const organizationSelect = {
+    select: { id: true, name: true, plan: true },
+  } as const
 
   const [escalated, active, resolved]: [InboxConv[], InboxConv[], InboxConv[]] = await Promise.all([
     prisma.conversation.findMany({
@@ -38,6 +49,8 @@ export default async function InboxPage() {
       include: {
         messages: { take: 1, orderBy: { createdAt: 'asc' }, select: { content: true } },
         assignedTo: { select: { user: { select: { name: true } } } },
+        contact: contactSelect,
+        organization: organizationSelect,
         _count: { select: { messages: true } },
       },
     }),
@@ -48,6 +61,8 @@ export default async function InboxPage() {
       include: {
         messages: { take: 1, orderBy: { createdAt: 'asc' }, select: { content: true } },
         assignedTo: { select: { user: { select: { name: true } } } },
+        contact: contactSelect,
+        organization: organizationSelect,
         _count: { select: { messages: true } },
       },
     }),
@@ -61,6 +76,8 @@ export default async function InboxPage() {
       include: {
         messages: { take: 1, orderBy: { createdAt: 'asc' }, select: { content: true } },
         assignedTo: { select: { user: { select: { name: true } } } },
+        contact: contactSelect,
+        organization: organizationSelect,
         _count: { select: { messages: true } },
       },
     }),
@@ -71,6 +88,7 @@ export default async function InboxPage() {
   const serialize = (convs: InboxConv[]) =>
     convs.map((c) => ({
       id: c.id,
+      number: c.number ?? null,
       status: c.status,
       customerName: c.customerName,
       customerEmail: c.customerEmail,
@@ -80,6 +98,12 @@ export default async function InboxPage() {
       assignedTo: c.assignedTo?.user?.name ?? null,
       firstMessage: c.messages[0]?.content?.slice(0, 200) ?? null,
       messageCount: c._count.messages,
+      contact: c.contact
+        ? { id: c.contact.id, fullName: c.contact.fullName, email: c.contact.email }
+        : null,
+      organization: c.organization
+        ? { id: c.organization.id, name: c.organization.name, plan: c.organization.plan ?? null }
+        : null,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
     }))
