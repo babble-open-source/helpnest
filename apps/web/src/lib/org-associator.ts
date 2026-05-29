@@ -1,5 +1,5 @@
 import type { Contact, Organization, Prisma } from '@helpnest/db'
-import { FREE_MAIL_DOMAINS } from '@/lib/free-mail-domains'
+import { FREE_MAIL_DOMAINS } from './free-mail-domains'
 
 /**
  * Attempts to associate a Contact with an Organization based on the email domain.
@@ -29,7 +29,7 @@ import { FREE_MAIL_DOMAINS } from '@/lib/free-mail-domains'
 export async function autoAssociateContactToOrg(
   tx: Prisma.TransactionClient,
   workspaceId: string,
-  contact: Contact,
+  contact: Contact
 ): Promise<Organization | null> {
   const domain = extractDomain(contact.email)
   if (domain === null) return null
@@ -100,7 +100,10 @@ function extractDomain(email: string | null | undefined): string | null {
   const atIndex = email.lastIndexOf('@')
   if (atIndex <= 0) return null
 
-  const domain = email.slice(atIndex + 1).toLowerCase().trim()
+  const domain = email
+    .slice(atIndex + 1)
+    .toLowerCase()
+    .trim()
   if (domain.length === 0) return null
 
   return domain
