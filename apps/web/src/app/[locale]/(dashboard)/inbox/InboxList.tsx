@@ -42,7 +42,11 @@ function timeAgo(dateStr: string): string {
   return `${days}d ago`
 }
 
-function ConversationList({ conversations, activeTabKey, t }: {
+function ConversationList({
+  conversations,
+  activeTabKey,
+  t,
+}: {
   conversations: ConversationSummary[]
   activeTabKey: 'escalated' | 'active' | 'resolved'
   t: ReturnType<typeof useTranslations<'inboxPage'>>
@@ -54,8 +58,8 @@ function ConversationList({ conversations, activeTabKey, t }: {
           {activeTabKey === 'escalated'
             ? t('noEscalated')
             : activeTabKey === 'active'
-            ? t('noActive')
-            : t('noResolved')}
+              ? t('noActive')
+              : t('noResolved')}
         </p>
       </div>
     )
@@ -82,8 +86,8 @@ function ConversationList({ conversations, activeTabKey, t }: {
                     conv.aiConfidence >= 0.7
                       ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10'
                       : conv.aiConfidence >= 0.3
-                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
-                      : 'bg-primary/10 text-primary hover:bg-primary/10'
+                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-100'
+                        : 'bg-primary/10 text-primary hover:bg-primary/10'
                   )}
                 >
                   {Math.round(conv.aiConfidence * 100)}%
@@ -98,10 +102,17 @@ function ConversationList({ conversations, activeTabKey, t }: {
             )}
           </div>
           <div className="text-end shrink-0">
+            {conv.number !== null && (
+              <p className="font-mono text-xs text-muted-foreground mb-0.5">#{conv.number}</p>
+            )}
             <p className="text-xs text-muted-foreground">{timeAgo(conv.updatedAt)}</p>
-            <p className="text-xs text-muted-foreground mt-1">{t('msgs', { count: conv.messageCount })}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {t('msgs', { count: conv.messageCount })}
+            </p>
             {conv.assignedTo && (
-              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">{conv.assignedTo}</p>
+              <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                {conv.assignedTo}
+              </p>
             )}
           </div>
         </Link>
@@ -119,7 +130,10 @@ export function InboxList({ escalated, active, resolved }: Props) {
         <TabsTrigger value="escalated" className="gap-2">
           {t('escalated')}
           {escalated.length > 0 && (
-            <Badge variant="secondary" className="text-xs bg-primary/10 text-primary hover:bg-primary/10">
+            <Badge
+              variant="secondary"
+              className="text-xs bg-primary/10 text-primary hover:bg-primary/10"
+            >
               {escalated.length}
             </Badge>
           )}

@@ -13,6 +13,8 @@ export default defineConfig({
     environmentMatchGlobs: [
       ['src/**/__tests__/components/**', 'jsdom'],
       ['src/**/*.component.test.tsx', 'jsdom'],
+      // Inbox component tests (Task 27+) — use jsdom for React component rendering
+      ['src/app/**/inbox/__tests__/**', 'jsdom'],
     ],
     globalSetup: ['./src/test/global-setup.ts'],
     setupFiles: ['./src/test/setup.ts'],
@@ -61,5 +63,10 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, 'src'),
     },
+  },
+  // Use the automatic JSX runtime so component files that do not import React
+  // (Next.js automatic transform) compile correctly under vitest/esbuild.
+  esbuild: {
+    jsx: 'automatic',
   },
 })

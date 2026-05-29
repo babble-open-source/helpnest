@@ -85,18 +85,20 @@ interface Props {
 }
 
 const statusVariantMap: Record<string, { label: string; className: string }> = {
-  ACTIVE: { label: 'Active', className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10' },
+  ACTIVE: {
+    label: 'Active',
+    className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10',
+  },
   ESCALATED: { label: 'Escalated', className: 'bg-primary/10 text-primary hover:bg-primary/10' },
   RESOLVED_AI: { label: 'Resolved (AI)', className: 'bg-blue-100 text-blue-700 hover:bg-blue-100' },
-  RESOLVED_HUMAN: { label: 'Resolved', className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10' },
+  RESOLVED_HUMAN: {
+    label: 'Resolved',
+    className: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10',
+  },
   CLOSED: { label: 'Closed', className: 'bg-muted text-muted-foreground hover:bg-muted' },
 }
 
-export function ConversationDetail({
-  conversation: initialConv,
-  members,
-  currentMemberId,
-}: Props) {
+export function ConversationDetail({ conversation: initialConv, members, currentMemberId }: Props) {
   const t = useTranslations('conversation')
   const tc = useTranslations('common')
   const format = useFormatter()
@@ -119,7 +121,7 @@ export function ConversationDetail({
         const lastMsg = conversation.messages[conversation.messages.length - 1]
         const since = lastMsg?.createdAt ?? conversation.createdAt
         const res = await fetch(
-          `/api/conversations/${conversation.id}/messages?since=${encodeURIComponent(since)}`,
+          `/api/conversations/${conversation.id}/messages?since=${encodeURIComponent(since)}`
         )
         if (!res.ok) return
         const data = (await res.json()) as { messages?: Message[] }
@@ -203,9 +205,7 @@ export function ConversationDetail({
       const matched = memberId ? members.find((m) => m.id === memberId) : null
       setConversation((prev) => ({
         ...prev,
-        assignedTo: matched
-          ? { id: matched.id, name: matched.name, email: matched.email }
-          : null,
+        assignedTo: matched ? { id: matched.id, name: matched.name, email: matched.email } : null,
       }))
     } catch {
       // Silently ignore assignment errors — UI stays optimistic, next refresh will correct
@@ -221,7 +221,10 @@ export function ConversationDetail({
     })
   }
 
-  const statusInfo = statusVariantMap[conversation.status] ?? { label: conversation.status, className: 'bg-muted text-muted-foreground' }
+  const statusInfo = statusVariantMap[conversation.status] ?? {
+    label: conversation.status,
+    className: 'bg-muted text-muted-foreground',
+  }
 
   return (
     <>
@@ -238,9 +241,16 @@ export function ConversationDetail({
               <ChevronLeft className="w-5 h-5" />
             </Link>
             <div className="flex-1 min-w-0">
-              <h1 className="text-base font-semibold text-foreground truncate">
-                {conversation.subject ?? t('defaultSubject')}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-base font-semibold text-foreground truncate">
+                  {conversation.subject ?? t('defaultSubject')}
+                </h1>
+                {conversation.number !== null && (
+                  <span className="font-mono text-xs text-muted-foreground shrink-0">
+                    #{conversation.number}
+                  </span>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">
                 {conversation.customerName ?? conversation.customerEmail ?? 'Anonymous'}
               </p>
@@ -262,44 +272,63 @@ export function ConversationDetail({
                 key={msg.id}
                 className={cn(
                   'flex items-end gap-2',
-                  msg.role === 'CUSTOMER' ? 'justify-end' : msg.role === 'SYSTEM' ? 'justify-center' : 'justify-start'
+                  msg.role === 'CUSTOMER'
+                    ? 'justify-end'
+                    : msg.role === 'SYSTEM'
+                      ? 'justify-center'
+                      : 'justify-start'
                 )}
               >
                 {/* Role avatar dot — left side for AI/AGENT */}
                 {msg.role !== 'CUSTOMER' && msg.role !== 'SYSTEM' && (
-                  <div className={cn(
-                    'w-1.5 h-1.5 rounded-full shrink-0 mb-2',
-                    msg.role === 'AI' ? 'bg-muted-foreground' : 'bg-emerald-500'
-                  )} />
+                  <div
+                    className={cn(
+                      'w-1.5 h-1.5 rounded-full shrink-0 mb-2',
+                      msg.role === 'AI' ? 'bg-muted-foreground' : 'bg-emerald-500'
+                    )}
+                  />
                 )}
 
-                <div className={cn(
-                  'flex flex-col max-w-[72%]',
-                  msg.role === 'CUSTOMER' ? 'items-end' : msg.role === 'SYSTEM' ? 'items-center' : 'items-start'
-                )}>
+                <div
+                  className={cn(
+                    'flex flex-col max-w-[72%]',
+                    msg.role === 'CUSTOMER'
+                      ? 'items-end'
+                      : msg.role === 'SYSTEM'
+                        ? 'items-center'
+                        : 'items-start'
+                  )}
+                >
                   {msg.role !== 'SYSTEM' && (
                     <p className="text-xs font-medium mb-1 text-muted-foreground">
-                      {msg.role === 'CUSTOMER' ? t('customer') : msg.role === 'AI' ? t('aiAgent') : t('you')}
+                      {msg.role === 'CUSTOMER'
+                        ? t('customer')
+                        : msg.role === 'AI'
+                          ? t('aiAgent')
+                          : t('you')}
                     </p>
                   )}
 
-                  <div className={cn(
-                    'w-fit rounded-2xl px-3.5 py-2',
-                    msg.role === 'CUSTOMER'
-                      ? 'bg-primary text-primary-foreground rounded-br-sm'
-                      : msg.role === 'AI'
-                      ? 'bg-card border rounded-bl-sm'
-                      : msg.role === 'AGENT'
-                      ? 'bg-emerald-500/10 border border-emerald-500/20 rounded-bl-sm'
-                      : 'bg-muted/40 text-muted-foreground italic text-xs px-3 py-1.5 rounded-full'
-                  )}>
+                  <div
+                    className={cn(
+                      'w-fit rounded-2xl px-3.5 py-2',
+                      msg.role === 'CUSTOMER'
+                        ? 'bg-primary text-primary-foreground rounded-br-sm'
+                        : msg.role === 'AI'
+                          ? 'bg-card border rounded-bl-sm'
+                          : msg.role === 'AGENT'
+                            ? 'bg-emerald-500/10 border border-emerald-500/20 rounded-bl-sm'
+                            : 'bg-muted/40 text-muted-foreground italic text-xs px-3 py-1.5 rounded-full'
+                    )}
+                  >
                     <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
                   </div>
 
                   <div className="flex items-center gap-2 mt-1">
                     {msg.confidence !== null && msg.role === 'AI' && (
                       <span className="text-xs text-muted-foreground">
-                        {Math.round(msg.confidence * 100)}{t('confidence')}
+                        {Math.round(msg.confidence * 100)}
+                        {t('confidence')}
                       </span>
                     )}
                     <span className="text-xs text-muted-foreground/60">
@@ -364,17 +393,16 @@ export function ConversationDetail({
                 {t('assignToMe')}
               </Button>
             )}
-            {conversation.status !== 'RESOLVED_HUMAN' &&
-              conversation.status !== 'CLOSED' && (
-                <Button
-                  variant="outline"
-                  onClick={() => void handleStatusUpdate('RESOLVED_HUMAN')}
-                  disabled={updating}
-                  className="w-full border-emerald-500 text-emerald-600 hover:bg-emerald-500/5 hover:text-emerald-600 dark:text-emerald-400"
-                >
-                  {t('resolve')}
-                </Button>
-              )}
+            {conversation.status !== 'RESOLVED_HUMAN' && conversation.status !== 'CLOSED' && (
+              <Button
+                variant="outline"
+                onClick={() => void handleStatusUpdate('RESOLVED_HUMAN')}
+                disabled={updating}
+                className="w-full border-emerald-500 text-emerald-600 hover:bg-emerald-500/5 hover:text-emerald-600 dark:text-emerald-400"
+              >
+                {t('resolve')}
+              </Button>
+            )}
             {conversation.status !== 'CLOSED' && (
               <Button
                 variant="outline"
