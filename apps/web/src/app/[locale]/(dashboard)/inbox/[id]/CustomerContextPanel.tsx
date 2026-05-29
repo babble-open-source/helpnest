@@ -87,6 +87,7 @@ function LinkContactModal({ open, onClose, conversationId, onLinked }: LinkConta
   const [results, setResults] = useState<CustomerSearchResult[]>([])
   const [searching, setSearching] = useState(false)
   const [linking, setLinking] = useState(false)
+  const [linkError, setLinkError] = useState<string | null>(null)
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Reset state when the modal closes
@@ -95,6 +96,7 @@ function LinkContactModal({ open, onClose, conversationId, onLinked }: LinkConta
       setQuery('')
       setResults([])
       setSearching(false)
+      setLinkError(null)
     }
   }, [open])
 
@@ -121,6 +123,7 @@ function LinkContactModal({ open, onClose, conversationId, onLinked }: LinkConta
 
   async function handleSelect(customer: CustomerSearchResult) {
     setLinking(true)
+    setLinkError(null)
     try {
       const res = await fetch(`/api/conversations/${conversationId}`, {
         method: 'PATCH',
@@ -130,7 +133,11 @@ function LinkContactModal({ open, onClose, conversationId, onLinked }: LinkConta
       if (res.ok) {
         onLinked(customer)
         onClose()
+      } else {
+        setLinkError('Failed to link contact. Please try again.')
       }
+    } catch {
+      setLinkError('Failed to link contact. Please try again.')
     } finally {
       setLinking(false)
     }
@@ -151,6 +158,11 @@ function LinkContactModal({ open, onClose, conversationId, onLinked }: LinkConta
             aria-label="Search contacts"
           />
           {searching && <p className="text-xs text-muted-foreground">Searching…</p>}
+          {linkError && (
+            <p role="alert" className="text-xs text-destructive">
+              {linkError}
+            </p>
+          )}
           {results.length > 0 && (
             <ul className="space-y-1" role="listbox" aria-label="Contact search results">
               {results.map((c) => (

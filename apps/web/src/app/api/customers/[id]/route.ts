@@ -89,7 +89,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const updated = await prisma.contact.update({
-    where: { id },
+    where: { id, workspaceId: authResult.workspaceId },
     data,
     include: {
       organizations: {
@@ -129,6 +129,20 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: 'Contact not found' }, { status: 404 })
   }
 
+  // Reject any operation on a contact that has already been merged: it is a
+  // source record kept for audit purposes only. Hard-deleting it would remove
+  // the mergedFrom back-reference on the survivor (onDelete: SetNull), silently
+  // destroying the merge audit trail.
+  if (contact.mergedIntoId) {
+    return NextResponse.json(
+      {
+        error:
+          'Cannot delete a merged contact. The merge record is required for audit history.',
+      },
+      { status: 409 }
+    )
+  }
+
   if (body.mergeIntoId) {
     const survivor = await prisma.contact.findFirst({
       where: { id: body.mergeIntoId, workspaceId: authResult.workspaceId },
@@ -149,9 +163,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
         where: { contactId: id, workspaceId: authResult.workspaceId },
         data: { contactId: body.mergeIntoId },
       })
-      // Mark source as merged
+      // Mark source as merged — include workspaceId in the predicate to prevent
+      // a TOCTOU race from mutating a record whose workspace was changed concurrently.
       await tx.contact.update({
-        where: { id },
+        where: { id, workspaceId: authResult.workspaceId },
         data: { mergedIntoId: body.mergeIntoId },
       })
     })
@@ -172,6 +187,8 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     )
   }
 
-  await prisma.contact.delete({ where: { id } })
+  // Include workspaceId in the delete predicate to match the established pattern
+  // in the conversation PATCH route and prevent TOCTOU races on workspace scope.
+  await prisma.contact.delete({ where: { id, workspaceId: authResult.workspaceId } })
   return NextResponse.json({ deleted: true })
 }

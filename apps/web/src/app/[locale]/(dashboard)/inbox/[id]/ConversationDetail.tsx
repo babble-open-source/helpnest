@@ -278,11 +278,7 @@ export function ConversationDetail({ conversation: initialConv, members, current
                     {msg.role !== 'SYSTEM' && (
                       <div className="flex items-center gap-1.5 mb-1">
                         {isInternalNote && (
-                          <span
-                            aria-label="Internal note"
-                            className="flex items-center gap-0.5"
-                            title="Internal note"
-                          >
+                          <span className="flex items-center gap-0.5">
                             {/* Lock icon — inline SVG for zero additional imports */}
                             <svg
                               xmlns="http://www.w3.org/2000/svg"

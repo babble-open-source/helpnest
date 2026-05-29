@@ -313,7 +313,9 @@ describe('DELETE /api/organizations/[id]', () => {
 
     expect(res.status).toBe(200)
     expect(body.deleted).toBe(true)
-    expect(prisma.organization.delete).toHaveBeenCalledWith({ where: { id: ORG_ID } })
+    expect(prisma.organization.delete).toHaveBeenCalledWith({
+      where: { id: ORG_ID, workspaceId: WORKSPACE_ID },
+    })
   })
 
   it('returns 404 when org not found', async () => {

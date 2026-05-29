@@ -11,6 +11,9 @@ vi.mock('@/lib/db', () => ({
     contact: { findFirst: vi.fn() },
     organization: { findFirst: vi.fn() },
     member: { findFirst: vi.fn() },
+    // $transaction: delegate to the callback with a proxy so all inner Prisma
+    // calls use the same vi.fn() instances and assertions stay unchanged.
+    $transaction: vi.fn(),
   },
 }))
 
@@ -54,6 +57,7 @@ beforeEach(() => {
     status: 'ESCALATED',
     contactId: null,
     organizationId: null,
+    createdAt: new Date('2026-05-29T09:00:00Z'),
   } as never)
 
   vi.mocked(prisma.conversation.update).mockResolvedValue({
@@ -70,6 +74,17 @@ beforeEach(() => {
   } as never)
 
   vi.mocked(emitConversationEvent).mockResolvedValue(undefined)
+
+  // $transaction: execute the callback immediately with a thin proxy that
+  // delegates to the same vi.fn() mocks so assertions remain unchanged.
+  ;(prisma.$transaction as unknown as ReturnType<typeof vi.fn>).mockImplementation(
+    async (fn: unknown) => {
+      const txProxy = {
+        conversation: { update: vi.mocked(prisma.conversation.update) },
+      }
+      return (fn as (tx: typeof txProxy) => Promise<unknown>)(txProxy)
+    }
+  )
 })
 
 // ── tests ─────────────────────────────────────────────────────────────────────
@@ -165,5 +180,53 @@ describe('PATCH /api/conversations/[id]', () => {
     expect(emitConversationEvent).toHaveBeenCalledWith(
       expect.objectContaining({ verb: 'ORG_LINKED', conversationId: 'conv-1' })
     )
+  })
+
+  it('emits STATUS_CHANGED when status changes', async () => {
+    // conversation.status is 'ESCALATED' in beforeEach; change to HUMAN_ACTIVE
+    const res = await PATCH(makeRequest({ status: 'HUMAN_ACTIVE' }), { params: PARAMS })
+    expect(res.status).toBe(200)
+    expect(emitConversationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        verb: 'STATUS_CHANGED',
+        payload: expect.objectContaining({ from: 'ESCALATED', to: 'HUMAN_ACTIVE' }),
+      })
+    )
+  })
+
+  it('emits STATUS_CHANGED and RESOLVED when status is RESOLVED_HUMAN', async () => {
+    vi.mocked(prisma.conversation.update).mockResolvedValue({
+      id: 'conv-1',
+      status: 'RESOLVED_HUMAN',
+    } as never)
+
+    const res = await PATCH(makeRequest({ status: 'RESOLVED_HUMAN' }), { params: PARAMS })
+    expect(res.status).toBe(200)
+
+    expect(emitConversationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ verb: 'STATUS_CHANGED' })
+    )
+    expect(emitConversationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({ verb: 'RESOLVED', durationSeconds: expect.any(Number) })
+    )
+  })
+
+  it('does NOT emit STATUS_CHANGED when status is unchanged', async () => {
+    // findFirst returns status 'ESCALATED'; patch also sends 'ESCALATED' — no change
+    vi.mocked(prisma.conversation.findFirst).mockResolvedValue({
+      id: 'conv-1',
+      workspaceId: 'ws-1',
+      status: 'ESCALATED',
+      contactId: null,
+      organizationId: null,
+      createdAt: new Date('2026-05-29T09:00:00Z'),
+    } as never)
+
+    const res = await PATCH(makeRequest({ status: 'ESCALATED' }), { params: PARAMS })
+    expect(res.status).toBe(200)
+    const statusChangedCall = vi.mocked(emitConversationEvent).mock.calls.find(
+      ([opts]) => opts.verb === 'STATUS_CHANGED'
+    )
+    expect(statusChangedCall).toBeUndefined()
   })
 })

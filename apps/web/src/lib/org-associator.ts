@@ -51,9 +51,12 @@ export async function autoAssociateContactToOrg(
   // The length guard above ensures at least one element; the non-null assertion is safe.
   const targetOrg = matchingOrgs[0]!
 
-  // Determine isPrimary: true only when the contact has no org memberships yet
+  // Determine isPrimary: true only when the contact has no org memberships yet.
+  // Include workspaceId so the count is scoped to this workspace only — avoids
+  // cross-tenant contamination if a contactId were ever shared across workspaces
+  // (e.g. via a future migration bug).
   const existingLinkCount = await tx.contactOrganization.count({
-    where: { contactId: contact.id },
+    where: { contactId: contact.id, workspaceId },
   })
   const isPrimary = existingLinkCount === 0
 

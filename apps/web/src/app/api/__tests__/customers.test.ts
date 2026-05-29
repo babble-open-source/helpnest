@@ -389,10 +389,10 @@ describe('DELETE /api/customers/[id]', () => {
       data: { contactId: 'cnt_survivor' },
     })
 
-    // Source contact must have mergedIntoId set
+    // Source contact must have mergedIntoId set — workspaceId is required in the predicate
     expect(prisma.contact.update).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { id: CONTACT_ID },
+        where: { id: CONTACT_ID, workspaceId: WORKSPACE_ID },
         data: expect.objectContaining({ mergedIntoId: 'cnt_survivor' }),
       })
     )
@@ -418,7 +418,29 @@ describe('DELETE /api/customers/[id]', () => {
 
     expect(res.status).toBe(200)
     expect(body.deleted).toBe(true)
-    expect(prisma.contact.delete).toHaveBeenCalledWith({ where: { id: CONTACT_ID } })
+    expect(prisma.contact.delete).toHaveBeenCalledWith({
+      where: { id: CONTACT_ID, workspaceId: WORKSPACE_ID },
+    })
+  })
+
+  it('returns 409 when trying to delete a contact that is itself already merged', async () => {
+    vi.mocked(requireAuth).mockResolvedValue({ workspaceId: WORKSPACE_ID, via: 'session' })
+
+    const mergedSourceContact = {
+      id: CONTACT_ID,
+      workspaceId: WORKSPACE_ID,
+      email: 'old@acme.com',
+      fullName: 'Old Alice',
+      // This contact was already merged into another — it is a source record
+      mergedIntoId: 'cnt_survivor',
+    }
+    vi.mocked(prisma.contact.findFirst).mockResolvedValue(mergedSourceContact as never)
+
+    const req = makeRequest('DELETE', `http://localhost/api/customers/${CONTACT_ID}`)
+    const res = await DELETE(req, { params: Promise.resolve({ id: CONTACT_ID }) })
+    expect(res.status).toBe(409)
+    const body = await res.json()
+    expect(body.error).toMatch(/merged contact|audit/i)
   })
 
   it('returns 409 when trying to hard-delete a contact with conversations', async () => {

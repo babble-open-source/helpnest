@@ -89,7 +89,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const existing = await prisma.contactOrganization.findFirst({
-    where: { contactId: id, organizationId: body.organizationId },
+    where: { contactId: id, organizationId: body.organizationId, workspaceId: authResult.workspaceId },
   })
 
   let membership

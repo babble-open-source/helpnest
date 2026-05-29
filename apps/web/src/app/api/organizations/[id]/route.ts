@@ -117,7 +117,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const updated = await prisma.organization.update({
-    where: { id },
+    where: { id, workspaceId: authResult.workspaceId },
     data,
     include: {
       owner: {
@@ -163,6 +163,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     )
   }
 
-  await prisma.organization.delete({ where: { id } })
+  // Include workspaceId in the delete predicate to prevent TOCTOU races on workspace scope.
+  await prisma.organization.delete({ where: { id, workspaceId: authResult.workspaceId } })
   return NextResponse.json({ deleted: true })
 }

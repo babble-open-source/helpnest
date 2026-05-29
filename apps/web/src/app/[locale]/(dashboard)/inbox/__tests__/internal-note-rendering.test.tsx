@@ -4,7 +4,8 @@
  *
  * Covers:
  *  - "Internal note" text label present for isInternal messages (a11y: text, not color alone)
- *  - lock icon aria-label present for isInternal messages
+ *  - lock icon is aria-hidden (the visible text label is the accessible identifier,
+ *    not the icon — a duplicate aria-label on the icon would cause double-announcement)
  *  - amber bubble classes (bg-amber-50, border-amber-200) applied to isInternal bubbles
  *  - amber classes NOT applied to regular agent replies
  *  - "Internal note" label NOT rendered for public agent messages
@@ -107,15 +108,21 @@ describe('Internal note rendering', () => {
     expect(screen.getByText('Internal note')).toBeInTheDocument()
   })
 
-  it('renders a lock icon aria-label for isInternal messages', () => {
-    render(
+  it('renders the lock icon as aria-hidden (visible text label is the a11y identifier)', () => {
+    // The lock SVG must be aria-hidden="true" so screen readers do not announce
+    // it. The adjacent <p> text "Internal note" is the sole accessible label.
+    // A duplicate aria-label on the icon wrapper would cause double-announcement.
+    const { container } = render(
       <ConversationDetail
         conversation={{ ...baseConversation, messages: [internalNoteMessage] }}
         members={members}
         currentMemberId="m1"
       />
     )
-    expect(screen.getByLabelText('Internal note')).toBeInTheDocument()
+    const lockSvg = container.querySelector('svg[aria-hidden="true"]')
+    expect(lockSvg).not.toBeNull()
+    // No element should carry aria-label="Internal note" (that was the bug).
+    expect(container.querySelector('[aria-label="Internal note"]')).toBeNull()
   })
 
   it('applies amber bubble classes to isInternal message', () => {

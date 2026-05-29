@@ -42,18 +42,32 @@ if (!connectionString) {
 export const testDb = createPrismaClient(connectionString)
 
 /**
- * Registers an afterAll hook that disconnects testDb.
+ * Registers an afterAll hook that:
+ *  1. Deletes all test Workspace rows whose slug starts with 'test-workspace-'
+ *     (the prefix every createTestWorkspace() call uses). CASCADE removes the
+ *     associated User, Member, Conversation, Contact, etc. rows automatically.
+ *     This prevents unbounded accumulation — without cleanup, runBackfill()
+ *     iterates all workspaces on every test run and grows proportionally.
+ *  2. Disconnects testDb so the Postgres connection pool does not keep the
+ *     Vitest process alive after the last test.
  *
- * Call this once at the top of every integration test file that imports
- * testDb. Without it the Vitest process hangs after the last test because
- * the Postgres connection pool keeps the event loop alive.
- *
- * smoke.test.ts example:
- *   import { testDb, registerTestDbTeardown } from './harness'
- *   registerTestDbTeardown()
+ * Call this once at the top of every integration test file that imports testDb.
  */
 export function registerTestDbTeardown(): void {
   afterAll(async () => {
+    // Delete test workspaces created during this test run. The slug prefix
+    // 'test-workspace-%' matches every slug produced by createTestWorkspace().
+    // CASCADE on the FK constraints removes all dependent rows (Member, User,
+    // Conversation, Contact, etc.) without needing to enumerate each table.
+    try {
+      await testDb.$executeRawUnsafe(
+        `DELETE FROM "Workspace" WHERE slug LIKE 'test-workspace-%'`
+      )
+    } catch {
+      // Best-effort: if the delete fails (e.g. FK violation not using CASCADE),
+      // log and continue — a hung process is worse than leftover rows.
+      // Subsequent runs will still clean up their own workspaces.
+    }
     await testDb.$disconnect()
   })
 }

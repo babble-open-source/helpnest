@@ -15,6 +15,7 @@ const {
   mockMemberFindFirst,
   mockRequireAuth,
   mockEmitConversationEvent,
+  mockTransaction,
 } = vi.hoisted(() => ({
   mockConversationFindFirst: vi.fn(),
   mockConversationUpdate: vi.fn(),
@@ -24,6 +25,10 @@ const {
   mockMemberFindFirst: vi.fn(),
   mockRequireAuth: vi.fn(),
   mockEmitConversationEvent: vi.fn(),
+  // $transaction: calls the callback with a tx proxy so inner calls use the
+  // same mocks as the module-level prisma (tests verify at the mock level,
+  // not at the Prisma client level, so this is sufficient).
+  mockTransaction: vi.fn(),
 }))
 
 vi.mock('@/lib/db', () => ({
@@ -40,6 +45,9 @@ vi.mock('@/lib/db', () => ({
     member: {
       findFirst: mockMemberFindFirst,
     },
+    // $transaction calls the callback with a tx proxy that delegates to the
+    // same mock functions so assertions remain unchanged.
+    $transaction: mockTransaction,
   },
 }))
 
@@ -106,6 +114,22 @@ beforeEach(() => {
     id: 'member-1',
     user: { name: 'Test Agent', email: 'agent@test.com' },
   })
+  // $transaction: execute the callback with a tx proxy that delegates to the
+  // same module-level mocks so all assertions remain valid.
+  mockTransaction.mockImplementation(
+    async (fn: (tx: Record<string, unknown>) => Promise<unknown>) => {
+      const txProxy = {
+        message: {
+          create: mockMessageCreate,
+          count: mockMessageCount,
+        },
+        conversation: {
+          update: mockConversationUpdate,
+        },
+      }
+      return fn(txProxy as never)
+    }
+  )
 })
 
 // ── POST tests ─────────────────────────────────────────────────────────────

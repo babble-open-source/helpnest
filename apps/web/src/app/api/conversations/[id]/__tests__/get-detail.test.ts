@@ -116,4 +116,21 @@ describe('GET /api/conversations/[id] (detail)', () => {
       })
     )
   })
+
+  it('widget path (sessionToken) filters messages to isInternal: false', async () => {
+    mockConversationFindFirst.mockResolvedValue({ ...FULL_CONVERSATION, sessionToken: 'tok-1' })
+
+    const req = new Request('http://localhost/api/conversations/conv-1', {
+      headers: { 'X-Session-Token': 'tok-1' },
+    })
+    await GET(req, { params: PARAMS })
+
+    expect(mockConversationFindFirst).toHaveBeenCalledWith(
+      expect.objectContaining({
+        include: expect.objectContaining({
+          messages: expect.objectContaining({ where: { isInternal: false } }),
+        }),
+      })
+    )
+  })
 })

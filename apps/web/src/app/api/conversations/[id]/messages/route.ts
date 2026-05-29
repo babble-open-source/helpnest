@@ -435,62 +435,80 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       })
     : null
 
-  const message = await prisma.message.create({
-    data: {
-      conversationId: id,
-      role: 'AGENT',
-      content,
-      isInternal,
-      authorMemberId: member?.id ?? null,
-    },
-  })
-
   const actorType: EventActorType = 'AGENT'
   const actorMemberId = member?.id ?? undefined
   const actorLabel = member?.user.name ?? member?.user.email ?? undefined
 
-  if (isInternal) {
-    // Internal note: emit NOTE_ADDED, do NOT transition conversation status.
-    await emitConversationEvent({
-      workspaceId: authResult.workspaceId,
-      conversationId: id,
-      actorType,
-      actorMemberId,
-      actorLabel,
-      verb: 'NOTE_ADDED',
-      payload: { messageId: message.id },
+  // Wrap the agent flow in a single transaction so the message write,
+  // status transition, and SLA event (FIRST_RESPONSE_SENT) are atomic.
+  // This eliminates two race conditions (spec §3):
+  //   (1) Two simultaneous agent replies both counting 0 prior messages →
+  //       duplicate FIRST_RESPONSE_SENT events.
+  //   (2) DB failure between message.create and emitConversationEvent →
+  //       message persisted but FIRST_RESPONSE_SENT silently lost.
+  const message = await prisma.$transaction(async (tx) => {
+    const createdMessage = await tx.message.create({
+      data: {
+        conversationId: id,
+        role: 'AGENT',
+        content,
+        isInternal,
+        authorMemberId: member?.id ?? null,
+      },
     })
-  } else {
-    // Public agent reply: transition ESCALATED/ACTIVE → HUMAN_ACTIVE so the
-    // AI stays off while the human continues the conversation.
-    if (conversation.status === 'ESCALATED' || conversation.status === 'ACTIVE') {
-      await prisma.conversation.update({
-        where: { id },
-        data: { status: 'HUMAN_ACTIVE' },
-      })
-    }
 
-    // Emit FIRST_RESPONSE_SENT for the first non-internal agent message, with
-    // durationSeconds computed from conversation.createdAt to now.
-    const priorAgentMessageCount = await prisma.message.count({
-      where: { conversationId: id, role: 'AGENT', isInternal: false, id: { not: message.id } },
-    })
-    if (priorAgentMessageCount === 0) {
-      const durationSeconds = Math.floor(
-        (Date.now() - new Date(conversation.createdAt).getTime()) / 1000
-      )
+    if (isInternal) {
+      // Internal note: emit NOTE_ADDED, do NOT transition conversation status.
       await emitConversationEvent({
+        tx,
         workspaceId: authResult.workspaceId,
         conversationId: id,
         actorType,
         actorMemberId,
         actorLabel,
-        verb: 'FIRST_RESPONSE_SENT',
-        payload: { messageId: message.id },
-        durationSeconds,
+        verb: 'NOTE_ADDED',
+        payload: { messageId: createdMessage.id },
       })
+    } else {
+      // Public agent reply: transition ESCALATED/ACTIVE → HUMAN_ACTIVE so the
+      // AI stays off while the human continues the conversation.
+      if (conversation.status === 'ESCALATED' || conversation.status === 'ACTIVE') {
+        await tx.conversation.update({
+          where: { id },
+          data: { status: 'HUMAN_ACTIVE' },
+        })
+      }
+
+      // Count prior non-internal agent messages within the transaction to
+      // prevent the duplicate-event race at the serialization point.
+      const priorAgentMessageCount = await tx.message.count({
+        where: {
+          conversationId: id,
+          role: 'AGENT',
+          isInternal: false,
+          id: { not: createdMessage.id },
+        },
+      })
+      if (priorAgentMessageCount === 0) {
+        const durationSeconds = Math.floor(
+          (Date.now() - new Date(conversation.createdAt).getTime()) / 1000
+        )
+        await emitConversationEvent({
+          tx,
+          workspaceId: authResult.workspaceId,
+          conversationId: id,
+          actorType,
+          actorMemberId,
+          actorLabel,
+          verb: 'FIRST_RESPONSE_SENT',
+          payload: { messageId: createdMessage.id },
+          durationSeconds,
+        })
+      }
     }
-  }
+
+    return createdMessage
+  })
 
   return NextResponse.json({ message })
 }

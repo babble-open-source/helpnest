@@ -144,4 +144,24 @@ describe('backfill-k2-contacts', () => {
     })
     expect(events.length).toBe(1)
   }, 30_000)
+
+  it('creates a Contact and links the conversation for visitorId-only (anonymous widget) conversations', async () => {
+    // Anonymous widget users have no customerEmail — only a stable visitorId.
+    // The backfill must route these through resolveOrCreateContact and create a
+    // Contact row keyed on visitorId rather than email.
+    const conv = await testDb.conversation.create({
+      data: { workspaceId, status: 'ACTIVE', visitorId: 'vis-test-001', customerEmail: null },
+    })
+
+    const runBackfill = await getBackfill()
+    await runBackfill(testDb)
+
+    const updated = await testDb.conversation.findUnique({ where: { id: conv.id } })
+    expect(updated!.contactId).not.toBeNull()
+
+    const contact = await testDb.contact.findUnique({ where: { id: updated!.contactId! } })
+    expect(contact).not.toBeNull()
+    expect(contact!.visitorId).toBe('vis-test-001')
+    expect(contact!.email).toBeNull()
+  })
 })

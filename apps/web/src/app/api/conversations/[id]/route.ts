@@ -21,10 +21,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   if (sessionToken) {
     // Widget access via session token — scope strictly to matching conversation.
+    // Internal notes must never be exposed to the widget: the response is sent
+    // with Access-Control-Allow-Origin: * so any JS on the host page (or an XSS
+    // payload) that has the sessionToken can read the full body.
     const conversation = await prisma.conversation.findFirst({
       where: { id, sessionToken },
       include: {
-        messages: { orderBy: { createdAt: 'asc' } },
+        messages: { where: { isInternal: false }, orderBy: { createdAt: 'asc' } },
         articles: {
           include: {
             article: {
@@ -218,14 +221,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 })
   }
 
-  // Scope the update where-clause by workspaceId (defense-in-depth; we already
-  // confirmed membership above, but this prevents a TOCTOU race on ownership).
-  const updated = await prisma.conversation.update({
-    where: { id, workspaceId: authResult.workspaceId },
-    data,
-  })
-
-  // Resolve member for actor label on events (best-effort; null is acceptable).
+  // Resolve member for actor label before the transaction so we can use the
+  // label inside it. Best-effort: null is acceptable.
   const member = authResult.userId
     ? await prisma.member.findFirst({
         where: { userId: authResult.userId, workspaceId: authResult.workspaceId },
@@ -237,17 +234,64 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const actorMemberId = member?.id ?? undefined
   const actorLabel = member?.user.name ?? member?.user.email ?? undefined
 
-  for (const ev of pendingEvents) {
-    await emitConversationEvent({
-      workspaceId: authResult.workspaceId,
-      conversationId: id,
-      actorType,
-      actorMemberId,
-      actorLabel,
-      verb: ev.verb,
-      payload: ev.payload,
+  // Execute the DB write and all event emissions in a single atomic transaction.
+  // STATUS_CHANGED and RESOLVED are SLA-critical verbs (spec §3) — they must be
+  // written in the same transaction as the conversation mutation so they are never
+  // persisted without the corresponding status change, or vice-versa.
+  const updated = await prisma.$transaction(async (tx) => {
+    const result = await tx.conversation.update({
+      where: { id, workspaceId: authResult.workspaceId },
+      data,
     })
-  }
+
+    // ── STATUS_CHANGED (spec §3: SLA-critical, must be transactional) ────────
+    if (body.status !== undefined && body.status !== conversation.status) {
+      await emitConversationEvent({
+        tx,
+        workspaceId: authResult.workspaceId,
+        conversationId: id,
+        actorType,
+        actorMemberId,
+        actorLabel,
+        verb: 'STATUS_CHANGED',
+        payload: { from: conversation.status, to: body.status },
+      })
+
+      // ── RESOLVED (emitted alongside STATUS_CHANGED for terminal statuses) ──
+      if (body.status === 'RESOLVED_AI' || body.status === 'RESOLVED_HUMAN') {
+        const durationSeconds = Math.floor(
+          (Date.now() - new Date(conversation.createdAt).getTime()) / 1000
+        )
+        await emitConversationEvent({
+          tx,
+          workspaceId: authResult.workspaceId,
+          conversationId: id,
+          actorType,
+          actorMemberId,
+          actorLabel,
+          verb: 'RESOLVED',
+          payload: { status: body.status },
+          durationSeconds,
+        })
+      }
+    }
+
+    // ── Contact/Org link events ───────────────────────────────────────────────
+    for (const ev of pendingEvents) {
+      await emitConversationEvent({
+        tx,
+        workspaceId: authResult.workspaceId,
+        conversationId: id,
+        actorType,
+        actorMemberId,
+        actorLabel,
+        verb: ev.verb,
+        payload: ev.payload,
+      })
+    }
+
+    return result
+  })
 
   return NextResponse.json(updated)
 }
