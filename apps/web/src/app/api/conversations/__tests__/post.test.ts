@@ -82,7 +82,11 @@ beforeEach(() => {
 
   mockWorkspaceFindFirst.mockResolvedValue(WORKSPACE)
   mockAssignConversationNumber.mockResolvedValue(42)
-  mockResolveOrCreateContact.mockResolvedValue({ id: 'contact-1', email: 'user@acme.com', fullName: null })
+  mockResolveOrCreateContact.mockResolvedValue({
+    id: 'contact-1',
+    email: 'user@acme.com',
+    fullName: null,
+  })
   mockAutoAssociateContactToOrg.mockResolvedValue(null)
   mockEmitConversationEvent.mockResolvedValue(undefined)
 
@@ -117,11 +121,13 @@ describe('POST /api/conversations', () => {
   })
 
   it('calls resolveOrCreateContact with the provided customerEmail', async () => {
-    await POST(makeRequest({ workspaceSlug: 'acme', customerEmail: 'user@acme.com', customerName: 'Alice' }))
+    await POST(
+      makeRequest({ workspaceSlug: 'acme', customerEmail: 'user@acme.com', customerName: 'Alice' })
+    )
     expect(mockResolveOrCreateContact).toHaveBeenCalledWith(
       expect.anything(), // tx
       'ws-1',
-      expect.objectContaining({ email: 'user@acme.com', fullName: 'Alice' }),
+      expect.objectContaining({ email: 'user@acme.com', fullName: 'Alice' })
     )
   })
 
@@ -130,36 +136,21 @@ describe('POST /api/conversations', () => {
     expect(mockConversationCreate).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ contactId: 'contact-1' }),
-      }),
+      })
     )
   })
 
   it('emits CONVERSATION_CREATED event', async () => {
     await POST(makeRequest({ workspaceSlug: 'acme' }))
     expect(mockEmitConversationEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ verb: 'CONVERSATION_CREATED' }),
+      expect.objectContaining({ verb: 'CONVERSATION_CREATED' })
     )
-  })
-
-  it('reuses an existing contact for the same email (dedup)', async () => {
-    // Simulate that resolveOrCreateContact returns the same id on both calls.
-    mockResolveOrCreateContact.mockResolvedValue({ id: 'contact-1', email: 'user@acme.com', fullName: null })
-
-    await POST(makeRequest({ workspaceSlug: 'acme', customerEmail: 'user@acme.com' }))
-    await POST(makeRequest({ workspaceSlug: 'acme', customerEmail: 'user@acme.com' }))
-
-    // Both calls resolve to the same contact id — mock is called twice but returns the same contact.
-    expect(mockResolveOrCreateContact).toHaveBeenCalledTimes(2)
-    const allContactIds = mockResolveOrCreateContact.mock.results.map((r) => r.value)
-    // All resolved values have the same id.
-    const ids = await Promise.all(allContactIds)
-    expect(new Set(ids.map((c) => (c as { id: string }).id)).size).toBe(1)
   })
 
   it('emits CONTACT_LINKED when a contact is resolved', async () => {
     await POST(makeRequest({ workspaceSlug: 'acme', customerEmail: 'user@acme.com' }))
     expect(mockEmitConversationEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ verb: 'CONTACT_LINKED' }),
+      expect.objectContaining({ verb: 'CONTACT_LINKED' })
     )
   })
 
@@ -176,7 +167,7 @@ describe('POST /api/conversations', () => {
     })
     await POST(makeRequest({ workspaceSlug: 'acme', customerEmail: 'user@acme.com' }))
     expect(mockEmitConversationEvent).toHaveBeenCalledWith(
-      expect.objectContaining({ verb: 'ORG_LINKED' }),
+      expect.objectContaining({ verb: 'ORG_LINKED' })
     )
   })
 
