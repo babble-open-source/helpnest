@@ -36,10 +36,7 @@ export default function globalSetup() {
   }
 
   const schemaPath = path.resolve(__dirname, '../../../../packages/db/prisma/schema.prisma')
-  const prismaBin = path.resolve(
-    __dirname,
-    '../../../../packages/db/node_modules/.bin/prisma'
-  )
+  const prismaBin = path.resolve(__dirname, '../../../../packages/db/node_modules/.bin/prisma')
 
   try {
     execSync(

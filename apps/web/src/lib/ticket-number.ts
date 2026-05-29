@@ -32,6 +32,7 @@ export async function assignConversationNumber(
     RETURNING "lastConversationNumber" AS n`
 
   const row = rows[0]
-  if (!row) throw new Error(`assignConversationNumber: no row returned for workspaceId=${workspaceId}`)
+  if (!row)
+    throw new Error(`assignConversationNumber: no row returned for workspaceId=${workspaceId}`)
   return row.n
 }
