@@ -303,7 +303,7 @@ export function ConversationDetail({ conversation: initialConv, members, current
                         <p
                           className={cn(
                             'text-xs font-medium text-muted-foreground',
-                            isInternalNote && 'text-amber-700'
+                            isInternalNote && 'text-amber-800'
                           )}
                         >
                           {msg.role === 'CUSTOMER'
