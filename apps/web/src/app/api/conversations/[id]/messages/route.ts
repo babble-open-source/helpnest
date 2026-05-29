@@ -6,7 +6,9 @@ import { isByok } from '@/lib/ai/resolve-provider'
 import { checkLimit, incrementUsage } from '@/lib/cloud'
 import { redis } from '@/lib/redis'
 import { draftArticle } from '@/lib/article-drafter'
+import { emitConversationEvent } from '@/lib/conversation-events'
 import type { ChatMessage } from '@/lib/ai/types'
+import type { EventActorType } from '@helpnest/db'
 
 // Widget-facing CORS (public, any origin)
 const WIDGET_CORS_HEADERS = {
@@ -62,14 +64,18 @@ export async function GET(
   const since = url.searchParams.get('since')
 
   let conversationWhere: Record<string, unknown>
+  // isWidget is true for both widget auth paths — used to filter internal messages.
+  let isWidget = false
 
   if (sessionToken) {
     conversationWhere = { id, sessionToken }
+    isWidget = true
   } else if (visitorId) {
     // Widget read-only auth via stable visitorId (no sessionToken stored for older conversations).
     // { id, visitorId } is sufficient: the visitorId is a per-browser UUID the visitor controls,
     // so they can only match conversations they themselves created — cross-user access is impossible.
     conversationWhere = { id, visitorId }
+    isWidget = true
   } else {
     const authResult = await requireAuth(request)
     if (!authResult) {
@@ -91,6 +97,12 @@ export async function GET(
   }
 
   const messageWhere: Record<string, unknown> = { conversationId: id }
+
+  // Defense-in-depth: widget paths must never receive internal notes.
+  if (isWidget) {
+    messageWhere.isInternal = false
+  }
+
   if (since) {
     const sinceDate = new Date(since)
     // Silently skip an invalid `since` value — return all messages rather than error.
@@ -131,9 +143,9 @@ export async function POST(
   const { id } = await params
   const sessionToken = request.headers.get('x-session-token')
 
-  let body: { content?: string; role?: string }
+  let body: { content?: string; role?: string; isInternal?: boolean }
   try {
-    body = (await request.json()) as { content?: string; role?: string }
+    body = (await request.json()) as { content?: string; role?: string; isInternal?: boolean }
   } catch {
     return NextResponse.json(
       { error: 'Invalid JSON body' },
@@ -155,6 +167,15 @@ export async function POST(
   // Flow 1: Customer message via widget
   // =========================================================================
   if (sessionToken) {
+    // isInternal is an agent-only concept. Reject any attempt from the widget
+    // to mark a message as internal — customers cannot create internal notes.
+    if (body.isInternal) {
+      return NextResponse.json(
+        { error: 'Internal notes are not allowed from the customer widget' },
+        { status: 400, headers: WIDGET_CORS_HEADERS },
+      )
+    }
+
     const rate = await checkMsgRateLimit(sessionToken)
     if (rate.limited) {
       return NextResponse.json(
@@ -395,29 +416,80 @@ export async function POST(
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const isInternal = body.isInternal ?? false
+
   const conversation = await prisma.conversation.findFirst({
     where: { id, workspaceId: authResult.workspaceId },
-    select: { id: true, status: true },
+    select: { id: true, status: true, createdAt: true },
   })
   if (!conversation) {
     return NextResponse.json({ error: 'Conversation not found' }, { status: 404 })
   }
+
+  // Resolve the authenticated Member record so we can set authorMemberId and
+  // provide a durable actor label on events.
+  const member = authResult.userId
+    ? await prisma.member.findFirst({
+        where: { userId: authResult.userId, workspaceId: authResult.workspaceId },
+        select: { id: true, user: { select: { name: true, email: true } } },
+      })
+    : null
 
   const message = await prisma.message.create({
     data: {
       conversationId: id,
       role: 'AGENT',
       content,
+      isInternal,
+      authorMemberId: member?.id ?? null,
     },
   })
 
-  // When an agent replies to an escalated conversation, move to HUMAN_ACTIVE
-  // so the AI stays off while the human continues the conversation.
-  if (conversation.status === 'ESCALATED' || conversation.status === 'ACTIVE') {
-    await prisma.conversation.update({
-      where: { id },
-      data: { status: 'HUMAN_ACTIVE' },
+  const actorType: EventActorType = 'AGENT'
+  const actorMemberId = member?.id ?? undefined
+  const actorLabel = member?.user.name ?? member?.user.email ?? undefined
+
+  if (isInternal) {
+    // Internal note: emit NOTE_ADDED, do NOT transition conversation status.
+    await emitConversationEvent({
+      workspaceId: authResult.workspaceId,
+      conversationId: id,
+      actorType,
+      actorMemberId,
+      actorLabel,
+      verb: 'NOTE_ADDED',
+      payload: { messageId: message.id },
     })
+  } else {
+    // Public agent reply: transition ESCALATED/ACTIVE → HUMAN_ACTIVE so the
+    // AI stays off while the human continues the conversation.
+    if (conversation.status === 'ESCALATED' || conversation.status === 'ACTIVE') {
+      await prisma.conversation.update({
+        where: { id },
+        data: { status: 'HUMAN_ACTIVE' },
+      })
+    }
+
+    // Emit FIRST_RESPONSE_SENT for the first non-internal agent message, with
+    // durationSeconds computed from conversation.createdAt to now.
+    const priorAgentMessageCount = await prisma.message.count({
+      where: { conversationId: id, role: 'AGENT', isInternal: false, id: { not: message.id } },
+    })
+    if (priorAgentMessageCount === 0) {
+      const durationSeconds = Math.floor(
+        (Date.now() - new Date(conversation.createdAt).getTime()) / 1000,
+      )
+      await emitConversationEvent({
+        workspaceId: authResult.workspaceId,
+        conversationId: id,
+        actorType,
+        actorMemberId,
+        actorLabel,
+        verb: 'FIRST_RESPONSE_SENT',
+        payload: { messageId: message.id },
+        durationSeconds,
+      })
+    }
   }
 
   return NextResponse.json({ message })
