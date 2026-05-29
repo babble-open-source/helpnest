@@ -82,6 +82,44 @@ enum VerificationMethod {
   DNS_TXT
 }
 
+enum ContactOrgSource {
+  DOMAIN
+  MANUAL
+  API
+  CRM
+  BACKFILL
+}
+
+enum ContactOrgRole {
+  MEMBER
+  ADMIN
+  TECHNICAL
+  BILLING
+}
+
+enum EventActorType {
+  CUSTOMER
+  AI
+  AGENT
+  SYSTEM
+}
+
+enum ConversationEventVerb {
+  CONVERSATION_CREATED
+  STATUS_CHANGED
+  ASSIGNED
+  UNASSIGNED
+  CONTACT_LINKED
+  ORG_LINKED
+  FIRST_RESPONSE_SENT
+  NOTE_ADDED
+  AI_ANSWERED
+  AI_ESCALATED
+  HANDOFF_TO_HUMAN
+  RESOLVED
+  REOPENED
+}
+
 model Workspace {
   id           String   @id @default(cuid())
   name         String
@@ -145,6 +183,10 @@ model Workspace {
   knowledgeGaps KnowledgeGap[]
   crawlJobs     CrawlJob[]
   domainVerifications DomainVerification[]
+  contacts              Contact[]
+  organizations         Organization[]
+  workspaceCounter      WorkspaceCounter?
+  conversationEvents    ConversationEvent[]
 
   deletedAt DateTime?
 
@@ -179,6 +221,9 @@ model Member {
   workspace            Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user                 User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignedConversations Conversation[]
+  ownedOrganizations    Organization[]      @relation("OrgOwner")
+  conversationEvents    ConversationEvent[]
+  messageAuthored       Message[]
 
   @@unique([workspaceId, userId])
   @@index([workspaceId])
@@ -337,6 +382,9 @@ model Conversation {
   visitorId          String?
   subject            String?
   assignedToId       String?
+  number         Int?
+  contactId      String?
+  organizationId String?
   aiConfidence       Float?
   escalationReason   String?
   resolutionSummary  String?
@@ -348,11 +396,17 @@ model Conversation {
   messages      Message[]
   articles      ConversationArticle[]
   voiceSessions VoiceSession[]
+  contact      Contact?      @relation(fields: [contactId], references: [id], onDelete: SetNull)
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+  events       ConversationEvent[]
 
   @@index([workspaceId, status])
   @@index([workspaceId, createdAt])
   @@index([assignedToId])
   @@index([workspaceId, visitorId])
+  @@index([workspaceId, number])
+  @@index([workspaceId, contactId])
+  @@index([workspaceId, organizationId])
 }
 
 model VoiceSession {
@@ -379,12 +433,16 @@ model Message {
   content          String      @db.Text
   sources          Json?
   confidence       Float?
+  isInternal       Boolean  @default(false)
+  authorMemberId   String?
   feedbackHelpful  Boolean?
   createdAt        DateTime    @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  authorMember Member? @relation(fields: [authorMemberId], references: [id], onDelete: SetNull)
 
   @@index([conversationId, createdAt])
+  @@index([conversationId, isInternal])
 }
 
 model ConversationArticle {
@@ -478,4 +536,97 @@ model DomainVerification {
 
   @@unique([workspaceId, domain])
   @@index([workspaceId])
+}
+
+model Contact {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  externalId   String?
+  email        String?
+  fullName     String?
+  phone        String?
+  avatarUrl    String?
+  visitorId    String?
+  customFields Json?     @default("{}")
+  mergedIntoId String?
+  mergedInto   Contact?  @relation("ContactMerge", fields: [mergedIntoId], references: [id], onDelete: SetNull)
+  mergedFrom   Contact[] @relation("ContactMerge")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  organizations ContactOrganization[]
+  conversations Conversation[]
+
+  @@unique([workspaceId, email])
+  @@unique([workspaceId, externalId])
+  @@unique([workspaceId, visitorId])
+  @@index([workspaceId])
+}
+
+model Organization {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  externalId   String?
+  name         String
+  domains      String[]
+  plan         String?
+  tags         String[]  @default([])
+  notes        String?
+  customFields Json?     @default("{}")
+  ownerId      String?
+  owner        Member?   @relation("OrgOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  contacts      ContactOrganization[]
+  conversations Conversation[]
+
+  @@unique([workspaceId, externalId])
+  @@index([workspaceId])
+  @@index([workspaceId, ownerId])
+}
+
+model ContactOrganization {
+  id             String           @id @default(cuid())
+  workspaceId    String
+  contactId      String
+  organizationId String
+  isPrimary      Boolean          @default(false)
+  role           ContactOrgRole?
+  source         ContactOrgSource @default(MANUAL)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  contact      Contact      @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([contactId, organizationId])
+  @@index([workspaceId, organizationId])
+  @@index([workspaceId, contactId])
+}
+
+model WorkspaceCounter {
+  workspaceId            String    @id
+  lastConversationNumber Int       @default(0)
+  workspace              Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+}
+
+model ConversationEvent {
+  id             String                @id @default(cuid())
+  workspaceId    String
+  conversationId String
+  actorType      EventActorType
+  actorMemberId  String?
+  actorLabel     String?
+  verb           ConversationEventVerb
+  payload        Json?
+  durationSeconds         Int?
+  durationBusinessSeconds Int?
+  createdAt      DateTime              @default(now())
+  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  actorMember  Member?      @relation(fields: [actorMemberId], references: [id], onDelete: NoAction)
+
+  @@index([conversationId, createdAt])
+  @@index([workspaceId, verb, createdAt])
+  @@index([workspaceId, createdAt])
 }
