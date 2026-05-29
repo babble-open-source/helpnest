@@ -224,9 +224,9 @@ describe('PATCH /api/conversations/[id]', () => {
 
     const res = await PATCH(makeRequest({ status: 'ESCALATED' }), { params: PARAMS })
     expect(res.status).toBe(200)
-    const statusChangedCall = vi.mocked(emitConversationEvent).mock.calls.find(
-      ([opts]) => opts.verb === 'STATUS_CHANGED'
-    )
+    const statusChangedCall = vi
+      .mocked(emitConversationEvent)
+      .mock.calls.find(([opts]) => opts.verb === 'STATUS_CHANGED')
     expect(statusChangedCall).toBeUndefined()
   })
 })

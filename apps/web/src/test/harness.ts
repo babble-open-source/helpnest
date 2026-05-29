@@ -60,9 +60,7 @@ export function registerTestDbTeardown(): void {
     // CASCADE on the FK constraints removes all dependent rows (Member, User,
     // Conversation, Contact, etc.) without needing to enumerate each table.
     try {
-      await testDb.$executeRawUnsafe(
-        `DELETE FROM "Workspace" WHERE slug LIKE 'test-workspace-%'`
-      )
+      await testDb.$executeRawUnsafe(`DELETE FROM "Workspace" WHERE slug LIKE 'test-workspace-%'`)
     } catch {
       // Best-effort: if the delete fails (e.g. FK violation not using CASCADE),
       // log and continue — a hung process is worse than leftover rows.

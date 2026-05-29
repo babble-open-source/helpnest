@@ -136,8 +136,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   if (contact.mergedIntoId) {
     return NextResponse.json(
       {
-        error:
-          'Cannot delete a merged contact. The merge record is required for audit history.',
+        error: 'Cannot delete a merged contact. The merge record is required for audit history.',
       },
       { status: 409 }
     )
