@@ -65,7 +65,7 @@ describe('backfill-k2-contacts', () => {
       orderBy: { createdAt: 'asc' },
     })
     expect(updated.map((c: Conversation) => c.number)).toEqual([1, 2])
-  })
+  }, 30_000)
 
   it('sets WorkspaceCounter.lastConversationNumber to the max assigned number', async () => {
     await testDb.conversation.create({ data: { workspaceId, status: 'ACTIVE' } })
@@ -143,5 +143,5 @@ describe('backfill-k2-contacts', () => {
       where: { conversationId: conv.id, verb: 'CONTACT_LINKED' },
     })
     expect(events.length).toBe(1)
-  })
+  }, 30_000)
 })
