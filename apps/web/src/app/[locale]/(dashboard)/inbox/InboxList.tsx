@@ -21,6 +21,10 @@ interface ConversationSummary {
   messageCount: number
   contact: { id: string; fullName: string | null; email: string | null } | null
   organization: { id: string; name: string; plan: string | null } | null
+  /** Pre-computed contact label: contact.fullName ?? contact.email ?? null */
+  contactName: string | null
+  /** Pre-computed organization label: organization.name ?? null */
+  orgName: string | null
   createdAt: string
   updatedAt: string
 }
@@ -76,7 +80,7 @@ function ConversationList({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <p className="font-medium text-foreground truncate text-sm">
-                {conv.customerName ?? conv.customerEmail ?? t('anonymous')}
+                {conv.contactName ?? conv.customerName ?? conv.customerEmail ?? t('anonymous')}
               </p>
               {conv.aiConfidence !== null && (
                 <Badge
@@ -94,6 +98,9 @@ function ConversationList({
                 </Badge>
               )}
             </div>
+            {conv.orgName && (
+              <p className="text-xs text-muted-foreground truncate">{conv.orgName}</p>
+            )}
             <p className="text-sm text-foreground/80 truncate">
               {conv.subject ?? conv.firstMessage ?? t('noMessages')}
             </p>

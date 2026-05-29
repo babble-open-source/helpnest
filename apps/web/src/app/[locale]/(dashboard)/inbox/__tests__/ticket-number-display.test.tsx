@@ -41,7 +41,11 @@ vi.mock('@/i18n/navigation', () => ({
     href: string
     children: React.ReactNode
     [k: string]: unknown
-  }) => <a href={href} {...rest}>{children}</a>,
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
   useRouter: () => ({ refresh: vi.fn() }),
 }))
 
@@ -89,6 +93,8 @@ const baseConvSummary = {
   messageCount: 3,
   contact: null,
   organization: null,
+  contactName: null as string | null,
+  orgName: null as string | null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 }
@@ -102,7 +108,7 @@ describe('ConversationDetail — ticket number in header', () => {
         conversation={{ ...baseConversation, number: 1042 }}
         members={baseMembers}
         currentMemberId="m1"
-      />,
+      />
     )
     const el = screen.getByText('#1042')
     expect(el).toBeInTheDocument()
@@ -116,7 +122,7 @@ describe('ConversationDetail — ticket number in header', () => {
         conversation={{ ...baseConversation, number: null }}
         members={baseMembers}
         currentMemberId="m1"
-      />,
+      />
     )
     expect(screen.queryByText(/^#\d+$/)).not.toBeInTheDocument()
   })
@@ -132,7 +138,7 @@ describe('InboxList — ticket number in rows', () => {
         escalated={[]}
         active={[{ ...baseConvSummary, id: 'conv_2', number: 2077 }]}
         resolved={[]}
-      />,
+      />
     )
     // Switch to active tab — the component defaults to "escalated" but active is visible via tab
     const activeTab = screen.getByRole('tab', { name: /active/i })
@@ -150,7 +156,7 @@ describe('InboxList — ticket number in rows', () => {
         escalated={[]}
         active={[{ ...baseConvSummary, id: 'conv_3', number: null }]}
         resolved={[]}
-      />,
+      />
     )
     const activeTab = screen.getByRole('tab', { name: /active/i })
     await user.click(activeTab)
@@ -171,7 +177,7 @@ describe('InboxList — ticket number in rows', () => {
         ]}
         active={[]}
         resolved={[]}
-      />,
+      />
     )
     // Default tab is "escalated" — no click needed
     const el = screen.getByText('#101')

@@ -104,6 +104,13 @@ export default async function InboxPage() {
       organization: c.organization
         ? { id: c.organization.id, name: c.organization.name, plan: c.organization.plan ?? null }
         : null,
+      // Pre-compute display labels so the client component has no business logic.
+      // Full fallback chain (contact.fullName ?? email ?? legacy customerName ??
+      // customerEmail ?? "Anonymous") is split: server resolves the contact-record
+      // portion; InboxList handles the remaining customerName/customerEmail/t('anonymous')
+      // fallbacks in case contact is absent.
+      contactName: c.contact?.fullName ?? c.contact?.email ?? null,
+      orgName: c.organization?.name ?? null,
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
     }))
