@@ -236,82 +236,131 @@ export function ConversationDetail({ conversation: initialConv, members, current
             {conversation.messages.length === 0 && (
               <p className="text-sm text-muted-foreground text-center py-8">{t('noMessages')}</p>
             )}
-            {conversation.messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={cn(
-                  'flex items-end gap-2',
-                  msg.role === 'CUSTOMER'
-                    ? 'justify-end'
-                    : msg.role === 'SYSTEM'
-                      ? 'justify-center'
-                      : 'justify-start'
-                )}
-              >
-                {/* Role avatar dot — left side for AI/AGENT */}
-                {msg.role !== 'CUSTOMER' && msg.role !== 'SYSTEM' && (
-                  <div
-                    className={cn(
-                      'w-1.5 h-1.5 rounded-full shrink-0 mb-2',
-                      msg.role === 'AI' ? 'bg-muted-foreground' : 'bg-emerald-500'
-                    )}
-                  />
-                )}
+            {conversation.messages.map((msg) => {
+              const isInternalNote = msg.role === 'AGENT' && msg.isInternal
 
+              return (
                 <div
+                  key={msg.id}
                   className={cn(
-                    'flex flex-col max-w-[72%]',
+                    'flex items-end gap-2',
                     msg.role === 'CUSTOMER'
-                      ? 'items-end'
+                      ? 'justify-end'
                       : msg.role === 'SYSTEM'
-                        ? 'items-center'
-                        : 'items-start'
+                        ? 'justify-center'
+                        : 'justify-start'
                   )}
                 >
-                  {msg.role !== 'SYSTEM' && (
-                    <p className="text-xs font-medium mb-1 text-muted-foreground">
-                      {msg.role === 'CUSTOMER'
-                        ? t('customer')
-                        : msg.role === 'AI'
-                          ? t('aiAgent')
-                          : t('you')}
-                    </p>
+                  {/* Role avatar dot — left side for AI/AGENT */}
+                  {msg.role !== 'CUSTOMER' && msg.role !== 'SYSTEM' && (
+                    <div
+                      className={cn(
+                        'w-1.5 h-1.5 rounded-full shrink-0 mb-2',
+                        msg.role === 'AI'
+                          ? 'bg-muted-foreground'
+                          : isInternalNote
+                            ? 'bg-amber-400'
+                            : 'bg-emerald-500'
+                      )}
+                    />
                   )}
 
                   <div
                     className={cn(
-                      'w-fit rounded-2xl px-3.5 py-2',
+                      'flex flex-col max-w-[72%]',
                       msg.role === 'CUSTOMER'
-                        ? 'bg-primary text-primary-foreground rounded-br-sm'
-                        : msg.role === 'AI'
-                          ? 'bg-card border rounded-bl-sm'
-                          : msg.role === 'AGENT'
-                            ? 'bg-emerald-500/10 border border-emerald-500/20 rounded-bl-sm'
-                            : 'bg-muted/40 text-muted-foreground italic text-xs px-3 py-1.5 rounded-full'
+                        ? 'items-end'
+                        : msg.role === 'SYSTEM'
+                          ? 'items-center'
+                          : 'items-start'
                     )}
                   >
-                    <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
-                  </div>
-
-                  <div className="flex items-center gap-2 mt-1">
-                    {msg.confidence !== null && msg.role === 'AI' && (
-                      <span className="text-xs text-muted-foreground">
-                        {Math.round(msg.confidence * 100)}
-                        {t('confidence')}
-                      </span>
+                    {msg.role !== 'SYSTEM' && (
+                      <div className="flex items-center gap-1.5 mb-1">
+                        {isInternalNote && (
+                          <span
+                            aria-label="Internal note"
+                            className="flex items-center gap-0.5"
+                            title="Internal note"
+                          >
+                            {/* Lock icon — inline SVG for zero additional imports */}
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="w-3 h-3 text-amber-600"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <rect width="18" height="11" x="3" y="11" rx="2" ry="2" />
+                              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                          </span>
+                        )}
+                        <p
+                          className={cn(
+                            'text-xs font-medium text-muted-foreground',
+                            isInternalNote && 'text-amber-700'
+                          )}
+                        >
+                          {msg.role === 'CUSTOMER'
+                            ? t('customer')
+                            : msg.role === 'AI'
+                              ? t('aiAgent')
+                              : isInternalNote
+                                ? 'Internal note'
+                                : t('you')}
+                        </p>
+                      </div>
                     )}
-                    <span className="text-xs text-muted-foreground/60">
-                      {formatTime(msg.createdAt)}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Role avatar dot — right side for CUSTOMER */}
-                {msg.role === 'CUSTOMER' && (
-                  <div className="w-1.5 h-1.5 rounded-full shrink-0 mb-2 bg-foreground/40" />
-                )}
-              </div>
-            ))}
+                    <div
+                      className={cn(
+                        'w-fit rounded-2xl px-3.5 py-2',
+                        msg.role === 'CUSTOMER'
+                          ? 'bg-primary text-primary-foreground rounded-br-sm'
+                          : msg.role === 'AI'
+                            ? 'bg-card border rounded-bl-sm'
+                            : isInternalNote
+                              ? 'bg-amber-50 border border-amber-200 rounded-bl-sm'
+                              : msg.role === 'AGENT'
+                                ? 'bg-emerald-500/10 border border-emerald-500/20 rounded-bl-sm'
+                                : 'bg-muted/40 text-muted-foreground italic text-xs px-3 py-1.5 rounded-full'
+                      )}
+                    >
+                      <p
+                        className={cn(
+                          'text-sm whitespace-pre-wrap leading-relaxed',
+                          isInternalNote && 'text-amber-900'
+                        )}
+                      >
+                        {msg.content}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 mt-1">
+                      {msg.confidence !== null && msg.role === 'AI' && (
+                        <span className="text-xs text-muted-foreground">
+                          {Math.round(msg.confidence * 100)}
+                          {t('confidence')}
+                        </span>
+                      )}
+                      <span className="text-xs text-muted-foreground/60">
+                        {formatTime(msg.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Role avatar dot — right side for CUSTOMER */}
+                  {msg.role === 'CUSTOMER' && (
+                    <div className="w-1.5 h-1.5 rounded-full shrink-0 mb-2 bg-foreground/40" />
+                  )}
+                </div>
+              )
+            })}
             <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
