@@ -4,6 +4,10 @@ import { requireAuth } from '@/lib/auth-api'
 import { redis } from '@/lib/redis'
 import { checkLimit } from '@/lib/cloud'
 import { isByok } from '@/lib/ai/resolve-provider'
+import { assignConversationNumber } from '@/lib/ticket-number'
+import { resolveOrCreateContact } from '@/lib/contact-resolver'
+import { autoAssociateContactToOrg } from '@/lib/org-associator'
+import { emitConversationEvent } from '@/lib/conversation-events'
 
 // Widget-facing CORS (public, any origin)
 const WIDGET_CORS_HEADERS = {
@@ -90,14 +94,14 @@ export async function POST(request: Request) {
     )
   }
 
-  let body: { workspaceSlug?: string; customerName?: string; customerEmail?: string; visitorId?: string }
+  let body: {
+    workspaceSlug?: string
+    customerName?: string
+    customerEmail?: string
+    visitorId?: string
+  }
   try {
-    body = (await request.json()) as {
-      workspaceSlug?: string
-      customerName?: string
-      customerEmail?: string
-      visitorId?: string
-    }
+    body = (await request.json()) as typeof body
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: WIDGET_CORS_HEADERS })
   }
@@ -110,23 +114,26 @@ export async function POST(request: Request) {
     )
   }
 
-  const workspace = await prisma.workspace.findFirst({
+  // Pre-flight workspace lookup — early-exit before touching the transaction.
+  // The workspace is re-fetched inside the tx to guard against a TOCTOU race
+  // where the workspace is deleted between this check and the write.
+  const workspacePrecheck = await prisma.workspace.findFirst({
     where: { slug: workspaceSlug },
     select: { id: true, aiEnabled: true, aiGreeting: true, aiProvider: true, aiApiKey: true },
   })
-  if (!workspace) {
+  if (!workspacePrecheck) {
     return NextResponse.json(
       { error: 'Workspace not found' },
       { status: 404, headers: WIDGET_CORS_HEADERS },
     )
   }
 
-  // Pre-check AI credit quota to reject early if exhausted.
-  // Actual credit consumption happens per-message in /conversations/[id]/messages
-  // when the AI agent runs — not here (conversation creation is just a container).
-  const limit = await checkLimit(workspace.id, 'aiCredits')
-  const byokAllowed = limit.plan === 'SELF_HOSTED' || limit.plan === 'PRO' || limit.plan === 'BUSINESS'
-  if (!isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })) {
+  // Pre-check AI credit quota — reject before touching the transaction.
+  // Actual credit consumption happens per-message in /conversations/[id]/messages.
+  const limit = await checkLimit(workspacePrecheck.id, 'aiCredits')
+  const byokAllowed =
+    limit.plan === 'SELF_HOSTED' || limit.plan === 'PRO' || limit.plan === 'BUSINESS'
+  if (!isByok({ aiApiKey: workspacePrecheck.aiApiKey }, { byok: byokAllowed })) {
     if (!limit.allowed) {
       return NextResponse.json(
         { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },
@@ -135,28 +142,124 @@ export async function POST(request: Request) {
     }
   }
 
-  const conversation = await prisma.conversation.create({
-    data: {
-      workspaceId: workspace.id,
-      customerName: customerName?.slice(0, 200) || null,
-      customerEmail: customerEmail?.slice(0, 320) || null,
-      visitorId: visitorId?.slice(0, 128) || null,
-    },
-    select: {
-      id: true,
-      sessionToken: true,
-      status: true,
-      createdAt: true,
-    },
-  })
+  // ── Transactional create ──────────────────────────────────────────────────
+  // All identity resolution and the conversation row are written atomically.
+  // A partial failure (e.g. contact upsert succeeds but conversation.create
+  // fails) is rolled back in full. emitConversationEvent receives `tx` for
+  // SLA-critical events (CONVERSATION_CREATED, CONTACT_LINKED, ORG_LINKED).
 
-  // AI credits are consumed per-message in /conversations/[id]/messages, not here
+  type ConvRow = {
+    id: string
+    sessionToken: string
+    status: string
+    number: number | null
+    contactId: string | null
+    organizationId: string | null
+    createdAt: Date
+  }
+  type TxResult = {
+    conversation: ConvRow
+    workspace: { id: string; aiEnabled: boolean; aiGreeting: string | null }
+  }
+
+  let txResult: TxResult
+  try {
+    txResult = await prisma.$transaction(async (tx) => {
+      // Re-fetch workspace inside tx — guards against deletion between the
+      // pre-check above and this write.
+      const ws = await tx.workspace.findFirst({
+        where: { slug: workspaceSlug },
+        select: { id: true, aiEnabled: true, aiGreeting: true },
+      })
+      if (!ws) throw new Error('WORKSPACE_NOT_FOUND')
+
+      // 1. Assign a gapless, per-workspace ticket number.
+      const number = await assignConversationNumber(tx, ws.id)
+
+      // 2. Resolve or create a Contact from the available identity signals.
+      const contact = await resolveOrCreateContact(tx, ws.id, {
+        email: customerEmail?.slice(0, 320) || undefined,
+        visitorId: visitorId?.slice(0, 128) || undefined,
+        fullName: customerName?.slice(0, 200) || undefined,
+      })
+
+      // 3. Auto-associate the contact to an org via email domain.
+      const org = await autoAssociateContactToOrg(tx, ws.id, contact)
+
+      // 4. Create the conversation with full identity snapshot.
+      const conv = await tx.conversation.create({
+        data: {
+          workspaceId: ws.id,
+          number,
+          customerName: customerName?.slice(0, 200) || null,
+          customerEmail: customerEmail?.slice(0, 320) || null,
+          visitorId: visitorId?.slice(0, 128) || null,
+          contactId: contact.id,
+          organizationId: org?.id ?? null,
+        },
+        select: {
+          id: true,
+          sessionToken: true,
+          status: true,
+          number: true,
+          contactId: true,
+          organizationId: true,
+          createdAt: true,
+        },
+      })
+
+      // 5. Emit audit events inside the same tx so they are rolled back with
+      //    the conversation row on failure.
+      await emitConversationEvent({
+        tx,
+        workspaceId: ws.id,
+        conversationId: conv.id,
+        actorType: 'CUSTOMER',
+        actorLabel: customerName?.slice(0, 200) || 'Anonymous',
+        verb: 'CONVERSATION_CREATED',
+        payload: { source: 'widget' },
+      })
+
+      await emitConversationEvent({
+        tx,
+        workspaceId: ws.id,
+        conversationId: conv.id,
+        actorType: 'SYSTEM',
+        verb: 'CONTACT_LINKED',
+        payload: { contactId: contact.id, source: 'widget' },
+      })
+
+      if (org) {
+        await emitConversationEvent({
+          tx,
+          workspaceId: ws.id,
+          conversationId: conv.id,
+          actorType: 'SYSTEM',
+          verb: 'ORG_LINKED',
+          payload: { organizationId: org.id, source: 'DOMAIN' },
+        })
+      }
+
+      return { conversation: conv, workspace: ws }
+    }) as TxResult
+  } catch (err) {
+    if (err instanceof Error && err.message === 'WORKSPACE_NOT_FOUND') {
+      return NextResponse.json(
+        { error: 'Workspace not found' },
+        { status: 404, headers: WIDGET_CORS_HEADERS },
+      )
+    }
+    throw err
+  }
+
+  const { conversation, workspace } = txResult
 
   return NextResponse.json(
     {
       id: conversation.id,
       sessionToken: conversation.sessionToken,
       status: conversation.status,
+      number: conversation.number,
       aiEnabled: workspace.aiEnabled,
       greeting: workspace.aiGreeting || 'Hi! How can I help you today?',
       createdAt: conversation.createdAt,
