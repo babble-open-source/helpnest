@@ -4,7 +4,16 @@ import path from 'path'
 export default defineConfig({
   test: {
     globals: true,
+    // Default environment for DB / integration tests (they import Prisma, pg, etc.).
+    // Component tests opt-in to jsdom via the // @vitest-environment jsdom pragma
+    // at the top of each file — no config change required for those files.
+    // environmentMatchGlobs provides the same opt-in declaratively for any file
+    // placed under src/**/__tests__/components/ or ending in .component.test.tsx.
     environment: 'node',
+    environmentMatchGlobs: [
+      ['src/**/__tests__/components/**', 'jsdom'],
+      ['src/**/*.component.test.tsx', 'jsdom'],
+    ],
     globalSetup: ['./src/test/global-setup.ts'],
     setupFiles: ['./src/test/setup.ts'],
     // Run all test files sequentially in a single thread.

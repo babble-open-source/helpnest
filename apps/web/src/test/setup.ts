@@ -1,6 +1,8 @@
 /**
  * Vitest setupFiles — runs in every worker process before any test module
- * is imported. Responsible only for loading the test environment variables.
+ * is imported. Responsible for:
+ *  1. Loading test environment variables (DATABASE_URL → helpnest_test)
+ *  2. Registering @testing-library/jest-dom matchers (toBeInTheDocument, etc.)
  *
  * Schema synchronisation (prisma db push) is intentionally NOT here — it
  * belongs in global-setup.ts, which runs once per test invocation. Doing
@@ -12,8 +14,15 @@
  *  - We use the prisma binary from packages/db (v7.5.0) because that matches
  *    the generated client. The root `npx prisma` resolves an older globally
  *    installed version and is NOT compatible.
+ *
+ * jest-dom note:
+ *  Importing @testing-library/jest-dom in a node environment is safe — it
+ *  augments the global `expect` with DOM matchers. Those matchers are unused
+ *  in node/DB tests but cause no failures. Component tests (jsdom environment)
+ *  get the matchers for free from the same import.
  */
 
+import '@testing-library/jest-dom'
 import path from 'path'
 import dotenv from 'dotenv'
 
