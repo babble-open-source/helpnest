@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select'
 import { ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { CustomerContextPanel } from './CustomerContextPanel'
 
 interface ContactSummary {
   id: string
@@ -103,6 +104,7 @@ export function ConversationDetail({ conversation: initialConv, members, current
   const tc = useTranslations('common')
   const format = useFormatter()
   const [conversation, setConversation] = useState(initialConv)
+  const [linkedContact, setLinkedContact] = useState(initialConv.contact)
   const [reply, setReply] = useState('')
   const [sending, setSending] = useState(false)
   const [updating, setUpdating] = useState(false)
@@ -450,6 +452,23 @@ export function ConversationDetail({ conversation: initialConv, members, current
             )}
           </dl>
         </div>
+
+        {/* Customer context */}
+        <CustomerContextPanel
+          conversationId={conversation.id}
+          contact={linkedContact}
+          organization={conversation.organization}
+          onContactLinked={(c) =>
+            setLinkedContact({
+              id: c.id,
+              fullName: c.fullName,
+              email: c.email,
+              phone: null,
+              avatarUrl: null,
+              primaryOrganization: conversation.organization,
+            })
+          }
+        />
 
         {/* Assignment */}
         <div>
