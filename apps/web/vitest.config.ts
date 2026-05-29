@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    globalSetup: ['./src/test/global-setup.ts'],
     setupFiles: ['./src/test/setup.ts'],
     // Exclude Playwright e2e specs — they use @playwright/test, not vitest.
     // Playwright has its own runner configured via playwright.config.ts.

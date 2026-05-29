@@ -5,7 +5,8 @@
  *  - testDb connects to helpnest_test successfully
  *  - createTestWorkspace inserts a real workspace+user+member row
  *  - createTestConversation creates an ACTIVE conversation
- *  - truncateTicketingTables() runs without crashing at Task 1 schema
+ *  - truncateTicketingTables() clears Conversation/Message rows and runs
+ *    without crashing on the not-yet-existing ticketing schema (Tasks 2-4)
  *
  * Assertions about not-yet-existing columns/tables are marked it.todo
  * and will be enabled in their respective tasks:
@@ -15,17 +16,17 @@
  *  - ConversationEvent table                           — Task 2
  */
 
-import { describe, it, expect, afterAll } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import {
   testDb,
+  registerTestDbTeardown,
   truncateTicketingTables,
   createTestWorkspace,
   createTestConversation,
 } from './harness'
 
-afterAll(async () => {
-  await testDb.$disconnect()
-})
+// Disconnect the shared testDb client after all tests in this file complete.
+registerTestDbTeardown()
 
 describe('harness — database connectivity', () => {
   it('can execute a raw query against helpnest_test', async () => {
@@ -40,10 +41,11 @@ describe('harness — database connectivity', () => {
 
 describe('harness — createTestWorkspace', () => {
   it('creates a workspace, user, and member row', async () => {
-    const { workspaceId, userId, memberId } = await createTestWorkspace('smoke')
+    const { workspaceId, userId, memberId, slug } = await createTestWorkspace('smoke')
 
     const workspace = await testDb.workspace.findUnique({ where: { id: workspaceId } })
     expect(workspace).not.toBeNull()
+    expect(workspace!.slug).toBe(slug)
     expect(workspace!.slug).toMatch(/^test-workspace-/)
 
     const user = await testDb.user.findUnique({ where: { id: userId } })
@@ -60,7 +62,8 @@ describe('harness — createTestWorkspace', () => {
   it('generates unique slugs when called multiple times', async () => {
     const a = await createTestWorkspace()
     const b = await createTestWorkspace()
-    expect(a.workspaceId).not.toBe(b.workspaceId)
+    // Assert on slug (the unique-constrained value), not on CUID workspaceId.
+    expect(a.slug).not.toBe(b.slug)
   })
 })
 
@@ -84,6 +87,20 @@ describe('harness — truncateTicketingTables', () => {
   it('can be called multiple times without error', async () => {
     await truncateTicketingTables()
     await truncateTicketingTables()
+  })
+
+  it('clears Conversation and Message rows', async () => {
+    const { workspaceId } = await createTestWorkspace()
+    const { conversationId } = await createTestConversation(workspaceId)
+
+    // Confirm rows exist before truncate.
+    const before = await testDb.conversation.findUnique({ where: { id: conversationId } })
+    expect(before).not.toBeNull()
+
+    await truncateTicketingTables()
+
+    const after = await testDb.conversation.findUnique({ where: { id: conversationId } })
+    expect(after).toBeNull()
   })
 })
 
