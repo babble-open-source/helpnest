@@ -93,9 +93,7 @@ function renderWithMessages(messages: ReturnType<typeof message>[]) {
 
 describe('Markdown message rendering', () => {
   it('renders bold markdown in AI messages as <strong>, without raw ** markers', () => {
-    renderWithMessages([
-      message({ content: 'Click **Edit Configuration** to begin.' }),
-    ])
+    renderWithMessages([message({ content: 'Click **Edit Configuration** to begin.' })])
 
     const strong = screen.getByText('Edit Configuration')
     expect(strong.tagName).toBe('STRONG')
@@ -113,9 +111,7 @@ describe('Markdown message rendering', () => {
   })
 
   it('renders http(s) links as anchors with safe target and rel', () => {
-    renderWithMessages([
-      message({ content: 'See [the docs](https://example.com/docs) for more.' }),
-    ])
+    renderWithMessages([message({ content: 'See [the docs](https://example.com/docs) for more.' })])
 
     const anchor = screen.getByRole('link', { name: 'the docs' })
     expect(anchor).toHaveAttribute('href', 'https://example.com/docs')
@@ -124,9 +120,7 @@ describe('Markdown message rendering', () => {
   })
 
   it('renders AI citation artifacts like [title](2) as plain text, not a link', () => {
-    renderWithMessages([
-      message({ content: 'Check the article on [editing a live agent](2).' }),
-    ])
+    renderWithMessages([message({ content: 'Check the article on [editing a live agent](2).' })])
 
     const citation = screen.getByText('editing a live agent')
     expect(citation.closest('a')).toBeNull()
