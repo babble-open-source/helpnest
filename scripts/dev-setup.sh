@@ -20,6 +20,12 @@ if [ ! -f apps/web/.env.local ]; then
   echo "📋 Created apps/web/.env.local (Next.js env)"
 fi
 
+# Test env for the apps/web integration tests (vitest loads apps/web/.env.test)
+if [ ! -f apps/web/.env.test ]; then
+  cp apps/web/.env.test.example apps/web/.env.test
+  echo "📋 Created apps/web/.env.test from .env.test.example (test env)"
+fi
+
 # Install dependencies
 echo "📦 Installing dependencies..."
 pnpm install

@@ -39,8 +39,9 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     # apps/web has integration tests that need a real Postgres. The vitest
-    # globalSetup runs `prisma db push` against DATABASE_URL (from .env.test ->
-    # localhost:5432/helpnest_test), so the test job must provide that database.
+    # globalSetup runs `prisma db push` against DATABASE_URL (set via the job
+    # env below — apps/web/.env.test is gitignored and absent in CI), so the
+    # test job must provide that database.
     services:
       postgres:
         image: postgres:16-alpine
@@ -56,9 +57,11 @@ jobs:
           --health-timeout 5s
           --health-retries 10
     env:
-      # Mirrors apps/web/.env.test so the globalSetup db push and the tests
-      # target the service container. AUTH_SECRET is set in case a route test
-      # imports the auth config at module load.
+      # Mirrors apps/web/.env.test.example so the globalSetup db push and the
+      # tests target the service container (the real .env.test is gitignored
+      # and not present in CI; vitest setup falls back to these env vars).
+      # AUTH_SECRET is set in case a route test imports the auth config at
+      # module load.
       DATABASE_URL: postgresql://helpnest:helpnest@localhost:5432/helpnest_test
       AUTH_SECRET: ci-secret-for-tests
       NEXTAUTH_URL: http://localhost:3000

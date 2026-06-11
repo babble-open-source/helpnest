@@ -113,7 +113,8 @@ export async function GET(request: Request) {
   // Determine help center base URL: custom domain takes priority; otherwise derive from
   // the request host so that local dev (http://localhost:3000) and production both work correctly.
   // Always include the full path prefix so consumers can append /{collection}/{article} directly.
-  const customDomain = (workspace as Record<string, unknown>).customDomain as string | null ?? null
+  const customDomain =
+    ((workspace as Record<string, unknown>).customDomain as string | null) ?? null
   const requestUrl = new URL(request.url)
   const appBase = `${requestUrl.protocol}//${requestUrl.host}`
   const helpCenterUrl = customDomain

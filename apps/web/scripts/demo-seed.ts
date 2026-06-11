@@ -52,10 +52,24 @@ async function main() {
 
   // Organizations (B2B accounts)
   const acme = await prisma.organization.create({
-    data: { workspaceId: ws.id, name: 'Acme Corp', domains: ['acme.test'], plan: 'Business', ownerId: member.id, tags: ['enterprise'] },
+    data: {
+      workspaceId: ws.id,
+      name: 'Acme Corp',
+      domains: ['acme.test'],
+      plan: 'Business',
+      ownerId: member.id,
+      tags: ['enterprise'],
+    },
   })
   const globex = await prisma.organization.create({
-    data: { workspaceId: ws.id, name: 'Globex Inc', domains: ['globex.test'], plan: 'Pro', ownerId: member.id, tags: ['growth'] },
+    data: {
+      workspaceId: ws.id,
+      name: 'Globex Inc',
+      domains: ['globex.test'],
+      plan: 'Pro',
+      ownerId: member.id,
+      tags: ['growth'],
+    },
   })
 
   // Contacts linked to orgs
@@ -64,7 +78,14 @@ async function main() {
       data: { workspaceId: ws.id, email, fullName, phone: phone ?? null },
     })
     await prisma.contactOrganization.create({
-      data: { workspaceId: ws.id, contactId: c.id, organizationId: org.id, isPrimary: true, role: 'MEMBER', source: 'DOMAIN' },
+      data: {
+        workspaceId: ws.id,
+        contactId: c.id,
+        organizationId: org.id,
+        isPrimary: true,
+        role: 'MEMBER',
+        source: 'DOMAIN',
+      },
     })
     return c
   }
@@ -74,9 +95,17 @@ async function main() {
   const dev = await contact('dev@globex.test', 'Priya Nair', globex)
 
   let n = 0
-  async function nextNumber() { n += 1; return n }
+  async function nextNumber() {
+    n += 1
+    return n
+  }
 
-  type Msg = { role: 'CUSTOMER' | 'AI' | 'AGENT' | 'SYSTEM'; content: string; isInternal?: boolean; confidence?: number }
+  type Msg = {
+    role: 'CUSTOMER' | 'AI' | 'AGENT' | 'SYSTEM'
+    content: string
+    isInternal?: boolean
+    confidence?: number
+  }
   async function ticket(opts: {
     status: 'ESCALATED' | 'ACTIVE' | 'HUMAN_ACTIVE' | 'RESOLVED_AI' | 'RESOLVED_HUMAN'
     subject: string
@@ -107,7 +136,10 @@ async function main() {
         visitorId: opts.anonymous?.visitorId ?? null,
       },
     })
-    await prisma.workspaceCounter.update({ where: { workspaceId: ws.id }, data: { lastConversationNumber: number } })
+    await prisma.workspaceCounter.update({
+      where: { workspaceId: ws.id },
+      data: { lastConversationNumber: number },
+    })
     // Stagger createdAt per message — the inbox sorts by createdAt asc, and
     // rapid sequential inserts can collide at millisecond precision.
     const baseTime = Date.now() - opts.messages.length * 60_000
@@ -127,84 +159,192 @@ async function main() {
       })
     }
     await prisma.conversationEvent.create({
-      data: { workspaceId: ws.id, conversationId: conv.id, actorType: 'CUSTOMER', actorLabel: opts.contact?.fullName ?? 'Customer', verb: 'CONVERSATION_CREATED' },
+      data: {
+        workspaceId: ws.id,
+        conversationId: conv.id,
+        actorType: 'CUSTOMER',
+        actorLabel: opts.contact?.fullName ?? 'Customer',
+        verb: 'CONVERSATION_CREATED',
+      },
     })
     if (opts.contact) {
       await prisma.conversationEvent.create({
-        data: { workspaceId: ws.id, conversationId: conv.id, actorType: 'SYSTEM', actorLabel: 'System', verb: 'CONTACT_LINKED', payload: { contactId: opts.contact.id } },
+        data: {
+          workspaceId: ws.id,
+          conversationId: conv.id,
+          actorType: 'SYSTEM',
+          actorLabel: 'System',
+          verb: 'CONTACT_LINKED',
+          payload: { contactId: opts.contact.id },
+        },
       })
     }
     if (opts.assigned) {
       await prisma.conversationEvent.create({
-        data: { workspaceId: ws.id, conversationId: conv.id, actorType: 'AGENT', actorMemberId: member.id, actorLabel: 'Demo Agent', verb: 'ASSIGNED', payload: { toMemberId: member.id } },
+        data: {
+          workspaceId: ws.id,
+          conversationId: conv.id,
+          actorType: 'AGENT',
+          actorMemberId: member.id,
+          actorLabel: 'Demo Agent',
+          verb: 'ASSIGNED',
+          payload: { toMemberId: member.id },
+        },
       })
     }
     return conv
   }
 
   await ticket({
-    status: 'ESCALATED', subject: 'Cannot export invoices to CSV', contact: sarah, org: acme, assigned: true,
-    aiConfidence: 0.24, escalationReason: 'Low confidence on a billing/export edge case',
+    status: 'ESCALATED',
+    subject: 'Cannot export invoices to CSV',
+    contact: sarah,
+    org: acme,
+    assigned: true,
+    aiConfidence: 0.24,
+    escalationReason: 'Low confidence on a billing/export edge case',
     messages: [
-      { role: 'CUSTOMER', content: 'When I click Export on the Invoices page nothing downloads. We need the Q2 CSV for our auditor today.' },
-      { role: 'AI', content: 'I can help with invoice exports. Could you tell me which browser you are using and whether you see any error message?', confidence: 0.24 },
+      {
+        role: 'CUSTOMER',
+        content:
+          'When I click Export on the Invoices page nothing downloads. We need the Q2 CSV for our auditor today.',
+      },
+      {
+        role: 'AI',
+        content:
+          'I can help with invoice exports. Could you tell me which browser you are using and whether you see any error message?',
+        confidence: 0.24,
+      },
       { role: 'SYSTEM', content: 'AI confidence below threshold — escalated to a human agent.' },
-      { role: 'AGENT', content: 'Hi Sarah, sorry about that! This is a known issue with Safari pop-up blocking. Try Chrome, or allow downloads for our domain — the CSV should appear immediately.' },
-      { role: 'AGENT', isInternal: true, content: 'Internal: confirmed Safari download bug — eng ticket HN-4821. Tell enterprise accounts to use Chrome until the fix ships next sprint.' },
+      {
+        role: 'AGENT',
+        content:
+          'Hi Sarah, sorry about that! This is a known issue with Safari pop-up blocking. Try Chrome, or allow downloads for our domain — the CSV should appear immediately.',
+      },
+      {
+        role: 'AGENT',
+        isInternal: true,
+        content:
+          'Internal: confirmed Safari download bug — eng ticket HN-4821. Tell enterprise accounts to use Chrome until the fix ships next sprint.',
+      },
     ],
   })
 
   await ticket({
-    status: 'HUMAN_ACTIVE', subject: 'Refund for duplicate charge', contact: mia, org: acme, assigned: true,
+    status: 'HUMAN_ACTIVE',
+    subject: 'Refund for duplicate charge',
+    contact: mia,
+    org: acme,
+    assigned: true,
     messages: [
-      { role: 'CUSTOMER', content: 'We were charged twice for the Business plan this month. Please refund the duplicate.' },
-      { role: 'AI', content: 'I see two charges on your account this cycle. A human agent will confirm and process the refund.', confidence: 0.55 },
-      { role: 'AGENT', content: 'Hi Mia — confirmed the duplicate charge. I have issued a refund; it will appear in 3–5 business days.' },
-      { role: 'AGENT', isInternal: true, content: 'Internal: refund approved by finance (ref RF-2210). Root cause = retry on a timed-out Stripe webhook.' },
+      {
+        role: 'CUSTOMER',
+        content:
+          'We were charged twice for the Business plan this month. Please refund the duplicate.',
+      },
+      {
+        role: 'AI',
+        content:
+          'I see two charges on your account this cycle. A human agent will confirm and process the refund.',
+        confidence: 0.55,
+      },
+      {
+        role: 'AGENT',
+        content:
+          'Hi Mia — confirmed the duplicate charge. I have issued a refund; it will appear in 3–5 business days.',
+      },
+      {
+        role: 'AGENT',
+        isInternal: true,
+        content:
+          'Internal: refund approved by finance (ref RF-2210). Root cause = retry on a timed-out Stripe webhook.',
+      },
     ],
   })
 
   await ticket({
-    status: 'ACTIVE', subject: 'How do I add teammates?', contact: tom, org: globex, aiConfidence: 0.92,
+    status: 'ACTIVE',
+    subject: 'How do I add teammates?',
+    contact: tom,
+    org: globex,
+    aiConfidence: 0.92,
     messages: [
       { role: 'CUSTOMER', content: 'How do I invite my teammates to our workspace?' },
-      { role: 'AI', content: 'Go to Settings → Members → Invite, enter their email, and pick a role (Admin, Editor, or Viewer). They will get an email invite.', confidence: 0.92 },
+      {
+        role: 'AI',
+        content:
+          'Go to Settings → Members → Invite, enter their email, and pick a role (Admin, Editor, or Viewer). They will get an email invite.',
+        confidence: 0.92,
+      },
     ],
   })
 
   await ticket({
-    status: 'RESOLVED_AI', subject: 'Reset my password', contact: dev, org: globex,
+    status: 'RESOLVED_AI',
+    subject: 'Reset my password',
+    contact: dev,
+    org: globex,
     resolutionSummary: 'AI guided the customer through the password reset link.',
     messages: [
       { role: 'CUSTOMER', content: 'I forgot my password and cannot log in.' },
-      { role: 'AI', content: 'No problem — click "Forgot password" on the login page and follow the reset link sent to your email. Resolved?', confidence: 0.95 },
+      {
+        role: 'AI',
+        content:
+          'No problem — click "Forgot password" on the login page and follow the reset link sent to your email. Resolved?',
+        confidence: 0.95,
+      },
       { role: 'CUSTOMER', content: 'That worked, thanks!' },
     ],
   })
 
   await ticket({
-    status: 'RESOLVED_HUMAN', subject: 'Custom domain SSL not provisioning', contact: sarah, org: acme, assigned: true,
+    status: 'RESOLVED_HUMAN',
+    subject: 'Custom domain SSL not provisioning',
+    contact: sarah,
+    org: acme,
+    assigned: true,
     resolutionSummary: 'DNS CNAME corrected; SSL issued.',
     messages: [
       { role: 'CUSTOMER', content: 'Our custom help-center domain shows an SSL warning.' },
-      { role: 'AGENT', content: 'Your CNAME was pointing to the wrong target. I corrected it and the certificate has been issued — please re-check.' },
+      {
+        role: 'AGENT',
+        content:
+          'Your CNAME was pointing to the wrong target. I corrected it and the certificate has been issued — please re-check.',
+      },
       { role: 'CUSTOMER', content: 'Looks good now. Thank you!' },
     ],
   })
 
   // Anonymous conversation — demonstrates the "No contact linked / Link contact" empty state
   await ticket({
-    status: 'ACTIVE', subject: 'Pricing for 50 seats?',
+    status: 'ACTIVE',
+    subject: 'Pricing for 50 seats?',
     anonymous: { customerName: 'Website visitor', visitorId: 'visitor-demo-001' },
     aiConfidence: 0.7,
     messages: [
       { role: 'CUSTOMER', content: 'What would the Business plan cost for about 50 agents?' },
-      { role: 'AI', content: 'The Business plan is usage-based above 50 members — I can connect you with sales for an exact quote.', confidence: 0.7 },
+      {
+        role: 'AI',
+        content:
+          'The Business plan is usage-based above 50 members — I can connect you with sales for an exact quote.',
+        confidence: 0.7,
+      },
     ],
   })
 
   console.log('Demo seeded.')
-  console.log(JSON.stringify({ workspaceSlug: SLUG, login: { email: EMAIL, password: PASSWORD }, tickets: n }, null, 2))
+  console.log(
+    JSON.stringify(
+      { workspaceSlug: SLUG, login: { email: EMAIL, password: PASSWORD }, tickets: n },
+      null,
+      2
+    )
+  )
 }
 
-main().catch((e) => { console.error(e); process.exit(1) }).finally(() => prisma.$disconnect())
+main()
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(() => prisma.$disconnect())

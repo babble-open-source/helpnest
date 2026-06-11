@@ -1,7 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { prisma } from '@/lib/db'
 import { resolveOrCreateContact } from '@/lib/contact-resolver'
-import type { Contact } from '@helpnest/db'
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -20,7 +20,7 @@ export async function getHelpBaseUrl(): Promise<string | null> {
 export function buildHelpPath(
   workspaceSlug: string,
   subPath: string,
-  externalBaseUrl: string | null,
+  externalBaseUrl: string | null
 ): string {
   if (externalBaseUrl) {
     // Custom domain / subdomain — clean path without /{slug}/help prefix

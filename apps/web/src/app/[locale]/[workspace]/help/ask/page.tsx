@@ -1,6 +1,5 @@
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { notFound } from 'next/navigation'
-import { getTranslations } from 'next-intl/server'
 import { AskAIClient } from './AskAIClient'
 
 interface Props {
@@ -9,7 +8,6 @@ interface Props {
 
 export default async function AskAIPage(props: Props) {
   const params = await props.params
-  const t = await getTranslations('askAI')
   const columns = await getWorkspaceColumnSet()
   const workspace = await prisma.workspace.findFirst({
     where: { slug: params.workspace },

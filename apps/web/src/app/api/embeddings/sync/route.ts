@@ -5,7 +5,7 @@ import { resolveWorkspaceId } from '@/lib/workspace'
 import { qdrant, COLLECTION_NAME, ensureCollection, chunkText, buildPointId } from '@/lib/qdrant'
 import { embedBatch } from '@/lib/embeddings'
 
-export async function POST(request: Request) {
+export async function POST() {
   const session = await auth()
   const userId = await resolveSessionUserId(session)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -23,7 +23,8 @@ export async function POST(request: Request) {
     },
     select: { workspaceId: true },
   })
-  if (!member) return NextResponse.json({ error: 'Forbidden — OWNER or ADMIN required' }, { status: 403 })
+  if (!member)
+    return NextResponse.json({ error: 'Forbidden — OWNER or ADMIN required' }, { status: 403 })
 
   const targetWorkspaceId = member.workspaceId
 
@@ -32,7 +33,11 @@ export async function POST(request: Request) {
   const articles = await prisma.article.findMany({
     where: { workspaceId: targetWorkspaceId, status: 'PUBLISHED' },
     select: {
-      id: true, title: true, content: true, slug: true, collectionId: true,
+      id: true,
+      title: true,
+      content: true,
+      slug: true,
+      collectionId: true,
       collection: { select: { visibility: true } },
     },
   })

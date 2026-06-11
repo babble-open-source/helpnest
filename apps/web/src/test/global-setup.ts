@@ -32,7 +32,10 @@ export default function globalSetup() {
   const databaseUrl = parsed.parsed?.DATABASE_URL ?? process.env.DATABASE_URL
 
   if (!databaseUrl) {
-    throw new Error(`DATABASE_URL not found in ${envPath} — cannot run prisma db push`)
+    throw new Error(
+      `DATABASE_URL not found in ${envPath} or process.env — cannot run prisma db push. ` +
+        'Copy apps/web/.env.test.example to apps/web/.env.test (or run ./scripts/dev-setup.sh) and try again.'
+    )
   }
 
   const schemaPath = path.resolve(__dirname, '../../../../packages/db/prisma/schema.prisma')

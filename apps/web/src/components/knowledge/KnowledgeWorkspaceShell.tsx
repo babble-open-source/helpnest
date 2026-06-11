@@ -44,9 +44,7 @@ export function KnowledgeWorkspaceShell({
               {sidebarTitle}
             </h2>
           </div>
-          <div className="min-h-0 flex-1 px-4 py-4">
-            {sidebarContent}
-          </div>
+          <div className="min-h-0 flex-1 px-4 py-4">{sidebarContent}</div>
         </aside>
 
         <section className="flex min-h-[560px] min-w-0 flex-col overflow-hidden rounded-[32px] border bg-card shadow-sm">

@@ -8,20 +8,14 @@ interface Heading {
   level: number
 }
 
-export function TableOfContents({
-  headings,
-  label,
-}: {
-  headings: Heading[]
-  label: string
-}) {
+export function TableOfContents({ headings, label }: { headings: Heading[]; label: string }) {
   const [activeId, setActiveId] = useState<string>(headings[0]?.id ?? '')
   const visibleIds = useRef(new Set<string>())
 
   const headingIds = useMemo(
     () => headings.map((h) => h.id),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [JSON.stringify(headings.map((h) => h.id))],
+    [JSON.stringify(headings.map((h) => h.id))]
   )
 
   useEffect(() => {
@@ -31,35 +25,37 @@ export function TableOfContents({
 
     if (elements.length === 0) return
 
+    // Copy the ref value to a local so the cleanup below clears the same Set
+    // this effect run populated (react-hooks/exhaustive-deps ref-in-cleanup rule).
+    const visible = visibleIds.current
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
-            visibleIds.current.add(entry.target.id)
+            visible.add(entry.target.id)
           } else {
-            visibleIds.current.delete(entry.target.id)
+            visible.delete(entry.target.id)
           }
         }
 
         // Pick the first visible heading in document order
-        const first = headingIds.find((id) => visibleIds.current.has(id))
+        const first = headingIds.find((id) => visible.has(id))
         if (first) setActiveId(first)
       },
-      { rootMargin: '-10% 0px -70% 0px', threshold: 0 },
+      { rootMargin: '-10% 0px -70% 0px', threshold: 0 }
     )
 
     for (const el of elements) observer.observe(el)
     return () => {
       observer.disconnect()
-      visibleIds.current.clear()
+      visible.clear()
     }
   }, [headingIds])
 
   return (
     <div className="sticky top-20">
-      <p className="text-xs font-medium text-muted uppercase tracking-wide mb-3">
-        {label}
-      </p>
+      <p className="text-xs font-medium text-muted uppercase tracking-wide mb-3">{label}</p>
       <nav className="space-y-0.5">
         {headings.map((h) => {
           const isActive = activeId === h.id

@@ -108,13 +108,10 @@ export function OnboardingForm({
   return (
     <main className="min-h-screen bg-cream flex items-center justify-center">
       <div className="w-full max-w-md px-6 py-10">
+        {/* eslint-disable-next-line @next/next/no-img-element -- static local SVG brand mark; next/image would need dangerouslyAllowSVG with no optimization benefit */}
         <img src="/mark-ink.svg" alt="HelpNest" className="w-10 h-10 mx-auto mb-6" />
-        <h1 className="font-serif text-3xl text-ink mb-2 text-center">
-          {t.title}
-        </h1>
-        <p className="text-muted text-sm text-center mb-8">
-          {t.subtitle}
-        </p>
+        <h1 className="font-serif text-3xl text-ink mb-2 text-center">{t.title}</h1>
+        <p className="text-muted text-sm text-center mb-8">{t.subtitle}</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
@@ -169,9 +166,7 @@ export function OnboardingForm({
                 </span>
               )}
             </div>
-            <p className="text-xs text-muted mt-1.5">
-              {t.slugHint}
-            </p>
+            <p className="text-xs text-muted mt-1.5">{t.slugHint}</p>
           </div>
 
           <button

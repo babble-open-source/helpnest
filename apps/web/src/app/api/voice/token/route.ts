@@ -26,7 +26,7 @@ const voiceRateBuckets = new Map<string, RateBucket>()
 
 function consumeInMemoryVoiceRateLimit(
   key: string,
-  max: number,
+  max: number
 ): { limited: boolean; retryAfterSeconds: number } {
   const now = Date.now()
 
@@ -56,7 +56,7 @@ function consumeInMemoryVoiceRateLimit(
 
 async function consumeVoiceRateLimit(
   key: string,
-  max: number,
+  max: number
 ): Promise<{ limited: boolean; retryAfterSeconds: number }> {
   if (redis) {
     try {
@@ -181,28 +181,34 @@ export async function POST(request: Request) {
   // Rate-limit checks — per session and per workspace.
   const sessionRateResult = await consumeVoiceRateLimit(
     `session:${sessionToken}`,
-    VOICE_RATE_LIMIT_SESSION_MAX,
+    VOICE_RATE_LIMIT_SESSION_MAX
   )
   if (sessionRateResult.limited) {
     return NextResponse.json(
       { error: 'Too many voice requests. Please try again shortly.' },
       {
         status: 429,
-        headers: { ...WIDGET_CORS_HEADERS, 'Retry-After': String(sessionRateResult.retryAfterSeconds) },
+        headers: {
+          ...WIDGET_CORS_HEADERS,
+          'Retry-After': String(sessionRateResult.retryAfterSeconds),
+        },
       }
     )
   }
 
   const workspaceRateResult = await consumeVoiceRateLimit(
     `workspace:${workspace.id}`,
-    VOICE_RATE_LIMIT_WORKSPACE_MAX,
+    VOICE_RATE_LIMIT_WORKSPACE_MAX
   )
   if (workspaceRateResult.limited) {
     return NextResponse.json(
       { error: 'Too many voice requests for this workspace. Please try again shortly.' },
       {
         status: 429,
-        headers: { ...WIDGET_CORS_HEADERS, 'Retry-After': String(workspaceRateResult.retryAfterSeconds) },
+        headers: {
+          ...WIDGET_CORS_HEADERS,
+          'Retry-After': String(workspaceRateResult.retryAfterSeconds),
+        },
       }
     )
   }

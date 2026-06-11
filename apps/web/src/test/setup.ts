@@ -28,9 +28,14 @@ import dotenv from 'dotenv'
 
 // Load .env.test with override:true so DATABASE_URL points at helpnest_test
 // before any module that imports @/lib/db or harness.ts is resolved.
+// dotenv no-ops if the file is missing (e.g. CI, where env vars are set
+// directly on the job) — the check below catches a truly absent DATABASE_URL.
 const envPath = path.resolve(__dirname, '../../.env.test')
 dotenv.config({ path: envPath, override: true })
 
 if (!process.env.DATABASE_URL) {
-  throw new Error(`DATABASE_URL is not set after loading ${envPath}`)
+  throw new Error(
+    `DATABASE_URL is not set and ${envPath} did not provide it. ` +
+      'Copy apps/web/.env.test.example to apps/web/.env.test (or run ./scripts/dev-setup.sh) and try again.'
+  )
 }
