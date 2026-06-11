@@ -253,9 +253,7 @@ describe('GET /api/articles', () => {
 
     const body = await res.json()
     expect(body.limit).toBe(100)
-    expect(mockArticleFindMany).toHaveBeenCalledWith(
-      expect.objectContaining({ take: 100 })
-    )
+    expect(mockArticleFindMany).toHaveBeenCalledWith(expect.objectContaining({ take: 100 }))
   })
 
   it('clamps limit to minimum 1 when zero is supplied', async () => {
@@ -427,7 +425,10 @@ describe('POST /api/articles', () => {
     mockRequireAuth.mockResolvedValue(AUTH_RESULT)
     // First call: findFirst for default collection
     mockCollectionFindFirst.mockResolvedValue({ id: 'col-default' } as never)
-    mockArticleCreate.mockResolvedValue({ ...CREATED_ARTICLE, collectionId: 'col-default' } as never)
+    mockArticleCreate.mockResolvedValue({
+      ...CREATED_ARTICLE,
+      collectionId: 'col-default',
+    } as never)
 
     await POST(postRequest({ title: 'New article' }))
 
