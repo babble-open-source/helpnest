@@ -40,9 +40,23 @@ export async function PATCH(
   const [authResult, params] = await Promise.all([requireAuth(request), paramsPromise])
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  // requireAuth only checks membership; for writes we additionally require a
+  // role that is permitted to edit content (mirrors the DELETE guard below).
+  if (authResult.via === 'session' && authResult.userId) {
+    const member = await prisma.member.findFirst({
+      where: {
+        userId: authResult.userId,
+        workspaceId: authResult.workspaceId,
+        role: { in: ['OWNER', 'ADMIN', 'EDITOR'] },
+      },
+      select: { id: true },
+    })
+    if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
   const { workspaceId } = authResult
 
-  const body = await request.json() as {
+  const body = (await request.json()) as {
     title?: string
     content?: string
     excerpt?: string
@@ -82,7 +96,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Collection not found' }, { status: 404 })
     }
     if (targetCollection.isArchived) {
-      return NextResponse.json({ error: 'Cannot move an article into an archived collection' }, { status: 409 })
+      return NextResponse.json(
+        { error: 'Cannot move an article into an archived collection' },
+        { status: 409 }
+      )
     }
   }
 

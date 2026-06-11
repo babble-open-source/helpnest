@@ -132,7 +132,7 @@
     "signupFailed": "L'inscription a échoué. Veuillez réessayer.",
     "signInFailed": "Compte créé mais la connexion a échoué. Veuillez essayer de vous connecter.",
     "networkError": "Erreur réseau. Veuillez réessayer.",
-    "passwordMinLength": "Min. 8 caractères"
+    "passwordMinLength": "Min. 12 caractères"
   },
   "onboarding": {
     "title": "Créez votre centre d'aide",
@@ -187,10 +187,10 @@
     "alreadyHaveAccount": "Vous avez déjà un compte ? Se connecter",
     "yourName": "Votre nom",
     "namePlaceholder": "Jane Smith",
-    "atLeast8Chars": "Au moins 8 caractères",
+    "atLeast8Chars": "Au moins 12 caractères",
     "confirmPassword": "Confirmer le mot de passe",
     "repeatPassword": "Répéter le mot de passe",
-    "passwordMinLength": "Le mot de passe doit contenir au moins 8 caractères.",
+    "passwordMinLength": "Le mot de passe doit contenir au moins 12 caractères.",
     "passwordsMismatch": "Les mots de passe ne correspondent pas.",
     "creatingAccount": "Création du compte…",
     "acceptInvitation": "Accepter l'invitation"

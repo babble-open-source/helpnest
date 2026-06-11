@@ -27,7 +27,10 @@ async function isSignupRateLimited(ip: string): Promise<boolean> {
 export async function POST(request: Request) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   if (await isSignupRateLimited(ip)) {
-    return NextResponse.json({ error: 'Too many signup attempts. Try again later.' }, { status: 429 })
+    return NextResponse.json(
+      { error: 'Too many signup attempts. Try again later.' },
+      { status: 429 }
+    )
   }
 
   const { name, email, password } = (await request.json()) as {
@@ -40,15 +43,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Name, email, and password are required' }, { status: 400 })
   }
 
-  if (password.length < 8) {
-    return NextResponse.json({ error: 'Password must be at least 8 characters' }, { status: 400 })
+  if (password.length < 12) {
+    return NextResponse.json({ error: 'Password must be at least 12 characters' }, { status: 400 })
   }
 
   const normalizedEmail = email.toLowerCase().trim()
 
   const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } })
   if (existing) {
-    return NextResponse.json({ error: 'An account with this email already exists' }, { status: 409 })
+    return NextResponse.json(
+      { error: 'An account with this email already exists' },
+      { status: 409 }
+    )
   }
 
   const passwordHash = await bcrypt.hash(password, 12)

@@ -132,7 +132,7 @@
     "signupFailed": "Falha no cadastro. Por favor, tente novamente.",
     "signInFailed": "Conta criada, mas o login falhou. Por favor, tente fazer login.",
     "networkError": "Erro de rede. Por favor, tente novamente.",
-    "passwordMinLength": "Mín. 8 caracteres"
+    "passwordMinLength": "Mín. 12 caracteres"
   },
   "onboarding": {
     "title": "Crie sua central de ajuda",
@@ -187,10 +187,10 @@
     "alreadyHaveAccount": "Já tem uma conta? Entre",
     "yourName": "Seu nome",
     "namePlaceholder": "Jane Smith",
-    "atLeast8Chars": "Pelo menos 8 caracteres",
+    "atLeast8Chars": "Pelo menos 12 caracteres",
     "confirmPassword": "Confirmar senha",
     "repeatPassword": "Repetir senha",
-    "passwordMinLength": "A senha deve ter pelo menos 8 caracteres.",
+    "passwordMinLength": "A senha deve ter pelo menos 12 caracteres.",
     "passwordsMismatch": "As senhas não coincidem.",
     "creatingAccount": "Criando conta…",
     "acceptInvitation": "Aceitar convite"

@@ -53,9 +53,7 @@ const nextConfig = {
     return config
   },
   async rewrites() {
-    return [
-      { source: '/widget.js', destination: '/api/widget.js' },
-    ]
+    return [{ source: '/widget.js', destination: '/api/widget.js' }]
   },
   async headers() {
     return [
@@ -68,7 +66,33 @@ const nextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           // HSTS — safe to include; HTTPS termination happens at the reverse proxy.
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+          // Content-Security-Policy
+          // Notes:
+          // - next/font/google downloads fonts at build time and self-hosts them, so no
+          //   runtime requests to fonts.googleapis.com are needed.
+          // - 'unsafe-inline' and 'unsafe-eval' are required by Next.js App Router (inline
+          //   theme scripts, HMR in dev, React hydration).
+          // - https://unpkg.com in script-src covers the react-grab dev tool loaded in layout.tsx.
+          // - wss: in connect-src covers Next.js HMR WebSocket.
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com",
+              "style-src 'self' 'unsafe-inline'",
+              "img-src 'self' data: blob: https:",
+              "font-src 'self' data:",
+              "connect-src 'self' https: wss:",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "frame-ancestors 'none'",
+              "form-action 'self'",
+            ].join('; '),
+          },
         ],
       },
     ]

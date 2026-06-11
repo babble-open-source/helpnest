@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     authorId = member.userId
   }
 
-  const body = await request.json() as {
+  const body = (await request.json()) as {
     subdomain?: string
     email?: string
     token?: string
@@ -65,9 +65,18 @@ export async function POST(request: Request) {
   const email = body.email?.trim()
   const token = body.token?.trim()
 
-  if (!subdomain) return NextResponse.json({ error: 'Zendesk subdomain is required' }, { status: 400 })
+  if (!subdomain)
+    return NextResponse.json({ error: 'Zendesk subdomain is required' }, { status: 400 })
   if (!email) return NextResponse.json({ error: 'Email is required' }, { status: 400 })
   if (!token) return NextResponse.json({ error: 'API token is required' }, { status: 400 })
+
+  // Prevent SSRF: subdomain must be a valid DNS label so that interpolating it into
+  // `https://${subdomain}.zendesk.com/…` cannot redirect requests to an attacker-
+  // controlled host (e.g. "evil.com#" would parse as hostname "evil.com").
+  const SUBDOMAIN_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/
+  if (!SUBDOMAIN_RE.test(subdomain)) {
+    return NextResponse.json({ error: 'Invalid Zendesk subdomain' }, { status: 400 })
+  }
 
   const importStatus = body.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'
   const errors: string[] = []
@@ -82,6 +91,15 @@ export async function POST(request: Request) {
   }
   const base = `https://${subdomain}.zendesk.com/api/v2`
 
+  // Validate that a next_page URL returned by the Zendesk API still points to
+  // the expected base before following it — prevents open-redirect / SSRF if the
+  // API response were ever tampered with or if an attacker could influence it.
+  function validateZendeskNextPage(nextPage: string | null): string | null {
+    if (!nextPage) return null
+    if (nextPage.startsWith(base + '/')) return nextPage
+    return null
+  }
+
   // Fetch all sections → collections
   const sectionMap = new Map<number, string>() // zendesk section id → HelpNest collection id
   try {
@@ -95,7 +113,7 @@ export async function POST(request: Request) {
           { status: 502 }
         )
       }
-      const data = await res.json() as ZendeskSectionsResponse
+      const data = (await res.json()) as ZendeskSectionsResponse
       for (const section of data.sections ?? []) {
         const slug = await uniqueCollectionSlug(section.name, workspaceId)
         const col = await prisma.collection.create({
@@ -104,7 +122,7 @@ export async function POST(request: Request) {
         collectionsCreated++
         sectionMap.set(section.id, col.id)
       }
-      url = data.next_page
+      url = validateZendeskNextPage(data.next_page)
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
@@ -134,12 +152,13 @@ export async function POST(request: Request) {
         errors.push(`Zendesk API error fetching articles: ${res.status} ${text.slice(0, 200)}`)
         break
       }
-      const data = await res.json() as ZendeskArticlesResponse
+      const data = (await res.json()) as ZendeskArticlesResponse
       for (const article of data.articles ?? []) {
         try {
-          const collectionId = article.section_id && sectionMap.has(article.section_id)
-            ? sectionMap.get(article.section_id)!
-            : await getFallback()
+          const collectionId =
+            article.section_id && sectionMap.has(article.section_id)
+              ? sectionMap.get(article.section_id)!
+              : await getFallback()
 
           const articleSlug = await uniqueArticleSlug(article.title ?? 'Untitled', workspaceId)
           await prisma.article.create({
@@ -160,7 +179,7 @@ export async function POST(request: Request) {
           errors.push(`Article "${article.title}": ${msg}`)
         }
       }
-      url = data.next_page
+      url = validateZendeskNextPage(data.next_page)
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

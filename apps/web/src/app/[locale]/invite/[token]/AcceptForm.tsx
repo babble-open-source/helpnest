@@ -24,7 +24,7 @@ export function AcceptForm({ token, email }: Props) {
     e.preventDefault()
     setError('')
 
-    if (password.length < 8) {
+    if (password.length < 12) {
       setError(t('passwordMinLength'))
       return
     }
@@ -44,7 +44,7 @@ export function AcceptForm({ token, email }: Props) {
       })
 
       if (!res.ok) {
-        const body = await res.json() as { error?: string }
+        const body = (await res.json()) as { error?: string }
         setError(body.error ?? tCommon('somethingWentWrong'))
         return
       }
@@ -88,7 +88,7 @@ export function AcceptForm({ token, email }: Props) {
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="new-password"
-          minLength={8}
+          minLength={12}
           className="w-full px-3 py-2 border border-border rounded-lg bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent text-sm"
           placeholder={t('atLeast8Chars')}
         />

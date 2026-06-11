@@ -132,7 +132,7 @@
     "signupFailed": "Error en el registro. Por favor, inténtalo de nuevo.",
     "signInFailed": "Cuenta creada pero el inicio de sesión falló. Por favor, intenta iniciar sesión.",
     "networkError": "Error de red. Por favor, inténtalo de nuevo.",
-    "passwordMinLength": "Mín. 8 caracteres"
+    "passwordMinLength": "Mín. 12 caracteres"
   },
   "onboarding": {
     "title": "Crea tu centro de ayuda",
@@ -187,10 +187,10 @@
     "alreadyHaveAccount": "¿Ya tienes una cuenta? Inicia sesión",
     "yourName": "Tu nombre",
     "namePlaceholder": "Jane Smith",
-    "atLeast8Chars": "Al menos 8 caracteres",
+    "atLeast8Chars": "Al menos 12 caracteres",
     "confirmPassword": "Confirmar contraseña",
     "repeatPassword": "Repetir contraseña",
-    "passwordMinLength": "La contraseña debe tener al menos 8 caracteres.",
+    "passwordMinLength": "La contraseña debe tener al menos 12 caracteres.",
     "passwordsMismatch": "Las contraseñas no coinciden.",
     "creatingAccount": "Creando cuenta…",
     "acceptInvitation": "Aceptar invitación"

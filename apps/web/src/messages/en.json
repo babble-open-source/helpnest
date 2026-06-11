@@ -132,7 +132,7 @@
     "signupFailed": "Signup failed. Please try again.",
     "signInFailed": "Account created but sign-in failed. Please try signing in.",
     "networkError": "Network error. Please try again.",
-    "passwordMinLength": "Min. 8 characters"
+    "passwordMinLength": "Min. 12 characters"
   },
   "onboarding": {
     "title": "Create your help center",
@@ -187,10 +187,10 @@
     "alreadyHaveAccount": "Already have an account? Sign in",
     "yourName": "Your name",
     "namePlaceholder": "Jane Smith",
-    "atLeast8Chars": "At least 8 characters",
+    "atLeast8Chars": "At least 12 characters",
     "confirmPassword": "Confirm password",
     "repeatPassword": "Repeat password",
-    "passwordMinLength": "Password must be at least 8 characters.",
+    "passwordMinLength": "Password must be at least 12 characters.",
     "passwordsMismatch": "Passwords do not match.",
     "creatingAccount": "Creating account…",
     "acceptInvitation": "Accept invitation"

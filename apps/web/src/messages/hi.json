@@ -132,7 +132,7 @@
     "signupFailed": "साइन अप विफल रहा। कृपया पुनः प्रयास करें।",
     "signInFailed": "खाता बनाया गया लेकिन साइन इन विफल रहा। कृपया साइन इन करने का प्रयास करें।",
     "networkError": "नेटवर्क त्रुटि। कृपया पुनः प्रयास करें।",
-    "passwordMinLength": "न्यूनतम ८ अक्षर"
+    "passwordMinLength": "न्यूनतम १२ अक्षर"
   },
   "onboarding": {
     "title": "अपना सहायता केंद्र बनाएं",
@@ -187,10 +187,10 @@
     "alreadyHaveAccount": "पहले से खाता है? साइन इन करें",
     "yourName": "आपका नाम",
     "namePlaceholder": "Jane Smith",
-    "atLeast8Chars": "कम से कम 8 अक्षर",
+    "atLeast8Chars": "कम से कम 12 अक्षर",
     "confirmPassword": "पासवर्ड की पुष्टि करें",
     "repeatPassword": "पासवर्ड दोहराएं",
-    "passwordMinLength": "पासवर्ड कम से कम 8 अक्षरों का होना चाहिए।",
+    "passwordMinLength": "पासवर्ड कम से कम 12 अक्षरों का होना चाहिए।",
     "passwordsMismatch": "पासवर्ड मेल नहीं खाते।",
     "creatingAccount": "खाता बनाया जा रहा है…",
     "acceptInvitation": "आमंत्रण स्वीकार करें"

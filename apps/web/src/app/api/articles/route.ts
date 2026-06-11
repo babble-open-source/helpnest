@@ -8,7 +8,7 @@ import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
 import { slugify } from '@/lib/slugify'
 
 const VALID_STATUSES = ['DRAFT', 'PUBLISHED', 'ARCHIVED'] as const
-type ArticleStatus = typeof VALID_STATUSES[number]
+type ArticleStatus = (typeof VALID_STATUSES)[number]
 
 export async function GET(request: Request) {
   const authResult = await requireAuth(request)
@@ -63,12 +63,13 @@ export async function GET(request: Request) {
     prisma.article.count({ where }),
   ])
 
-  const data = format === 'markdown'
-    ? articles.map(a => ({
-        ...a,
-        content: htmlToMarkdown((a as typeof a & { content: string }).content ?? ''),
-      }))
-    : articles
+  const data =
+    format === 'markdown'
+      ? articles.map((a) => ({
+          ...a,
+          content: htmlToMarkdown((a as typeof a & { content: string }).content ?? ''),
+        }))
+      : articles
 
   return NextResponse.json({ data, total, page, limit })
 }
@@ -76,6 +77,20 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const authResult = await requireAuth(request)
   if (!authResult) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  // requireAuth only checks membership; for writes we additionally require a
+  // role that is permitted to create content (mirrors the DELETE guard below).
+  if (authResult.via === 'session' && authResult.userId) {
+    const member = await prisma.member.findFirst({
+      where: {
+        userId: authResult.userId,
+        workspaceId: authResult.workspaceId,
+        role: { in: ['OWNER', 'ADMIN', 'EDITOR'] },
+      },
+      select: { id: true },
+    })
+    if (!member) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
 
   const { workspaceId, userId } = authResult
 
@@ -90,7 +105,7 @@ export async function POST(request: Request) {
     authorId = member.userId
   }
 
-  const body = await request.json() as {
+  const body = (await request.json()) as {
     title?: string
     content?: string
     excerpt?: string
@@ -108,7 +123,8 @@ export async function POST(request: Request) {
       orderBy: { order: 'asc' },
       select: { id: true },
     })
-    if (!defaultCollection) return NextResponse.json({ error: 'Create a collection first' }, { status: 400 })
+    if (!defaultCollection)
+      return NextResponse.json({ error: 'Create a collection first' }, { status: 400 })
     collectionId = defaultCollection.id
   } else {
     const col = await prisma.collection.findFirst({
@@ -128,7 +144,7 @@ export async function POST(request: Request) {
     if (articleLimit !== -1 && articleCount >= articleLimit) {
       return NextResponse.json(
         { error: `Article limit reached (${articleCount}/${articleLimit}). Upgrade your plan.` },
-        { status: 403 },
+        { status: 403 }
       )
     }
   }

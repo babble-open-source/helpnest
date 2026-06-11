@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     authorId = member.userId
   }
 
-  const body = await request.json() as {
+  const body = (await request.json()) as {
     subdomain?: string
     apiKey?: string
     status?: 'DRAFT' | 'PUBLISHED'
@@ -58,8 +58,17 @@ export async function POST(request: Request) {
   const subdomain = body.subdomain?.trim()
   const apiKey = body.apiKey?.trim()
 
-  if (!subdomain) return NextResponse.json({ error: 'Freshdesk subdomain is required' }, { status: 400 })
+  if (!subdomain)
+    return NextResponse.json({ error: 'Freshdesk subdomain is required' }, { status: 400 })
   if (!apiKey) return NextResponse.json({ error: 'Freshdesk API key is required' }, { status: 400 })
+
+  // Prevent SSRF: subdomain must be a valid DNS label so that interpolating it into
+  // `https://${subdomain}.freshdesk.com/…` cannot redirect requests to an attacker-
+  // controlled host (e.g. "evil.com#" would parse as hostname "evil.com").
+  const SUBDOMAIN_RE = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/
+  if (!SUBDOMAIN_RE.test(subdomain)) {
+    return NextResponse.json({ error: 'Invalid Freshdesk subdomain' }, { status: 400 })
+  }
 
   const importStatus = body.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'
   const errors: string[] = []
@@ -85,10 +94,13 @@ export async function POST(request: Request) {
         { status: 502 }
       )
     }
-    categories = await res.json() as FreshdeskCategory[]
+    categories = (await res.json()) as FreshdeskCategory[]
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: `Failed to fetch Freshdesk categories: ${msg}` }, { status: 502 })
+    return NextResponse.json(
+      { error: `Failed to fetch Freshdesk categories: ${msg}` },
+      { status: 502 }
+    )
   }
 
   // For each category, fetch folders (sub-collections) and articles
@@ -113,7 +125,7 @@ export async function POST(request: Request) {
     try {
       const res = await fetch(`${base}/solutions/categories/${category.id}/folders`, { headers })
       if (res.ok) {
-        folders = await res.json() as FreshdeskFolder[]
+        folders = (await res.json()) as FreshdeskFolder[]
       }
     } catch {
       // ignore — fall back to no folders
@@ -152,10 +164,12 @@ export async function POST(request: Request) {
           )
           if (!res.ok) {
             const text = await res.text()
-            errors.push(`Folder "${folder.name}" articles (page ${page}): ${res.status} ${text.slice(0, 200)}`)
+            errors.push(
+              `Folder "${folder.name}" articles (page ${page}): ${res.status} ${text.slice(0, 200)}`
+            )
             break
           }
-          const articles = await res.json() as FreshdeskArticle[]
+          const articles = (await res.json()) as FreshdeskArticle[]
           if (!articles.length) break
 
           const collectionId = folderCollectionMap.get(folder.id) ?? categoryCollectionId

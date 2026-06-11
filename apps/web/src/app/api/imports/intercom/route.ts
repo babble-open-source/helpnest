@@ -60,13 +60,14 @@ export async function POST(request: Request) {
     authorId = member.userId
   }
 
-  const body = await request.json() as {
+  const body = (await request.json()) as {
     token?: string
     status?: 'DRAFT' | 'PUBLISHED'
   }
 
   const token = body.token?.trim()
-  if (!token) return NextResponse.json({ error: 'Intercom access token is required' }, { status: 400 })
+  if (!token)
+    return NextResponse.json({ error: 'Intercom access token is required' }, { status: 400 })
 
   const importStatus = body.status === 'PUBLISHED' ? 'PUBLISHED' : 'DRAFT'
   const errors: string[] = []
@@ -77,6 +78,17 @@ export async function POST(request: Request) {
     Authorization: `Bearer ${token}`,
     Accept: 'application/json',
     'Content-Type': 'application/json',
+  }
+
+  const INTERCOM_API_BASE = 'https://api.intercom.io'
+
+  // Validate that a next-page URL returned by the Intercom API still points to
+  // the expected base before following it — prevents open-redirect / SSRF if the
+  // API response were ever tampered with or if an attacker could influence it.
+  function validateIntercomNextPage(nextPage: string | undefined): string | undefined {
+    if (!nextPage) return undefined
+    if (nextPage.startsWith(INTERCOM_API_BASE + '/')) return nextPage
+    return undefined
   }
 
   // Fetch all collections
@@ -92,7 +104,7 @@ export async function POST(request: Request) {
           { status: 502 }
         )
       }
-      const data = await res.json() as IntercomCollectionsResponse
+      const data = (await res.json()) as IntercomCollectionsResponse
       for (const col of data.data ?? []) {
         const slug = await uniqueCollectionSlug(col.name, workspaceId)
         const created = await prisma.collection.create({
@@ -106,11 +118,14 @@ export async function POST(request: Request) {
         collectionsCreated++
         intercomCollections.set(col.id, created.id)
       }
-      url = data.pages?.next ?? undefined
+      url = validateIntercomNextPage(data.pages?.next)
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: `Failed to fetch Intercom collections: ${msg}` }, { status: 502 })
+    return NextResponse.json(
+      { error: `Failed to fetch Intercom collections: ${msg}` },
+      { status: 502 }
+    )
   }
 
   // Fall back to a single catch-all collection if nothing was returned
@@ -136,12 +151,13 @@ export async function POST(request: Request) {
         errors.push(`Intercom API error fetching articles: ${res.status} ${text.slice(0, 200)}`)
         break
       }
-      const data = await res.json() as IntercomArticlesResponse
+      const data = (await res.json()) as IntercomArticlesResponse
       for (const article of data.data ?? []) {
         try {
           let collectionId: string
           if (article.parent_id && article.parent_type === 'collection') {
-            collectionId = intercomCollections.get(article.parent_id) ?? await getFallbackCollectionId()
+            collectionId =
+              intercomCollections.get(article.parent_id) ?? (await getFallbackCollectionId())
           } else {
             collectionId = await getFallbackCollectionId()
           }
@@ -166,11 +182,14 @@ export async function POST(request: Request) {
           errors.push(`Article "${article.title}": ${msg}`)
         }
       }
-      url = data.pages?.next ?? undefined
+      url = validateIntercomNextPage(data.pages?.next)
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
-    return NextResponse.json({ error: `Failed to fetch Intercom articles: ${msg}` }, { status: 502 })
+    return NextResponse.json(
+      { error: `Failed to fetch Intercom articles: ${msg}` },
+      { status: 502 }
+    )
   }
 
   return NextResponse.json({ collectionsCreated, articlesCreated, errors })

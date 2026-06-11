@@ -132,7 +132,7 @@
     "signupFailed": "注册失败，请重试。",
     "signInFailed": "账户已创建但登录失败，请尝试登录。",
     "networkError": "网络错误，请重试。",
-    "passwordMinLength": "至少 8 个字符"
+    "passwordMinLength": "至少 12 个字符"
   },
   "onboarding": {
     "title": "创建您的帮助中心",
@@ -187,10 +187,10 @@
     "alreadyHaveAccount": "已有账户？立即登录",
     "yourName": "您的姓名",
     "namePlaceholder": "Jane Smith",
-    "atLeast8Chars": "至少 8 个字符",
+    "atLeast8Chars": "至少 12 个字符",
     "confirmPassword": "确认密码",
     "repeatPassword": "重复密码",
-    "passwordMinLength": "密码长度至少为 8 个字符。",
+    "passwordMinLength": "密码长度至少为 12 个字符。",
     "passwordsMismatch": "两次输入的密码不一致。",
     "creatingAccount": "正在创建账户…",
     "acceptInvitation": "接受邀请"

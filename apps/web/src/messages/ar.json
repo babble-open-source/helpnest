@@ -132,7 +132,7 @@
     "signupFailed": "فشل التسجيل. يرجى المحاولة مرة أخرى.",
     "signInFailed": "تم إنشاء الحساب لكن فشل تسجيل الدخول. يرجى محاولة تسجيل الدخول.",
     "networkError": "خطأ في الشبكة. يرجى المحاولة مرة أخرى.",
-    "passwordMinLength": "٨ أحرف كحد أدنى"
+    "passwordMinLength": "١٢ حرفاً كحد أدنى"
   },
   "onboarding": {
     "title": "أنشئ مركز المساعدة الخاص بك",
@@ -187,10 +187,10 @@
     "alreadyHaveAccount": "هل لديك حساب بالفعل؟ سجّل الدخول",
     "yourName": "اسمك",
     "namePlaceholder": "Jane Smith",
-    "atLeast8Chars": "8 أحرف على الأقل",
+    "atLeast8Chars": "12 حرفاً على الأقل",
     "confirmPassword": "تأكيد كلمة المرور",
     "repeatPassword": "إعادة كلمة المرور",
-    "passwordMinLength": "يجب أن تتكوّن كلمة المرور من 8 أحرف على الأقل.",
+    "passwordMinLength": "يجب أن تتكوّن كلمة المرور من 12 حرفاً على الأقل.",
     "passwordsMismatch": "كلمتا المرور غير متطابقتين.",
     "creatingAccount": "جارٍ إنشاء الحساب…",
     "acceptInvitation": "قبول الدعوة"

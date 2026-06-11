@@ -19,7 +19,11 @@ async function isLoginRateLimited(email: string): Promise<boolean> {
     if (count === 1) await redis.pexpire(key, LOGIN_RATE_LIMIT_WINDOW_MS * 2)
     return count > LOGIN_RATE_LIMIT_MAX
   } catch {
-    // Redis unavailable — allow through rather than lock users out
+    // Redis unavailable — intentional fail-open: we prefer availability (letting
+    // legitimate users log in during a Redis outage) over strict rate enforcement.
+    // The trade-off is that brute-force protection is temporarily suspended while
+    // Redis is down. Monitor Redis uptime and alert on connection failures to keep
+    // this window short.
     return false
   }
 }
@@ -63,17 +67,21 @@ function getAuthBundle(): NextAuthResult {
       // Only register GitHub provider when credentials are present.
       // Passing empty strings would silently break OAuth without a clear error.
       ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
-        ? [GitHub({
-            clientId: process.env.GITHUB_CLIENT_ID,
-            clientSecret: process.env.GITHUB_CLIENT_SECRET,
-          })]
+        ? [
+            GitHub({
+              clientId: process.env.GITHUB_CLIENT_ID,
+              clientSecret: process.env.GITHUB_CLIENT_SECRET,
+            }),
+          ]
         : []),
       ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
-        ? [Google({
-            clientId: process.env.GOOGLE_CLIENT_ID,
-            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-            authorization: { params: { prompt: 'select_account' } },
-          })]
+        ? [
+            Google({
+              clientId: process.env.GOOGLE_CLIENT_ID,
+              clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+              authorization: { params: { prompt: 'select_account' } },
+            }),
+          ]
         : []),
       Credentials({
         credentials: {
@@ -127,17 +135,23 @@ export const auth = ((...args: unknown[]) =>
   (getAuthBundle().auth as (...innerArgs: unknown[]) => unknown)(...args)) as NextAuthResult['auth']
 
 export const signIn = ((...args: unknown[]) =>
-  (getAuthBundle().signIn as (...innerArgs: unknown[]) => unknown)(...args)) as NextAuthResult['signIn']
+  (getAuthBundle().signIn as (...innerArgs: unknown[]) => unknown)(
+    ...args
+  )) as NextAuthResult['signIn']
 
 export const signOut = ((...args: unknown[]) =>
-  (getAuthBundle().signOut as (...innerArgs: unknown[]) => unknown)(...args)) as NextAuthResult['signOut']
+  (getAuthBundle().signOut as (...innerArgs: unknown[]) => unknown)(
+    ...args
+  )) as NextAuthResult['signOut']
 
 /**
  * Resolve a stable user id from session data.
  * In production, the JWT id must match a live user record — no fallback.
  * In development, falls back to email lookup to survive DB resets.
  */
-export async function resolveSessionUserId(session: { user?: { id?: string | null; email?: string | null } } | null): Promise<string | null> {
+export async function resolveSessionUserId(
+  session: { user?: { id?: string | null; email?: string | null } } | null
+): Promise<string | null> {
   if (!session?.user) return null
 
   if (session.user.id) {
