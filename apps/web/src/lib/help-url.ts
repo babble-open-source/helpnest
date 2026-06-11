@@ -5,7 +5,7 @@ import { headers } from 'next/headers'
  * subdomain or custom domain rewrite (e.g. "https://help.example.com").
  * Returns null for path-based routing (self-hosted without domain routing).
  *
- * The middleware sets x-helpnest-base-url on rewrite responses.
+ * The proxy (src/proxy.ts) sets x-helpnest-base-url on rewrite responses.
  */
 export async function getHelpBaseUrl(): Promise<string | null> {
   const h = await headers()

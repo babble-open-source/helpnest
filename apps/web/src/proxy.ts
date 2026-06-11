@@ -28,7 +28,7 @@ const APP_ORIGIN =
 const APP_HOST = APP_ORIGIN.replace(/^https?:\/\//, '').split(':')[0] ?? ''
 
 // ---------------------------------------------------------------------------
-// Error pages — static HTML returned directly from middleware (no Next.js)
+// Error pages — static HTML returned directly from the proxy (no Next.js)
 // ---------------------------------------------------------------------------
 
 const NOT_FOUND_HTML = `<!DOCTYPE html>
@@ -74,9 +74,27 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   if (pathWithoutLocale.startsWith('/api/')) return null
   if (pathWithoutLocale === '/widget.js') return null
   // App routes that should never be rewritten by subdomain routing
-  const APP_PATHS = ['/login', '/signup', '/onboarding', '/invite/', '/workspaces', '/articles', '/inbox', '/collections', '/knowledge-gaps', '/imports', '/settings', '/billing']
+  const APP_PATHS = [
+    '/login',
+    '/signup',
+    '/onboarding',
+    '/invite/',
+    '/workspaces',
+    '/articles',
+    '/inbox',
+    '/collections',
+    '/knowledge-gaps',
+    '/imports',
+    '/settings',
+    '/billing',
+  ]
   if (APP_PATHS.some((p) => pathWithoutLocale.startsWith(p))) return null
-  if (pathWithoutLocale.startsWith('/imports/') || pathWithoutLocale === '/manifest.json' || pathWithoutLocale.match(/\.(png|ico|svg|jpg|jpeg|webp)$/)) return null
+  if (
+    pathWithoutLocale.startsWith('/imports/') ||
+    pathWithoutLocale === '/manifest.json' ||
+    pathWithoutLocale.match(/\.(png|ico|svg|jpg|jpeg|webp)$/)
+  )
+    return null
 
   const host = getRequestHostname(req.headers)
   const externalBaseUrl = `https://${host}`
@@ -87,9 +105,7 @@ function rewriteToHelp(req: NextRequest, slug: string): NextResponse | null {
   // origin rewrite that Next.js converts to a 308 redirect loop.
   const forwardedHost = req.headers.get('x-forwarded-host')?.split(',')[0]?.trim()
   const proto = APP_ORIGIN.startsWith('https') ? 'https' : 'http'
-  const rewriteBase = forwardedHost
-    ? `${proto}://${forwardedHost}`
-    : req.url
+  const rewriteBase = forwardedHost ? `${proto}://${forwardedHost}` : req.url
   const rewritePath = `/${locale}/${slug}/help${pathWithoutLocale === '/' ? '' : pathWithoutLocale}`
   const rewriteUrl = new URL(rewritePath + (search || ''), rewriteBase)
   const response = NextResponse.rewrite(rewriteUrl)
@@ -146,7 +162,10 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
   const hasHelpNestHost = !!req.headers.get('x-helpnest-host')
 
   const host = getRequestHostname(req.headers)
-  if (!host) return hasHelpNestHost ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } }) : null
+  if (!host)
+    return hasHelpNestHost
+      ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+      : null
   if (host.endsWith(`.${HELP_CENTER_DOMAIN}`) || host === CUSTOM_DOMAIN?.toLowerCase()) return null
   if (isKnownHost(host) && !hasHelpNestHost) return null
 
@@ -160,22 +179,28 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
         headers: process.env.INTERNAL_SECRET
           ? { 'X-Internal-Secret': process.env.INTERNAL_SECRET }
           : {},
-      },
+      }
     )
     clearTimeout(timeout)
 
     if (!res.ok) {
       // API error — if BYOD, show error page; otherwise fall through
       return hasHelpNestHost
-        ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5' } })
+        ? new NextResponse(UNAVAILABLE_HTML, {
+            status: 503,
+            headers: { 'Content-Type': 'text/html', 'Retry-After': '5' },
+          })
         : null
     }
 
-    const { slug } = await res.json() as { slug: string | null }
+    const { slug } = (await res.json()) as { slug: string | null }
     if (!slug) {
       // Domain not found in DB
       return hasHelpNestHost
-        ? new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+        ? new NextResponse(NOT_FOUND_HTML, {
+            status: 404,
+            headers: { 'Content-Type': 'text/html' },
+          })
         : null
     }
 
@@ -198,7 +223,10 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
   } catch {
     // Timeout or network error
     return hasHelpNestHost
-      ? new NextResponse(UNAVAILABLE_HTML, { status: 503, headers: { 'Content-Type': 'text/html', 'Retry-After': '5' } })
+      ? new NextResponse(UNAVAILABLE_HTML, {
+          status: 503,
+          headers: { 'Content-Type': 'text/html', 'Retry-After': '5' },
+        })
       : null
   }
 }
@@ -207,17 +235,25 @@ async function handleDBCustomDomain(req: NextRequest): Promise<NextResponse | nu
 // Step 6: Auth redirect
 // ---------------------------------------------------------------------------
 
-function handleAuthRedirect(
-  req: NextRequest & { auth?: unknown },
-): NextResponse | null {
+function handleAuthRedirect(req: NextRequest & { auth?: unknown }): NextResponse | null {
   const authData = req.auth as { user?: unknown } | null | undefined
   const isLoggedIn = !!authData?.user
   const { pathname } = req.nextUrl
   const locale = detectLocaleFromPath(pathname)
   const pathWithoutLocale = pathname.replace(new RegExp(`^/${locale}`), '') || '/'
 
-  const PROTECTED_PATHS = ['/workspaces', '/articles', '/inbox', '/collections', '/knowledge-gaps', '/imports', '/settings', '/billing']
-  const isProtected = pathWithoutLocale === '/' || PROTECTED_PATHS.some((p) => pathWithoutLocale.startsWith(p))
+  const PROTECTED_PATHS = [
+    '/workspaces',
+    '/articles',
+    '/inbox',
+    '/collections',
+    '/knowledge-gaps',
+    '/imports',
+    '/settings',
+    '/billing',
+  ]
+  const isProtected =
+    pathWithoutLocale === '/' || PROTECTED_PATHS.some((p) => pathWithoutLocale.startsWith(p))
   if (isProtected && !isLoggedIn) {
     return NextResponse.redirect(new URL(`/${locale}/login`, req.url))
   }
@@ -225,7 +261,7 @@ function handleAuthRedirect(
 }
 
 // ---------------------------------------------------------------------------
-// Middleware — 7-step routing pipeline
+// Proxy (Next 16 file convention, formerly middleware) — 7-step routing pipeline
 // ---------------------------------------------------------------------------
 
 export default auth(async (req) => {
@@ -266,7 +302,10 @@ export default auth(async (req) => {
     }
 
     // BYOD domain hitting a non-help path (e.g. /articles) — block it
-    return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+    return new NextResponse(NOT_FOUND_HTML, {
+      status: 404,
+      headers: { 'Content-Type': 'text/html' },
+    })
   }
 
   // 4. BYOD fallback — KV missed, try API fetch (terminal for BYOD requests)
@@ -281,7 +320,10 @@ export default auth(async (req) => {
   if (!req.headers.get('x-helpnest-host')) {
     const host = getRequestHostname(req.headers)
     if (!isKnownHost(host)) {
-      return new NextResponse(NOT_FOUND_HTML, { status: 404, headers: { 'Content-Type': 'text/html' } })
+      return new NextResponse(NOT_FOUND_HTML, {
+        status: 404,
+        headers: { 'Content-Type': 'text/html' },
+      })
     }
   }
 
@@ -299,7 +341,7 @@ export default auth(async (req) => {
         const restPath = pathWithoutLocale.replace(`/${slug}/help`, '') || ''
         return NextResponse.redirect(
           `https://${slug}.${HELP_CENTER_DOMAIN}${restPath}${req.nextUrl.search}`,
-          308,
+          308
         )
       }
     }
@@ -313,5 +355,7 @@ export default auth(async (req) => {
 })
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|imports/|api/|.*\\.(?:png|ico|svg|jpg|jpeg|webp|json|webmanifest)$).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|imports/|api/|.*\\.(?:png|ico|svg|jpg|jpeg|webp|json|webmanifest)$).*)',
+  ],
 }

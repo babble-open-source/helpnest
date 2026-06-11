@@ -4,8 +4,8 @@ import type { NextAuthConfig } from 'next-auth'
  * Edge-compatible NextAuth configuration.
  *
  * This file must NOT import any Node.js-only modules (ioredis, bcrypt,
- * Prisma, etc.) because it is imported by middleware which runs in the
- * Edge Runtime. Providers that require Node.js are added in auth.ts.
+ * Prisma, etc.) because it is imported by the proxy (src/proxy.ts) which
+ * runs in the Edge Runtime. Providers that require Node.js are added in auth.ts.
  */
 
 // Behind a TLS-terminating proxy (ALB → ECS), next-auth auto-detects the

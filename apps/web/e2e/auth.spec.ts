@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test'
 
 // The app uses next-intl with localePrefix: 'always'.
 // Auth pages live at /en/login, /en/signup, etc.
-// Dashboard is at /en/dashboard (middleware redirects unauthenticated users to /en/login).
+// Dashboard is at /en/dashboard (the proxy redirects unauthenticated users to /en/login).
 //
 // Seed credentials: admin@helpnest.cloud / password123
 
@@ -25,7 +25,7 @@ test.describe('Authentication — unauthenticated flows', () => {
 
   test('dashboard redirects unauthenticated users to login', async ({ page }) => {
     await page.goto('/en/dashboard')
-    // Middleware issues a redirect to /en/login
+    // The proxy issues a redirect to /en/login
     await page.waitForURL(/\/en\/login/, { timeout: 10000 })
     await expect(page).toHaveURL(/\/en\/login/)
   })
@@ -64,7 +64,7 @@ test.describe('Authentication — unauthenticated flows', () => {
     await passwordInput.fill('password123')
     await page.locator('button[type="submit"]').first().click()
 
-    // On success next-auth redirects to /dashboard (the middleware resolves the locale)
+    // On success next-auth redirects to /dashboard (the proxy resolves the locale)
     await page.waitForURL(/\/dashboard/, { timeout: 15000 })
   })
 })
