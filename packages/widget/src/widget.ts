@@ -333,7 +333,9 @@ export class HelpNestWidget {
 
     if (raw) {
       try {
-        existing = JSON.parse(raw) as Array<{ sessionToken: string; conversationId: string } | string>
+        existing = JSON.parse(raw) as Array<
+          { sessionToken: string; conversationId: string } | string
+        >
       } catch {
         existing = []
       }
@@ -687,7 +689,10 @@ export class HelpNestWidget {
           const { conversationId } = this.getStoredSession()
           stopVoiceSession()
           queueChatDraft(message, conversationId ?? undefined)
-          switchTabAndPush('messages', { kind: 'chat', conversationId: conversationId ?? undefined })
+          switchTabAndPush('messages', {
+            kind: 'chat',
+            conversationId: conversationId ?? undefined,
+          })
         }
         this.voiceOpenArticleHandler = (event: Event) => {
           const customEvent = event as CustomEvent<{ articleId?: string }>

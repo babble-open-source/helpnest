@@ -108,19 +108,21 @@ export function renderChat(): string {
   const showTyping = isStreaming && streamingContent === ''
   const lastRole = messages.length > 0 ? messages[messages.length - 1].role : null
   const streamingIsGroupCont = lastRole === 'AI'
-  const streamingSenderHtml = isStreaming && streamingContent !== '' && !streamingIsGroupCont
-    ? renderStreamingSender(config)
-    : ''
-  const streamingBubble = isStreaming && streamingContent !== ''
-    ? `<div class="hn-msg hn-msg-ai hn-msg-left">
+  const streamingSenderHtml =
+    isStreaming && streamingContent !== '' && !streamingIsGroupCont
+      ? renderStreamingSender(config)
+      : ''
+  const streamingBubble =
+    isStreaming && streamingContent !== ''
+      ? `<div class="hn-msg hn-msg-ai hn-msg-left">
         ${streamingSenderHtml}
         <div class="hn-msg-bubble">${escapeHtml(streamingContent)}</div>
       </div>`
-    : ''
+      : ''
 
   const customerMsgCount = messages.filter((m) => m.role === 'CUSTOMER').length
-  const showEscalate = !isStreaming && customerMsgCount >= 3
-    && chatManager?.getState() === 'CHAT_AI'
+  const showEscalate =
+    !isStreaming && customerMsgCount >= 3 && chatManager?.getState() === 'CHAT_AI'
 
   const escalateBtn = showEscalate
     ? `<div class="hn-chat-escalate-wrap">
@@ -137,7 +139,8 @@ export function renderChat(): string {
   // messages even if the conversation happens to also be resolved.
   // null session = new chat not yet created (editable); '' token = old conv with no stored token (read-only)
   const isReadOnly = chatManager?.getSession()?.sessionToken === ''
-  const composerDisabled = isStreaming || chatManager?.getState() === 'RESOLVED' || isReadOnly ? 'disabled' : ''
+  const composerDisabled =
+    isStreaming || chatManager?.getState() === 'RESOLVED' || isReadOnly ? 'disabled' : ''
   const composerPlaceholder = isReadOnly
     ? 'This conversation is view-only.'
     : chatManager?.getState() === 'RESOLVED'
@@ -152,9 +155,10 @@ export function renderChat(): string {
     ? `<span class="hn-chat-header-status">${escapeHtml(config.widgetResponseTime)}</span>`
     : ''
 
-  const greetingHtml = messages.length === 0
-    ? `<div class="hn-chat-greeting">${escapeHtml(config.aiGreeting || 'Ask us anything, or share your feedback.')}</div>`
-    : ''
+  const greetingHtml =
+    messages.length === 0
+      ? `<div class="hn-chat-greeting">${escapeHtml(config.aiGreeting || 'Ask us anything, or share your feedback.')}</div>`
+      : ''
 
   return `
     <div class="hn-view hn-view-chat">
@@ -276,7 +280,7 @@ export function bindChatEvents(container: HTMLElement, rerenderFn: () => void): 
         const helpful = (btn as HTMLElement).dataset.fb === 'true'
         void chatManager?.sendFeedback(messageId, helpful)
         feedbackEl.querySelectorAll('.hn-msg-fb-btn').forEach((b) => {
-          (b as HTMLButtonElement).disabled = true
+          ;(b as HTMLButtonElement).disabled = true
         })
       })
     })
@@ -341,7 +345,7 @@ async function sendMessage(text: string, input: HTMLTextAreaElement | null): Pro
       } else if (event.type === 'done') {
         manager.advanceLastMessageAt()
         const loaded = await manager.loadMessages()
-        if (chatManager === null) return  // navigated away during load
+        if (chatManager === null) return // navigated away during load
         messages = loaded
         isStreaming = false
         streamingContent = ''

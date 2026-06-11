@@ -38,14 +38,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const workspaceSlug = searchParams.get('workspace')?.trim() ?? ''
 
-  if (
-    workspaceSlug.length === 0 ||
-    workspaceSlug.length > 63 ||
-    !SLUG_RE.test(workspaceSlug)
-  ) {
+  if (workspaceSlug.length === 0 || workspaceSlug.length > 63 || !SLUG_RE.test(workspaceSlug)) {
     return NextResponse.json(
       { error: 'Invalid workspace slug' },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers: CORS_HEADERS }
     )
   }
 
@@ -88,7 +84,7 @@ export async function GET(request: Request) {
   if (!workspace) {
     return NextResponse.json(
       { error: 'Workspace not found' },
-      { status: 404, headers: CORS_HEADERS },
+      { status: 404, headers: CORS_HEADERS }
     )
   }
 
@@ -117,7 +113,7 @@ export async function GET(request: Request) {
   // Determine help center base URL: custom domain takes priority; otherwise derive from
   // the request host so that local dev (http://localhost:3000) and production both work correctly.
   // Always include the full path prefix so consumers can append /{collection}/{article} directly.
-  const customDomain = (workspace as unknown as Record<string, unknown>).customDomain as string | null ?? null
+  const customDomain = (workspace as Record<string, unknown>).customDomain as string | null ?? null
   const requestUrl = new URL(request.url)
   const appBase = `${requestUrl.protocol}//${requestUrl.host}`
   const helpCenterUrl = customDomain
@@ -146,6 +142,6 @@ export async function GET(request: Request) {
         ...CORS_HEADERS,
         'Cache-Control': 'public, max-age=300, s-maxage=3600',
       },
-    },
+    }
   )
 }
