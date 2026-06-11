@@ -17,6 +17,7 @@ import { ChevronLeft } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { CustomerContextPanel } from './CustomerContextPanel'
 import { MessageComposer } from './MessageComposer'
+import { MessageMarkdown } from './MessageMarkdown'
 
 interface ContactSummary {
   id: string
@@ -324,17 +325,17 @@ export function ConversationDetail({ conversation: initialConv, members, current
                               ? 'bg-amber-50 border border-amber-200 rounded-bl-sm'
                               : msg.role === 'AGENT'
                                 ? 'bg-emerald-500/10 border border-emerald-500/20 rounded-bl-sm'
-                                : 'bg-muted/40 text-muted-foreground italic text-xs px-3 py-1.5 rounded-full'
+                                : 'bg-muted/40 text-muted-foreground italic text-xs px-3 py-1.5 rounded-full',
+                        isInternalNote && 'text-amber-900'
                       )}
                     >
-                      <p
-                        className={cn(
-                          'text-sm whitespace-pre-wrap leading-relaxed',
-                          isInternalNote && 'text-amber-900'
-                        )}
-                      >
-                        {msg.content}
-                      </p>
+                      {msg.role === 'AI' || msg.role === 'AGENT' ? (
+                        // AI/agent messages are authored in Markdown; customer
+                        // and system messages stay verbatim plain text.
+                        <MessageMarkdown content={msg.content} />
+                      ) : (
+                        <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-2 mt-1">
