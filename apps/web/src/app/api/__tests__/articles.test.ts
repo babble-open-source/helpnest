@@ -333,6 +333,13 @@ describe('POST /api/articles', () => {
     updatedAt: new Date(),
   }
 
+  beforeEach(() => {
+    // POST requires an OWNER/ADMIN/EDITOR member for session auth; the role
+    // query is a member.findFirst, so arm it by default. API-key tests
+    // override this mock explicitly for the authorId lookup.
+    mockMemberFindFirst.mockResolvedValue({ id: 'member-1' } as never)
+  })
+
   it('returns 401 when requireAuth returns null', async () => {
     mockRequireAuth.mockResolvedValue(null)
 
@@ -341,6 +348,19 @@ describe('POST /api/articles', () => {
     expect(res.status).toBe(401)
     const body = await res.json()
     expect(body).toEqual({ error: 'Unauthorized' })
+  })
+
+  it('returns 403 when the session user has no content-write role', async () => {
+    mockRequireAuth.mockResolvedValue(AUTH_RESULT)
+    // role-filtered member lookup finds nothing (e.g. VIEWER)
+    mockMemberFindFirst.mockResolvedValue(null)
+
+    const res = await POST(postRequest({ title: 'Test' }))
+
+    expect(res.status).toBe(403)
+    const body = await res.json()
+    expect(body).toEqual({ error: 'Forbidden' })
+    expect(mockArticleCreate).not.toHaveBeenCalled()
   })
 
   it('creates an article with all provided fields and returns 201', async () => {
