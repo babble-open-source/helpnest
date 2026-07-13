@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     body.plan as 'PRO' | 'BUSINESS',
     session?.user?.email ?? '',
     `${appUrl}/billing?success=true`,
-    `${appUrl}/billing?cancelled=true`,
+    `${appUrl}/billing?cancelled=true`
   )
 
   if (!url) {

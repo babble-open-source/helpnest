@@ -98,37 +98,37 @@ export function AppSidebar({
     document.body.classList.toggle('dark', next === 'dark')
     const b = document.body
     if (next === 'dark') {
-      b.style.setProperty('--color-background','10 10 12')
-      b.style.setProperty('--color-foreground','237 237 237')
-      b.style.setProperty('--color-card','23 23 26')
-      b.style.setProperty('--color-card-foreground','237 237 237')
-      b.style.setProperty('--color-popover','23 23 26')
-      b.style.setProperty('--color-popover-foreground','237 237 237')
-      b.style.setProperty('--color-primary','237 237 237')
-      b.style.setProperty('--color-primary-foreground','10 10 12')
-      b.style.setProperty('--color-muted','32 32 36')
-      b.style.setProperty('--color-muted-foreground','140 140 150')
-      b.style.setProperty('--color-accent','32 32 36')
-      b.style.setProperty('--color-accent-foreground','237 237 237')
-      b.style.setProperty('--color-border','35 35 39')
-      b.style.setProperty('--color-input','35 35 39')
-      b.style.setProperty('--color-ring','100 100 110')
+      b.style.setProperty('--color-background', '10 10 12')
+      b.style.setProperty('--color-foreground', '237 237 237')
+      b.style.setProperty('--color-card', '23 23 26')
+      b.style.setProperty('--color-card-foreground', '237 237 237')
+      b.style.setProperty('--color-popover', '23 23 26')
+      b.style.setProperty('--color-popover-foreground', '237 237 237')
+      b.style.setProperty('--color-primary', '237 237 237')
+      b.style.setProperty('--color-primary-foreground', '10 10 12')
+      b.style.setProperty('--color-muted', '32 32 36')
+      b.style.setProperty('--color-muted-foreground', '140 140 150')
+      b.style.setProperty('--color-accent', '32 32 36')
+      b.style.setProperty('--color-accent-foreground', '237 237 237')
+      b.style.setProperty('--color-border', '35 35 39')
+      b.style.setProperty('--color-input', '35 35 39')
+      b.style.setProperty('--color-ring', '100 100 110')
     } else {
-      b.style.setProperty('--color-background','255 255 255')
-      b.style.setProperty('--color-foreground','9 9 11')
-      b.style.setProperty('--color-card','255 255 255')
-      b.style.setProperty('--color-card-foreground','9 9 11')
-      b.style.setProperty('--color-popover','255 255 255')
-      b.style.setProperty('--color-popover-foreground','9 9 11')
-      b.style.setProperty('--color-primary','24 24 27')
-      b.style.setProperty('--color-primary-foreground','250 250 250')
-      b.style.setProperty('--color-muted','244 244 245')
-      b.style.setProperty('--color-muted-foreground','113 113 122')
-      b.style.setProperty('--color-accent','244 244 245')
-      b.style.setProperty('--color-accent-foreground','24 24 27')
-      b.style.setProperty('--color-border','229 229 232')
-      b.style.setProperty('--color-input','229 229 232')
-      b.style.setProperty('--color-ring','24 24 27')
+      b.style.setProperty('--color-background', '255 255 255')
+      b.style.setProperty('--color-foreground', '9 9 11')
+      b.style.setProperty('--color-card', '255 255 255')
+      b.style.setProperty('--color-card-foreground', '9 9 11')
+      b.style.setProperty('--color-popover', '255 255 255')
+      b.style.setProperty('--color-popover-foreground', '9 9 11')
+      b.style.setProperty('--color-primary', '24 24 27')
+      b.style.setProperty('--color-primary-foreground', '250 250 250')
+      b.style.setProperty('--color-muted', '244 244 245')
+      b.style.setProperty('--color-muted-foreground', '113 113 122')
+      b.style.setProperty('--color-accent', '244 244 245')
+      b.style.setProperty('--color-accent-foreground', '24 24 27')
+      b.style.setProperty('--color-border', '229 229 232')
+      b.style.setProperty('--color-input', '229 229 232')
+      b.style.setProperty('--color-ring', '24 24 27')
     }
   }
 
@@ -160,7 +160,12 @@ export function AppSidebar({
         className={cn(cls, 'rounded-md object-contain shrink-0')}
       />
     ) : (
-      <div className={cn(cls, 'rounded-md bg-primary text-primary-foreground flex items-center justify-center font-semibold shrink-0')}>
+      <div
+        className={cn(
+          cls,
+          'rounded-md bg-primary text-primary-foreground flex items-center justify-center font-semibold shrink-0'
+        )}
+      >
         {workspaceName[0]?.toUpperCase() ?? '?'}
       </div>
     )
@@ -205,7 +210,14 @@ export function AppSidebar({
                     variant="sidebar"
                   >
                     {ws.logo ? (
-                      <NextImage src={ws.logo} alt="" width={20} height={20} unoptimized className="w-5 h-5 rounded object-contain shrink-0" />
+                      <NextImage
+                        src={ws.logo}
+                        alt=""
+                        width={20}
+                        height={20}
+                        unoptimized
+                        className="w-5 h-5 rounded object-contain shrink-0"
+                      />
                     ) : (
                       <div className="w-5 h-5 rounded bg-primary text-primary-foreground flex items-center justify-center text-[10px] font-semibold shrink-0">
                         {ws.name[0]?.toUpperCase() ?? '?'}
@@ -216,11 +228,7 @@ export function AppSidebar({
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuSeparator variant="sidebar" />
-                <DropdownMenuItem
-                  asChild
-                  className="rounded-md"
-                  variant="sidebar"
-                >
+                <DropdownMenuItem asChild className="rounded-md" variant="sidebar">
                   <Link href="/workspaces" className="cursor-pointer">
                     <Plus className="size-4 mr-2" />
                     {tc('createWorkspace')}

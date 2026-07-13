@@ -28,7 +28,14 @@ interface Props {
 
 const RESTORE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
 
-export function WorkspaceList({ active, deleted, currentWorkspaceId, billingEnabled, slugPrefix, slugSuffix }: Props) {
+export function WorkspaceList({
+  active,
+  deleted,
+  currentWorkspaceId,
+  billingEnabled,
+  slugPrefix,
+  slugSuffix,
+}: Props) {
   const t = useTranslations('workspaces')
   const locale = useLocale()
   const [restoreTarget, setRestoreTarget] = useState<Workspace | null>(null)
@@ -80,9 +87,7 @@ export function WorkspaceList({ active, deleted, currentWorkspaceId, billingEnab
         <p className="text-4xl mb-3">🏢</p>
         <p className="font-medium text-foreground mb-1">{t('emptyTitle')}</p>
         <p className="text-muted-foreground text-sm mb-6">{t('emptyDescription')}</p>
-        <Button onClick={() => setShowCreateModal(true)}>
-          {t('createWorkspace')}
-        </Button>
+        <Button onClick={() => setShowCreateModal(true)}>{t('createWorkspace')}</Button>
       </Card>
     )
   }
@@ -90,20 +95,17 @@ export function WorkspaceList({ active, deleted, currentWorkspaceId, billingEnab
   return (
     <>
       <div className="flex justify-end mb-6">
-        <Button onClick={() => setShowCreateModal(true)}>
-          {t('createWorkspace')}
-        </Button>
+        <Button onClick={() => setShowCreateModal(true)}>{t('createWorkspace')}</Button>
       </div>
 
       {active.length > 0 && (
         <section className="mb-10">
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">{t('activeSection')}</h2>
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            {t('activeSection')}
+          </h2>
           <div className="grid gap-3">
             {active.map((ws) => (
-              <Card
-                key={ws.id}
-                className="p-5 flex items-center gap-4"
-              >
+              <Card key={ws.id} className="p-5 flex items-center gap-4">
                 <div className="w-10 h-10 rounded-lg bg-muted border flex items-center justify-center text-lg shrink-0">
                   {ws.name[0]?.toUpperCase() ?? '?'}
                 </div>
@@ -111,13 +113,14 @@ export function WorkspaceList({ active, deleted, currentWorkspaceId, billingEnab
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-foreground truncate">{ws.name}</p>
                     {ws.id === currentWorkspaceId && (
-                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20">
+                      <Badge
+                        variant="outline"
+                        className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                      >
                         {t('current')}
                       </Badge>
                     )}
-                    <Badge variant="secondary">
-                      {ws.role}
-                    </Badge>
+                    <Badge variant="secondary">{ws.role}</Badge>
                   </div>
                   <p className="text-sm text-muted-foreground truncate">{ws.slug}</p>
                 </div>
@@ -152,13 +155,12 @@ export function WorkspaceList({ active, deleted, currentWorkspaceId, billingEnab
 
       {restorable.length > 0 && (
         <section className="mb-10">
-          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">{t('deletedSection')}</h2>
+          <h2 className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+            {t('deletedSection')}
+          </h2>
           <div className="grid gap-3">
             {restorable.map((ws) => (
-              <Card
-                key={ws.id}
-                className="p-5 flex items-center gap-4 bg-muted"
-              >
+              <Card key={ws.id} className="p-5 flex items-center gap-4 bg-muted">
                 <div className="w-10 h-10 rounded-lg bg-muted-foreground/10 flex items-center justify-center text-lg shrink-0 opacity-60">
                   {ws.name[0]?.toUpperCase() ?? '?'}
                 </div>
@@ -192,10 +194,7 @@ export function WorkspaceList({ active, deleted, currentWorkspaceId, billingEnab
         <section>
           <div className="grid gap-3">
             {expired.map((ws) => (
-              <Card
-                key={ws.id}
-                className="p-5 flex items-center gap-4 opacity-50 bg-muted"
-              >
+              <Card key={ws.id} className="p-5 flex items-center gap-4 opacity-50 bg-muted">
                 <div className="w-10 h-10 rounded-lg bg-muted-foreground/10 flex items-center justify-center text-lg shrink-0">
                   {ws.name[0]?.toUpperCase() ?? '?'}
                 </div>

@@ -96,7 +96,9 @@ export function WorkspaceForm({
       ? t('logoMatchesFavicon')
       : null
   const previewBrandText = values.brandText.trim() || values.name.trim() || 'Brand'
-  const [dnsStatus, setDnsStatus] = useState<'idle' | 'checking' | 'registering' | 'active' | 'pending' | 'not_registered' | 'error'>('idle')
+  const [dnsStatus, setDnsStatus] = useState<
+    'idle' | 'checking' | 'registering' | 'active' | 'pending' | 'not_registered' | 'error'
+  >('idle')
   const [dnsMessage, setDnsMessage] = useState('')
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [deleteConfirmName, setDeleteConfirmName] = useState('')
@@ -162,7 +164,7 @@ export function WorkspaceForm({
         setValues((prev) => ({ ...prev, customDomain: '' }))
         router.refresh()
       } else {
-        const data = await res.json().catch(() => ({})) as { error?: string }
+        const data = (await res.json().catch(() => ({}))) as { error?: string }
         setDnsStatus('error')
         setDnsMessage(data.error ?? t('dnsCheckFailed'))
       }
@@ -197,7 +199,8 @@ export function WorkspaceForm({
     }
   }
 
-  const brandFontUrlInvalid = values.customBrandFontUrl.trim().length > 0 && !isAllowedFontUrl(values.customBrandFontUrl)
+  const brandFontUrlInvalid =
+    values.customBrandFontUrl.trim().length > 0 && !isAllowedFontUrl(values.customBrandFontUrl)
 
   useEffect(() => {
     const trimmedBrandFontUrl = values.customBrandFontUrl.trim()
@@ -236,16 +239,16 @@ export function WorkspaceForm({
 
   return (
     <div className="space-y-4">
-      {demoMode && (
-        <p className="text-sm text-muted-foreground">{t('demoDisabled')}</p>
-      )}
+      {demoMode && <p className="text-sm text-muted-foreground">{t('demoDisabled')}</p>}
       <div className="space-y-1.5">
         <Label htmlFor="ws-name">{t('name')}</Label>
         <Input id="ws-name" value={values.name} onChange={set('name')} disabled={demoMode} />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="ws-slug">{t('slug')}</Label>
-        <div className={`flex items-center border border-input rounded-md overflow-hidden${demoMode ? ' opacity-60' : ''}`}>
+        <div
+          className={`flex items-center border border-input rounded-md overflow-hidden${demoMode ? ' opacity-60' : ''}`}
+        >
           {!helpCenterDomain && (
             <span className="px-3 py-2 bg-muted text-muted-foreground text-sm border-e border-input shrink-0">
               {appUrl.replace(/^https?:\/\//, '')}/
@@ -271,7 +274,9 @@ export function WorkspaceForm({
           <Label htmlFor="ws-custom-domain">
             {t('customDomain')}
             {planTier === 'FREE' && (
-              <span className="ms-2 text-xs font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">PRO</span>
+              <span className="ms-2 text-xs font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                PRO
+              </span>
             )}
           </Label>
 
@@ -279,8 +284,18 @@ export function WorkspaceForm({
             /* Locked state for FREE users */
             <div className="rounded-lg border bg-muted/50 p-5 text-center">
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted mb-3">
-                <svg className="w-5 h-5 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                <svg
+                  className="w-5 h-5 text-muted-foreground"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={1.5}
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                  />
                 </svg>
               </div>
               <p className="text-sm font-medium text-foreground mb-1">{t('customDomainLocked')}</p>
@@ -292,7 +307,12 @@ export function WorkspaceForm({
                 >
                   {t('upgradeToPro')}
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
                   </svg>
                 </Link>
               )}
@@ -307,9 +327,7 @@ export function WorkspaceForm({
                 placeholder={t('customDomainPlaceholder')}
                 disabled={demoMode}
               />
-              <p className="text-xs text-muted-foreground">
-                {t('customDomainHelp')}
-              </p>
+              <p className="text-xs text-muted-foreground">{t('customDomainHelp')}</p>
               {values.customDomain.trim().length > 0 && (
                 <div className="mt-3 rounded-lg border bg-muted p-4 text-sm space-y-3">
                   <div className="flex items-center justify-between min-h-[24px]">
@@ -342,8 +360,12 @@ export function WorkspaceForm({
                       <tbody>
                         <tr>
                           <td className="py-1.5 pe-4 font-mono text-foreground">CNAME</td>
-                          <td className="py-1.5 pe-4 font-mono text-foreground">{values.customDomain.trim()}</td>
-                          <td className="py-1.5 pe-4 font-mono text-primary select-all">{cnameTarget || 'proxy.helpnest.cloud'}</td>
+                          <td className="py-1.5 pe-4 font-mono text-foreground">
+                            {values.customDomain.trim()}
+                          </td>
+                          <td className="py-1.5 pe-4 font-mono text-primary select-all">
+                            {cnameTarget || 'proxy.helpnest.cloud'}
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -351,11 +373,7 @@ export function WorkspaceForm({
 
                   <div className="flex flex-wrap items-center gap-2 min-h-[30px]">
                     {dnsStatus === 'idle' || dnsStatus === 'not_registered' ? (
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={registerDomain}
-                      >
+                      <Button type="button" size="sm" onClick={registerDomain}>
                         {t('dnsRegister')}
                       </Button>
                     ) : (
@@ -385,17 +403,23 @@ export function WorkspaceForm({
 
                   <div className="min-h-[16px]">
                     {dnsMessage && (
-                      <p className={`text-xs ${
-                        dnsStatus === 'active' ? 'text-emerald-600 dark:text-emerald-400'
-                        : dnsStatus === 'error' ? 'text-destructive'
-                        : 'text-muted-foreground'
-                      }`}>
+                      <p
+                        className={`text-xs ${
+                          dnsStatus === 'active'
+                            ? 'text-emerald-600 dark:text-emerald-400'
+                            : dnsStatus === 'error'
+                              ? 'text-destructive'
+                              : 'text-muted-foreground'
+                        }`}
+                      >
                         {dnsMessage}
                       </p>
                     )}
                   </div>
 
-                  <p className={`text-xs text-muted-foreground ${dnsStatus === 'active' ? 'invisible' : ''}`}>
+                  <p
+                    className={`text-xs text-muted-foreground ${dnsStatus === 'active' ? 'invisible' : ''}`}
+                  >
                     {t('dnsNote')}
                   </p>
                 </div>
@@ -554,8 +578,12 @@ export function WorkspaceForm({
           <Button onClick={save} disabled={status === 'saving'}>
             {status === 'saving' ? tc('saving') : t('saveChanges')}
           </Button>
-          {status === 'saved' && <span className="text-sm text-emerald-600 dark:text-emerald-400">{t('saved')}</span>}
-          {status === 'error' && <span className="text-sm text-destructive">{t('saveFailed')}</span>}
+          {status === 'saved' && (
+            <span className="text-sm text-emerald-600 dark:text-emerald-400">{t('saved')}</span>
+          )}
+          {status === 'error' && (
+            <span className="text-sm text-destructive">{t('saveFailed')}</span>
+          )}
         </div>
       )}
 
@@ -585,12 +613,18 @@ export function WorkspaceForm({
           </div>
         ) : (
           <a
-            href={helpCenterDomain ? `https://${values.slug}.${helpCenterDomain}` : `${appUrl}/${values.slug}/help`}
+            href={
+              helpCenterDomain
+                ? `https://${values.slug}.${helpCenterDomain}`
+                : `${appUrl}/${values.slug}/help`
+            }
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm font-mono text-primary hover:underline break-all"
           >
-            {helpCenterDomain ? `${values.slug}.${helpCenterDomain}` : `${appUrl}/${values.slug}/help`}
+            {helpCenterDomain
+              ? `${values.slug}.${helpCenterDomain}`
+              : `${appUrl}/${values.slug}/help`}
           </a>
         )}
       </div>
@@ -599,8 +633,8 @@ export function WorkspaceForm({
         <div className="mt-10 pt-6 border-t border-destructive/30">
           <h3 className="text-sm font-medium text-destructive mb-1">Danger zone</h3>
           <p className="text-xs text-muted-foreground mb-3">
-            Deleting a workspace removes all articles, collections, conversations, and members.
-            You have 30 days to restore it before data is permanently deleted.
+            Deleting a workspace removes all articles, collections, conversations, and members. You
+            have 30 days to restore it before data is permanently deleted.
           </p>
           <Button
             type="button"
@@ -625,13 +659,22 @@ export function WorkspaceForm({
         onCancel={() => setShowRemoveDomainConfirm(false)}
       />
 
-      <AlertDialog open={showDeleteModal} onOpenChange={(open) => { if (!open) { setShowDeleteModal(false); setDeleteConfirmName('') } }}>
+      <AlertDialog
+        open={showDeleteModal}
+        onOpenChange={(open) => {
+          if (!open) {
+            setShowDeleteModal(false)
+            setDeleteConfirmName('')
+          }
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete workspace</AlertDialogTitle>
             <AlertDialogDescription>
-              This will soft-delete <span className="font-medium text-foreground">{values.name}</span>.
-              All content will be inaccessible. You have 30 days to restore it.
+              This will soft-delete{' '}
+              <span className="font-medium text-foreground">{values.name}</span>. All content will
+              be inaccessible. You have 30 days to restore it.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-2 px-0">
@@ -641,12 +684,13 @@ export function WorkspaceForm({
             <Input
               type="text"
               value={deleteConfirmName}
-              onChange={(e) => { setDeleteConfirmName(e.target.value); setDeleteError('') }}
+              onChange={(e) => {
+                setDeleteConfirmName(e.target.value)
+                setDeleteError('')
+              }}
               placeholder={values.name}
             />
-            {deleteError && (
-              <p className="text-sm text-destructive">{deleteError}</p>
-            )}
+            {deleteError && <p className="text-sm text-destructive">{deleteError}</p>}
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteConfirmName('')}>Cancel</AlertDialogCancel>

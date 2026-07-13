@@ -69,7 +69,9 @@ export function AiSettingsSection({
   const [productContext, setProductContext] = useState(initProductContext || '')
   const [autoDraftGapsEnabled, setAutoDraftGapsEnabled] = useState(initAutoDraftGapsEnabled)
   const [autoDraftGapThreshold, setAutoDraftGapThreshold] = useState(initAutoDraftGapThreshold)
-  const [autoDraftExternalEnabled, setAutoDraftExternalEnabled] = useState(initAutoDraftExternalEnabled)
+  const [autoDraftExternalEnabled, setAutoDraftExternalEnabled] = useState(
+    initAutoDraftExternalEnabled
+  )
   const [batchWindowMinutes, setBatchWindowMinutes] = useState(initBatchWindowMinutes)
   const [aiDraftRateLimit, setAiDraftRateLimit] = useState(initAiDraftRateLimit)
   const t = useTranslations('aiSettings')
@@ -111,7 +113,7 @@ export function AiSettingsSection({
         setRemoveApiKey(false)
         setTimeout(() => setSaved(false), 3000)
       } else {
-        const data = await res.json() as { error?: string }
+        const data = (await res.json()) as { error?: string }
         setSaveError(data.error ?? tc('somethingWentWrong'))
       }
     } catch {
@@ -154,7 +156,10 @@ export function AiSettingsSection({
                 <Label htmlFor="ai-provider">{t('provider')}</Label>
                 <Select
                   value={provider}
-                  onValueChange={(v) => { setProvider(v); setModel('') }}
+                  onValueChange={(v) => {
+                    setProvider(v)
+                    setModel('')
+                  }}
                   disabled={demoMode}
                 >
                   <SelectTrigger id="ai-provider">
@@ -162,7 +167,9 @@ export function AiSettingsSection({
                   </SelectTrigger>
                   <SelectContent>
                     {providers.map((p) => (
-                      <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                      <SelectItem key={p.value} value={p.value}>
+                        {p.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -193,15 +200,26 @@ export function AiSettingsSection({
                 <Label htmlFor="ai-api-key">
                   {t('apiKey')}
                   {cloudMode && planTier === 'FREE' && (
-                    <span className="ms-2 text-xs font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">PRO</span>
+                    <span className="ms-2 text-xs font-normal text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                      PRO
+                    </span>
                   )}
                 </Label>
                 {cloudMode && planTier === 'FREE' ? (
                   <div className="rounded-lg border bg-muted/50 p-4 text-center">
-                    <p className="text-sm text-foreground mb-1">Bring your own API key is a Pro feature</p>
-                    <p className="text-xs text-muted-foreground mb-2">Upgrade to use your own API key for unlimited AI — search, agent, and drafts.</p>
+                    <p className="text-sm text-foreground mb-1">
+                      Bring your own API key is a Pro feature
+                    </p>
+                    <p className="text-xs text-muted-foreground mb-2">
+                      Upgrade to use your own API key for unlimited AI — search, agent, and drafts.
+                    </p>
                     {billingEnabled && (
-                      <Link href="/billing" className="text-xs font-medium text-primary hover:underline">Upgrade to Pro →</Link>
+                      <Link
+                        href="/billing"
+                        className="text-xs font-medium text-primary hover:underline"
+                      >
+                        Upgrade to Pro →
+                      </Link>
                     )}
                   </div>
                 ) : (
@@ -209,7 +227,15 @@ export function AiSettingsSection({
                     {removeApiKey ? (
                       <div className="flex items-center gap-2 px-3 py-2 border border-destructive/30 rounded-md bg-destructive/5 text-sm text-destructive">
                         <span className="flex-1">{t('keyRemoved')}</span>
-                        <Button type="button" variant="link" size="sm" onClick={() => setRemoveApiKey(false)} className="h-auto p-0 text-destructive underline hover:no-underline shrink-0">{t('undo')}</Button>
+                        <Button
+                          type="button"
+                          variant="link"
+                          size="sm"
+                          onClick={() => setRemoveApiKey(false)}
+                          className="h-auto p-0 text-destructive underline hover:no-underline shrink-0"
+                        >
+                          {t('undo')}
+                        </Button>
                       </div>
                     ) : (
                       <Input
@@ -234,7 +260,10 @@ export function AiSettingsSection({
                           type="button"
                           variant="link"
                           size="sm"
-                          onClick={() => { setRemoveApiKey(true); setApiKey('') }}
+                          onClick={() => {
+                            setRemoveApiKey(true)
+                            setApiKey('')
+                          }}
                           disabled={demoMode}
                           className="h-auto p-0 text-destructive hover:text-destructive/80"
                         >
@@ -275,7 +304,9 @@ export function AiSettingsSection({
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label>{t('escalationThreshold')}</Label>
-                  <span className="text-sm text-muted-foreground">{t('confidenceRequired', { value: Math.round(threshold * 100) })}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {t('confidenceRequired', { value: Math.round(threshold * 100) })}
+                  </span>
                 </div>
                 <Slider
                   min={0}
@@ -296,7 +327,10 @@ export function AiSettingsSection({
               <div className="space-y-3">
                 <h3 className="text-sm font-medium text-foreground">{t('productContext')}</h3>
                 <div className="space-y-1.5">
-                  <Label htmlFor="ai-product-context" className="text-sm text-muted-foreground font-normal">
+                  <Label
+                    htmlFor="ai-product-context"
+                    className="text-sm text-muted-foreground font-normal"
+                  >
                     {t('productContextLabel')}
                   </Label>
                   <Textarea
@@ -317,8 +351,12 @@ export function AiSettingsSection({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="text-sm font-medium text-foreground">{t('autoDraftQuestions')}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{t('autoDraftQuestionsHelp')}</p>
+                    <h3 className="text-sm font-medium text-foreground">
+                      {t('autoDraftQuestions')}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {t('autoDraftQuestionsHelp')}
+                    </p>
                   </div>
                   <Switch
                     checked={autoDraftGapsEnabled}
@@ -335,7 +373,9 @@ export function AiSettingsSection({
                         min={1}
                         max={100}
                         value={autoDraftGapThreshold}
-                        onChange={(e) => setAutoDraftGapThreshold(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                        onChange={(e) =>
+                          setAutoDraftGapThreshold(Math.max(1, parseInt(e.target.value, 10) || 1))
+                        }
                         disabled={demoMode}
                         className="inline-block w-16 mx-1 h-7 py-0.5 text-sm"
                       />{' '}
@@ -368,7 +408,9 @@ export function AiSettingsSection({
                         min={1}
                         max={1440}
                         value={batchWindowMinutes}
-                        onChange={(e) => setBatchWindowMinutes(Math.max(1, parseInt(e.target.value, 10) || 60))}
+                        onChange={(e) =>
+                          setBatchWindowMinutes(Math.max(1, parseInt(e.target.value, 10) || 60))
+                        }
                         disabled={demoMode}
                         className="inline-block w-20 mx-1 h-7 py-0.5 text-sm"
                       />{' '}
@@ -392,7 +434,11 @@ export function AiSettingsSection({
                       min={1}
                       max={500}
                       value={aiDraftRateLimit}
-                      onChange={(e) => setAiDraftRateLimit(Math.max(1, Math.min(500, parseInt(e.target.value, 10) || 50)))}
+                      onChange={(e) =>
+                        setAiDraftRateLimit(
+                          Math.max(1, Math.min(500, parseInt(e.target.value, 10) || 50))
+                        )
+                      }
                       disabled={demoMode}
                       className="inline-block w-20 me-1 h-7 py-0.5 text-sm"
                     />{' '}
@@ -404,10 +450,7 @@ export function AiSettingsSection({
           )}
 
           {saveError && <p className="text-sm text-destructive">{saveError}</p>}
-          <Button
-            onClick={handleSave}
-            disabled={saving || demoMode}
-          >
+          <Button onClick={handleSave} disabled={saving || demoMode}>
             {saving ? tc('saving') : saved ? t('saved') : t('saveAiSettings')}
           </Button>
         </div>

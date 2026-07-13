@@ -13,7 +13,13 @@ import { AppSidebar } from './AppSidebar'
 import { DefaultPasswordBanner } from './DefaultPasswordBanner'
 import { Toaster } from '@/components/ui/sonner'
 
-export default async function DashboardLayout({ children, params }: { children: React.ReactNode; params: Promise<{ locale: string }> }) {
+export default async function DashboardLayout({
+  children,
+  params,
+}: {
+  children: React.ReactNode
+  params: Promise<{ locale: string }>
+}) {
   const { locale } = await params
   const rtl = isRtlLocale(locale)
   const session = await auth()
@@ -31,9 +37,7 @@ export default async function DashboardLayout({ children, params }: { children: 
 
   const demoMode = isDemoMode()
   const showDefaultPasswordBanner =
-    !demoMode &&
-    currentUser?.passwordHash !== null &&
-    currentUser?.passwordChangedAt === null
+    !demoMode && currentUser?.passwordHash !== null && currentUser?.passwordChangedAt === null
 
   const columns = await getWorkspaceColumnSet()
 
@@ -92,7 +96,11 @@ export default async function DashboardLayout({ children, params }: { children: 
           </span>
         </div>
       )}
-      <SidebarProvider defaultOpen={defaultOpen} className="dashboard h-screen !min-h-0 text-foreground" style={{ fontFamily: "'Inter', system-ui, sans-serif" }}>
+      <SidebarProvider
+        defaultOpen={defaultOpen}
+        className="dashboard h-screen !min-h-0 text-foreground"
+        style={{ fontFamily: "'Inter', system-ui, sans-serif" }}
+      >
         <AppSidebar
           workspaceId={workspaceId}
           workspaceName={workspace.name}
@@ -114,9 +122,7 @@ export default async function DashboardLayout({ children, params }: { children: 
               {workspace.brandText ?? workspace.name}
             </span>
           </header>
-          <main className="flex-1 overflow-auto min-h-0">
-            {children}
-          </main>
+          <main className="flex-1 overflow-auto min-h-0">{children}</main>
         </SidebarInset>
       </SidebarProvider>
       <Toaster />

@@ -24,7 +24,9 @@ export default async function WorkspacesPage() {
 
   const helpCenterDomain = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  const slugPrefix = helpCenterDomain ? '' : `${appUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}/`
+  const slugPrefix = helpCenterDomain
+    ? ''
+    : `${appUrl.replace(/^https?:\/\//, '').replace(/\/$/, '')}/`
   const slugSuffix = helpCenterDomain ? `.${helpCenterDomain}` : ''
 
   return (

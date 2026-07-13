@@ -16,11 +16,7 @@ function headers(): Record<string, string> {
   return h
 }
 
-export type Resource =
-  | 'articles'
-  | 'members'
-  | 'apiCalls'
-  | 'aiCredits'
+export type Resource = 'articles' | 'members' | 'apiCalls' | 'aiCredits'
 
 export interface LimitCheckResult {
   allowed: boolean
@@ -36,7 +32,7 @@ export interface LimitCheckResult {
  */
 export async function checkLimit(
   workspaceId: string,
-  resource: Resource,
+  resource: Resource
 ): Promise<LimitCheckResult> {
   if (!CLOUD_API_URL) {
     return { allowed: true, current: 0, limit: Infinity, plan: 'SELF_HOSTED' }
@@ -127,7 +123,7 @@ export async function createCheckoutSession(
   plan: 'PRO' | 'BUSINESS',
   email: string,
   successUrl: string,
-  cancelUrl: string,
+  cancelUrl: string
 ): Promise<string | null> {
   if (!CLOUD_API_URL) return null
 
@@ -148,7 +144,10 @@ export async function createCheckoutSession(
 /**
  * Get Stripe customer portal URL for managing subscription.
  */
-export async function getPortalUrl(workspaceId: string, returnUrl?: string): Promise<string | null> {
+export async function getPortalUrl(
+  workspaceId: string,
+  returnUrl?: string
+): Promise<string | null> {
   if (!CLOUD_API_URL) return null
 
   try {

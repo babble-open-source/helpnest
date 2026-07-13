@@ -3,7 +3,13 @@
 import { useEffect, useState } from 'react'
 import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 
 interface Props {
@@ -28,7 +34,7 @@ export function RestoreModal({ workspace, billingEnabled, onClose, onSuccess }: 
       try {
         const res = await fetch(`/api/workspaces/restore/check-slug?workspaceId=${workspace.id}`)
         if (!res.ok) {
-          const data = await res.json() as { error?: string }
+          const data = (await res.json()) as { error?: string }
           if (res.status === 410) {
             setError(t('restoreExpired'))
           } else {
@@ -36,7 +42,11 @@ export function RestoreModal({ workspace, billingEnabled, onClose, onSuccess }: 
           }
           return
         }
-        const data = await res.json() as { available: boolean; slug: string; originalSlug?: string }
+        const data = (await res.json()) as {
+          available: boolean
+          slug: string
+          originalSlug?: string
+        }
         if (cancelled) return
         if (data.available) {
           setSlugState('available')
@@ -49,7 +59,9 @@ export function RestoreModal({ workspace, billingEnabled, onClose, onSuccess }: 
       }
     }
     checkSlug()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [workspace.id, t, tc])
 
   async function handleRestore() {
@@ -68,7 +80,7 @@ export function RestoreModal({ workspace, billingEnabled, onClose, onSuccess }: 
       })
 
       if (!res.ok) {
-        const data = await res.json() as { error?: string }
+        const data = (await res.json()) as { error?: string }
         if (data.error === 'slugRequired') {
           setSlugState('claimed')
           setError(t('restoreSlugRequired'))
@@ -102,7 +114,12 @@ export function RestoreModal({ workspace, billingEnabled, onClose, onSuccess }: 
     (slugState === 'available' || newSlug.trim().length >= 3)
 
   return (
-    <Dialog open onOpenChange={(open) => { if (!open) onClose() }}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose()
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>{t('restoreTitle')}</DialogTitle>
@@ -112,9 +129,7 @@ export function RestoreModal({ workspace, billingEnabled, onClose, onSuccess }: 
           <span className="font-medium text-foreground">{workspace.name}</span>
         </p>
 
-        {slugState === 'loading' && !error && (
-          <p className="text-sm text-muted-foreground">…</p>
-        )}
+        {slugState === 'loading' && !error && <p className="text-sm text-muted-foreground">…</p>}
 
         {slugState === 'claimed' && (
           <div className="space-y-2">
@@ -122,7 +137,10 @@ export function RestoreModal({ workspace, billingEnabled, onClose, onSuccess }: 
             <Input
               type="text"
               value={newSlug}
-              onChange={(e) => { setNewSlug(e.target.value); setError('') }}
+              onChange={(e) => {
+                setNewSlug(e.target.value)
+                setError('')
+              }}
               placeholder={t('restoreSlugPlaceholder')}
             />
           </div>
@@ -137,18 +155,10 @@ export function RestoreModal({ workspace, billingEnabled, onClose, onSuccess }: 
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <DialogFooter>
-          <Button
-            type="button"
-            onClick={onClose}
-            variant="outline"
-          >
+          <Button type="button" onClick={onClose} variant="outline">
             {tc('cancel')}
           </Button>
-          <Button
-            type="button"
-            onClick={handleRestore}
-            disabled={!canSubmit}
-          >
+          <Button type="button" onClick={handleRestore} disabled={!canSubmit}>
             {restoring ? t('restoring') : t('restoreConfirm')}
           </Button>
         </DialogFooter>
