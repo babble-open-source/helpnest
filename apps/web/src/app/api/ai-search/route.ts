@@ -67,7 +67,9 @@ function consumeInMemoryRateLimit(key: string): { limited: boolean; retryAfterSe
  * Redis-backed sliding-window rate limiter.
  * Falls back to the in-memory implementation if Redis is unavailable.
  */
-async function consumeAiRateLimit(key: string): Promise<{ limited: boolean; retryAfterSeconds: number }> {
+async function consumeAiRateLimit(
+  key: string
+): Promise<{ limited: boolean; retryAfterSeconds: number }> {
   if (redis) {
     try {
       const windowSlot = Math.floor(Date.now() / AI_RATE_LIMIT_WINDOW_MS)
@@ -120,7 +122,7 @@ function sanitizeHistory(input: unknown): HistoryMessage[] {
 export async function POST(request: Request) {
   let body: { query?: string; workspaceSlug?: string; history?: unknown }
   try {
-    body = await request.json() as { query?: string; workspaceSlug?: string; history?: unknown }
+    body = (await request.json()) as { query?: string; workspaceSlug?: string; history?: unknown }
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: CORS_HEADERS })
   }
@@ -131,7 +133,7 @@ export async function POST(request: Request) {
   if (!query?.trim() || !workspaceSlug) {
     return NextResponse.json(
       { error: 'query and workspaceSlug are required' },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers: CORS_HEADERS }
     )
   }
 
@@ -139,7 +141,7 @@ export async function POST(request: Request) {
   if (normalizedQuery.length > 500) {
     return NextResponse.json(
       { error: 'Query must be 500 characters or fewer' },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers: CORS_HEADERS }
     )
   }
 
@@ -154,22 +156,34 @@ export async function POST(request: Request) {
           ...CORS_HEADERS,
           'Retry-After': String(rate.retryAfterSeconds),
         },
-      },
+      }
     )
   }
 
   const workspace = await prisma.workspace.findFirst({
     where: { slug: workspaceSlug },
-    select: { id: true, slug: true, name: true, customDomain: true, aiEnabled: true, aiProvider: true, aiApiKey: true, aiModel: true },
+    select: {
+      id: true,
+      slug: true,
+      name: true,
+      customDomain: true,
+      aiEnabled: true,
+      aiProvider: true,
+      aiApiKey: true,
+      aiModel: true,
+    },
   })
   if (!workspace) {
-    return NextResponse.json({ error: 'Workspace not found' }, { status: 404, headers: CORS_HEADERS })
+    return NextResponse.json(
+      { error: 'Workspace not found' },
+      { status: 404, headers: CORS_HEADERS }
+    )
   }
 
   if (!workspace.aiEnabled) {
     return NextResponse.json(
       { error: 'AI search is not enabled for this workspace.' },
-      { status: 503, headers: CORS_HEADERS },
+      { status: 503, headers: CORS_HEADERS }
     )
   }
 
@@ -177,13 +191,17 @@ export async function POST(request: Request) {
   // BYOK (skip metering) is allowed for: self-hosted (always), PRO, BUSINESS.
   // Cloud FREE users with a key set are still metered.
   const limit = await checkLimit(workspace.id, 'aiCredits')
-  const byokAllowed = limit.plan === 'SELF_HOSTED' || limit.plan === 'PRO' || limit.plan === 'BUSINESS'
+  const byokAllowed =
+    limit.plan === 'SELF_HOSTED' || limit.plan === 'PRO' || limit.plan === 'BUSINESS'
   const byok = isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })
   if (!byok) {
     if (!limit.allowed) {
       return NextResponse.json(
-        { error: 'AI credit limit reached for this month. Upgrade your plan or add your own API key.' },
-        { status: 429, headers: CORS_HEADERS },
+        {
+          error:
+            'AI credit limit reached for this month. Upgrade your plan or add your own API key.',
+        },
+        { status: 429, headers: CORS_HEADERS }
       )
     }
     incrementUsage(workspace.id, 'aiCredits')
@@ -199,7 +217,7 @@ export async function POST(request: Request) {
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : 'AI provider not configured.' },
-      { status: 503, headers: CORS_HEADERS },
+      { status: 503, headers: CORS_HEADERS }
     )
   }
 
@@ -272,7 +290,10 @@ export async function POST(request: Request) {
         collection: { is: { visibility: { in: allowedVisibility }, isArchived: false } },
       },
       select: {
-        id: true, title: true, slug: true, content: true,
+        id: true,
+        title: true,
+        slug: true,
+        content: true,
         collection: { select: { slug: true, title: true } },
       },
     })
@@ -309,10 +330,11 @@ export async function POST(request: Request) {
   if (articles.length === 0 && history.length === 0) {
     return NextResponse.json(
       {
-        answer: "I couldn't find any relevant articles for your question. Try browsing the help center or contact our support team.",
+        answer:
+          "I couldn't find any relevant articles for your question. Try browsing the help center or contact our support team.",
         sources: [],
       },
-      { headers: CORS_HEADERS },
+      { headers: CORS_HEADERS }
     )
   }
 
@@ -321,14 +343,19 @@ export async function POST(request: Request) {
     ? `https://${workspace.customDomain}`
     : `${appUrl}/${workspace.slug}/help`
 
-  const context = articles.map((a, i) => {
-    const raw = a.contextChunk ?? a.content.slice(0, 1500)
-    const content = raw.trimStart().startsWith('<')
-      ? raw.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-      : raw
-    const articleUrl = `${helpCenterBase}/${a.collection.slug}/${a.slug}`
-    return `[Article ${i + 1}]: ${a.title}\nURL: ${articleUrl}\n${content}`
-  }).join('\n\n---\n\n')
+  const context = articles
+    .map((a, i) => {
+      const raw = a.contextChunk ?? a.content.slice(0, 1500)
+      const content = raw.trimStart().startsWith('<')
+        ? raw
+            .replace(/<[^>]+>/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim()
+        : raw
+      const articleUrl = `${helpCenterBase}/${a.collection.slug}/${a.slug}`
+      return `[Article ${i + 1}]: ${a.title}\nURL: ${articleUrl}\n${content}`
+    })
+    .join('\n\n---\n\n')
 
   const sources = articles.map((a) => ({
     id: a.id,
@@ -375,7 +402,9 @@ Format your response in markdown. Put each list item on its own line.`,
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: 'done' })}\n\n`))
           } else if (event.type === 'error') {
             controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ type: 'error', message: event.message })}\n\n`)
+              encoder.encode(
+                `data: ${JSON.stringify({ type: 'error', message: event.message })}\n\n`
+              )
             )
           }
         }
@@ -395,7 +424,7 @@ Format your response in markdown. Put each list item on its own line.`,
       ...CORS_HEADERS,
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
     },
   })
 }

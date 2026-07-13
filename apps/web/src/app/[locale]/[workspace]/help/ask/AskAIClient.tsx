@@ -159,9 +159,7 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
       if (failed) {
         setMessages((prev) =>
           prev.map((m) =>
-            m.id === assistantId
-              ? { ...m, content: m.content || t('aiError'), error: true }
-              : m
+            m.id === assistantId ? { ...m, content: m.content || t('aiError'), error: true } : m
           )
         )
       }
@@ -242,7 +240,8 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
   }
 
   const lastMessage = messages[messages.length - 1]
-  const showThinking = status === 'loading' && lastMessage?.role === 'assistant' && !lastMessage.content
+  const showThinking =
+    status === 'loading' && lastMessage?.role === 'assistant' && !lastMessage.content
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -254,7 +253,9 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
       >
         {messages.length === 0 ? (
           <div className="text-center py-16">
-            <p className="text-4xl mb-4" aria-hidden="true">✦</p>
+            <p className="text-4xl mb-4" aria-hidden="true">
+              ✦
+            </p>
             <p className="font-serif text-2xl text-ink mb-2">{t('askAnything')}</p>
             <p className="text-muted text-sm mb-8">{t('subtitle', { workspaceName })}</p>
             {suggestions.length > 0 && (
@@ -286,7 +287,12 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
                 className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4v16m8-8H4"
+                  />
                 </svg>
                 {t('newConversation')}
               </button>
@@ -316,29 +322,41 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
                 ) : (
                   <div key={message.id}>
                     {message.error ? (
-                        <div className="bg-white rounded-xl border border-border p-4">
-                          <p className="text-sm text-ink">{message.content}</p>
-                          <button
-                            type="button"
-                            onClick={() => handleRetry(message.id)}
-                            disabled={busy}
-                            className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline disabled:opacity-50"
+                      <div className="bg-white rounded-xl border border-border p-4">
+                        <p className="text-sm text-ink">{message.content}</p>
+                        <button
+                          type="button"
+                          onClick={() => handleRetry(message.id)}
+                          disabled={busy}
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-accent hover:underline disabled:opacity-50"
+                        >
+                          <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                            </svg>
-                            {t('retry')}
-                          </button>
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                            />
+                          </svg>
+                          {t('retry')}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-xl border border-border p-4">
+                        <div className="hn-prose text-sm">
+                          <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
+                          {status === 'streaming' && message.id === lastMessage?.id && (
+                            <span className="inline-block w-0.5 h-4 bg-ink/50 ms-0.5 animate-pulse motion-reduce:animate-none align-text-bottom" />
+                          )}
                         </div>
-                      ) : (
-                        <div className="bg-white rounded-xl border border-border p-4">
-                          <div className="hn-prose text-sm">
-                            <Markdown remarkPlugins={[remarkGfm]}>{message.content}</Markdown>
-                            {status === 'streaming' && message.id === lastMessage?.id && (
-                              <span className="inline-block w-0.5 h-4 bg-ink/50 ms-0.5 animate-pulse motion-reduce:animate-none align-text-bottom" />
-                            )}
-                          </div>
-                          {message.sources && message.sources.length > 0 && !(status === 'streaming' && message.id === lastMessage?.id) && (
+                        {message.sources &&
+                          message.sources.length > 0 &&
+                          !(status === 'streaming' && message.id === lastMessage?.id) && (
                             <div className="mt-3 pt-3 border-t border-border">
                               <p className="text-xs font-medium text-muted uppercase tracking-wide mb-2">
                                 {t('sources')}
@@ -350,8 +368,18 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
                                     href={`/${workspace}/help/${source.collection.slug}/${source.slug}`}
                                     className="inline-flex items-center gap-1.5 max-w-full px-2.5 py-1 rounded-full border border-border bg-cream text-xs text-ink hover:border-accent hover:text-accent transition-colors"
                                   >
-                                    <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    <svg
+                                      className="w-3 h-3 shrink-0"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                      />
                                     </svg>
                                     <span className="truncate">{source.title}</span>
                                   </Link>
@@ -359,8 +387,8 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
                               </div>
                             </div>
                           )}
-                        </div>
-                      )}
+                      </div>
+                    )}
                   </div>
                 )
               )}
@@ -389,7 +417,12 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
             className="absolute -top-12 start-1/2 -translate-x-1/2 rtl:translate-x-1/2 bg-white border border-border rounded-full p-2 shadow-sm hover:border-accent hover:text-accent text-muted transition-colors"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 14l-7 7m0 0l-7-7m7 7V3"
+              />
             </svg>
           </button>
         </div>
@@ -440,7 +473,12 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
                   className="bg-green text-white p-2 rounded-lg hover:bg-green/90 transition-colors disabled:bg-border disabled:text-muted disabled:cursor-not-allowed"
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 10l7-7m0 0l7 7m-7-7v18"
+                    />
                   </svg>
                 </button>
               )}
