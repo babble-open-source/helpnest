@@ -420,7 +420,12 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
               className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               {t('newConversation')}
             </button>
