@@ -90,10 +90,18 @@
     "noResults": "No results for \"{query}\"",
     "tryDifferent": "Try different keywords or browse collections",
     "sources": "Sources",
-    "notWhatLooking": "Not what you were looking for? Browse all articles",
+    "notWhatLooking": "Not what you were looking for?",
     "askAnother": "Ask another question",
     "inputPlaceholder": "Ask a question...",
-    "disclaimer": "AI answers are based on our help center articles"
+    "disclaimer": "AI answers are based on our help center articles",
+    "tryAsking": "Try asking",
+    "newConversation": "New conversation",
+    "retry": "Retry",
+    "stop": "Stop generating",
+    "send": "Send",
+    "scrollToLatest": "Scroll to latest",
+    "aiError": "Something went wrong generating the answer.",
+    "stopped": "Answer stopped before it started."
   },
   "feedback": {
     "wasHelpful": "Was this article helpful?",

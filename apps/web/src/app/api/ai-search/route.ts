@@ -98,15 +98,35 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
 }
 
+const MAX_HISTORY_MESSAGES = 12
+const MAX_HISTORY_CONTENT_LENGTH = 4000
+
+type HistoryMessage = { role: 'user' | 'assistant'; content: string }
+
+/** Keep only well-formed turns, truncate long ones, and cap the window. */
+function sanitizeHistory(input: unknown): HistoryMessage[] {
+  if (!Array.isArray(input)) return []
+  const valid: HistoryMessage[] = []
+  for (const entry of input) {
+    if (typeof entry !== 'object' || entry === null) continue
+    const { role, content } = entry as { role?: unknown; content?: unknown }
+    if (role !== 'user' && role !== 'assistant') continue
+    if (typeof content !== 'string' || !content.trim()) continue
+    valid.push({ role, content: content.slice(0, MAX_HISTORY_CONTENT_LENGTH) })
+  }
+  return valid.slice(-MAX_HISTORY_MESSAGES)
+}
+
 export async function POST(request: Request) {
-  let body: { query?: string; workspaceSlug?: string }
+  let body: { query?: string; workspaceSlug?: string; history?: unknown }
   try {
-    body = await request.json() as { query?: string; workspaceSlug?: string }
+    body = await request.json() as { query?: string; workspaceSlug?: string; history?: unknown }
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: CORS_HEADERS })
   }
 
   const { query, workspaceSlug } = body
+  const history = sanitizeHistory(body.history)
 
   if (!query?.trim() || !workspaceSlug) {
     return NextResponse.json(
@@ -186,9 +206,13 @@ export async function POST(request: Request) {
   const allowedVisibility = await getApiVisibility(request, workspace.id)
 
   // 1. Embed the query (requires OPENAI_API_KEY; falls back to full-text if unavailable)
+  // Follow-up questions ("how do I enable it?") often lack the topic on their
+  // own, so retrieval also sees the previous user turn for context.
+  const lastUserTurn = history.filter((m) => m.role === 'user').at(-1)?.content
+  const retrievalText = lastUserTurn ? `${lastUserTurn}\n${normalizedQuery}` : normalizedQuery
   let queryEmbedding: number[] = []
   try {
-    queryEmbedding = await embedText(normalizedQuery)
+    queryEmbedding = await embedText(retrievalText)
   } catch {
     // fall back to full-text search below
   }
@@ -279,7 +303,10 @@ export async function POST(request: Request) {
     `
   }
 
-  if (articles.length === 0) {
+  // With no conversation to draw on, an empty retrieval means there is nothing
+  // to answer from. Mid-conversation, the model can still use earlier context
+  // (e.g. "thanks!" or a follow-up about an already-discussed article).
+  if (articles.length === 0 && history.length === 0) {
     return NextResponse.json(
       {
         answer: "I couldn't find any relevant articles for your question. Try browsing the help center or contact our support team.",
@@ -318,19 +345,27 @@ export async function POST(request: Request) {
         controller.enqueue(
           encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources })}\n\n`)
         )
+        const questionContent = context
+          ? `Help center articles:\n\n${context}\n\nCustomer question: ${normalizedQuery}`
+          : `No new help center articles matched this message. Answer from the conversation so far, or say you don't have that information and suggest contacting support.\n\nCustomer question: ${normalizedQuery}`
+
         for await (const event of aiProvider.streamChat({
           model: workspace.aiModel ?? undefined,
           maxTokens: 1024,
           system: `You are a helpful customer support assistant for ${workspace.name}.
-Answer questions ONLY using the provided help center articles.
+Answer questions ONLY using the provided help center articles and the conversation so far.
+This may be an ongoing conversation — use earlier turns to resolve references like "it" or "that".
 Be concise, friendly, and accurate.
 If the articles don't contain enough information, say so and suggest contacting support.
 When referencing an article, link to it using the exact URL provided — e.g. [Article Title](URL).
 Format your response in markdown. Put each list item on its own line.`,
-          messages: [{
-            role: 'user',
-            content: `Help center articles:\n\n${context}\n\nCustomer question: ${query}`,
-          }],
+          messages: [
+            ...history,
+            {
+              role: 'user',
+              content: questionContent,
+            },
+          ],
         })) {
           if (event.type === 'text') {
             controller.enqueue(

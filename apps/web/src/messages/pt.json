@@ -90,10 +90,18 @@
     "noResults": "Nenhum resultado para \"{query}\"",
     "tryDifferent": "Tente palavras-chave diferentes ou navegue pelas coleções",
     "sources": "Fontes",
-    "notWhatLooking": "Não era o que procurava? Veja todos os artigos",
+    "notWhatLooking": "Não era o que procurava?",
     "askAnother": "Fazer outra pergunta",
     "inputPlaceholder": "Digite sua pergunta...",
-    "disclaimer": "As respostas da IA são baseadas nos artigos da nossa central de ajuda"
+    "disclaimer": "As respostas da IA são baseadas nos artigos da nossa central de ajuda",
+    "tryAsking": "Experimente perguntar",
+    "newConversation": "Nova conversa",
+    "retry": "Tentar novamente",
+    "stop": "Parar de gerar",
+    "send": "Enviar",
+    "scrollToLatest": "Ir para o mais recente",
+    "aiError": "Algo deu errado ao gerar a resposta.",
+    "stopped": "A resposta foi interrompida antes de começar."
   },
   "feedback": {
     "wasHelpful": "Este artigo foi útil?",

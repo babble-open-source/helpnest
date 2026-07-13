@@ -21,11 +21,28 @@ export default async function AskAIPage(props: Props) {
   })
   if (!workspace || workspace.deletedAt) notFound()
 
+  // Most-viewed public articles seed the empty state's suggested questions,
+  // so first-time visitors see what the assistant can actually answer.
+  const topArticles = await prisma.article.findMany({
+    where: {
+      workspaceId: workspace.id,
+      status: 'PUBLISHED',
+      collection: { is: { visibility: 'PUBLIC', isArchived: false } },
+    },
+    orderBy: { views: 'desc' },
+    take: 4,
+    select: { title: true },
+  })
+
   return (
     <div className="min-h-[calc(100dvh-3.5rem)] bg-cream flex flex-col">
       {/* Chat — fills remaining height */}
       <div className="flex-1 min-h-0 max-w-2xl w-full mx-auto flex flex-col">
-        <AskAIClient workspace={params.workspace} workspaceName={workspace.name} />
+        <AskAIClient
+          workspace={params.workspace}
+          workspaceName={workspace.name}
+          suggestions={topArticles.map((a) => a.title)}
+        />
       </div>
     </div>
   )

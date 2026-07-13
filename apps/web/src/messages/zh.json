@@ -90,10 +90,18 @@
     "noResults": "未找到「{query}」的相关结果",
     "tryDifferent": "请尝试其他关键词或浏览合集",
     "sources": "参考来源",
-    "notWhatLooking": "不是您想要的？浏览所有文章",
+    "notWhatLooking": "不是您想要的？",
     "askAnother": "再问一个问题",
     "inputPlaceholder": "输入您的问题...",
-    "disclaimer": "AI 解答基于我们帮助中心的文章内容"
+    "disclaimer": "AI 解答基于我们帮助中心的文章内容",
+    "tryAsking": "试试问",
+    "newConversation": "新对话",
+    "retry": "重试",
+    "stop": "停止生成",
+    "send": "发送",
+    "scrollToLatest": "跳到最新",
+    "aiError": "生成回答时出错。",
+    "stopped": "回答在开始前已停止。"
   },
   "feedback": {
     "wasHelpful": "这篇文章对您有帮助吗？",
