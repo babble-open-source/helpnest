@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { requireAuth } from '@/lib/auth-api'
 import { runAgent, recordKnowledgeGap } from '@/lib/ai-agent'
+import { shouldEscalate as shouldEscalateOn } from '@/lib/ai-grounding'
 import { isByok } from '@/lib/ai/resolve-provider'
 import { checkLimit, incrementUsage } from '@/lib/cloud'
 import { redis } from '@/lib/redis'
@@ -194,6 +195,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
             aiModel: true,
             aiInstructions: true,
             aiEscalationThreshold: true,
+            aiGroundingEnabled: true,
+            aiRetrievalFloor: true,
+            aiLexicalFloor: true,
             autoDraftGapsEnabled: true,
             autoDraftGapThreshold: true,
           },
@@ -282,6 +286,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       aiModel: conversation.workspace.aiModel,
       aiInstructions: conversation.workspace.aiInstructions,
       aiEscalationThreshold: conversation.workspace.aiEscalationThreshold,
+      aiGroundingEnabled: conversation.workspace.aiGroundingEnabled,
+      aiRetrievalFloor: conversation.workspace.aiRetrievalFloor,
+      aiLexicalFloor: conversation.workspace.aiLexicalFloor,
       includeInternal: false, // Widget conversations never access internal articles
     }
 
@@ -291,7 +298,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         try {
           let aiResponseText = ''
           let sources: unknown[] = []
-          let confidence = 0.5
+          // null = the agent never searched, so there is nothing to ground and
+          // nothing to judge. Deliberately NOT defaulted to a number: a default
+          // here would re-create the bug the agent was just fixed for, by
+          // inventing a passing score the model never gave.
+          let confidence: number | null = null
+          let reportedConfidence: number | null = null
+          let retrievalMode: string | null = null
+          let retrievalScore: number | null = null
           let shouldEscalate = false
           let escalationReason: string | undefined
 
@@ -303,14 +317,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
               )
             } else if (event.type === 'done') {
               // The done event from AgentStreamEvent carries metadata fields.
-              const doneEvent = event as typeof event & {
-                sources?: unknown[]
-                confidence?: number
-                shouldEscalate?: boolean
-                escalationReason?: string
-              }
+              const doneEvent = event
               sources = doneEvent.sources ?? []
-              confidence = doneEvent.confidence ?? 0.5
+              confidence = doneEvent.confidence ?? null
+              reportedConfidence = doneEvent.reportedConfidence ?? null
+              retrievalMode = doneEvent.retrievalMode ?? null
+              retrievalScore = doneEvent.retrievalScore ?? null
               shouldEscalate = doneEvent.shouldEscalate ?? false
               escalationReason = doneEvent.escalationReason
             } else if (event.type === 'error') {
@@ -331,6 +343,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
                 content: aiResponseText,
                 sources: sources.length > 0 ? (sources as never) : undefined,
                 confidence,
+                retrievalMode,
+                retrievalScore,
+                reportedConfidence,
               },
             })
           }
@@ -356,7 +371,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           // Record a knowledge gap when confidence is very low — signals content
           // the KB is missing that would have resolved this question.
           // Use the same threshold as escalation so gaps and escalations stay in sync.
-          if (confidence < (conversation.workspace.aiEscalationThreshold ?? 0.3)) {
+          //
+          // shouldEscalate() rather than `confidence < threshold`: confidence is
+          // nullable, and JS coerces `null < 0.3` to `0 < 0.3` === true, which would
+          // file a knowledge gap for every greeting the agent never searched on.
+          if (shouldEscalateOn(confidence, conversation.workspace.aiEscalationThreshold ?? 0.3)) {
             const gap = await recordKnowledgeGap(conversation.workspaceId, content).catch(
               () => null
             )

@@ -563,7 +563,9 @@
     "draftRateLimit": "Límite de velocidad:",
     "perHour": "borradores por hora",
     "draftRateLimitHelp": "Número máximo de borradores de artículos generados por IA por hora para este espacio de trabajo.",
-    "saved": "¡Guardado!"
+    "saved": "¡Guardado!",
+    "groundedAnswers": "Exigir respuestas fundamentadas",
+    "groundedAnswersHelp": "Permite que la IA resuelva una conversación solo cuando la base de conocimiento respalde realmente la respuesta. Si lo desactivas, la única comprobación será la confianza declarada por la propia IA, y una respuesta inventada podrá marcarse como resuelta."
   },
   "sync": {
     "syncing": "Sincronizando...",

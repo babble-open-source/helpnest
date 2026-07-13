@@ -153,6 +153,16 @@ model Workspace {
   aiGreeting               String?
   aiInstructions           String?    @db.Text
   aiEscalationThreshold    Float      @default(0.3)
+  // Grounding gate. When enabled, how well the knowledge base actually matched the
+  // question sets a CEILING on confidence — the model's self-report can lower it but
+  // never raise it. Disable to revert to self-report alone (legacy behaviour).
+  aiGroundingEnabled       Boolean    @default(true)
+  // Cosine floor for the vector retriever; null = conservative built-in default.
+  // Calibrate per corpus: pnpm calibrate:retrieval -- --workspace <slug>
+  aiRetrievalFloor         Float?
+  // Coverage floor for the Postgres full-text retriever. A different measurement on a
+  // different scale from cosine — deliberately NOT the same number.
+  aiLexicalFloor           Float?
   autoDraftGapsEnabled      Boolean    @default(true)
   autoDraftGapThreshold     Int        @default(2)
   autoDraftExternalEnabled  Boolean    @default(true)
@@ -432,7 +442,17 @@ model Message {
   role             MessageRole
   content          String      @db.Text
   sources          Json?
+  // Effective confidence: min(retrieval, self-report). NULL means the agent never
+  // searched (a greeting), which is NOT the same as low confidence — do not treat a
+  // NULL as 0 when aggregating.
   confidence       Float?
+  // The grounding breakdown behind `confidence`. Persisted so the two failure modes
+  // can be measured separately after the fact: answers that were grounded but wrong,
+  // and escalations raised while a good article existed (over-abstention). A single
+  // scalar cannot tell you which one you are looking at.
+  retrievalMode      String?  // 'vector' | 'lexical' | 'none'
+  retrievalScore     Float?   // cosine similarity, or lexical coverage — see retrievalMode
+  reportedConfidence Float?   // what the model claimed, before the retrieval ceiling
   isInternal       Boolean  @default(false)
   authorMemberId   String?
   feedbackHelpful  Boolean?

@@ -563,7 +563,9 @@
     "draftRateLimit": "Limite de taxa:",
     "perHour": "rascunhos por hora",
     "draftRateLimitHelp": "Número máximo de rascunhos de artigos gerados por IA por hora para este espaço de trabalho.",
-    "saved": "Salvo!"
+    "saved": "Salvo!",
+    "groundedAnswers": "Exigir respostas fundamentadas",
+    "groundedAnswersHelp": "Permite que a IA resolva uma conversa apenas quando a base de conhecimento realmente sustentar a resposta. Se desativar, a única verificação será a confiança declarada pela própria IA — uma resposta inventada ainda poderá ser marcada como resolvida."
   },
   "sync": {
     "syncing": "Sincronizando...",

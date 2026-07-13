@@ -563,7 +563,9 @@
     "draftRateLimit": "速率限制：",
     "perHour": "篇草稿/小时",
     "draftRateLimitHelp": "此工作区每小时 AI 生成文章草稿的最大数量。",
-    "saved": "已保存！"
+    "saved": "已保存！",
+    "groundedAnswers": "要求答案有知识库依据",
+    "groundedAnswersHelp": "仅当知识库确实支持该答案时，才允许 AI 将会话标记为已解决。关闭后，唯一的检查就是 AI 自报的置信度——它凭空编造的答案同样会被标记为已解决。"
   },
   "sync": {
     "syncing": "同步中...",

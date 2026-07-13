@@ -563,7 +563,9 @@
     "draftRateLimit": "Limite de débit :",
     "perHour": "brouillons par heure",
     "draftRateLimitHelp": "Nombre maximum de brouillons d'articles générés par IA par heure pour cet espace de travail.",
-    "saved": "Enregistré !"
+    "saved": "Enregistré !",
+    "groundedAnswers": "Exiger des réponses fondées",
+    "groundedAnswersHelp": "N'autorise l'IA à résoudre une conversation que si la base de connaissances étaye réellement la réponse. Désactivé, seul le score de confiance de l'IA fait foi : une réponse inventée peut encore être marquée comme résolue."
   },
   "sync": {
     "syncing": "Synchronisation...",

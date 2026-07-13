@@ -80,6 +80,9 @@ export async function PATCH(request: Request) {
     aiGreeting,
     aiInstructions,
     aiEscalationThreshold,
+    aiGroundingEnabled,
+    aiRetrievalFloor,
+    aiLexicalFloor,
     productContext,
     autoDraftGapsEnabled,
     autoDraftGapThreshold,
@@ -121,6 +124,9 @@ export async function PATCH(request: Request) {
     aiGreeting?: unknown
     aiInstructions?: unknown
     aiEscalationThreshold?: unknown
+    aiGroundingEnabled?: unknown
+    aiRetrievalFloor?: unknown
+    aiLexicalFloor?: unknown
     productContext?: unknown
     autoDraftGapsEnabled?: unknown
     autoDraftGapThreshold?: unknown
@@ -514,6 +520,41 @@ export async function PATCH(request: Request) {
     }
   }
 
+  if (aiGroundingEnabled !== undefined && typeof aiGroundingEnabled !== 'boolean') {
+    return NextResponse.json({ error: 'aiGroundingEnabled must be a boolean' }, { status: 400 })
+  }
+
+  // Both floors are nullable: null means "fall back to the conservative built-in
+  // default" and is how an operator undoes a bad calibration.
+  //
+  // The two are validated against DIFFERENT ranges on purpose. aiRetrievalFloor is a
+  // cosine similarity, which can legitimately be negative for opposing vectors;
+  // aiLexicalFloor is a fraction of matched query terms and cannot be. Sharing a
+  // range here would be the first step toward pretending they are the same signal.
+  if (aiRetrievalFloor !== undefined && aiRetrievalFloor !== null) {
+    if (typeof aiRetrievalFloor !== 'number' || !Number.isFinite(aiRetrievalFloor)) {
+      return NextResponse.json({ error: 'aiRetrievalFloor must be a number' }, { status: 400 })
+    }
+    if (aiRetrievalFloor < -1 || aiRetrievalFloor > 1) {
+      return NextResponse.json(
+        { error: 'aiRetrievalFloor must be a cosine similarity between -1 and 1' },
+        { status: 400 }
+      )
+    }
+  }
+
+  if (aiLexicalFloor !== undefined && aiLexicalFloor !== null) {
+    if (typeof aiLexicalFloor !== 'number' || !Number.isFinite(aiLexicalFloor)) {
+      return NextResponse.json({ error: 'aiLexicalFloor must be a number' }, { status: 400 })
+    }
+    if (aiLexicalFloor < 0 || aiLexicalFloor > 1) {
+      return NextResponse.json(
+        { error: 'aiLexicalFloor must be a coverage fraction between 0 and 1' },
+        { status: 400 }
+      )
+    }
+  }
+
   if (productContext !== undefined && productContext !== null) {
     if (typeof productContext !== 'string') {
       return NextResponse.json({ error: 'productContext must be a string' }, { status: 400 })
@@ -674,6 +715,10 @@ export async function PATCH(request: Request) {
       ? productContext.trim()
       : null
   const canPersistProductContext = productContext !== undefined && cols.has('productContext')
+  const canPersistAiGroundingEnabled =
+    aiGroundingEnabled !== undefined && cols.has('aiGroundingEnabled')
+  const canPersistAiRetrievalFloor = aiRetrievalFloor !== undefined && cols.has('aiRetrievalFloor')
+  const canPersistAiLexicalFloor = aiLexicalFloor !== undefined && cols.has('aiLexicalFloor')
   const canPersistAutoDraftGapsEnabled =
     autoDraftGapsEnabled !== undefined && cols.has('autoDraftGapsEnabled')
   const canPersistAutoDraftGapThreshold =
@@ -829,6 +874,13 @@ export async function PATCH(request: Request) {
         ...(aiGreeting !== undefined ? { aiGreeting: trimmedAiGreeting } : {}),
         ...(aiInstructions !== undefined ? { aiInstructions: trimmedAiInstructions } : {}),
         ...(clampedThreshold !== undefined ? { aiEscalationThreshold: clampedThreshold } : {}),
+        ...(canPersistAiGroundingEnabled
+          ? { aiGroundingEnabled: aiGroundingEnabled as boolean }
+          : {}),
+        ...(canPersistAiRetrievalFloor
+          ? { aiRetrievalFloor: aiRetrievalFloor as number | null }
+          : {}),
+        ...(canPersistAiLexicalFloor ? { aiLexicalFloor: aiLexicalFloor as number | null } : {}),
         ...(canPersistProductContext ? { productContext: trimmedProductContext } : {}),
         ...(canPersistAutoDraftGapsEnabled
           ? { autoDraftGapsEnabled: autoDraftGapsEnabled as boolean }

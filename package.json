@@ -11,6 +11,7 @@
     "db:generate": "turbo db:generate",
     "db:migrate": "turbo db:migrate",
     "db:studio": "cd packages/db && pnpm prisma studio",
+    "calibrate:retrieval": "pnpm --filter @helpnest/web calibrate:retrieval",
     "prepare": "husky"
   },
   "prisma": {

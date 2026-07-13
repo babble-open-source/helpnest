@@ -563,7 +563,9 @@
     "draftRateLimit": "AI rate limit",
     "perHour": "drafts per hour",
     "draftRateLimitHelp": "Maximum number of AI-generated article drafts and repo analyses per hour for this workspace.",
-    "saved": "Saved!"
+    "saved": "Saved!",
+    "groundedAnswers": "Require grounded answers",
+    "groundedAnswersHelp": "Let the AI resolve a conversation only when the knowledge base actually supports the answer. Turn this off and the AI's own confidence score becomes the only check — an answer it invented can still be marked resolved."
   },
   "sync": {
     "syncing": "Syncing...",

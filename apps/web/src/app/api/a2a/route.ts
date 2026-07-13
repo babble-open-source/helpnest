@@ -59,13 +59,7 @@ interface A2AArtifact {
   metadata?: Record<string, unknown>
 }
 
-type A2ATaskState =
-  | 'submitted'
-  | 'working'
-  | 'completed'
-  | 'failed'
-  | 'canceled'
-  | 'input-required'
+type A2ATaskState = 'submitted' | 'working' | 'completed' | 'failed' | 'canceled' | 'input-required'
 
 interface A2ATask {
   id: string
@@ -104,7 +98,7 @@ function jsonRpcSuccess(id: string | number, result: unknown) {
 function jsonRpcError(id: string | number | null, code: number, message: string) {
   return NextResponse.json(
     { jsonrpc: '2.0', id, error: { code, message } },
-    { headers: CORS_HEADERS },
+    { headers: CORS_HEADERS }
   )
 }
 
@@ -144,7 +138,7 @@ function conversationStatusToA2A(status: string): A2ATaskState {
 async function conversationToTask(
   conversationId: string,
   workspaceId: string,
-  includeHistory: boolean,
+  includeHistory: boolean
 ): Promise<A2ATask | null> {
   const conversation = await prisma.conversation.findFirst({
     where: { id: conversationId, workspaceId },
@@ -209,7 +203,7 @@ export async function POST(request: Request) {
     return jsonRpcError(
       null,
       INVALID_REQUEST,
-      'Unauthorized — provide a valid API key via Authorization: Bearer header',
+      'Unauthorized — provide a valid API key via Authorization: Bearer header'
     )
   }
 
@@ -225,7 +219,7 @@ export async function POST(request: Request) {
     return jsonRpcError(
       (rpc as Partial<JsonRpcRequest>)?.id ?? null,
       INVALID_REQUEST,
-      'Invalid JSON-RPC 2.0 request — jsonrpc, id, and method are required',
+      'Invalid JSON-RPC 2.0 request — jsonrpc, id, and method are required'
     )
   }
 
@@ -265,6 +259,9 @@ export async function POST(request: Request) {
           aiModel: true,
           aiInstructions: true,
           aiEscalationThreshold: true,
+          aiGroundingEnabled: true,
+          aiRetrievalFloor: true,
+          aiLexicalFloor: true,
         },
       })
       if (!workspace) {
@@ -273,7 +270,10 @@ export async function POST(request: Request) {
 
       // Check AI credit quota — BYOK allowed for self-hosted, PRO, BUSINESS
       const creditLimit = await checkLimit(workspace.id, 'aiCredits')
-      const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || creditLimit.plan === 'PRO' || creditLimit.plan === 'BUSINESS'
+      const byokAllowed =
+        creditLimit.plan === 'SELF_HOSTED' ||
+        creditLimit.plan === 'PRO' ||
+        creditLimit.plan === 'BUSINESS'
       if (!isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })) {
         if (!creditLimit.allowed) {
           return jsonRpcError(rpc.id, INTERNAL_ERROR, 'AI credit limit reached for this month')
@@ -348,12 +348,20 @@ export async function POST(request: Request) {
         aiModel: workspace.aiModel,
         aiInstructions: workspace.aiInstructions,
         aiEscalationThreshold: workspace.aiEscalationThreshold,
+        aiGroundingEnabled: workspace.aiGroundingEnabled,
+        aiRetrievalFloor: workspace.aiRetrievalFloor,
+        aiLexicalFloor: workspace.aiLexicalFloor,
         includeInternal: true, // A2A is authenticated — include internal articles
       }
 
       let aiResponseText = ''
       let sources: unknown[] = []
-      let confidence = 0.5
+      // null = the agent never searched, so there is nothing to ground. NOT defaulted
+      // to a number: a default here would invent a passing score the model never gave.
+      let confidence: number | null = null
+      let reportedConfidence: number | null = null
+      let retrievalMode: string | null = null
+      let retrievalScore: number | null = null
       let shouldEscalate = false
       let escalationReason: string | undefined
 
@@ -362,14 +370,12 @@ export async function POST(request: Request) {
           if (event.type === 'text') {
             aiResponseText += event.text
           } else if (event.type === 'done') {
-            const doneEvent = event as typeof event & {
-              sources?: unknown[]
-              confidence?: number
-              shouldEscalate?: boolean
-              escalationReason?: string
-            }
+            const doneEvent = event
             sources = doneEvent.sources ?? []
-            confidence = doneEvent.confidence ?? 0.5
+            confidence = doneEvent.confidence ?? null
+            reportedConfidence = doneEvent.reportedConfidence ?? null
+            retrievalMode = doneEvent.retrievalMode ?? null
+            retrievalScore = doneEvent.retrievalScore ?? null
             shouldEscalate = doneEvent.shouldEscalate ?? false
             escalationReason = doneEvent.escalationReason
           }
@@ -401,6 +407,9 @@ export async function POST(request: Request) {
             content: aiResponseText,
             sources: sources.length > 0 ? (sources as never) : undefined,
             confidence,
+            retrievalMode,
+            retrievalScore,
+            reportedConfidence,
           },
         })
       }
@@ -431,10 +440,7 @@ export async function POST(request: Request) {
                   {
                     type: 'text' as const,
                     text: aiResponseText,
-                    metadata:
-                      sources.length > 0
-                        ? { sources, confidence }
-                        : { confidence },
+                    metadata: sources.length > 0 ? { sources, confidence } : { confidence },
                   },
                 ],
                 index: 0,
@@ -480,6 +486,9 @@ export async function POST(request: Request) {
           aiModel: true,
           aiInstructions: true,
           aiEscalationThreshold: true,
+          aiGroundingEnabled: true,
+          aiRetrievalFloor: true,
+          aiLexicalFloor: true,
         },
       })
       if (!workspace) {
@@ -488,7 +497,10 @@ export async function POST(request: Request) {
 
       // Check AI credit quota — BYOK allowed for self-hosted, PRO, BUSINESS
       const creditLimit = await checkLimit(workspace.id, 'aiCredits')
-      const byokAllowed = creditLimit.plan === 'SELF_HOSTED' || creditLimit.plan === 'PRO' || creditLimit.plan === 'BUSINESS'
+      const byokAllowed =
+        creditLimit.plan === 'SELF_HOSTED' ||
+        creditLimit.plan === 'PRO' ||
+        creditLimit.plan === 'BUSINESS'
       if (!isByok({ aiApiKey: workspace.aiApiKey }, { byok: byokAllowed })) {
         if (!creditLimit.allowed) {
           return jsonRpcError(rpc.id, INTERNAL_ERROR, 'AI credit limit reached for this month')
@@ -545,6 +557,9 @@ export async function POST(request: Request) {
         aiModel: workspace.aiModel,
         aiInstructions: workspace.aiInstructions,
         aiEscalationThreshold: workspace.aiEscalationThreshold,
+        aiGroundingEnabled: workspace.aiGroundingEnabled,
+        aiRetrievalFloor: workspace.aiRetrievalFloor,
+        aiLexicalFloor: workspace.aiLexicalFloor,
         includeInternal: true, // A2A is authenticated — include internal articles
       }
 
@@ -568,7 +583,7 @@ export async function POST(request: Request) {
                 type: 'status',
                 taskId: finalConvId,
                 status: { state: 'working' },
-              }),
+              })
             )
 
             if (!aiEnabled) {
@@ -589,7 +604,7 @@ export async function POST(request: Request) {
                       ],
                     },
                   },
-                }),
+                })
               )
               controller.close()
               return
@@ -597,7 +612,12 @@ export async function POST(request: Request) {
 
             let aiResponseText = ''
             let sources: unknown[] = []
-            let confidence = 0.5
+            // null = the agent never searched, so there is nothing to ground. NOT defaulted
+            // to a number: a default here would invent a passing score the model never gave.
+            let confidence: number | null = null
+            let reportedConfidence: number | null = null
+            let retrievalMode: string | null = null
+            let retrievalScore: number | null = null
             let shouldEscalate = false
             let escalationReason: string | undefined
 
@@ -616,17 +636,15 @@ export async function POST(request: Request) {
                       append: true,
                       lastChunk: false,
                     },
-                  }),
+                  })
                 )
               } else if (event.type === 'done') {
-                const doneEvent = event as typeof event & {
-                  sources?: unknown[]
-                  confidence?: number
-                  shouldEscalate?: boolean
-                  escalationReason?: string
-                }
+                const doneEvent = event
                 sources = doneEvent.sources ?? []
-                confidence = doneEvent.confidence ?? 0.5
+                confidence = doneEvent.confidence ?? null
+                reportedConfidence = doneEvent.reportedConfidence ?? null
+                retrievalMode = doneEvent.retrievalMode ?? null
+                retrievalScore = doneEvent.retrievalScore ?? null
                 shouldEscalate = doneEvent.shouldEscalate ?? false
                 escalationReason = doneEvent.escalationReason
               }
@@ -642,6 +660,9 @@ export async function POST(request: Request) {
                   content: aiResponseText,
                   sources: sources.length > 0 ? (sources as never) : undefined,
                   confidence,
+                  retrievalMode,
+                  retrievalScore,
+                  reportedConfidence,
                 },
               })
             }
@@ -667,10 +688,9 @@ export async function POST(request: Request) {
                   index: 0,
                   append: true,
                   lastChunk: true,
-                  metadata:
-                    sources.length > 0 ? { sources, confidence } : { confidence },
+                  metadata: sources.length > 0 ? { sources, confidence } : { confidence },
                 },
-              }),
+              })
             )
 
             const finalState: A2ATaskState = shouldEscalate ? 'input-required' : 'completed'
@@ -690,7 +710,7 @@ export async function POST(request: Request) {
                     ],
                   },
                 },
-              }),
+              })
             )
           } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'AI agent error'
@@ -705,7 +725,7 @@ export async function POST(request: Request) {
                     parts: [{ type: 'text', text: errorMessage }],
                   },
                 },
-              }),
+              })
             )
           } finally {
             controller.close()

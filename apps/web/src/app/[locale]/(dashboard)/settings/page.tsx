@@ -67,6 +67,7 @@ export default async function SettingsPage() {
         aiGreeting: true,
         aiInstructions: true,
         aiEscalationThreshold: true,
+        aiGroundingEnabled: true,
         productContext: true,
         autoDraftGapsEnabled: true,
         autoDraftGapThreshold: true,
@@ -208,6 +209,7 @@ export default async function SettingsPage() {
               aiGreeting={workspace?.aiGreeting ?? null}
               aiInstructions={workspace?.aiInstructions ?? null}
               aiEscalationThreshold={workspace?.aiEscalationThreshold ?? 0.3}
+              aiGroundingEnabled={workspace?.aiGroundingEnabled ?? true}
               hasApiKey={!!workspace?.aiApiKey}
               cloudMode={isCloudMode()}
               billingEnabled={isBillingEnabled()}

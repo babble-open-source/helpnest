@@ -26,6 +26,7 @@ interface Props {
   aiGreeting: string | null
   aiInstructions: string | null
   aiEscalationThreshold: number
+  aiGroundingEnabled: boolean
   hasApiKey: boolean
   cloudMode?: boolean
   billingEnabled?: boolean
@@ -46,6 +47,7 @@ export function AiSettingsSection({
   aiGreeting: initGreeting,
   aiInstructions: initInstructions,
   aiEscalationThreshold: initThreshold,
+  aiGroundingEnabled: initGroundingEnabled,
   hasApiKey,
   cloudMode = false,
   billingEnabled = false,
@@ -66,6 +68,7 @@ export function AiSettingsSection({
   const [greeting, setGreeting] = useState(initGreeting || '')
   const [instructions, setInstructions] = useState(initInstructions || '')
   const [threshold, setThreshold] = useState(initThreshold)
+  const [groundingEnabled, setGroundingEnabled] = useState(initGroundingEnabled)
   const [productContext, setProductContext] = useState(initProductContext || '')
   const [autoDraftGapsEnabled, setAutoDraftGapsEnabled] = useState(initAutoDraftGapsEnabled)
   const [autoDraftGapThreshold, setAutoDraftGapThreshold] = useState(initAutoDraftGapThreshold)
@@ -93,6 +96,7 @@ export function AiSettingsSection({
         aiGreeting: greeting || null,
         aiInstructions: instructions || null,
         aiEscalationThreshold: threshold,
+        aiGroundingEnabled: groundingEnabled,
         productContext: productContext || null,
         autoDraftGapsEnabled,
         autoDraftGapThreshold,
@@ -321,6 +325,18 @@ export function AiSettingsSection({
                   <span>{t('alwaysEscalate')}</span>
                 </div>
                 <p className="text-xs text-muted-foreground">{t('escalationHelp')}</p>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-sm font-medium text-foreground">{t('groundedAnswers')}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t('groundedAnswersHelp')}</p>
+                </div>
+                <Switch
+                  checked={groundingEnabled}
+                  onCheckedChange={setGroundingEnabled}
+                  disabled={demoMode}
+                />
               </div>
 
               <Separator />
