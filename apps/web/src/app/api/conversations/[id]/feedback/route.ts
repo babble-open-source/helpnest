@@ -18,16 +18,13 @@ export async function OPTIONS() {
 // record it as a knowledge gap. This creates the learning loop: unhelpful
 // AI responses bubble up as gaps that the support team can resolve by writing
 // new articles.
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const sessionToken = request.headers.get('x-session-token')
   if (!sessionToken) {
     return NextResponse.json(
       { error: 'Session token required' },
-      { status: 401, headers: CORS_HEADERS },
+      { status: 401, headers: CORS_HEADERS }
     )
   }
 
@@ -35,16 +32,13 @@ export async function POST(
   try {
     body = (await request.json()) as { messageId?: string; helpful?: boolean }
   } catch {
-    return NextResponse.json(
-      { error: 'Invalid JSON body' },
-      { status: 400, headers: CORS_HEADERS },
-    )
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400, headers: CORS_HEADERS })
   }
 
   if (!body.messageId || typeof body.helpful !== 'boolean') {
     return NextResponse.json(
       { error: 'messageId and helpful (boolean) are required' },
-      { status: 400, headers: CORS_HEADERS },
+      { status: 400, headers: CORS_HEADERS }
     )
   }
 
@@ -56,7 +50,7 @@ export async function POST(
   if (!conversation) {
     return NextResponse.json(
       { error: 'Conversation not found' },
-      { status: 404, headers: CORS_HEADERS },
+      { status: 404, headers: CORS_HEADERS }
     )
   }
 
@@ -65,10 +59,7 @@ export async function POST(
     where: { id: body.messageId, conversationId: id, role: 'AI' },
   })
   if (!message) {
-    return NextResponse.json(
-      { error: 'Message not found' },
-      { status: 404, headers: CORS_HEADERS },
-    )
+    return NextResponse.json({ error: 'Message not found' }, { status: 404, headers: CORS_HEADERS })
   }
 
   await prisma.message.update({
@@ -90,7 +81,10 @@ export async function POST(
     })
     const customerQuery = prevMessages[0]?.content
     if (customerQuery) {
-      await recordKnowledgeGap(conversation.workspaceId, customerQuery).catch(() => {})
+      // Not awaited: gap recording now costs an embedding call plus an LLM judge
+      // call. A customer clicking "not helpful" should not sit and wait on the
+      // support team's bookkeeping.
+      void recordKnowledgeGap(conversation.workspaceId, customerQuery).catch(() => {})
     }
   }
 

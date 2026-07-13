@@ -52,20 +52,27 @@ export async function POST(request: Request) {
     },
   })
 
+  // Not awaited: recordKnowledgeGap now costs an embedding call plus an LLM judge
+  // call (semantic gap clustering). This endpoint is a fire-and-forget report from
+  // the voice service — holding the connection open for seconds of bookkeeping
+  // gains nobody anything.
   if (workspace && body.confidence < (workspace.aiEscalationThreshold ?? 0.3)) {
-    const gap = await recordKnowledgeGap(body.workspaceId, body.query).catch(() => null)
-    if (
-      gap &&
-      workspace.autoDraftGapsEnabled &&
-      gap.occurrences >= (workspace.autoDraftGapThreshold ?? 2) &&
-      !gap.resolvedArticleId
-    ) {
-      const { draftArticle } = await import('@/lib/article-drafter')
-      void draftArticle({
-        workspaceId: body.workspaceId,
-        gap: { id: gap.id, query: gap.query },
-      }).catch(() => {})
-    }
+    const workspaceSettings = workspace
+    void (async () => {
+      const gap = await recordKnowledgeGap(body.workspaceId, body.query).catch(() => null)
+      if (
+        gap &&
+        workspaceSettings.autoDraftGapsEnabled &&
+        gap.occurrences >= (workspaceSettings.autoDraftGapThreshold ?? 2) &&
+        !gap.resolvedArticleId
+      ) {
+        const { draftArticle } = await import('@/lib/article-drafter')
+        await draftArticle({
+          workspaceId: body.workspaceId,
+          gap: { id: gap.id, query: gap.query },
+        }).catch(() => {})
+      }
+    })()
   }
 
   return NextResponse.json({ ok: true })

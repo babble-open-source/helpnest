@@ -378,21 +378,30 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           // shouldEscalate() rather than `confidence < threshold`: confidence is
           // nullable, and JS coerces `null < 0.3` to `0 < 0.3` === true, which would
           // file a knowledge gap for every greeting the agent never searched on.
+          //
+          // Deliberately NOT awaited. Gap recording is bookkeeping for the support
+          // team, and it now costs an embedding call plus an LLM judge call (see
+          // recordKnowledgeGap). Awaiting it would put seconds between the last token
+          // of the answer and the customer's 'done' event — and it would do so on
+          // exactly the conversations that already went badly enough to escalate.
+          // The customer waits for nothing they benefit from.
           if (shouldEscalateOn(confidence, conversation.workspace.aiEscalationThreshold ?? 0.3)) {
-            const gap = await recordKnowledgeGap(conversation.workspaceId, content).catch(
-              () => null
-            )
-            if (
-              gap &&
-              conversation.workspace.autoDraftGapsEnabled &&
-              gap.occurrences >= (conversation.workspace.autoDraftGapThreshold ?? 2) &&
-              !gap.resolvedArticleId
-            ) {
-              void draftArticle({
-                workspaceId: conversation.workspaceId,
-                gap: { id: gap.id, query: gap.query },
-              }).catch(() => {})
-            }
+            void (async () => {
+              const gap = await recordKnowledgeGap(conversation.workspaceId, content).catch(
+                () => null
+              )
+              if (
+                gap &&
+                conversation.workspace.autoDraftGapsEnabled &&
+                gap.occurrences >= (conversation.workspace.autoDraftGapThreshold ?? 2) &&
+                !gap.resolvedArticleId
+              ) {
+                await draftArticle({
+                  workspaceId: conversation.workspaceId,
+                  gap: { id: gap.id, query: gap.query },
+                }).catch(() => {})
+              }
+            })()
           }
 
           // Send sources then the terminal done event.
