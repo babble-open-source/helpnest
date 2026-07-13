@@ -34,15 +34,20 @@ vi.mock('@/lib/embeddings', () => ({
   },
 }))
 
+/** When true, Qdrant throws — simulating an outage of a CONFIGURED vector store. */
+let qdrantUnavailable = false
+
 vi.mock('@/lib/qdrant', () => ({
   qdrant: {
-    search: async () =>
-      qdrantHits.map((hit, i) => ({
+    search: async () => {
+      if (qdrantUnavailable) throw new Error('connect ECONNREFUSED 127.0.0.1:6333')
+      return qdrantHits.map((hit, i) => ({
         id: `point-${i}`,
         version: 0,
         score: hit.score,
         payload: { articleId: hit.articleId },
-      })),
+      }))
+    },
   },
   COLLECTION_NAME: 'helpnest_articles',
   ensureCollection: async () => {},
@@ -121,6 +126,9 @@ beforeEach(() => {
   qdrantHits = []
   fullTextRows = []
   embeddingsUnavailable = false
+  qdrantUnavailable = false
+  delete process.env.OPENAI_API_KEY
+  vi.restoreAllMocks()
 })
 
 // ---------------------------------------------------------------------------
@@ -343,5 +351,74 @@ describe('runAgent — full-text fallback', () => {
 
     expect(done.confidence).toBe(0)
     expect(done.shouldEscalate).toBe(true)
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Degraded retrieval — "vector isn't configured" vs "vector is broken"
+//
+// The old catch block swallowed both identically, so a dead Qdrant looked exactly
+// like a self-hosted install that never had embeddings. The gate silently dropped
+// to its weaker signal and nothing anywhere said so.
+// ---------------------------------------------------------------------------
+
+describe('runAgent — a failing vector store must be loud, not invisible', () => {
+  it('does not flag degradation when embeddings are simply not configured', async () => {
+    // No OPENAI_API_KEY: lexical IS the retriever here. A supported deployment,
+    // not an incident, and it must not page anyone.
+    embeddingsUnavailable = true
+    fullTextRows = [{ ...article('a1'), coverage: 0.9 }]
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
+    providerRounds = [[searchCall()], answer()]
+
+    const done = await run()
+
+    expect(done.retrievalMode).toBe('lexical')
+    expect(done.retrievalDegraded).toBe(false)
+    expect(errorLog).not.toHaveBeenCalled()
+  })
+
+  it('flags degradation when embeddings ARE configured but the call fails', async () => {
+    process.env.OPENAI_API_KEY = 'sk-configured'
+    embeddingsUnavailable = true
+    fullTextRows = [{ ...article('a1'), coverage: 0.9 }]
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
+    providerRounds = [[searchCall()], answer()]
+
+    const done = await run()
+
+    expect(done.retrievalDegraded).toBe(true)
+    expect(errorLog).toHaveBeenCalled()
+    expect(String(errorLog.mock.calls[0]?.[0])).toContain('[ai-agent]')
+  })
+
+  it('flags degradation when the vector store itself is unreachable', async () => {
+    process.env.OPENAI_API_KEY = 'sk-configured'
+    qdrantUnavailable = true
+    fullTextRows = [{ ...article('a1'), coverage: 0.9 }]
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => {})
+    providerRounds = [[searchCall()], answer()]
+
+    const done = await run()
+
+    expect(done.retrievalMode).toBe('lexical')
+    expect(done.retrievalDegraded).toBe(true)
+    expect(errorLog).toHaveBeenCalled()
+  })
+
+  it('does not turn a vector-store outage into an escalation storm', async () => {
+    // Degradation is reported, NOT punished. Lexical coverage is a weaker signal,
+    // but it is a real one — escalating every conversation because Qdrant is down
+    // would be the "safe and useless" failure mode.
+    process.env.OPENAI_API_KEY = 'sk-configured'
+    qdrantUnavailable = true
+    fullTextRows = [{ ...article('a1'), coverage: 0.9 }]
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    providerRounds = [[searchCall(), reportCall(0.9)], answer()]
+
+    const done = await run()
+
+    expect(done.retrievalDegraded).toBe(true)
+    expect(done.shouldEscalate).toBe(false)
   })
 })

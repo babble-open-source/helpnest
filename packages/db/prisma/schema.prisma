@@ -453,6 +453,11 @@ model Message {
   retrievalMode      String?  // 'vector' | 'lexical' | 'none'
   retrievalScore     Float?   // cosine similarity, or lexical coverage — see retrievalMode
   reportedConfidence Float?   // what the model claimed, before the retrieval ceiling
+  // True when the vector retriever was CONFIGURED but FAILED, so this answer was graded
+  // on the weaker lexical signal. Distinguishes a Qdrant/OpenAI outage from a
+  // self-hosted install that never had embeddings — the old code could not tell the
+  // difference, so an outage was indistinguishable from normal operation.
+  retrievalDegraded  Boolean?
   isInternal       Boolean  @default(false)
   authorMemberId   String?
   feedbackHelpful  Boolean?

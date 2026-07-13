@@ -29,6 +29,16 @@
 
 export type RetrievalMode = 'vector' | 'lexical' | 'none'
 
+/**
+ * Why the primary (vector) retriever did not run, when it was supposed to.
+ *
+ * NOT set when the vector path is simply not configured — a self-hosted install
+ * with no OPENAI_API_KEY is running lexical search as its intended retriever, which
+ * is a supported deployment, not an incident. These two cases used to be swallowed
+ * by the same catch block and were indistinguishable.
+ */
+export type DegradedReason = 'embedding_failed' | 'vector_store_failed'
+
 export interface RetrievalSignal {
   mode: RetrievalMode
   /** Cosine similarity of the best vector match. Only set when mode === 'vector'. */
@@ -39,6 +49,17 @@ export interface RetrievalSignal {
    * deliberately graded against its own floor.
    */
   coverage: number | null
+  /**
+   * True when the vector retriever was CONFIGURED but FAILED, so this answer was
+   * graded on the weaker lexical signal without anyone asking for that.
+   *
+   * Deliberately does not affect the score. A vector-store outage must not become
+   * an escalation storm — lexical coverage is a weaker signal but a real one, and
+   * escalating every conversation because Qdrant is down is the "safe and useless"
+   * failure. Degradation is reported, not punished.
+   */
+  degraded?: boolean
+  degradedReason?: DegradedReason | null
 }
 
 export interface GroundingFloors {

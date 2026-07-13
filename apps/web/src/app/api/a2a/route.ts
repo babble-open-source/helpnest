@@ -362,6 +362,7 @@ export async function POST(request: Request) {
       let reportedConfidence: number | null = null
       let retrievalMode: string | null = null
       let retrievalScore: number | null = null
+      let retrievalDegraded = false
       let shouldEscalate = false
       let escalationReason: string | undefined
 
@@ -376,6 +377,7 @@ export async function POST(request: Request) {
             reportedConfidence = doneEvent.reportedConfidence ?? null
             retrievalMode = doneEvent.retrievalMode ?? null
             retrievalScore = doneEvent.retrievalScore ?? null
+            retrievalDegraded = doneEvent.retrievalDegraded ?? false
             shouldEscalate = doneEvent.shouldEscalate ?? false
             escalationReason = doneEvent.escalationReason
           }
@@ -410,6 +412,7 @@ export async function POST(request: Request) {
             retrievalMode,
             retrievalScore,
             reportedConfidence,
+            retrievalDegraded,
           },
         })
       }
@@ -618,6 +621,7 @@ export async function POST(request: Request) {
             let reportedConfidence: number | null = null
             let retrievalMode: string | null = null
             let retrievalScore: number | null = null
+            let retrievalDegraded = false
             let shouldEscalate = false
             let escalationReason: string | undefined
 
@@ -645,6 +649,7 @@ export async function POST(request: Request) {
                 reportedConfidence = doneEvent.reportedConfidence ?? null
                 retrievalMode = doneEvent.retrievalMode ?? null
                 retrievalScore = doneEvent.retrievalScore ?? null
+                retrievalDegraded = doneEvent.retrievalDegraded ?? false
                 shouldEscalate = doneEvent.shouldEscalate ?? false
                 escalationReason = doneEvent.escalationReason
               }
@@ -663,6 +668,7 @@ export async function POST(request: Request) {
                   retrievalMode,
                   retrievalScore,
                   reportedConfidence,
+                  retrievalDegraded,
                 },
               })
             }

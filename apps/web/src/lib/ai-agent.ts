@@ -27,7 +27,12 @@ import {
   retrievalConfidence,
   shouldEscalate as shouldEscalateOn,
 } from '@/lib/ai-grounding'
-import type { GroundingFloors, RetrievalMode, RetrievalSignal } from '@/lib/ai-grounding'
+import type {
+  DegradedReason,
+  GroundingFloors,
+  RetrievalMode,
+  RetrievalSignal,
+} from '@/lib/ai-grounding'
 import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import type { CollectionVisibility } from '@helpnest/db'
 
@@ -130,6 +135,12 @@ export type AgentStreamEvent = StreamEvent & {
   reportedConfidence?: number | null
   retrievalMode?: RetrievalMode
   retrievalScore?: number | null
+  /**
+   * True when the vector retriever was configured but failed, so this answer was
+   * graded on the weaker lexical signal. Reported, never punished — see
+   * RetrievalSignal.degraded.
+   */
+  retrievalDegraded?: boolean
   shouldEscalate?: boolean
   escalationReason?: string
 }
@@ -234,11 +245,31 @@ export async function searchArticles(
     : ['PUBLIC']
 
   // --- Vector path ---
+  //
+  // Two very different situations used to be swallowed by the same bare catch:
+  //
+  //   "no OPENAI_API_KEY"  — lexical search IS this install's retriever. Supported.
+  //   "the call blew up"   — the primary grounding signal is DEAD and the gate is
+  //                          quietly running on the weaker one. An incident.
+  //
+  // Only the second is degradation. Conflating them is how a Qdrant outage stays
+  // invisible for a week while the bot answers off keyword overlap alone.
+  const vectorConfigured = Boolean(process.env.OPENAI_API_KEY)
+  let degradedReason: DegradedReason | null = null
+
   let queryEmbedding: number[] = []
   try {
     queryEmbedding = await embedText(query)
-  } catch {
-    // OPENAI_API_KEY not configured or network error — proceed to full-text.
+  } catch (err) {
+    if (vectorConfigured) {
+      degradedReason = 'embedding_failed'
+      console.error(
+        `[ai-agent] embeddings configured but failed for workspace ${workspaceId} — ` +
+          `falling back to full-text, grounding is DEGRADED:`,
+        (err as Error).message
+      )
+    }
+    // Not configured: no log. This is the intended retriever, not a failure.
   }
 
   if (queryEmbedding.length > 0) {
@@ -308,13 +339,32 @@ export async function searchArticles(
         // whose article is draft/archived/out-of-scope is filtered out above and
         // must not be allowed to vouch for the answer the customer actually gets.
         if (articles.length === 0) {
-          return { articles: [], signal: NO_RETRIEVAL }
+          return {
+            articles: [],
+            signal: { ...NO_RETRIEVAL, degraded: false, degradedReason: null },
+          }
         }
         const topScore = Math.max(...articles.map((a) => bestScoreByArticle.get(a.id) ?? 0))
-        return { articles, signal: { mode: 'vector', topScore, coverage: null } }
+        return {
+          articles,
+          signal: {
+            mode: 'vector',
+            topScore,
+            coverage: null,
+            degraded: false,
+            degradedReason: null,
+          },
+        }
       }
-    } catch {
-      // Qdrant unavailable — fall through to full-text.
+    } catch (err) {
+      // The vector store is configured (we got this far with an embedding) and it
+      // failed. That is an incident, not a fallback — say so.
+      degradedReason = 'vector_store_failed'
+      console.error(
+        `[ai-agent] vector store unreachable for workspace ${workspaceId} — ` +
+          `falling back to full-text, grounding is DEGRADED:`,
+        (err as Error).message
+      )
     }
   }
 
@@ -355,13 +405,18 @@ export async function searchArticles(
     LIMIT  5
   `
 
+  const degraded = degradedReason !== null
+
   if (rows.length === 0) {
-    return { articles: [], signal: NO_RETRIEVAL }
+    return { articles: [], signal: { ...NO_RETRIEVAL, degraded, degradedReason } }
   }
 
   const coverage = Math.max(...rows.map((r) => (typeof r.coverage === 'number' ? r.coverage : 0)))
   const articles: ArticleRow[] = rows.map(({ coverage: _coverage, ...article }) => article)
-  return { articles, signal: { mode: 'lexical', topScore: null, coverage } }
+  return {
+    articles,
+    signal: { mode: 'lexical', topScore: null, coverage, degraded, degradedReason },
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -480,6 +535,9 @@ export async function* runAgent(
   // and found nothing" (grounding 0) and "never searched" (no opinion) are
   // different states with opposite outcomes.
   let searched = false
+  // Sticky across the turn: if ANY search this turn ran on a broken vector store,
+  // the turn was degraded — even if a later search happened to succeed.
+  let retrievalDegraded = false
   let bestSignal: RetrievalSignal | null = null
   let bestSignalConfidence = -1
   let reported: number | null = null
@@ -542,6 +600,7 @@ export async function* runAgent(
           ctx.includeInternal
         )
         searched = true
+        if (signal.degraded) retrievalDegraded = true
 
         // Keep the BEST retrieval across every search this turn, not the last.
         // The agent may refine its query or chase a tangent; a weak follow-up
@@ -674,6 +733,7 @@ export async function* runAgent(
     reportedConfidence: reported,
     retrievalMode: bestSignal?.mode ?? 'none',
     retrievalScore: bestSignal ? (bestSignal.topScore ?? bestSignal.coverage) : null,
+    retrievalDegraded,
     shouldEscalate,
     escalationReason,
   }
