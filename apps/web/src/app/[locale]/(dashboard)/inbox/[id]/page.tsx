@@ -137,6 +137,10 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
         authorMemberId: string | null
         sources: unknown
         confidence: number | null
+        retrievalMode: string | null
+        retrievalScore: number | null
+        reportedConfidence: number | null
+        retrievalDegraded: boolean | null
         feedbackHelpful: boolean | null
         createdAt: Date
       }>
@@ -148,6 +152,10 @@ export default async function ConversationPage({ params }: { params: Promise<{ i
       authorMemberId: m.authorMemberId ?? null,
       sources: m.sources,
       confidence: m.confidence,
+      retrievalMode: m.retrievalMode ?? null,
+      retrievalScore: m.retrievalScore ?? null,
+      reportedConfidence: m.reportedConfidence ?? null,
+      retrievalDegraded: m.retrievalDegraded ?? null,
       feedbackHelpful: m.feedbackHelpful,
       createdAt: m.createdAt.toISOString(),
     })),

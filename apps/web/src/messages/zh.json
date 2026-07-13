@@ -597,7 +597,13 @@
     "resolutionSummary": "解决摘要",
     "assignedTo": "负责人",
     "unassigned": "未分配",
-    "referencedArticles": "引用文章"
+    "referencedArticles": "引用文章",
+    "answeredFrom": "答案来源",
+    "groundingVector": "最佳文章匹配度 {score}",
+    "groundingLexical": "关键词覆盖率 {score}（未使用向量检索）",
+    "groundingNone": "未找到匹配的文章",
+    "selfReported": "AI 自评 {score}",
+    "groundingDegraded": "向量检索不可用——本回答仅依据关键词重合度评估。"
   },
   "knowledgeGaps": {
     "unresolved": "未解决",

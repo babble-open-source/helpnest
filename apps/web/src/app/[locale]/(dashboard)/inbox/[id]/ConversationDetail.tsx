@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ChevronLeft } from 'lucide-react'
+import { MessageGrounding } from './MessageGrounding'
 import { cn } from '@/lib/utils'
 import { CustomerContextPanel } from './CustomerContextPanel'
 import { MessageComposer } from './MessageComposer'
@@ -44,8 +45,14 @@ interface Message {
   content: string
   isInternal: boolean
   authorMemberId: string | null
+  /** Prisma Json column — parsed defensively in MessageGrounding. */
   sources: unknown
+  /** Effective confidence. null = the agent never searched (e.g. a greeting). */
   confidence: number | null
+  retrievalMode: string | null
+  retrievalScore: number | null
+  reportedConfidence: number | null
+  retrievalDegraded: boolean | null
   feedbackHelpful: boolean | null
   createdAt: string
 }
@@ -349,6 +356,17 @@ export function ConversationDetail({ conversation: initialConv, members, current
                         {formatTime(msg.createdAt)}
                       </span>
                     </div>
+
+                    {msg.role === 'AI' && (
+                      <MessageGrounding
+                        sources={msg.sources}
+                        confidence={msg.confidence}
+                        retrievalMode={msg.retrievalMode}
+                        retrievalScore={msg.retrievalScore}
+                        reportedConfidence={msg.reportedConfidence}
+                        retrievalDegraded={msg.retrievalDegraded}
+                      />
+                    )}
                   </div>
 
                   {/* Role avatar dot — right side for CUSTOMER */}

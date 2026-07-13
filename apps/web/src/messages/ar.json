@@ -597,7 +597,13 @@
     "resolutionSummary": "ملخّص الحل",
     "assignedTo": "مُعيَّن إلى",
     "unassigned": "غير مُعيَّن",
-    "referencedArticles": "المقالات المرجعية"
+    "referencedArticles": "المقالات المرجعية",
+    "answeredFrom": "استنادًا إلى",
+    "groundingVector": "أفضل تطابق للمقالة {score}",
+    "groundingLexical": "تغطية الكلمات المفتاحية {score} (بدون بحث متجهي)",
+    "groundingNone": "لم يُعثر على مقالات مطابقة",
+    "selfReported": "تقييم الذكاء الاصطناعي لنفسه {score}",
+    "groundingDegraded": "البحث المتجهي غير متاح — جرى تقييم هذه الإجابة بناءً على تطابق الكلمات المفتاحية فقط."
   },
   "knowledgeGaps": {
     "unresolved": "غير محلولة",

@@ -33,6 +33,13 @@ import type {
   RetrievalMode,
   RetrievalSignal,
 } from '@/lib/ai-grounding'
+import {
+  GAP_SCAN_LIMIT,
+  buildGapJudgePrompt,
+  parseGapJudgeVerdict,
+  selectGapCandidates,
+} from '@/lib/gap-clustering'
+import type { ScoredGapCandidate } from '@/lib/gap-clustering'
 import { qdrant, COLLECTION_NAME, ensureCollection } from '@/lib/qdrant'
 import type { CollectionVisibility } from '@helpnest/db'
 
@@ -750,44 +757,146 @@ function describeSignal(signal: RetrievalSignal | null): string {
 // Knowledge gap tracking
 // ---------------------------------------------------------------------------
 
-/**
- * Records or increments a knowledge gap entry when the agent cannot answer
- * a customer question well. Called by the conversation API route after the
- * agent stream completes with low confidence or an escalation.
- *
- * Matching is EXACT, not semantic. The query is lowercased, trimmed, its runs of
- * whitespace collapsed, truncated to 500 chars and SHA-256'd; only queries that
- * normalise to the identical string share a row. "how do I reset my password" and
- * "How do I reset my password?" do not collide — the trailing question mark
- * survives normalisation — and paraphrases never collide. Occurrence counts are
- * therefore a floor on how often a gap was hit, not an exact tally, and the
- * auto-draft threshold (autoDraftGapThreshold) fires later than it appears to.
- *
- * Clustering paraphrases would need the same embedding pipeline the agent uses;
- * that is a deliberate non-goal here.
- *
- * This is intentionally a standalone function rather than embedded in runAgent
- * so callers can choose when (and whether) to record gaps — e.g. only when
- * confidence is below a threshold AND no human is available.
- */
-export async function recordKnowledgeGap(
-  workspaceId: string,
-  query: string
-): Promise<{
+interface KnowledgeGapRow {
   id: string
   query: string
   occurrences: number
   resolvedArticleId: string | null
-} | null> {
+}
+
+const GAP_SELECT = {
+  id: true,
+  query: true,
+  occurrences: true,
+  resolvedArticleId: true,
+} as const
+
+/**
+ * Asks the workspace's own model whether the new question is the same gap as one
+ * we have already recorded. Returns null on any doubt, any failure, or no provider.
+ *
+ * This is the precision half of gap clustering — see lib/gap-clustering.ts for why
+ * the embedding cannot be trusted to make this call by itself (it scores "import"
+ * and "export" at 0.82). Not merging is always the safe outcome: a fragmented
+ * backlog is untidy, a wrongly merged one is wrong.
+ */
+async function judgeGapDuplicate(
+  workspaceId: string,
+  normalized: string,
+  candidates: ScoredGapCandidate[]
+): Promise<ScoredGapCandidate | null> {
+  if (candidates.length === 0) return null
+
+  const workspace = await prisma.workspace.findUnique({
+    where: { id: workspaceId },
+    select: { aiProvider: true, aiApiKey: true, aiModel: true },
+  })
+  // No model available (e.g. a self-hosted install with no key) — fall back to
+  // exact-hash behaviour rather than guessing from cosine alone.
+  if (!workspace) return null
+
+  try {
+    const provider = resolveProvider({
+      aiProvider: workspace.aiProvider,
+      aiApiKey: workspace.aiApiKey,
+      aiModel: workspace.aiModel,
+    })
+
+    let reply = ''
+    for await (const event of provider.streamChat({
+      system: 'You classify duplicate customer questions. Reply with only a number or NONE.',
+      messages: [{ role: 'user', content: buildGapJudgePrompt(normalized, candidates) }],
+      maxTokens: 8,
+      model: workspace.aiModel ?? undefined,
+    })) {
+      if (event.type === 'text') reply += event.text
+      if (event.type === 'error') return null
+    }
+
+    return parseGapJudgeVerdict(reply, candidates)
+  } catch {
+    // The judge is an optimisation, never a requirement. If it is down we file a
+    // separate gap, which is exactly the old behaviour.
+    return null
+  }
+}
+
+/**
+ * Records or increments a knowledge gap when the agent could not answer a customer
+ * question well. Called after the agent stream completes with low confidence or an
+ * escalation.
+ *
+ * Duplicate detection runs in three tiers, cheapest first:
+ *
+ *   1. EXACT — SHA-256 of the normalised query (lowercased, trimmed, whitespace
+ *      collapsed, truncated to 500 chars). Atomic via the unique constraint, so it
+ *      is also the race-safe path under concurrent writes.
+ *   2. CANDIDATES — cosine over the query embedding, to surface paraphrases the
+ *      hash cannot see ("I forgot my password" vs "how do I reset my password").
+ *      Recall only; see lib/gap-clustering.ts for why cosine cannot decide alone.
+ *   3. JUDGE — the workspace's model confirms a candidate really is the same gap.
+ *      Nothing merges without an explicit yes.
+ *
+ * Any tier being unavailable degrades to the tier above it, and the floor is the
+ * old exact-match behaviour. We would rather file a duplicate gap than merge two
+ * different questions: a wrong merge corrupts the occurrence count AND causes
+ * autoDraftGapThreshold to draft one article answering two different questions.
+ */
+export async function recordKnowledgeGap(
+  workspaceId: string,
+  query: string
+): Promise<KnowledgeGapRow | null> {
   const normalized = query.toLowerCase().trim().replace(/\s+/g, ' ').slice(0, 500)
   const queryHash = crypto.createHash('sha256').update(normalized).digest('hex').slice(0, 16)
 
+  const touch = (id: string): Promise<KnowledgeGapRow> =>
+    prisma.knowledgeGap.update({
+      where: { id },
+      data: { occurrences: { increment: 1 }, lastSeenAt: new Date() },
+      select: GAP_SELECT,
+    })
+
+  // --- Tier 1: exact match ---
+  const exact = await prisma.knowledgeGap.findUnique({
+    where: { workspaceId_queryHash: { workspaceId, queryHash } },
+    select: { id: true },
+  })
+  if (exact) return touch(exact.id)
+
+  // --- Tier 2: embedding candidates ---
+  let embedding: number[] = []
+  try {
+    embedding = await embedText(normalized)
+  } catch {
+    // No embeddings configured or the call failed — semantic clustering is simply
+    // unavailable for this gap. It still dedups exactly, as it always did.
+  }
+
+  if (embedding.length > 0) {
+    const recent = await prisma.knowledgeGap.findMany({
+      where: { workspaceId, resolvedArticleId: null },
+      orderBy: { lastSeenAt: 'desc' },
+      take: GAP_SCAN_LIMIT,
+      select: { id: true, query: true, embedding: true },
+    })
+
+    const candidates = selectGapCandidates(embedding, recent)
+
+    // --- Tier 3: the judge decides ---
+    const duplicate = await judgeGapDuplicate(workspaceId, normalized, candidates)
+    if (duplicate) return touch(duplicate.id)
+  }
+
+  // --- New gap ---
+  // upsert (not create) so two concurrent writes of the same question collide on the
+  // unique constraint and increment instead of throwing.
   return await prisma.knowledgeGap.upsert({
     where: { workspaceId_queryHash: { workspaceId, queryHash } },
     create: {
       workspaceId,
       query: normalized,
       queryHash,
+      embedding,
       occurrences: 1,
       lastSeenAt: new Date(),
     },
@@ -795,11 +904,6 @@ export async function recordKnowledgeGap(
       occurrences: { increment: 1 },
       lastSeenAt: new Date(),
     },
-    select: {
-      id: true,
-      query: true,
-      occurrences: true,
-      resolvedArticleId: true,
-    },
+    select: GAP_SELECT,
   })
 }

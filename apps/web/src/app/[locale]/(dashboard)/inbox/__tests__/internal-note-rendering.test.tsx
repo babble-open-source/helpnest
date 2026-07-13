@@ -78,6 +78,10 @@ const agentPublicMessage = {
   authorMemberId: null,
   sources: null,
   confidence: null,
+  retrievalMode: null,
+  retrievalScore: null,
+  reportedConfidence: null,
+  retrievalDegraded: null,
   feedbackHelpful: null,
   createdAt: new Date().toISOString(),
 }
@@ -90,6 +94,10 @@ const internalNoteMessage = {
   authorMemberId: null,
   sources: null,
   confidence: null,
+  retrievalMode: null,
+  retrievalScore: null,
+  reportedConfidence: null,
+  retrievalDegraded: null,
   feedbackHelpful: null,
   createdAt: new Date().toISOString(),
 }

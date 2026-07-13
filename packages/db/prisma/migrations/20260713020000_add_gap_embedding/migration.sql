@@ -1,0 +1,24 @@
+-- Semantic clustering of knowledge gaps.
+--
+-- Gap dedup was an exact SHA-256 of the normalised query, so "how do I reset my password"
+-- and "I forgot my password" filed two rows with one occurrence each. autoDraftGapThreshold
+-- (default 2) therefore fired far later than it appeared to, and the backlog fragmented
+-- across paraphrases of the same missing article.
+--
+-- The embedding finds CANDIDATE duplicates the hash cannot see. It is deliberately NOT the
+-- merge decision. Measured on text-embedding-3-small:
+--
+--   "how do I export my data" vs "how do I import my data"   -> 0.824   (opposite intents!)
+--   "upgrade my plan"         vs "downgrade my plan"         -> 0.792   (opposite intents!)
+--   "how do I add a teammate" ~  "invite a colleague"        -> 0.509   (genuine paraphrase)
+--
+-- The distributions overlap: every threshold that merges real paraphrases also merges
+-- upgrade with downgrade. Topic dominates the embedding; intent polarity barely registers.
+-- So cosine supplies recall and an LLM judge supplies precision — merging only on an
+-- explicit yes. Wrongly merging two opposite questions would corrupt the occurrence count
+-- AND auto-draft one article for both, which is worse than the fragmentation it fixes.
+--
+-- Empty array = filed while embeddings were unavailable; that gap simply never matches
+-- semantically and falls back to exact-hash behaviour.
+ALTER TABLE "KnowledgeGap"
+  ADD COLUMN "embedding" DOUBLE PRECISION[] NOT NULL DEFAULT ARRAY[]::DOUBLE PRECISION[];

@@ -597,7 +597,13 @@
     "resolutionSummary": "Resumen de resolución",
     "assignedTo": "Asignado a",
     "unassigned": "Sin asignar",
-    "referencedArticles": "Artículos referenciados"
+    "referencedArticles": "Artículos referenciados",
+    "answeredFrom": "Respondido a partir de",
+    "groundingVector": "Mejor coincidencia de artículo {score}",
+    "groundingLexical": "Cobertura de palabras clave {score} (sin búsqueda vectorial)",
+    "groundingNone": "No se encontraron artículos coincidentes",
+    "selfReported": "La IA se autoevaluó en {score}",
+    "groundingDegraded": "La búsqueda vectorial no estaba disponible: esta respuesta se evaluó solo por coincidencia de palabras clave."
   },
   "knowledgeGaps": {
     "unresolved": "Sin resolver",

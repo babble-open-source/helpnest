@@ -16,6 +16,10 @@ interface SentMessage {
   authorMemberId: string | null
   sources: unknown
   confidence: number | null
+  retrievalMode: string | null
+  retrievalScore: number | null
+  reportedConfidence: number | null
+  retrievalDegraded: boolean | null
   feedbackHelpful: boolean | null
   createdAt: string
 }

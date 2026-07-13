@@ -597,7 +597,13 @@
     "resolutionSummary": "Resolution Summary",
     "assignedTo": "Assigned to",
     "unassigned": "Unassigned",
-    "referencedArticles": "Referenced Articles"
+    "referencedArticles": "Referenced Articles",
+    "answeredFrom": "Answered from",
+    "groundingVector": "Best article match {score}",
+    "groundingLexical": "Keyword coverage {score} (no vector search)",
+    "groundingNone": "No matching articles were found",
+    "selfReported": "AI self-rated {score}",
+    "groundingDegraded": "Vector search was unavailable — this answer was graded on keyword overlap alone."
   },
   "knowledgeGaps": {
     "unresolved": "Unresolved",

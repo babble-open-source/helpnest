@@ -486,7 +486,19 @@ model KnowledgeGap {
   id                String    @id @default(cuid())
   workspaceId       String
   query             String
+  // Exact-match key: SHA-256 of the normalised query. Kept as the unique constraint
+  // (and the fast path) because it is atomic under concurrent writes.
   queryHash         String
+  // Embedding of the normalised query, used to find CANDIDATE duplicates that the
+  // hash cannot see. Empty when embeddings were unavailable when the gap was filed.
+  //
+  // Candidates only — never a merge decision on its own. Measured on
+  // text-embedding-3-small: "how do I export my data" vs "how do I import my data"
+  // scores 0.82 and "upgrade my plan" vs "downgrade my plan" scores 0.79, while the
+  // genuine paraphrase "add a teammate" ~ "invite a colleague" scores just 0.51.
+  // Topic dominates the vector; intent polarity barely registers. No cosine
+  // threshold separates them, so an LLM judge makes the final call.
+  embedding         Float[]
   occurrences       Int       @default(1)
   lastSeenAt        DateTime  @default(now())
   resolvedAt        DateTime?

@@ -597,7 +597,13 @@
     "resolutionSummary": "Resumo da resolução",
     "assignedTo": "Atribuído a",
     "unassigned": "Não atribuído",
-    "referencedArticles": "Artigos referenciados"
+    "referencedArticles": "Artigos referenciados",
+    "answeredFrom": "Respondido a partir de",
+    "groundingVector": "Melhor correspondência de artigo {score}",
+    "groundingLexical": "Cobertura de palavras-chave {score} (sem busca vetorial)",
+    "groundingNone": "Nenhum artigo correspondente encontrado",
+    "selfReported": "A IA autoavaliou-se em {score}",
+    "groundingDegraded": "A busca vetorial estava indisponível — esta resposta foi avaliada apenas por sobreposição de palavras-chave."
   },
   "knowledgeGaps": {
     "unresolved": "Não resolvidas",

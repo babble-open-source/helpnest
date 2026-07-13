@@ -597,7 +597,13 @@
     "resolutionSummary": "समाधान सारांश",
     "assignedTo": "असाइन किया गया",
     "unassigned": "असाइन नहीं किया गया",
-    "referencedArticles": "संदर्भित लेख"
+    "referencedArticles": "संदर्भित लेख",
+    "answeredFrom": "इन लेखों से उत्तर दिया",
+    "groundingVector": "सर्वोत्तम लेख मिलान {score}",
+    "groundingLexical": "कीवर्ड कवरेज {score} (वेक्टर खोज नहीं)",
+    "groundingNone": "कोई मेल खाता लेख नहीं मिला",
+    "selfReported": "AI ने स्वयं को {score} आँका",
+    "groundingDegraded": "वेक्टर खोज उपलब्ध नहीं थी — यह उत्तर केवल कीवर्ड मिलान पर आँका गया।"
   },
   "knowledgeGaps": {
     "unresolved": "अनसुलझे",

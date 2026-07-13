@@ -57,10 +57,33 @@ which is what HelpNest uses.
   trade off against each other, and a bot that escalates everything is safe and useless —
   so the script makes you choose against the cost of each rather than a single accuracy
   number.
-- **Grounding breakdown persisted per message** — `retrievalMode`, `retrievalScore` and
-  `reportedConfidence`. A single confidence scalar cannot tell you afterwards _why_ a turn
-  escalated; without these you cannot measure over-abstention in production or tune the
-  floors against real traffic.
+- **Grounding breakdown persisted per message** — `retrievalMode`, `retrievalScore`,
+  `reportedConfidence` and `retrievalDegraded`. A single confidence scalar cannot tell you
+  afterwards _why_ a turn escalated; without these you cannot measure over-abstention in
+  production or tune the floors against real traffic.
+- **The inbox now shows what the AI answered from** — source articles (linked), whether the
+  answer was grounded by vector or keyword search, and the model's own score separately from
+  what retrieval measured. This closes a gap the escalation gate _cannot_ close by design:
+  retrieval similarity measures whether an article is **about** the question, not whether it
+  is **correct or current**, so a stale-but-on-topic article scores high and sails through.
+  Nothing automated catches that — a human reading the source link does.
+- **Semantic knowledge-gap clustering** — paraphrases of the same missing article now
+  accumulate on one row instead of fragmenting across near-duplicate rows, so
+  `autoDraftGapThreshold` fires when it should.
+
+  Clustering is deliberately **not** a cosine threshold. Measured on
+  `text-embedding-3-small`, `"how do I export my data"` vs `"how do I import my data"` scores
+  **0.82**, and `"upgrade my plan"` vs `"downgrade my plan"` scores **0.79** — both _opposite_
+  intents — while the genuine paraphrase `"add a teammate"` ~ `"invite a colleague"` scores
+  only **0.51**. The distributions overlap: every threshold that merges real duplicates also
+  merges upgrade with downgrade. Embeddings encode topic strongly and intent polarity barely
+  at all.
+
+  So cosine supplies **recall** (candidates) and an LLM judge supplies **precision** (the
+  merge decision) — nothing merges without an explicit yes. Wrongly merging two opposite
+  questions would corrupt the occurrence count _and_ auto-draft a single article answering
+  both, which is worse than the fragmentation it fixes. Installs without embeddings or a
+  configured model fall back to the previous exact-match behaviour.
 
 ## [0.1.0] — 2025-03-08
 

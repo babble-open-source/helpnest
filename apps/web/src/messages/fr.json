@@ -597,7 +597,13 @@
     "resolutionSummary": "Résumé de résolution",
     "assignedTo": "Assigné à",
     "unassigned": "Non assigné",
-    "referencedArticles": "Articles référencés"
+    "referencedArticles": "Articles référencés",
+    "answeredFrom": "Réponse basée sur",
+    "groundingVector": "Meilleure correspondance d’article {score}",
+    "groundingLexical": "Couverture de mots-clés {score} (sans recherche vectorielle)",
+    "groundingNone": "Aucun article correspondant trouvé",
+    "selfReported": "Auto-évaluation de l’IA : {score}",
+    "groundingDegraded": "La recherche vectorielle était indisponible — cette réponse n’a été évaluée que sur le recoupement de mots-clés."
   },
   "knowledgeGaps": {
     "unresolved": "Non résolues",
