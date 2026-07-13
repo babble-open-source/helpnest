@@ -18,6 +18,17 @@ const WIDGET_CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Session-Token, X-Visitor-Id',
 }
 
+/**
+ * What the CUSTOMER sees when a conversation is handed to a human.
+ *
+ * Deliberately free of diagnostics. The escalation reason the agent produces is
+ * written for the support team — "Answer not grounded in the knowledge base
+ * (confidence 0.00, best vector match 0.19)" — and it is stored on the
+ * conversation for them. Putting it in the chat widget shows a customer a
+ * retrieval score they cannot act on, reads as a malfunction, and leaks internals.
+ */
+const CUSTOMER_ESCALATION_NOTICE = 'Conversation escalated to human support.'
+
 // Message rate limiting: 30 messages per minute per session token.
 // This is intentionally generous for normal chat flow while still providing
 // a guard against scripted abuse.
@@ -357,15 +368,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           const updateData: Record<string, unknown> = { aiConfidence: confidence }
           if (shouldEscalate) {
             updateData.status = 'ESCALATED'
+            // The full diagnostic ("confidence 0.00, best vector match 0.19") lives
+            // HERE, on the conversation, where the support team reads it.
             updateData.escalationReason = escalationReason ?? null
-            // Add a visible system message so the inbox shows why the conversation escalated.
+
+            // The SYSTEM message, by contrast, is rendered inside the customer's chat
+            // widget. It must never carry the diagnostic: retrieval scores are
+            // meaningless to a customer, read as a malfunction, and expose internals
+            // to anyone who can open the widget. The agent's own reply already
+            // explains, in plain language, that it could not find an answer.
             await prisma.message.create({
               data: {
                 conversationId: id,
                 role: 'SYSTEM',
-                content: escalationReason
-                  ? `Conversation escalated to human support: ${escalationReason}`
-                  : 'Conversation escalated to human support.',
+                content: CUSTOMER_ESCALATION_NOTICE,
               },
             })
           }
@@ -408,13 +424,16 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           controller.enqueue(
             encoder.encode(`data: ${JSON.stringify({ type: 'sources', sources })}\n\n`)
           )
+          // escalationReason is deliberately NOT streamed: this payload lands in the
+          // customer's browser, so anything in it is public. The widget only needs
+          // to know THAT a human is taking over, not the retrieval score that
+          // triggered it.
           controller.enqueue(
             encoder.encode(
               `data: ${JSON.stringify({
                 type: 'done',
                 confidence,
                 shouldEscalate,
-                escalationReason,
               })}\n\n`
             )
           )
