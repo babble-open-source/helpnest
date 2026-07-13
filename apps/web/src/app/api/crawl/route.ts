@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     authorId = member.userId
   }
 
-  const body = await request.json() as {
+  const body = (await request.json()) as {
     url?: string
     goal?: string
     collectionId?: string
@@ -91,7 +91,7 @@ export async function POST(request: Request) {
         code: 'DOMAIN_NOT_VERIFIED',
         domain,
       },
-      { status: 403 },
+      { status: 403 }
     )
   }
 
@@ -103,17 +103,21 @@ export async function POST(request: Request) {
   if (recentCrawls >= 20) {
     return NextResponse.json(
       { error: 'Rate limit exceeded. Max 20 crawls per hour per workspace.' },
-      { status: 429 },
+      { status: 429 }
     )
   }
 
   // Check AI credits
   const credits = await checkAiCredits(workspaceId)
   if (!credits.allowed) {
-    return NextResponse.json({
-      error: 'AI credits exhausted. Configure your own AI key in workspace settings or upgrade your plan.',
-      credits: { used: credits.used, limit: credits.limit, remaining: 0 },
-    }, { status: 402 })
+    return NextResponse.json(
+      {
+        error:
+          'AI credits exhausted. Configure your own AI key in workspace settings or upgrade your plan.',
+        credits: { used: credits.used, limit: credits.limit, remaining: 0 },
+      },
+      { status: 402 }
+    )
   }
 
   // 3. Get workspace AI settings
@@ -138,12 +142,12 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json(
       { error: 'No AI provider configured. Set up an AI provider in workspace settings.' },
-      { status: 422 },
+      { status: 422 }
     )
   }
 
   try {
-    // 4. Consult robots.txt BEFORE fetching anything.
+    // Consult robots.txt BEFORE fetching anything.
     //
     // This used to run after the starting page had already been fetched, and only
     // filtered the links discovered on it — so a site whose robots.txt said
@@ -157,22 +161,22 @@ export async function POST(request: Request) {
           error: `The robots.txt file at ${domain} does not allow automated access to this page. HelpNest respects robots.txt and will not crawl it.`,
           code: 'ROBOTS_DISALLOWED',
         },
-        { status: 403 },
+        { status: 403 }
       )
     }
 
-    // 5. Fetch starting page with Playwright
+    // 4. Fetch starting page with Playwright
     const fetchResult = await fetchPage(url)
     if (fetchResult.error || !fetchResult.html) {
       return NextResponse.json(
         { error: `Failed to fetch page: ${fetchResult.error ?? 'No HTML returned'}` },
-        { status: 502 },
+        { status: 502 }
       )
     }
 
     const startingHtml = fetchResult.html
 
-    // 6. Discover same-domain links on the page, filtered by the same robots rules.
+    // 5. Discover same-domain links on the page, filtered by the same robots rules.
     let discoveredLinks = discoverLinks(startingHtml, url)
     discoveredLinks = discoveredLinks.filter((l) => robots.isAllowed(l.url))
 
@@ -303,9 +307,10 @@ export async function POST(request: Request) {
           }
 
           // e. Truncate to 16k chars
-          const truncatedMarkdown = extracted.markdown.length > MAX_AI_CONTENT_LENGTH
-            ? extracted.markdown.slice(0, MAX_AI_CONTENT_LENGTH)
-            : extracted.markdown
+          const truncatedMarkdown =
+            extracted.markdown.length > MAX_AI_CONTENT_LENGTH
+              ? extracted.markdown.slice(0, MAX_AI_CONTENT_LENGTH)
+              : extracted.markdown
 
           // e1. Atomically consume one AI credit before generation
           const creditConsumed = await tryConsumeAiCredit(workspaceId)
@@ -330,13 +335,14 @@ export async function POST(request: Request) {
             workspaceName: workspace.name,
             existingCollections: existingCollections.map((c) => c.title),
             goal,
-            seriesContext: i > 0
-              ? {
-                  articleNumber: i + 1,
-                  totalArticles: pagesToProcess.length,
-                  previousTitles,
-                }
-              : undefined,
+            seriesContext:
+              i > 0
+                ? {
+                    articleNumber: i + 1,
+                    totalArticles: pagesToProcess.length,
+                    previousTitles,
+                  }
+                : undefined,
           })
 
           // g. Stream AI response, parse article draft
@@ -385,7 +391,10 @@ export async function POST(request: Request) {
             if (match) {
               collectionId = match.id
             } else {
-              const colSlug = await uniqueCollectionSlug(articleDraft.suggestedCollection, workspaceId)
+              const colSlug = await uniqueCollectionSlug(
+                articleDraft.suggestedCollection,
+                workspaceId
+              )
               const newCol = await prisma.collection.create({
                 data: { workspaceId, title: articleDraft.suggestedCollection, slug: colSlug },
               })
@@ -481,7 +490,11 @@ export async function POST(request: Request) {
         totalPages: pagesToProcess.length,
         processedPages,
         articlesCreated: articles.length,
-        credits: { used: updatedCredits.used, limit: updatedCredits.limit, remaining: updatedCredits.remaining },
+        credits: {
+          used: updatedCredits.used,
+          limit: updatedCredits.limit,
+          remaining: updatedCredits.remaining,
+        },
       })
     } else {
       // ── DISCOVERY MODE (>5 pages) ────────────────────────────────────
@@ -521,9 +534,6 @@ export async function POST(request: Request) {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
-    return NextResponse.json(
-      { error: `Crawl failed: ${message}` },
-      { status: 500 },
-    )
+    return NextResponse.json({ error: `Crawl failed: ${message}` }, { status: 500 })
   }
 }
