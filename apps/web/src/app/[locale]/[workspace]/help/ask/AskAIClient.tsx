@@ -280,24 +280,6 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
           </div>
         ) : (
           <>
-            <div className="flex justify-end mb-4">
-              <button
-                type="button"
-                onClick={handleNewConversation}
-                className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 4v16m8-8H4"
-                  />
-                </svg>
-                {t('newConversation')}
-              </button>
-            </div>
-
             <div role="log" aria-live="polite" className="space-y-5">
               {messages.map((message) =>
                 message.role === 'user' ? (
@@ -429,7 +411,21 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
       )}
 
       {/* Composer — pinned to bottom */}
-      <div className="shrink-0 border-t border-border bg-cream px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <div className="shrink-0 border-t border-border bg-cream px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {messages.length > 0 && (
+          <div className="flex justify-end mb-2">
+            <button
+              type="button"
+              onClick={handleNewConversation}
+              className="inline-flex items-center gap-1.5 text-xs text-muted hover:text-ink transition-colors"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              {t('newConversation')}
+            </button>
+          </div>
+        )}
         <form
           onSubmit={(e) => {
             e.preventDefault()

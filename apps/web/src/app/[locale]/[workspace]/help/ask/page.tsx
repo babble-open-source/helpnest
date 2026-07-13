@@ -35,7 +35,7 @@ export default async function AskAIPage(props: Props) {
   })
 
   return (
-    <div className="min-h-[calc(100dvh-3.5rem)] bg-cream flex flex-col">
+    <div className="h-[calc(100dvh-3.5rem)] bg-cream flex flex-col">
       {/* Chat — fills remaining height */}
       <div className="flex-1 min-h-0 max-w-2xl w-full mx-auto flex flex-col">
         <AskAIClient
