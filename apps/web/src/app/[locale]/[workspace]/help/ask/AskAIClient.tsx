@@ -436,7 +436,7 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
             send(input)
           }}
         >
-          <div className="relative">
+          <div className="flex items-end rounded-xl border border-border bg-white focus-within:border-green focus-within:ring-2 focus-within:ring-green/20">
             <textarea
               ref={textareaRef}
               value={input}
@@ -445,10 +445,10 @@ export function AskAIClient({ workspace, workspaceName, suggestions = [] }: Prop
               placeholder={t('inputPlaceholder')}
               maxLength={MAX_QUERY_LENGTH}
               rows={1}
-              className="w-full resize-none ps-4 pe-24 py-3 border border-border rounded-xl text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:border-green focus:ring-2 focus:ring-green/20"
+              className="flex-1 min-w-0 resize-none bg-transparent ps-4 pe-2 py-3 text-sm text-ink placeholder:text-muted focus:outline-none"
               autoFocus
             />
-            <div className="absolute end-2 bottom-2 flex items-center gap-2">
+            <div className="flex items-center gap-2 pe-1.5 pb-1.5 shrink-0">
               {input.length >= MAX_QUERY_LENGTH - 100 && (
                 <span className="text-xs text-muted tabular-nums">
                   {input.length}/{MAX_QUERY_LENGTH}
