@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/db'
 import { redis } from '@/lib/redis'
+import { isPublicSignupEnabled, SIGNUP_CLOSED_MESSAGE } from '@/lib/signup-gate'
 
 const SIGNUP_WINDOW_MS = 60 * 60 * 1000 // 1 hour
 const SIGNUP_MAX = 5 // per IP per window
@@ -25,6 +26,12 @@ async function isSignupRateLimited(ip: string): Promise<boolean> {
  * that happens on the /onboarding page after signup.
  */
 export async function POST(request: Request) {
+  // Enforced on the SERVER, before anything else. Hiding the signup link in the UI
+  // stops nobody: this is a public endpoint and anyone can POST to it directly.
+  if (!isPublicSignupEnabled()) {
+    return NextResponse.json({ error: SIGNUP_CLOSED_MESSAGE }, { status: 403 })
+  }
+
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
   if (await isSignupRateLimited(ip)) {
     return NextResponse.json(

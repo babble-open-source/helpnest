@@ -68,6 +68,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: validation.error ?? 'Invalid URL' }, { status: 400 })
   }
   const url = validation.url
+  const domain = new URL(url).hostname
+
+  // ── Ownership gate ────────────────────────────────────────────────────────
+  //
+  // You may only crawl a domain you have proven you control. Deep crawls (>5
+  // pages) already enforced this in crawl/confirm; shallow crawls did not, which
+  // meant HelpNest's crawler would fetch any site on any user's say-so — a
+  // competitor's documentation, a paywalled knowledge base — from HelpNest's own
+  // IP address and under HelpNest's own user-agent. The complaint for that lands
+  // on us, not on the user who asked for it.
+  //
+  // This is enforced here, at the entry point, so no crawl mode can bypass it.
+  const verification = await prisma.domainVerification.findFirst({
+    where: { workspaceId, domain, verifiedAt: { not: null } },
+    select: { id: true },
+  })
+  if (!verification) {
+    return NextResponse.json(
+      {
+        error: `You must verify that you own ${domain} before crawling it. Add the verification DNS record or meta tag in Settings, then try again.`,
+        code: 'DOMAIN_NOT_VERIFIED',
+        domain,
+      },
+      { status: 403 },
+    )
+  }
 
   // Rate limit: max 20 crawls per workspace per hour
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
@@ -117,7 +143,25 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 4. Fetch starting page with Playwright
+    // 4. Consult robots.txt BEFORE fetching anything.
+    //
+    // This used to run after the starting page had already been fetched, and only
+    // filtered the links discovered on it — so a site whose robots.txt said
+    // `Disallow: /` still had its page pulled down by HelpNestBot. Asking
+    // permission after you have already taken the thing is not asking permission.
+    const robotsTxt = await fetchRobotsTxt(url)
+    const robots = parseRobotsTxt(robotsTxt)
+    if (!robots.isAllowed(url)) {
+      return NextResponse.json(
+        {
+          error: `The robots.txt file at ${domain} does not allow automated access to this page. HelpNest respects robots.txt and will not crawl it.`,
+          code: 'ROBOTS_DISALLOWED',
+        },
+        { status: 403 },
+      )
+    }
+
+    // 5. Fetch starting page with Playwright
     const fetchResult = await fetchPage(url)
     if (fetchResult.error || !fetchResult.html) {
       return NextResponse.json(
@@ -128,14 +172,9 @@ export async function POST(request: Request) {
 
     const startingHtml = fetchResult.html
 
-    // 5. Discover same-domain links on the page
-    const domain = new URL(url).hostname
+    // 6. Discover same-domain links on the page, filtered by the same robots rules.
     let discoveredLinks = discoverLinks(startingHtml, url)
-
-    // 5a. Fetch robots.txt and filter discovered links accordingly
-    const robotsTxt = await fetchRobotsTxt(url)
-    const robots = parseRobotsTxt(robotsTxt)
-    discoveredLinks = discoveredLinks.filter(l => robots.isAllowed(l.url))
+    discoveredLinks = discoveredLinks.filter((l) => robots.isAllowed(l.url))
 
     // 6. Build AI link filter prompt with the goal, send to AI provider
     const filterPrompt = buildLinkFilterPrompt(discoveredLinks, goal, domain)

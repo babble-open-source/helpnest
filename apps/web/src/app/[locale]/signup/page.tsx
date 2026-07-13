@@ -1,11 +1,17 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { getTranslations } from 'next-intl/server'
+import { isPublicSignupEnabled } from '@/lib/signup-gate'
 import { SignupForm } from './SignupForm'
 
 export const dynamic = 'force-dynamic'
 
 export default async function SignupPage() {
+  // The API refuses too — this only spares a visitor from filling in a form that
+  // was always going to be rejected. Closing signup is enforced on the server, not
+  // by hiding this page.
+  if (!isPublicSignupEnabled()) notFound()
+
   const session = await auth()
   const userId = await resolveSessionUserId(session)
   if (session?.user && userId) redirect('/')

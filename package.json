@@ -1,6 +1,7 @@
 {
   "name": "helpnest",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
