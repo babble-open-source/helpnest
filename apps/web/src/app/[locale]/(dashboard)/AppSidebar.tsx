@@ -57,7 +57,7 @@ interface Props {
   userName: string
   userEmail: string
   userInitial: string
-  cloudMode?: boolean
+  billingEnabled?: boolean
   side?: 'left' | 'right'
 }
 
@@ -80,7 +80,7 @@ export function AppSidebar({
   userName,
   userEmail,
   userInitial,
-  cloudMode,
+  billingEnabled,
   side = 'left',
 }: Props) {
   const pathname = usePathname()
@@ -256,7 +256,7 @@ export function AppSidebar({
                   )}
                 </SidebarMenuItem>
               ))}
-              {cloudMode && (
+              {billingEnabled && (
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     asChild

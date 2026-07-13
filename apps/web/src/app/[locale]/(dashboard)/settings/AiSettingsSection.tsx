@@ -28,6 +28,7 @@ interface Props {
   aiEscalationThreshold: number
   hasApiKey: boolean
   cloudMode?: boolean
+  billingEnabled?: boolean
   planTier?: string
   demoMode: boolean
   productContext: string | null
@@ -47,6 +48,7 @@ export function AiSettingsSection({
   aiEscalationThreshold: initThreshold,
   hasApiKey,
   cloudMode = false,
+  billingEnabled = false,
   planTier = 'FREE',
   demoMode,
   productContext: initProductContext,
@@ -198,7 +200,9 @@ export function AiSettingsSection({
                   <div className="rounded-lg border bg-muted/50 p-4 text-center">
                     <p className="text-sm text-foreground mb-1">Bring your own API key is a Pro feature</p>
                     <p className="text-xs text-muted-foreground mb-2">Upgrade to use your own API key for unlimited AI — search, agent, and drafts.</p>
-                    <Link href="/billing" className="text-xs font-medium text-primary hover:underline">Upgrade to Pro →</Link>
+                    {billingEnabled && (
+                      <Link href="/billing" className="text-xs font-medium text-primary hover:underline">Upgrade to Pro →</Link>
+                    )}
                   </div>
                 ) : (
                   <>

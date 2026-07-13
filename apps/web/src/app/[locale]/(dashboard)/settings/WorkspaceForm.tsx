@@ -38,6 +38,7 @@ interface Props {
   appUrl: string
   helpCenterDomain: string
   cloudMode?: boolean
+  billingEnabled?: boolean
   planTier?: string
   cnameTarget?: string
   demoMode?: boolean
@@ -59,6 +60,7 @@ export function WorkspaceForm({
   appUrl,
   helpCenterDomain,
   cloudMode = false,
+  billingEnabled = false,
   planTier = 'FREE',
   cnameTarget = '',
   demoMode = false,
@@ -283,15 +285,17 @@ export function WorkspaceForm({
               </div>
               <p className="text-sm font-medium text-foreground mb-1">{t('customDomainLocked')}</p>
               <p className="text-xs text-muted-foreground mb-3">{t('customDomainLockedDesc')}</p>
-              <Link
-                href="/billing"
-                className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-              >
-                {t('upgradeToPro')}
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                </svg>
-              </Link>
+              {billingEnabled && (
+                <Link
+                  href="/billing"
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+                >
+                  {t('upgradeToPro')}
+                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </Link>
+              )}
             </div>
           ) : (
             /* Full domain UI for PRO/BUSINESS */

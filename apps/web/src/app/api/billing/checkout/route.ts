@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { createCheckoutSession } from '@/lib/cloud'
+import { createCheckoutSession, isBillingEnabled } from '@/lib/cloud'
 
 /**
  * POST /api/billing/checkout
@@ -9,6 +9,10 @@ import { createCheckoutSession } from '@/lib/cloud'
  * Body: { workspaceId, plan }
  */
 export async function POST(request: Request) {
+  if (!isBillingEnabled()) {
+    return NextResponse.json({ error: 'Billing is not enabled' }, { status: 404 })
+  }
+
   const session = await auth()
   const userId = await resolveSessionUserId(session)
   if (!userId) {

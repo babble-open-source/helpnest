@@ -1,6 +1,6 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
-import { isCloudMode, getWorkspacePlan } from '@/lib/cloud'
+import { isCloudMode, isBillingEnabled, getWorkspacePlan } from '@/lib/cloud'
 import { isDemoMode } from '@/lib/demo'
 import { fontPresets, radiusOptions } from '@/lib/branding'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
@@ -151,6 +151,7 @@ export default async function SettingsPage() {
                   appUrl={appUrl}
                   helpCenterDomain={process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''}
                   cloudMode={isCloudMode()}
+                  billingEnabled={isBillingEnabled()}
                   planTier={planTier}
                   cnameTarget={process.env.CLOUDFLARE_FALLBACK_ORIGIN ?? 'proxy.helpnest.cloud'}
                   demoMode={demoMode}
@@ -209,6 +210,7 @@ export default async function SettingsPage() {
               aiEscalationThreshold={workspace?.aiEscalationThreshold ?? 0.3}
               hasApiKey={!!workspace?.aiApiKey}
               cloudMode={isCloudMode()}
+              billingEnabled={isBillingEnabled()}
               planTier={planTier}
               demoMode={demoMode}
               productContext={workspace?.productContext ?? null}

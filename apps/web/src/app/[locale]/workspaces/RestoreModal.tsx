@@ -8,12 +8,12 @@ import { Input } from '@/components/ui/input'
 
 interface Props {
   workspace: { id: string; name: string; deletedAt: string | null }
-  cloudMode: boolean
+  billingEnabled: boolean
   onClose: () => void
   onSuccess: () => void
 }
 
-export function RestoreModal({ workspace, cloudMode, onClose, onSuccess }: Props) {
+export function RestoreModal({ workspace, billingEnabled, onClose, onSuccess }: Props) {
   const t = useTranslations('workspaces')
   const tc = useTranslations('common')
 
@@ -131,7 +131,7 @@ export function RestoreModal({ workspace, cloudMode, onClose, onSuccess }: Props
         <div className="space-y-1.5 text-xs text-muted-foreground">
           <p>{t('restoreAiReindex')}</p>
           <p>{t('restoreDomainNote')}</p>
-          {cloudMode && <p>{t('restoreBillingNote')}</p>}
+          {billingEnabled && <p>{t('restoreBillingNote')}</p>}
         </div>
 
         {error && <p className="text-sm text-destructive">{error}</p>}

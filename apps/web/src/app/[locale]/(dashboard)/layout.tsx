@@ -1,6 +1,6 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
-import { isCloudMode } from '@/lib/cloud'
+import { isBillingEnabled } from '@/lib/cloud'
 import { getWorkspaceColumnSet, prisma } from '@/lib/db'
 import { redirect } from 'next/navigation'
 import { isDemoMode } from '@/lib/demo'
@@ -102,7 +102,7 @@ export default async function DashboardLayout({ children, params }: { children: 
           userName={session.user.name ?? 'User'}
           userEmail={session.user.email ?? ''}
           userInitial={userInitial}
-          cloudMode={isCloudMode()}
+          billingEnabled={isBillingEnabled()}
           side={rtl ? 'right' : 'left'}
         />
         <SidebarInset>

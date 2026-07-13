@@ -1,6 +1,6 @@
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { getAllUserWorkspaces } from '@/lib/workspace'
-import { isCloudMode } from '@/lib/cloud'
+import { isBillingEnabled } from '@/lib/cloud'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import { getTranslations } from 'next-intl/server'
@@ -20,7 +20,7 @@ export default async function WorkspacesPage() {
   const cookieStore = await cookies()
   const currentWorkspaceId = cookieStore.get('helpnest-workspace')?.value ?? null
   const dashboardTheme = cookieStore.get('dashboard_theme')?.value === 'dark' ? 'dark' : 'light'
-  const cloudMode = isCloudMode()
+  const billingEnabled = isBillingEnabled()
 
   const helpCenterDomain = process.env.NEXT_PUBLIC_HELP_CENTER_DOMAIN ?? ''
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
@@ -45,7 +45,7 @@ export default async function WorkspacesPage() {
             deletedAt: w.deletedAt.toISOString(),
           }))}
           currentWorkspaceId={currentWorkspaceId}
-          cloudMode={cloudMode}
+          billingEnabled={billingEnabled}
           slugPrefix={slugPrefix}
           slugSuffix={slugSuffix}
         />

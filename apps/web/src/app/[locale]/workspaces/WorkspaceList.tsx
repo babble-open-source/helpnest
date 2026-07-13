@@ -21,14 +21,14 @@ interface Props {
   active: Workspace[]
   deleted: Workspace[]
   currentWorkspaceId: string | null
-  cloudMode: boolean
+  billingEnabled: boolean
   slugPrefix: string
   slugSuffix: string
 }
 
 const RESTORE_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
 
-export function WorkspaceList({ active, deleted, currentWorkspaceId, cloudMode, slugPrefix, slugSuffix }: Props) {
+export function WorkspaceList({ active, deleted, currentWorkspaceId, billingEnabled, slugPrefix, slugSuffix }: Props) {
   const t = useTranslations('workspaces')
   const locale = useLocale()
   const [restoreTarget, setRestoreTarget] = useState<Workspace | null>(null)
@@ -212,7 +212,7 @@ export function WorkspaceList({ active, deleted, currentWorkspaceId, cloudMode, 
       {restoreTarget && (
         <RestoreModal
           workspace={restoreTarget}
-          cloudMode={cloudMode}
+          billingEnabled={billingEnabled}
           onClose={() => setRestoreTarget(null)}
           onSuccess={handleRestoreSuccess}
         />

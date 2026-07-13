@@ -73,6 +73,15 @@ export function isCloudMode(): boolean {
   return !!CLOUD_API_URL
 }
 
+/**
+ * Whether billing UI (billing page, plan cards, upgrade links) is visible.
+ * Mirrors NEXT_PUBLIC_PAID_PLANS_ENABLED in helpnest-cloud — both apps
+ * show or hide paid plans from the same flag.
+ */
+export function isBillingEnabled(): boolean {
+  return isCloudMode() && process.env.NEXT_PUBLIC_PAID_PLANS_ENABLED === 'true'
+}
+
 // ── Billing ──
 
 export interface WorkspacePlan {

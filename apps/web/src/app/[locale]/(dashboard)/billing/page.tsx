@@ -2,12 +2,12 @@ import { redirect } from 'next/navigation'
 import { auth, resolveSessionUserId } from '@/lib/auth'
 import { resolveWorkspaceId } from '@/lib/workspace'
 import { prisma } from '@/lib/db'
-import { getWorkspacePlan, isCloudMode } from '@/lib/cloud'
+import { getWorkspacePlan, isBillingEnabled } from '@/lib/cloud'
 import { getTranslations } from 'next-intl/server'
 import { BillingContent } from './BillingContent'
 
 export default async function BillingPage() {
-  if (!isCloudMode()) redirect('/')
+  if (!isBillingEnabled()) redirect('/')
 
   const session = await auth()
   const userId = await resolveSessionUserId(session)
